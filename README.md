@@ -41,7 +41,7 @@ npm run dev          # 啟動開發伺服器
 
 **頁面入口**：學生端在 `/`（課題選擇）；教師端在 `/teacher`（首頁）、`/teacher/questions`（題目與回報）、`/teacher/records`（學生練習記錄）；管理員端在 `/admin`（儀表板）、`/admin/materials`（教材）、`/admin/settings`（課題與系統狀態）。教師及管理員帳戶亦可使用全部學生端功能作測試（見「三、頁面及功能」的「教師／管理員測試學生端」）。
 
-首次執行 `npm run setup` 約需 1–2 分鐘（匯入 14 份文件、約 9,200 個段落）。如需同時辨識教材圖片內的文字，可執行 `npm run setup -- --ocr`（預設 `npm run setup` 不執行 OCR，因為圖表辨識較慢）。
+首次執行 `npm run setup` 約需 1–2 分鐘（匯入 12 本教師版教材、約 9,000 個段落）。如需同時辨識教材圖片內的文字，可執行 `npm run setup -- --ocr`（預設 `npm run setup` 不執行 OCR，因為圖表辨識較慢）。
 
 ### 3. 常用指令
 
@@ -118,6 +118,8 @@ materials/
 題數為實際匯入題庫的數目（`npm run import:materials`，2026 年 10 月實測）：共 **4,028 題**，其中 49 題為示範題庫（課題5，已發布），其餘為校內試題（**草稿，待教師審核**）。匯入方式見第五節。
 
 > **課題1 考核範圍**：本校只考核「古埃及文明（尼羅河流域）」，新月沃土文明、（黃河、長江流域）中華文明及印度河流域文明**不會**寫入資料庫、不會出現在學生端，亦不會成為題目內容（規則見 [src/server/materials/exclusions.ts](src/server/materials/exclusions.ts)，資料庫遷移 `0008` 會清除舊資料）。匯入時會略過相關段落、分節及題目。
+
+> **不設「教師參考：課程指引」課題**：兩份教育局課程指引 PDF 只是教師可自行翻閱的參考資料，對出題沒有貢獻——學生練習的教材檢索以課題為範圍，批次生成題庫亦排除 `level = 0`，故此課題已移除（資料庫遷移 `0009` 會清除舊資料庫的該課題、2 份文件及 3,463 段教材）。課程重視的歷史概念及技能是寫在程式碼內的常數（[src/lib/types.ts](src/lib/types.ts) 的 `HISTORY_CONCEPTS`／`HISTORY_SKILLS`，取自該指引第 1.3 節），並非讀取 PDF 而得。
 
 （課題5 的分節結構：文藝復興、宗教改革、科學革命與啟蒙運動、工業革命、法國大革命及拿破崙時代，各含子分節，共 23 個分節節點。）
 
@@ -256,7 +258,7 @@ src/server/seed/                  教育局課程架構、學習重點（精簡�
 src/app/api/                      REST API（學生端、教師端 /api/teacher/**、管理員端 /api/admin/**）
 src/app/                          頁面（學生端 /、/practice/**、/account；教師端 /teacher/**；管理員端 /admin/**）
 src/components/                   前端元件
-tests/                            Vitest 測試（25 個測試檔）
+tests/                            Vitest 測試（25 個測試檔）及 tests/fixtures/ 測試樣本
 scripts/setup.ts                  初始化示範環境
 scripts/import-materials.ts       命令列匯入教材
 scripts/generate-question-bank.ts 命令列批次生成題目
@@ -409,7 +411,7 @@ OCR_LANGUAGES=chi_tra
    - `GET /api/admin/materials/import` 列出 `materials/` 內可匯入的檔案、對應課題及目前 OCR 引擎
    - `POST /api/admin/materials/import` 批次匯入（`{ "all": true, "runOcr": true }`）
 
-### 實測結果（`materials/` 內 14 份文件）
+### 實測結果（`materials/` 內的教師版教材及校內試題）
 
 | 項目 | 數量 |
 | --- | --- |
@@ -594,14 +596,19 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
 
 ### 設定步驟（約 5 分鐘）
 
-1. 到 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建立「OAuth 用戶端 ID」（應用程式類型：**網頁應用程式**）；亦可**沿用其他平台（例如 ai-english-platform）已建立的用戶端**，只需在下一個步驟補上本平台的回呼網址。
-2. 「已授權的重新導向 URI」加入（**沿用其他平台的用戶端時，這一步不可略過**；NextAuth 平台的路徑 `/api/auth/callback/google` 與本平台不同）：
+> **本平台已使用獨立 GCP 專案**：`pccss-ai-history`，OAuth 用戶端為 `784175190534-…`，
+> 登入畫面顯示「歷史科自學網站」。以下步驟供重建環境或新部署時參考。
+
+1. 到 [Google Cloud Console](https://console.cloud.google.com/apis/credentials)（**切換到 `pccss-ai-history` 專案**）建立「OAuth 用戶端 ID」（應用程式類型：**網頁應用程式**）。
+   > 不建議沿用其他平台（例如 ai-english-platform）的用戶端：OAuth 同意畫面的應用程式名稱屬**整個 GCP 專案**，共用專案會令登入畫面顯示對方平台的名稱（詳見下方說明）。
+2. 「已授權的重新導向 URI」加入本機及正式環境兩條（NextAuth 平台的路徑 `/api/auth/callback/google` 與本平台不同）：
 
    ```
    http://localhost:3000/api/auth/google/callback
+   https://<Cloud Run 服務網址>/api/auth/google/callback
    ```
 
-   正式環境請另加該網域的相同路徑（例如 `https://history.example.edu.hk/api/auth/google/callback`），或在 `.env.local` 以 `AUTH_REDIRECT_URI` 指定固定值。
+   服務網址可由 `gcloud run services describe history-self-study --region=asia-east2 --project pccss-ai-history --format "value(status.url)"` 取得，或看部署指令碼的輸出。
 3. 在 `.env.local` 設定：
 
    ```env
@@ -617,10 +624,11 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
 
 > **登入畫面顯示的應用程式名稱是「按 GCP 專案」而非按 OAuth 用戶端**：OAuth 同意畫面
 > （Google Auth Platform → Branding，即應用程式名稱、標誌、已授權網域）屬整個專案，同一專案內
-> 所有 OAuth 用戶端共用。因此若本平台與其他平台（例如 ai-english-platform）放在同一個 GCP 專案，
-> 即使各自使用獨立用戶端，Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登入『AI English Platform』」）。
+> 所有 OAuth 用戶端共用。**OAuth 用戶端可分開，但顯示名稱不能分開。**
 >
-> 處理方式：
+> 本平台過去與 ai-english-platform 共用專案，因此登入畫面曾顯示「您即將重新登入『AI English Platform』」；
+> 現已建立獨立專案 `pccss-ai-history` 解決（見第十節「為本平台建立獨立 GCP 專案」）。
+> 若日後又與其他平台共用專案，可選：
 > - **接受共用名稱**：在 Google Auth Platform → Branding 把應用程式名稱改為同時涵蓋兩者的名稱
 >   （例如「天主教普照中學 自學平台」）。改動會同時影響該專案內的其他平台，但功能不受影響。
 > - **完全分離**：為本平台建立**獨立的 GCP 專案**，在該專案建立同意畫面（名稱例如「歷史科自學網站」）
@@ -821,6 +829,7 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 | [Dockerfile](Dockerfile) | 多階段建置（`node:24-bookworm-slim`）；使用 Next.js `output: "standalone"`，並在建置時下載 `chi_tra.traineddata` 到 `/app/ocr-lang`（容器離線亦可 OCR） |
 | [.dockerignore](.dockerignore) | 排除 `node_modules`、`.next`、`data/`、`.env*`，確保憑證與本機資料不會進入映像檔 |
 | [.gcloudignore](.gcloudignore) | `gcloud builds submit` 上載時排除 `secrets/`、`data/`、`node_modules`、`.next`、`.env*`。**`gcloud builds submit` 只看 `.gcloudignore`，不會理會 `.gitignore`**，若沒有這個檔案，服務帳戶金鑰就會被上載到 Cloud Build 暫存 bucket |
+| [.gitattributes](.gitattributes) | 標示 `*.pdf` 為二進位：`core.autocrlf=true` 的環境會把 PDF 當文字檔改寫行尾，令 `tests/fixtures/` 的測試樣本 xref 位移失效而無法解析 |
 | [cloudbuild.yaml](cloudbuild.yaml) | Cloud Build：建置映像檔 → 推送 Artifact Registry → 部署 Cloud Run（環境變數及 `--set-secrets` 已備妥） |
 | [scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1) | 一鍵完成：啟用 API → 建立 Artifact Registry → 建立**資料備份 bucket 並授權執行身分** → 建立 Secret（`AUTH_SECRET` 隨機產生）→ 建立名冊服務帳戶 → 建置及部署 → 輸出服務網址與 OAuth 重新導向網址。**預設為模擬模式，加 `-Apply` 才真正執行**；LLM API key 及 Google 憑證未經參數提供時會自動讀取本機 `.env.local`，仍沒有時**不會**覆寫線上已設定的 Secret |
 
@@ -911,15 +920,35 @@ gcloud builds triggers create github `
    管理員端「課題與系統狀態」頁會列出名冊人數及任何設定提示。
 5. **首次匯入教材**：以管理員帳戶登入 → 教材管理 → 「匯入全部課程教材」（`materials/` 已打包在映像檔內）。
 
-#### 為本平台建立獨立 GCP 專案（完整分離，可選）
+#### 為本平台建立獨立 GCP 專案（已於 2026 年 10 月完成）
 
 **為何需要**：OAuth 同意畫面（Google Auth Platform → 品牌，即登入畫面顯示的應用程式名稱、已授權網域）
 屬**整個 GCP 專案**，同專案內所有 OAuth 用戶端共用。因此與其他平台共用專案時，即使各自使用獨立用戶端，
 Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登入『AI English Platform』」）。
 **OAuth 用戶端可分開，但顯示名稱不能分開**；要完全分離必須另建專案。
 
+**目前的實際設定**
+
+| 項目 | 值 |
+| --- | --- |
+| GCP 專案 | `pccss-ai-history`（編號 784175190534） |
+| OAuth 用戶端 | `784175190534-e73rbte2g8gjslk8fc0nf3rauf7l2m4s.apps.googleusercontent.com` |
+| 使用者類型 | **內部**（只有 `@pochiu.edu.hk` Workspace 帳戶可登入；外部 Gmail 會被 Google 拒絕） |
+| 同意畫面名稱 | 歷史科自學網站 |
+| Cloud Run 服務 | `history-self-study`（asia-east2） |
+| 服務網址 | https://history-self-study-4sija7xvrq-df.a.run.app |
+| 備份 bucket | `gs://pccss-ai-history-history-backup`（前綴 `history`） |
+| 名冊服務帳戶 | `history-roster-reader@pccss-ai-history.iam.gserviceaccount.com` |
+| 執行身分 | `history-run@pccss-ai-history.iam.gserviceaccount.com` |
+
+> 舊專案 `amiable-nirvana-500300-a0`（與 ai-english-platform 共用）仍保留 `history-self-study` 服務作為備份。
+> 確認新環境穩定後可刪除：
+> `gcloud run services delete history-self-study --region=asia-east2 --project amiable-nirvana-500300-a0`
+
+**重建步驟（如需重做）**
+
 1. **建立新專案**：Console → 建立專案，**位置選學校的 Workspace 組織**（否則無法使用「內部」使用者類型），
-   記下專案 ID（例如 `history-self-study`）。專案屬舊專案所在組織時，層級與權限最簡單。
+   記下專案 ID（例如 `pccss-ai-history`）。專案屬舊專案所在組織時，層級與權限最簡單。
 2. **建立 OAuth 同意畫面**（新專案 → Google Auth Platform → 開始使用）：
    - 使用者類型：**內部**（與現行設定一致；只有校內 Workspace 帳戶可登入，外部 Gmail 不能登入）
    - 應用程式名稱：**歷史科自學網站**（或「天主教普照中學 歷史科自學網站」── 這就是登入畫面顯示的名稱）
@@ -932,7 +961,8 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 4. **名冊服務帳戶**：新專案需要新的服務帳戶金鑰，先把舊專案的金鑰移開，讓部署指令碼重新建立：
    `Rename-Item .\secrets\roster-service-account.json roster-service-account.old-project.json`
 5. **部署到新專案**（需先 `gcloud auth login`，且帳戶對新專案有 Editor／Owner 權限）：
-   指令見上文，把 `-Project` 換成新專案 ID，並加上 `-GoogleClientId`／`-GoogleClientSecret`。
+   指令見上文，把 `-Project` 換成新專案 ID。LLM API key 及 Google 憑證會自動取自本機 `.env.local`；
+   `-RosterSheetId` 首次部署必須提供（見上文）。
 6. **部署後**：把新服務網址加入該用戶端的重新導向 URI，以及同意畫面的「已授權網域」；
    把名冊 Google Sheet 分享給 `history-roster-reader@<新專案ID>.iam.gserviceaccount.com`（檢視者）。
 7. **資料遷移（如需保留舊資料）**：舊資料庫快照在舊專案 bucket 的 `history/data/app.db`
@@ -950,7 +980,7 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 | Cloud Run 上 `llmProvider` 仍是 `mock` | 容器不會讀取本機 `.env.local` | 部署時一併以 `--set-env-vars` 設定 `LLM_PROVIDER`／`LLM_MODEL` 等（已寫入 cloudbuild.yaml） |
 | 重新部署後題庫、教材、練習記錄消失 | 資料庫位於容器內 `/tmp/data`（映像檔不會保存） | 已內建 Cloud Storage 備份（設定 `BACKUP_BUCKET`，並把 `BACKUP_PREFER_CLOUD=true`）：重新部署後會自動還原上次快照。若未設定，則每次重新部署後需重新匯入教材 |
 | 學生登入顯示「名冊暫時無法讀取」 | Sheet 未分享給名冊服務帳戶 | 把 Sheet 分享給 `history-roster-reader@<專案>.iam.gserviceaccount.com`（檢視者） |
-| Google 登入畫面顯示「您即將重新登入『其他平台名稱』」 | OAuth 同意畫面（應用程式名稱、標誌、已授權網域）屬**整個 GCP 專案**，同專案內所有 OAuth 用戶端共用；本平台與該平台在同一專案。**OAuth 用戶端可分開，但顯示名稱不能分開** | 登入功能不受影響。若要顯示正確名稱：在 [Google Auth Platform → Branding](https://console.cloud.google.com/auth/branding) 把應用程式名稱改為涵蓋兩者（例如「天主教普照中學 自學平台」，會同時影響同專案其他平台）；或為本平台**建立獨立 GCP 專案**（步驟見第十節「為本平台建立獨立 GCP 專案」）。**注意**：使用者類型設為「內部」時，只有同組織的 Workspace 帳戶能登入，外部 Gmail 一律被 Google 拒絕，不能用來測試學生角色 |
+| Google 登入畫面顯示「您即將重新登入『其他平台名稱』」 | OAuth 同意畫面（應用程式名稱、標誌、已授權網域）屬**整個 GCP 專案**，同專案內所有 OAuth 用戶端共用。**OAuth 用戶端可分開，但顯示名稱不能分開** | 本平台已改用獨立專案 `pccss-ai-history`（同意畫面名稱＝歷史科自學網站），此現象只會在與其他平台**共用專案**時出現。若遇到：在 [Google Auth Platform → Branding](https://console.cloud.google.com/auth/branding) 把應用程式名稱改為涵蓋兩者，或建立獨立專案（見第十節）。**注意**：使用者類型設為「內部」時，只有同組織的 Workspace 帳戶能登入，外部 Gmail 一律被 Google 拒絕，不能用來測試學生角色 |
 | Google 登入回 `redirect_uri_mismatch`（Error 400） | OAuth 用戶端未登記本平台的回呼網址。**注意本平台與 NextAuth 平台（如 ai-english-platform）路徑不同**：本平台是 `/api/auth/google/callback`，NextAuth 是 `/api/auth/callback/google`；共用同一個 OAuth 用戶端時，兩條都要各自登記 | 到 [Google Cloud Console → 憑證](https://console.cloud.google.com/apis/credentials) 開啟該「網頁應用程式」用戶端 → 「已授權的重新導向 URI」→ 加入 `http://localhost:3000/api/auth/google/callback`（正式環境另加 `https://<服務網址>/api/auth/google/callback`）→ 儲存。加入多條 URI 不會影響原有平台 |
 | Google 登入回 `redirect_uri_mismatch`，或網址出現 `https://0.0.0.0:8080/...` | 容器內看到的網址是內部位址，未使用反向代理標頭 | [google.ts](src/server/auth/google.ts) 的 `resolveRedirectUri` 會依序使用 `AUTH_REDIRECT_URI`、`X-Forwarded-Host`／`X-Forwarded-Proto`、再退回請求來源；雲端已實測輸出正確的公開網址 |
 | 重複部署後教師被登出 | 每次執行部署指令碼都會產生新的 `AUTH_SECRET` | 指令碼改為只在 Secret 尚未有版本時才產生，之後保留原有密鑰（如需強制更換可手動新增版本） |
@@ -1014,9 +1044,9 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 ```bash
 npm run lint        # ESLint：0 error、0 warning
 npm run typecheck   # tsc --noEmit：通過
-npm test            # Vitest：254 項測試全部通過（25 個測試檔）
+npm test            # Vitest：265 項測試全部通過（25 個測試檔）
 npm run build       # Next.js 生產建置：成功
-node scripts/e2e-flow.mjs --start   # 端對端 96 項檢查全部通過（含 OCR、教師端、題目回報、學生名冊及權限）
+node scripts/e2e-flow.mjs --start   # 端對端 100 項檢查全部通過（含 OCR、教師端、題目回報、學生名冊及權限）
 ```
 
 > 端對端測試包含 AI 即時生成題目及其回報，因此執行前需先匯入教材（`npm run import:materials`），否則相關檢查會如實失敗並提示原因。
@@ -1032,7 +1062,7 @@ node scripts/e2e-flow.mjs --start   # 端對端 96 項檢查全部通過（含 O
 | `tests/curriculum.test.ts` | 教育局課程架構：12 個課題、年級／課題編號、教材檔名對應、分節關鍵詞不重複 |
 | `tests/ocr.test.ts` | OCR 文字正規化、可用性判斷、圖片格式支援、PNG 編碼、OCR 雜訊過濾、OCR 文字仍可出題 |
 | `tests/section-mapper.test.ts` | 兩層分節對應（先用頂層分節切段，再對應子分節） |
-| `tests/materials-parsers.test.ts` | 真實 DOCX／PDF 解析、分節覆蓋率、示範題目教材依據核對、**重新匯入同名教材會取代舊版本並重新核對題目依據**、不支援格式錯誤訊息 |
+| `tests/materials-parsers.test.ts` | 真實 DOCX 解析、PDF 解析（用倉庫內自製樣本 [tests/fixtures/sample-guideline.pdf](tests/fixtures/sample-guideline.pdf)，不依賴版權教材）、分節覆蓋率、示範題目教材依據核對、**重新匯入同名教材會取代舊版本並重新核對題目依據**、不支援格式錯誤訊息 |
 | `tests/practice-flow.test.ts` | 完整練習流程：組題 → 作答 → 答案回饋 → 成績 → 重做錯題 → 短答自我檢查 → 練習記錄留檔及 CSV 匯出 |
 | `tests/practice-ai-mode.test.ts` | AI 即時出題：題數分配、題目只存在於練習快照（不寫入題庫）、不在題庫的題目也可重做錯題、分節可用性（教材段落數、`isSectionPractisable`、主題數計算） |
 | `tests/question-bank.test.ts` | 題庫難度分配：每個分節的目標題數平均分配到基礎／進階／挑戰，生成後題庫確實齊備三個難度 |

@@ -43,8 +43,10 @@ async function call(method, url, body, options = {}) {
     body: body ? JSON.stringify(body) : undefined,
     ...options,
   });
+  const contentType = response.headers.get("content-type") ?? "";
   const text = await response.text();
-  const payload = text.length > 0 ? JSON.parse(text) : null;
+  // 不存在的路由及重導向會回 HTML（Next.js 404 頁），此時只取狀態碼
+  const payload = text.length > 0 && contentType.includes("json") ? JSON.parse(text) : null;
   return { status: response.status, payload };
 }
 
@@ -138,7 +140,7 @@ async function main() {
     }
 
     const loginHtml = await fetch(`${BASE_URL}/login`).then((response) => response.text());
-    check("登入頁面可以開啟", loginHtml.includes("學校帳戶登入"));
+    check("登入頁面可以開啟", loginHtml.includes("Google 帳戶登入"));
     if (health.payload?.roster?.enabled) {
       check("登入頁面說明學生名冊要求", loginHtml.includes("名冊"));
     }
@@ -727,13 +729,19 @@ async function main() {
         ),
     );
     const csvResponse = await fetch(`${BASE_URL}/api/teacher/records/export`);
-    const csvText = await csvResponse.text();
+    // BOM 必須以原始位元組檢查：fetch 的 text() 會依規範把 UTF-8 BOM 吃掉
+    const csvBytes = Buffer.from(await csvResponse.arrayBuffer());
+    const csvText = csvBytes.toString("utf8");
     check(
       "教師可下載練習記錄 CSV",
       csvResponse.status === 200 && csvText.includes("作答日期") && csvText.includes("結果"),
       `HTTP ${csvResponse.status}`,
     );
-    check("CSV 以 UTF-8 BOM 開頭（Excel 可正常開啟）", csvText.charCodeAt(0) === 0xfeff);
+    check(
+      "CSV 以 UTF-8 BOM 開頭（Excel 可正常開啟）",
+      csvBytes[0] === 0xef && csvBytes[1] === 0xbb && csvBytes[2] === 0xbf,
+      `前三 byte：${csvBytes.subarray(0, 3).toString("hex")}`,
+    );
   } finally {
     if (server) {
       server.kill();
