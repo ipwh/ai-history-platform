@@ -21,18 +21,25 @@
        校內網域但非學號形式的帳戶本身已是教師，毋須填寫。
 
     機密值不會寫入任何檔案或顯示在輸出中：
-      - AUTH_SECRET 未提供時即時隨機產生
+       - AUTH_SECRET 未提供時即時隨機產生（已有版本時保留，避免登出所有使用者）
       - LLM API key 以 -LlmApiKey 或環境變數 DEEPSEEK_API_KEY 提供
       - Google 憑證以 -GoogleClientId／-GoogleClientSecret 或環境變數提供
+       - 以上兩者未提供時，會依序讀取本機 .env.local；仍然沒有時**不會**覆寫
+         已存在的 Secret（只在完全沒有版本時才寫入佔位值）
 
 .EXAMPLE
     # 先看會執行哪些指令（不會建立任何資源）
     ./scripts/deploy-cloud-run.ps1 -Project my-project
 
 .EXAMPLE
-    # 實際部署
-    ./scripts/deploy-cloud-run.ps1 -Project amiable-nirvana-500300-a0 -Apply `
+    # 實際部署（機密值會自動取自本機 .env.local）
+    ./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply `
         -RosterSheetId 1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM `
+        -AdminEmails ipwh@pochiu.edu.hk
+
+.EXAMPLE
+    # 或明確由環境變數提供
+    ./scripts/deploy-cloud-run.ps1 -Project amiable-nirvana-500300-a0 -Apply `
         -AdminEmails ipwh@pochiu.edu.hk `
         -LlmApiKey $env:DEEPSEEK_API_KEY `
         -GoogleClientId $env:GOOGLE_CLIENT_ID -GoogleClientSecret $env:GOOGLE_CLIENT_SECRET
@@ -91,6 +98,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$RepoRoot = Split-Path -Parent $PSScriptRoot
 $authSecretName = "history-auth-secret"
 $llmSecretName = "history-deepseek-api-key"
 $rosterSecretName = "history-roster-service-account"
@@ -159,6 +167,30 @@ function Add-SecretVersion {
     }
 }
 
+<# 由本機 .env.local 讀取機密值（避免部署時忘記傳參數而覆寫成佔位值） #>
+function Read-LocalEnvFile {
+    param([string]$FileName)
+
+    $path = Join-Path $RepoRoot $FileName
+    if (-not (Test-Path $path)) { return @{} }
+
+    $values = @{}
+    foreach ($line in (Get-Content $path)) {
+        if ($line -notmatch '^\s*[A-Za-z_][A-Za-z0-9_]*\s*=') { continue }
+        $key, $value = $line -split '=', 2
+        $values[$key.Trim()] = $value.Trim().Trim('"')
+    }
+    return $values
+}
+
+<# 取出已存在的 Secret 版本編號（gcloud 的「Listed 0 items.」會混在 2>&1 輸出中，必須只認數字） #>
+function Get-SecretVersions {
+    param([string]$Name)
+
+    $output = Invoke-Gcloud secrets versions list $Name --project $Project --format "value(name)" --filter "state!=DESTROYED"
+    return @($output -split "\r?\n" | Where-Object { $_ -match '^\d+$' })
+}
+
 function Ensure-Secret {
     param([string]$Name, [string]$Existing)
 
@@ -212,14 +244,15 @@ if ($Apply) {
 
 Write-Step "4/7 建立／更新 Secret Manager 機密"
 $existingSecrets = Invoke-Gcloud secrets list --project $Project --format "value(name)"
+# 未明確提供時，依序取環境變數、再取本機 .env.local；都沒有就不能覆寫線上已設定的值
+$localEnv = Read-LocalEnvFile -FileName ".env.local"
+$llmKey = if ($LlmApiKey) { $LlmApiKey } elseif ($env:DEEPSEEK_API_KEY) { $env:DEEPSEEK_API_KEY } else { $localEnv["DEEPSEEK_API_KEY"] }
+$googleId = if ($GoogleClientId) { $GoogleClientId } elseif ($env:GOOGLE_CLIENT_ID) { $env:GOOGLE_CLIENT_ID } else { $localEnv["GOOGLE_CLIENT_ID"] }
+$googleSecret = if ($GoogleClientSecret) { $GoogleClientSecret } elseif ($env:GOOGLE_CLIENT_SECRET) { $env:GOOGLE_CLIENT_SECRET } else { $localEnv["GOOGLE_CLIENT_SECRET"] }
 
 Ensure-Secret -Name $authSecretName -Existing $existingSecrets
 # 只在尚未有版本時產生新的工作階段密鑰；否則每次部署都會令所有已登入使用者被登出。
-# 注意：gcloud 會把「Listed 0 items.」等訊息寫到 stderr，而 helper 以 2>&1 合併輸出，
-#       因此不能只判斷輸出是否為空，必須檢查是否真的有版本編號（純數字）。
-$authVersions = Invoke-Gcloud secrets versions list $authSecretName --project $Project --format "value(name)" --filter "state!=DESTROYED"
-$hasAuthVersion = @($authVersions -split "\r?\n" | Where-Object { $_ -match '^\d+$' }).Count -gt 0
-if ($Apply -and -not $hasAuthVersion) {
+if ($Apply -and (Get-SecretVersions -Name $authSecretName).Count -eq 0) {
     $authSecret = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 48 | ForEach-Object { [char]$_ })
     Add-SecretVersion -Name $authSecretName -Value $authSecret -Label "工作階段簽署密鑰，隨機產生"
 } else {
@@ -227,25 +260,31 @@ if ($Apply -and -not $hasAuthVersion) {
 }
 
 Ensure-Secret -Name $llmSecretName -Existing $existingSecrets
-$llmKey = if ($LlmApiKey) { $LlmApiKey } else { $env:DEEPSEEK_API_KEY }
 if ($llmKey) {
     Add-SecretVersion -Name $llmSecretName -Value $llmKey -Label "LLM API key"
+} elseif (-not $Apply) {
+    Write-Host "  （模擬）更新 $llmSecretName（LLM API key）" -ForegroundColor DarkGray
+} elseif ((Get-SecretVersions -Name $llmSecretName).Count -gt 0) {
+    # 絕不以佔位值覆寫正在使用的機密（否則線上 AI 出題會靜靜失效）
+    Write-Host "  保留現有 $llmSecretName（未提供新的 API key）" -ForegroundColor DarkGray
 } else {
     Add-SecretVersion -Name $llmSecretName -Value "REPLACE_ME" -Label "佔位值"
-    Write-Warning "未提供 LLM API key：已放入佔位值，請盡快更新 Secret $llmSecretName，否則 AI 出題會回退到示範生成。"
+    Write-Warning "未提供 LLM API key：已放入佔位值（可設 DEEPSEEK_API_KEY 或在 .env.local 填寫），否則 AI 出題會回退到示範生成。"
 }
 
 Ensure-Secret -Name $googleIdSecretName -Existing $existingSecrets
 Ensure-Secret -Name $googleSecretSecretName -Existing $existingSecrets
-$googleId = if ($GoogleClientId) { $GoogleClientId } else { $env:GOOGLE_CLIENT_ID }
-$googleSecret = if ($GoogleClientSecret) { $GoogleClientSecret } else { $env:GOOGLE_CLIENT_SECRET }
 if ($googleId -and $googleSecret) {
     Add-SecretVersion -Name $googleIdSecretName -Value $googleId -Label "Google OAuth 用戶端 ID"
     Add-SecretVersion -Name $googleSecretSecretName -Value $googleSecret -Label "Google OAuth 用戶端密碼"
+} elseif (-not $Apply) {
+    Write-Host "  （模擬）更新 $googleIdSecretName／$googleSecretSecretName（Google OAuth 憑證）" -ForegroundColor DarkGray
+} elseif ((Get-SecretVersions -Name $googleIdSecretName).Count -gt 0 -and (Get-SecretVersions -Name $googleSecretSecretName).Count -gt 0) {
+    Write-Host "  保留現有 Google OAuth 憑證（未提供新的憑證）" -ForegroundColor DarkGray
 } else {
     Add-SecretVersion -Name $googleIdSecretName -Value "REPLACE_ME" -Label "佔位值"
     Add-SecretVersion -Name $googleSecretSecretName -Value "REPLACE_ME" -Label "佔位值"
-    Write-Warning "未提供 Google OAuth 憑證：已放入佔位值。未啟用登入時，Cloud Run 上的後台 API 會被拒絕（除非設 HISTORY_ALLOW_UNSAFE_DEMO_MODE=true），學生亦只能以匿名模式使用。"
+    Write-Warning "未提供 Google OAuth 憑證：已放入佔位值（可設 GOOGLE_CLIENT_ID／GOOGLE_CLIENT_SECRET 或在 .env.local 填寫）。未啟用登入時，Cloud Run 上的後台 API 會被拒絕。"
 }
 
 Write-Step "4/6 建立名冊讀取服務帳戶及金鑰"
@@ -309,6 +348,16 @@ foreach ($secretName in @($authSecretName, $llmSecretName, $rosterSecretName, $g
 Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$backupBucketName" --project $Project --member "serviceAccount:$runtimeServiceAccountEmail" --role roles/storage.objectAdmin --quiet | Out-Null
 
 Write-Step "6/7 以 Cloud Build 建置映像檔並部署到 Cloud Run（約需 5 至 10 分鐘）"
+# 未指定名冊 Sheet 時沿用線上服務現有設定，避免以空值覆寫（學生將無法登入）
+if (-not $RosterSheetId -and $Apply) {
+    $currentSheetId = Invoke-Gcloud run services describe $Service --project $Project --region $Region --format "value(spec.template.spec.containers[0].env.filter(name:STUDENT_ROSTER_SHEET_ID).extract(value).flatten())"
+    if ($currentSheetId) {
+        $RosterSheetId = "$currentSheetId".Trim()
+        Write-Host "  沿用線上現有 STUDENT_ROSTER_SHEET_ID（未指定 -RosterSheetId）" -ForegroundColor DarkGray
+    } else {
+        Write-Warning "未指定 -RosterSheetId，線上亦沒有現有設定：學生名冊將無法載入。"
+    }
+}
 # --allow-unauthenticated 是切換式旗標（不能寫 =true）；不允許公開存取時留空，改由 IAP／身分權杖保護
 $authFlag = if ($AllowUnauthenticated) { "--allow-unauthenticated" } else { "" }
 $substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $AdminEmails, $TeacherEmails)

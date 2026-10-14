@@ -822,7 +822,7 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 | [.dockerignore](.dockerignore) | 排除 `node_modules`、`.next`、`data/`、`.env*`，確保憑證與本機資料不會進入映像檔 |
 | [.gcloudignore](.gcloudignore) | `gcloud builds submit` 上載時排除 `secrets/`、`data/`、`node_modules`、`.next`、`.env*`。**`gcloud builds submit` 只看 `.gcloudignore`，不會理會 `.gitignore`**，若沒有這個檔案，服務帳戶金鑰就會被上載到 Cloud Build 暫存 bucket |
 | [cloudbuild.yaml](cloudbuild.yaml) | Cloud Build：建置映像檔 → 推送 Artifact Registry → 部署 Cloud Run（環境變數及 `--set-secrets` 已備妥） |
-| [scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1) | 一鍵完成：啟用 API → 建立 Artifact Registry → 建立**資料備份 bucket 並授權執行身分** → 建立 Secret（`AUTH_SECRET` 隨機產生）→ 建立名冊服務帳戶 → 建置及部署 → 輸出服務網址與 OAuth 重新導向網址。**預設為模擬模式，加 `-Apply` 才真正執行** |
+| [scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1) | 一鍵完成：啟用 API → 建立 Artifact Registry → 建立**資料備份 bucket 並授權執行身分** → 建立 Secret（`AUTH_SECRET` 隨機產生）→ 建立名冊服務帳戶 → 建置及部署 → 輸出服務網址與 OAuth 重新導向網址。**預設為模擬模式，加 `-Apply` 才真正執行**；LLM API key 及 Google 憑證未經參數提供時會自動讀取本機 `.env.local`，仍沒有時**不會**覆寫線上已設定的 Secret |
 
 ```powershell
 # 1. 先看會執行哪些指令（不會建立任何雲端資源）
@@ -836,6 +836,15 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 # 資料備份 bucket 預設為「專案ID-history-backup」（asia-east2）；
 # 如需零成本可改用美國區域：-BackupLocation us-central1
 ```
+
+> **`-RosterSheetId` 首次部署一定要填**：否則線上服務的 `STUDENT_ROSTER_SHEET_ID` 會是空值，
+> 學生名冊無法載入、學生不能登入。指令碼在未提供時會沿用線上服務現有設定（不會被空值覆寫），
+> 但全新專案沒有任何現有值可沿用。
+>
+> **LLM API key 及 Google 憑證**：未以參數或環境變數提供時，指令碼會讀取本機
+> [.env.local](.env.local) 的 `DEEPSEEK_API_KEY`／`GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET`。
+> 若兩者都沒有，指令碼**只會在該 Secret 完全沒有版本時**才寫入佔位值，
+> 已有版本則保留原值——避免一次忘記傳參數就把線上登入及 AI 出題弄壞。
 
 > **後台角色一定要設定**：`-AdminEmails` 指定誰可以使用管理員端（`/admin`：教材、OCR、課題發布及系統狀態）；
 > 沒有設定就**沒有人能進入管理員端**。多個電郵以**分號**分隔（例如 `-AdminEmails a@pochiu.edu.hk;b@pochiu.edu.hk`）。
