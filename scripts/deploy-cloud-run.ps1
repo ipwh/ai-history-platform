@@ -15,6 +15,11 @@
      5. 以 Cloud Build 建置映像檔並部署到 Cloud Run
      6. 輸出服務網址及需要登記的 OAuth 重新導向網址
 
+   後台角色：
+     - 管理員（可進入 /admin）必須以 -AdminEmails 指定，否則部署後沒有人能管理教材及系統設定。
+     - 教師（可進入 /teacher）可用 -TeacherEmails 指定非校內網域帳戶；
+       校內網域但非學號形式的帳戶本身已是教師，毋須填寫。
+
     機密值不會寫入任何檔案或顯示在輸出中：
       - AUTH_SECRET 未提供時即時隨機產生
       - LLM API key 以 -LlmApiKey 或環境變數 DEEPSEEK_API_KEY 提供
@@ -28,6 +33,7 @@
     # 實際部署
     ./scripts/deploy-cloud-run.ps1 -Project amiable-nirvana-500300-a0 -Apply `
         -RosterSheetId 1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM `
+        -AdminEmails ipwh@pochiu.edu.hk `
         -LlmApiKey $env:DEEPSEEK_API_KEY `
         -GoogleClientId $env:GOOGLE_CLIENT_ID -GoogleClientSecret $env:GOOGLE_CLIENT_SECRET
 #>
@@ -47,6 +53,12 @@ param(
     [string]$RosterSheetId = "",
     # 學生名冊工作表名稱（留空 = 第一張工作表）
     [string]$RosterSheetName = "",
+    # 管理員電郵（可進入管理員端 /admin；多個以分號分隔；留空 = 沒有人是管理員）
+    # 注意：管理員必須在此指定，否則部署後無法進入 /admin 管理教材及系統設定。
+    [string]$AdminEmails = "",
+    # 教師電郵（供非校內網域帳戶使用，可進入教師端 /teacher；多個以分號分隔）
+    # 校內網域但非學號形式的帳戶本身已是教師，毋須填寫。
+    [string]$TeacherEmails = "",
     # 名冊讀取用的服務帳戶名稱（會被建立；學校需把 Sheet 分享給它的電郵）
     [string]$RosterServiceAccount = "history-roster-reader",
     # Cloud Run 執行身分服務帳戶名稱（會被建立，只獲授讀取所需 Secret 的權限）
@@ -296,7 +308,7 @@ Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$backupBucketName" --
 Write-Step "6/7 以 Cloud Build 建置映像檔並部署到 Cloud Run（約需 5 至 10 分鐘）"
 # --allow-unauthenticated 是切換式旗標（不能寫 =true）；不允許公開存取時留空，改由 IAP／身分權杖保護
 $authFlag = if ($AllowUnauthenticated) { "--allow-unauthenticated" } else { "" }
-$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds)
+$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $AdminEmails, $TeacherEmails)
 Invoke-Gcloud builds submit --project $Project --config cloudbuild.yaml --substitutions $substitutions --timeout=1800s . | Out-Null
 
 Write-Step "7/7 部署結果"

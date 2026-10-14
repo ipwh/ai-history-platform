@@ -821,10 +821,27 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 # 2. 實際部署（需已啟用 billing 及具備 Cloud Run／Artifact Registry／Secret Manager／Storage 權限）
 ./scripts/deploy-cloud-run.ps1 -Project 你的專案ID -Apply `
     -RosterSheetId 1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM -RosterSheetName 名冊 `
+    -AdminEmails ipwh@pochiu.edu.hk `
     -LlmApiKey $env:DEEPSEEK_API_KEY -RosterServiceAccountFile ./secrets/roster-sa.json
 # 資料備份 bucket 預設為「專案ID-history-backup」（asia-east2）；
 # 如需零成本可改用美國區域：-BackupLocation us-central1
 ```
+
+> **後台角色一定要設定**：`-AdminEmails` 指定誰可以使用管理員端（`/admin`：教材、OCR、課題發布及系統狀態）；
+> 沒有設定就**沒有人能進入管理員端**。多個電郵以**分號**分隔（例如 `-AdminEmails a@pochiu.edu.hk;b@pochiu.edu.hk`）。
+> `-TeacherEmails` 只在教師使用非校內網域帳戶（例如個人 Gmail）時才需要；
+> 校內網域但非學號形式（例：`history.teacher@pochiu.edu.hk`）的帳戶本身已是教師。
+> 兩個參數都會帶入 Cloud Build 的 `_ADMIN_EMAILS`／`_TEACHER_EMAILS` substitution，再由 `cloudbuild.yaml`
+> 寫入 Cloud Run 的 `AUTH_ADMIN_EMAILS`／`AUTH_TEACHER_EMAILS` 環境變數，因此**每次部署都會保留**。
+>
+> 已部署但想臨時補上（下次部署會被 `cloudbuild.yaml` 的設定覆蓋）：
+>
+> ```powershell
+> gcloud run services update history-self-study --region=asia-east2 `
+>   --update-env-vars AUTH_ADMIN_EMAILS=ipwh@pochiu.edu.hk
+> ```
+>
+> （用 `--update-env-vars` 只加／改該變數；`--set-env-vars` 會整個取代，請避免手動使用以免覆蓋其他設定。）
 
 或以 Cloud Build 直接建置（需先自行建立 Secret）：
 
@@ -839,9 +856,12 @@ gcloud builds submit --config cloudbuild.yaml \
    `https://<服務網址>/api/auth/google/callback`（指令碼會輸出完整網址）。
 2. **名冊服務帳戶**：把學生名冊 Google Sheet 分享給指令碼輸出的服務帳戶電郵（例如
    `history-roster-reader@<專案>.iam.gserviceaccount.com`，檢視者權限）。
-3. **檢查**：開啟 `https://<服務網址>/api/health`，確認 `database.status = ok`、`roster.loaded = true`；
-   教師端「課題與系統狀態」頁會列出名冊人數及任何設定提示。
-4. **首次匯入教材**：以教師帳戶登入 → 教材管理 → 「匯入全部課程教材」（`materials/` 已打包在映像檔內）。
+3. **管理員帳戶**：確認部署時已用 `-AdminEmails` 指定管理員（見上）。沒有指定就沒有人能進入
+   `/admin`（教材、OCR、課題發布及系統狀態）；臨時可用
+   `gcloud run services update <服務名稱> --region=<區域> --update-env-vars AUTH_ADMIN_EMAILS=你的電郵`。
+4. **檢查**：開啟 `https://<服務網址>/api/health`，確認 `database.status = ok`、`roster.loaded = true`；
+   管理員端「課題與系統狀態」頁會列出名冊人數及任何設定提示。
+5. **首次匯入教材**：以管理員帳戶登入 → 教材管理 → 「匯入全部課程教材」（`materials/` 已打包在映像檔內）。
 
 **部署時實際遇到的問題與處理（本機與 Cloud Run 差異）**
 
@@ -857,6 +877,7 @@ gcloud builds submit --config cloudbuild.yaml \
 | 重複部署後教師被登出 | 每次執行部署指令碼都會產生新的 `AUTH_SECRET` | 指令碼改為只在 Secret 尚未有版本時才產生，之後保留原有密鑰（如需強制更換可手動新增版本） |
 | `fetch failed`（備份失敗） | Cloud Run 只會在處理請求時分配 CPU，容器閒置時的背景計時器會被節流；Next.js 亦有自己的 SIGTERM 處理，關機備份未必來得及完成 | 備份改為在 API 請求週期內執行（`handleRoute` 內 `await backupIfDue()`），並只在資料有變更時上載；實測 27 MB 備份可在請求內完成 |
 | 後台 API 在 Cloud Run 上回 `403` | 未設定 Google 憑證（`authEnabled=false`），守衛拒絕公開存取 | 設定 `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` 後重新部署；臨時示範可用 `HISTORY_ALLOW_UNSAFE_DEMO_MODE=true` |
+| 登入後進入 `/admin` 被導向「只限管理員帳戶使用」 | `AUTH_ADMIN_EMAILS` 未設定（`cloudbuild.yaml` 的 `_ADMIN_EMAILS` 留空），因此沒有任何帳戶是管理員 | 部署時加 `-AdminEmails 你的電郵`，或用 `gcloud run services update <服務> --region=<區域> --update-env-vars AUTH_ADMIN_EMAILS=你的電郵` |
 
 **本機以 Docker 驗證（建議部署前先做）**
 
