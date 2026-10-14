@@ -810,7 +810,7 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 | --- | --- |
 | [Dockerfile](Dockerfile) | 多階段建置（`node:24-bookworm-slim`）；使用 Next.js `output: "standalone"`，並在建置時下載 `chi_tra.traineddata` 到 `/app/ocr-lang`（容器離線亦可 OCR） |
 | [.dockerignore](.dockerignore) | 排除 `node_modules`、`.next`、`data/`、`.env*`，確保憑證與本機資料不會進入映像檔 |
-| [.gcloudignore](.gcloudignore) | `gcloud builds submit` 上載時排除 `secrets/`、`data/`、`node_modules`、`.next`、`.env*`。本專案不是 git 儲存庫，若沒有這個檔案，`.gitignore` 不會生效，服務帳戶金鑰就會被上載到 Cloud Build 暫存 bucket |
+| [.gcloudignore](.gcloudignore) | `gcloud builds submit` 上載時排除 `secrets/`、`data/`、`node_modules`、`.next`、`.env*`。**`gcloud builds submit` 只看 `.gcloudignore`，不會理會 `.gitignore`**，若沒有這個檔案，服務帳戶金鑰就會被上載到 Cloud Build 暫存 bucket |
 | [cloudbuild.yaml](cloudbuild.yaml) | Cloud Build：建置映像檔 → 推送 Artifact Registry → 部署 Cloud Run（環境變數及 `--set-secrets` 已備妥） |
 | [scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1) | 一鍵完成：啟用 API → 建立 Artifact Registry → 建立**資料備份 bucket 並授權執行身分** → 建立 Secret（`AUTH_SECRET` 隨機產生）→ 建立名冊服務帳戶 → 建置及部署 → 輸出服務網址與 OAuth 重新導向網址。**預設為模擬模式，加 `-Apply` 才真正執行** |
 
@@ -848,6 +848,35 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 ```bash
 gcloud builds submit --config cloudbuild.yaml \
   --substitutions=_REGION=asia-east2,_SERVICE=history-self-study,_REPOSITORY=history
+```
+
+> **`git push` 不會自動部署**：推送只更新 GitHub 上的原始碼，部署一律是手動執行上面的指令碼
+> （或 `gcloud builds submit`）。除非另外建立了 Cloud Build 觸發程序（見下）。
+
+#### 要不要設定「推送即部署」的 Cloud Build 觸發程序？
+
+本專案**刻意不預設**自動部署，原因：
+
+1. **`materials/` 不在儲存庫內**（第三方版權，見第五節）。由 GitHub 觸發的建置只會拿到
+   `materials/README.md`，映像檔將**不含任何課程教材**；由本機執行部署才會有完整的 `materials/`。
+2. **substitution 預設值是空字串**：`_ROSTER_SHEET_ID`、`_BACKUP_BUCKET`、`_ADMIN_EMAILS`、`_RUNTIME_SA`
+   留空時，部署出來的服務會沒有學生名冊、沒有資料備份（重新部署後題庫及練習記錄會全部消失）、
+   亦沒有人能進入管理員端。觸發程序必須填回與指令碼相同的值。
+3. 觸發程序以 **Cloud Build 服務帳戶**執行，需另行授予 `roles/run.admin`、
+   `roles/iam.serviceAccountUser`、`roles/artifactregistry.writer` 等權限。
+
+如仍要啟用（先確認沒有現存觸發程序）：
+
+```powershell
+# 1. 確認目前有無觸發程序（需先 gcloud auth login）
+gcloud builds triggers list --project 你的專案ID
+
+# 2. 建立 GitHub 觸發程序（需先連結 Cloud Build GitHub App；清單值用分號分隔）
+gcloud builds triggers create github `
+  --name history-main --project 你的專案ID `
+  --repo-name ai-history-platform --repo-owner ipwh `
+  --branch-pattern "^main$" --build-config cloudbuild.yaml `
+  --substitutions _REGION=asia-east2,_SERVICE=history-self-study,_REPOSITORY=history,_AUTH_FLAG=--allow-unauthenticated,_RUNTIME_SA=history-run@你的專案ID.iam.gserviceaccount.com,_ROSTER_SHEET_ID=你的SheetID,_ROSTER_SHEET_NAME=名冊,_BACKUP_BUCKET=你的專案ID-history-backup,_ADMIN_EMAILS=你的電郵
 ```
 
 **部署後必做**
@@ -1092,6 +1121,9 @@ STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=./secrets/roster-sa.json
 
 **Q：`GET /api/health` 為何不再顯示資料庫路徑？**
 健康檢查會回報狀態（例如 `sqlite`／`ok`）而不回報完整路徑，避免在公開部署時洩漏部署資訊或憑證。管理員端的系統狀態頁會顯示較詳細的設定提示（仍不含憑證）。
+
+**Q：`git push` 之後會自動部署到 Cloud Run 嗎？**
+不會。推送只更新 GitHub 上的原始碼，部署一律是手動執行 `./scripts/deploy-cloud-run.ps1 -Project <專案ID> -Apply`（或 `gcloud builds submit --config cloudbuild.yaml`）。專案內沒有任何 GitHub Actions 或觸發程序設定；除非你另外在 GCP 建立 Cloud Build 觸發程序（見第十節「要不要設定『推送即部署』的 Cloud Build 觸發程序？」）。**本專案建議維持手動部署**，因為 `materials/` 課程教材不在儲存庫內（有版權），由 GitHub 觸發的建置會產生不含教材的映像檔。
 
 **Q：部署 Cloud Run 前要改甚麼？**
 專案已包含 [Dockerfile](Dockerfile)、[cloudbuild.yaml](cloudbuild.yaml) 及 [scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1)（見第十節）。部署時必做：`AUTH_SECRET`／LLM API key／名冊服務帳戶由 Secret Manager 注入（指令碼會建立）、把服務網址加進 OAuth 重新導向 URI、把 Google Sheet 分享給名冊服務帳戶。**資料持久化**已內建（SQLite 快照 + Cloud Storage，見第十節「資料持久化」）：設定 `BACKUP_BUCKET`（指令碼會自動建立 bucket 並授權）即會在重新部署後自動還原資料。教材檔案仍建議打包在映像檔的 `materials/`，試行階段請保持 `--max-instances=1`。
