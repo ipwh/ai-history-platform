@@ -214,9 +214,12 @@ Write-Step "4/7 建立／更新 Secret Manager 機密"
 $existingSecrets = Invoke-Gcloud secrets list --project $Project --format "value(name)"
 
 Ensure-Secret -Name $authSecretName -Existing $existingSecrets
-# 只在尚未有版本時產生新的工作階段密鑰；否則每次部署都會令所有已登入使用者被登出
+# 只在尚未有版本時產生新的工作階段密鑰；否則每次部署都會令所有已登入使用者被登出。
+# 注意：gcloud 會把「Listed 0 items.」等訊息寫到 stderr，而 helper 以 2>&1 合併輸出，
+#       因此不能只判斷輸出是否為空，必須檢查是否真的有版本編號（純數字）。
 $authVersions = Invoke-Gcloud secrets versions list $authSecretName --project $Project --format "value(name)" --filter "state!=DESTROYED"
-if ($Apply -and ($authVersions -split "\r?\n" | Where-Object { $_.Trim().Length -gt 0 }).Count -eq 0) {
+$hasAuthVersion = @($authVersions -split "\r?\n" | Where-Object { $_ -match '^\d+$' }).Count -gt 0
+if ($Apply -and -not $hasAuthVersion) {
     $authSecret = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 48 | ForEach-Object { [char]$_ })
     Add-SecretVersion -Name $authSecretName -Value $authSecret -Label "工作階段簽署密鑰，隨機產生"
 } else {
@@ -310,6 +313,17 @@ Write-Step "6/7 以 Cloud Build 建置映像檔並部署到 Cloud Run（約需 5
 $authFlag = if ($AllowUnauthenticated) { "--allow-unauthenticated" } else { "" }
 $substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $AdminEmails, $TeacherEmails)
 Invoke-Gcloud builds submit --project $Project --config cloudbuild.yaml --substitutions $substitutions --timeout=1800s . | Out-Null
+
+# Cloud Build 執行身分未必有 run.services.setIamPolicy，令 --allow-unauthenticated 靜靜失效（服務會回 403）
+if ($Apply -and $AllowUnauthenticated) {
+    try {
+        Invoke-Gcloud run services add-iam-policy-binding $Service --project $Project --region $Region --member allUsers --role roles/run.invoker --quiet | Out-Null
+        Write-Host "  已允許公開存取（allUsers → roles/run.invoker）" -ForegroundColor DarkGray
+    } catch {
+        Write-Host "  無法自動開放公開存取，請手動執行：" -ForegroundColor Yellow
+        Write-Host "    gcloud run services add-iam-policy-binding $Service --region=$Region --project $Project --member=allUsers --role=roles/run.invoker" -ForegroundColor Yellow
+    }
+}
 
 Write-Step "7/7 部署結果"
 $url = Invoke-Gcloud run services describe $Service --project $Project --region $Region --format "value(status.url)"

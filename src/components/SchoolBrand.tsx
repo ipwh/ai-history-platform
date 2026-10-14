@@ -3,7 +3,7 @@ import Image from "next/image";
 /** 校徽 + 校名品牌區（參考 AI English Platform 的 SchoolBrand） */
 export const SCHOOL_NAME_ZH = "天主教普照中學";
 export const SCHOOL_NAME_EN = "Po Chiu Catholic Secondary School";
-export const SITE_NAME = "歷史自學互動網站";
+export const SITE_NAME = "歷史科自學網站";
 
 const LOGO_SRC = "/branding/pochiu-logo.png";
 /** 校徽原始像素尺寸（95×126，直向） */
@@ -21,7 +21,7 @@ const VARIANTS = {
 
 export interface SchoolBrandProps {
   variant?: keyof typeof VARIANTS;
-  /** 顯示網站名稱（例如「歷史自學互動網站」），僅 inline 使用 */
+  /** 顯示網站名稱（例如「歷史科自學網站」），僅 inline 使用 */
   showSiteName?: boolean;
   className?: string;
 }

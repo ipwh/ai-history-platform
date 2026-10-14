@@ -1,6 +1,6 @@
-# Cloud Build 上載時忽略的檔案（`gcloud builds submit` 只會看 .gcloudignore；
-# 本專案不是 git 儲存庫，因此沒有這個檔案時 .gitignore 不會生效，
-# secrets/ 內的服務帳戶金鑰就會被上載到 Cloud Build 的暫存 bucket）。
+# Cloud Build 上載時忽略的檔案（`gcloud builds submit` 只會看 .gcloudignore，
+# **不會**理會 .gitignore，因此刪除本檔會令 secrets/ 內的服務帳戶金鑰被上載到
+# Cloud Build 的暫存 bucket）。
 #
 # 保留：src、public、materials、scripts、tests、package*.json、next.config.ts、
 #       tsconfig.json、Dockerfile、.dockerignore、cloudbuild.yaml、README.md

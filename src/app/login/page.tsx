@@ -5,7 +5,7 @@ import { SchoolBrand, SITE_NAME } from "@/components/SchoolBrand";
 import { getSessionUser } from "@/server/auth/session";
 import { getServerConfig } from "@/server/config";
 
-export const metadata = { title: "登入 ｜ 歷史自學互動網站" };
+export const metadata = { title: "登入 ｜ 歷史科自學網站" };
 
 /** 登入失敗時顯示的說明（代碼由 /api/auth/google/callback 提供） */
 const ERROR_MESSAGES: Record<string, string> = {
@@ -79,16 +79,18 @@ export default async function LoginPage({
             以學校 Google 帳戶登入
           </a>
         ) : (
-          <p className="text-sm text-center" style={{ color: "var(--danger)" }}>
-            系統尚未設定 Google 登入，現以匿名模式使用。
-          </p>
+          <>
+            <p className="text-sm text-center" style={{ color: "var(--danger)" }}>
+              系統尚未設定 Google 登入，現以匿名模式使用。
+            </p>
+            {/* 未啟用登入時首頁毋須登入，才顯示返回連結；否則點下去只會回到本頁 */}
+            <p className="text-sm text-center">
+              <Link href="/" style={{ color: "var(--accent)" }}>
+                返回課題首頁
+              </Link>
+            </p>
+          </>
         )}
-
-        <p className="text-sm text-center">
-          <Link href="/" style={{ color: "var(--accent)" }}>
-            返回課題首頁
-          </Link>
-        </p>
       </section>
     </div>
   );

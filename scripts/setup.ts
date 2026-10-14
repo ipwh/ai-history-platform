@@ -33,7 +33,7 @@ async function main() {
   const withOcr = process.argv.includes("--ocr");
   const pilotOnly = process.argv.includes("--pilot");
 
-  console.log("【歷史自學互動網站】初始化示範環境");
+  console.log("【歷史科自學網站】初始化示範環境");
   console.log(`資料庫位置：${config.databasePath}`);
   console.log(`教材來源：${config.materialsDir}`);
 

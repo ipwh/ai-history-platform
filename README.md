@@ -1,4 +1,4 @@
-# 歷史自學互動網站（香港教育局歷史科課程：中一至中三）
+# 歷史科自學網站（香港教育局歷史科課程：中一至中三）
 
 供香港中學生使用的歷史科自學平台。學生以**學校 Google Workspace 帳戶**登入後，可揀選課題及課題內的多個**主題（分節，可多選）**，由 **AI 即時生成多項選擇題**（亦可改用教師題庫），完成練習後查看答案、解釋、知識點及**教材來源位置**；教師可上載 DOCX／PDF 教材、檢視及修正系統擷取的內容（包括**圖片 OCR 文字辨識**）、生成並查核題目。
 
@@ -597,8 +597,8 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
 
 ### 設定步驟（約 5 分鐘）
 
-1. 到 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建立「OAuth 用戶端 ID」（應用程式類型：**網頁應用程式**）。
-2. 「已授權的重新導向 URI」加入：
+1. 到 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建立「OAuth 用戶端 ID」（應用程式類型：**網頁應用程式**）；亦可**沿用其他平台（例如 ai-english-platform）已建立的用戶端**，只需在下一個步驟補上本平台的回呼網址。
+2. 「已授權的重新導向 URI」加入（**沿用其他平台的用戶端時，這一步不可略過**；NextAuth 平台的路徑 `/api/auth/callback/google` 與本平台不同）：
 
    ```
    http://localhost:3000/api/auth/google/callback
@@ -614,9 +614,22 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
    AUTH_SCHOOL_DOMAINS=pochiu.edu.hk
    ```
 
-4. 重新啟動伺服器。首頁右上角會出現「登入」，學生訪問 `/` 或練習頁時會被導向 `/login`。
+4. 重新啟動伺服器。瀏覽學生端頁面時會自動導向 `/login`，按「以學校 Google 帳戶登入」即可。
 
 > 未設定 `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` 時**不會啟用登入**，網站維持原有的匿名示範模式（產生匿名學習 ID），教師端亦維持開放，方便本機開發及測試。
+
+> **登入畫面顯示的應用程式名稱是「按 GCP 專案」而非按 OAuth 用戶端**：OAuth 同意畫面
+> （Google Auth Platform → Branding，即應用程式名稱、標誌、已授權網域）屬整個專案，同一專案內
+> 所有 OAuth 用戶端共用。因此若本平台與其他平台（例如 ai-english-platform）放在同一個 GCP 專案，
+> 即使各自使用獨立用戶端，Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登入『AI English Platform』」）。
+>
+> 處理方式：
+> - **接受共用名稱**：在 Google Auth Platform → Branding 把應用程式名稱改為同時涵蓋兩者的名稱
+>   （例如「天主教普照中學 自學平台」）。改動會同時影響該專案內的其他平台，但功能不受影響。
+> - **完全分離**：為本平台建立**獨立的 GCP 專案**，在該專案建立同意畫面（名稱例如「歷史科自學網站」）
+>   及 OAuth 用戶端。代價是 Cloud Run、Secret Manager、備份 bucket 及名冊服務帳戶都要在新專案重建
+>   （名冊 Google Sheet 需重新分享給新專案的服務帳戶電郵）。
+> - 兩者登入功能完全相同，此名稱只影響使用者在 Google 頁面看到的字樣。
 
 ### 角色判定
 
@@ -892,6 +905,35 @@ gcloud builds triggers create github `
    管理員端「課題與系統狀態」頁會列出名冊人數及任何設定提示。
 5. **首次匯入教材**：以管理員帳戶登入 → 教材管理 → 「匯入全部課程教材」（`materials/` 已打包在映像檔內）。
 
+#### 為本平台建立獨立 GCP 專案（完整分離，可選）
+
+**為何需要**：OAuth 同意畫面（Google Auth Platform → 品牌，即登入畫面顯示的應用程式名稱、已授權網域）
+屬**整個 GCP 專案**，同專案內所有 OAuth 用戶端共用。因此與其他平台共用專案時，即使各自使用獨立用戶端，
+Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登入『AI English Platform』」）。
+**OAuth 用戶端可分開，但顯示名稱不能分開**；要完全分離必須另建專案。
+
+1. **建立新專案**：Console → 建立專案，**位置選學校的 Workspace 組織**（否則無法使用「內部」使用者類型），
+   記下專案 ID（例如 `history-self-study`）。專案屬舊專案所在組織時，層級與權限最簡單。
+2. **建立 OAuth 同意畫面**（新專案 → Google Auth Platform → 開始使用）：
+   - 使用者類型：**內部**（與現行設定一致；只有校內 Workspace 帳戶可登入，外部 Gmail 不能登入）
+   - 應用程式名稱：**歷史科自學網站**（或「天主教普照中學 歷史科自學網站」── 這就是登入畫面顯示的名稱）
+   - 使用者支援電郵／開發人員聯絡資訊：你的電郵
+   - 已授權網域：**部署後**才知 Cloud Run 網址，屆時補上（例如 `history-self-study-xxxx.run.app`）
+3. **建立 OAuth 用戶端**（應用程式類型：網頁應用程式），已授權的重新導向 URI 兩條：
+   `http://localhost:3000/api/auth/google/callback` 及
+   `https://<新服務網址>/api/auth/google/callback`（後者可先留空，部署後補）。複製用戶端 ID 及密碼。
+   > 同一個用戶端可同時供本機開發及雲端使用，毋須建立兩個。
+4. **名冊服務帳戶**：新專案需要新的服務帳戶金鑰，先把舊專案的金鑰移開，讓部署指令碼重新建立：
+   `Rename-Item .\secrets\roster-service-account.json roster-service-account.old-project.json`
+5. **部署到新專案**（需先 `gcloud auth login`，且帳戶對新專案有 Editor／Owner 權限）：
+   指令見上文，把 `-Project` 換成新專案 ID，並加上 `-GoogleClientId`／`-GoogleClientSecret`。
+6. **部署後**：把新服務網址加入該用戶端的重新導向 URI，以及同意畫面的「已授權網域」；
+   把名冊 Google Sheet 分享給 `history-roster-reader@<新專案ID>.iam.gserviceaccount.com`（檢視者）。
+7. **資料遷移（如需保留舊資料）**：舊資料庫快照在舊專案 bucket 的 `history/data/app.db`
+   （`gs://<舊專案ID>-history-backup/history/data/app.db`）；下載後上載到新專案 bucket 的同一路徑，
+   服務啟動時便會自動還原。不需要舊資料則跳過（重新匯入教材即可）。
+8. **收尾**：舊專案的英文平台**不要改動**；本平台的舊 Cloud Run 服務可刪除以免混淆。
+
 **部署時實際遇到的問題與處理（本機與 Cloud Run 差異）**
 
 | 現象 | 原因 | 處理 |
@@ -902,8 +944,12 @@ gcloud builds triggers create github `
 | Cloud Run 上 `llmProvider` 仍是 `mock` | 容器不會讀取本機 `.env.local` | 部署時一併以 `--set-env-vars` 設定 `LLM_PROVIDER`／`LLM_MODEL` 等（已寫入 cloudbuild.yaml） |
 | 重新部署後題庫、教材、練習記錄消失 | 資料庫位於容器內 `/tmp/data`（映像檔不會保存） | 已內建 Cloud Storage 備份（設定 `BACKUP_BUCKET`，並把 `BACKUP_PREFER_CLOUD=true`）：重新部署後會自動還原上次快照。若未設定，則每次重新部署後需重新匯入教材 |
 | 學生登入顯示「名冊暫時無法讀取」 | Sheet 未分享給名冊服務帳戶 | 把 Sheet 分享給 `history-roster-reader@<專案>.iam.gserviceaccount.com`（檢視者） |
+| Google 登入畫面顯示「您即將重新登入『其他平台名稱』」 | OAuth 同意畫面（應用程式名稱、標誌、已授權網域）屬**整個 GCP 專案**，同專案內所有 OAuth 用戶端共用；本平台與該平台在同一專案。**OAuth 用戶端可分開，但顯示名稱不能分開** | 登入功能不受影響。若要顯示正確名稱：在 [Google Auth Platform → Branding](https://console.cloud.google.com/auth/branding) 把應用程式名稱改為涵蓋兩者（例如「天主教普照中學 自學平台」，會同時影響同專案其他平台）；或為本平台**建立獨立 GCP 專案**（步驟見第十節「為本平台建立獨立 GCP 專案」）。**注意**：使用者類型設為「內部」時，只有同組織的 Workspace 帳戶能登入，外部 Gmail 一律被 Google 拒絕，不能用來測試學生角色 |
+| Google 登入回 `redirect_uri_mismatch`（Error 400） | OAuth 用戶端未登記本平台的回呼網址。**注意本平台與 NextAuth 平台（如 ai-english-platform）路徑不同**：本平台是 `/api/auth/google/callback`，NextAuth 是 `/api/auth/callback/google`；共用同一個 OAuth 用戶端時，兩條都要各自登記 | 到 [Google Cloud Console → 憑證](https://console.cloud.google.com/apis/credentials) 開啟該「網頁應用程式」用戶端 → 「已授權的重新導向 URI」→ 加入 `http://localhost:3000/api/auth/google/callback`（正式環境另加 `https://<服務網址>/api/auth/google/callback`）→ 儲存。加入多條 URI 不會影響原有平台 |
 | Google 登入回 `redirect_uri_mismatch`，或網址出現 `https://0.0.0.0:8080/...` | 容器內看到的網址是內部位址，未使用反向代理標頭 | [google.ts](src/server/auth/google.ts) 的 `resolveRedirectUri` 會依序使用 `AUTH_REDIRECT_URI`、`X-Forwarded-Host`／`X-Forwarded-Proto`、再退回請求來源；雲端已實測輸出正確的公開網址 |
 | 重複部署後教師被登出 | 每次執行部署指令碼都會產生新的 `AUTH_SECRET` | 指令碼改為只在 Secret 尚未有版本時才產生，之後保留原有密鑰（如需強制更換可手動新增版本） |
+| 首次部署到**新建專案**時，部署步驟失敗：`Secret projects/<編號>/secrets/history-auth-secret/versions/latest was not found` | 舊版指令碼以「輸出是否為空」判斷機密是否已有版本，但 `gcloud secrets versions list` 在沒有版本時會把 `Listed 0 items.` 寫到 **stderr**，而 helper 以 `2>&1` 合併輸出，令新建的 `history-auth-secret` 被誤判為已有版本，結果從未寫入第一個版本 | 已修正為檢查是否真的有版本編號（`^\d+$`）。如使用舊版指令碼，可手動補一個版本：`"隨機字串" \| gcloud secrets versions add history-auth-secret --project <專案> --data-file -`。另：新建專案首次執行若在第 2 步（Artifact Registry）失敗，是因為剛啟用的 API 尚未生效，等 1–2 分鐘重跑即可（指令碼可安全重複執行） |
+| 部署成功但服務回 `403 Forbidden`（未開放公開存取） | Cloud Build 執行身分無 `run.services.setIamPolicy`，`--allow-unauthenticated` 未能套用（部署輸出會提示） | 指令碼已在部署後自動補上 `allUsers` → `roles/run.invoker`；如仍失敗，手動執行：`gcloud run services add-iam-policy-binding history-self-study --region=asia-east2 --project <專案> --member=allUsers --role=roles/run.invoker` |
 | `fetch failed`（備份失敗） | Cloud Run 只會在處理請求時分配 CPU，容器閒置時的背景計時器會被節流；Next.js 亦有自己的 SIGTERM 處理，關機備份未必來得及完成 | 備份改為在 API 請求週期內執行（`handleRoute` 內 `await backupIfDue()`），並只在資料有變更時上載；實測 27 MB 備份可在請求內完成 |
 | 後台 API 在 Cloud Run 上回 `403` | 未設定 Google 憑證（`authEnabled=false`），守衛拒絕公開存取 | 設定 `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` 後重新部署；臨時示範可用 `HISTORY_ALLOW_UNSAFE_DEMO_MODE=true` |
 | 登入後進入 `/admin` 被導向「只限管理員帳戶使用」 | `AUTH_ADMIN_EMAILS` 未設定（`cloudbuild.yaml` 的 `_ADMIN_EMAILS` 留空），因此沒有任何帳戶是管理員 | 部署時加 `-AdminEmails 你的電郵`，或用 `gcloud run services update <服務> --region=<區域> --update-env-vars AUTH_ADMIN_EMAILS=你的電郵` |

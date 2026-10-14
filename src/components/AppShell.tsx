@@ -63,8 +63,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const authEnabled = auth?.enabled === true;
   const role = authEnabled ? (auth?.user?.role ?? null) : null;
-  /** 未啟用登入（匿名示範模式）時，為方便本機測試仍顯示教師端及管理員端入口 */
-  const demoMode = !authEnabled;
+  /**
+   * 未啟用登入（匿名示範模式）時，為方便本機測試仍顯示教師端及管理員端入口。
+   * auth === null 代表仍在讀取登入狀態，此時只顯示學生端入口，
+   * 避免學生或未登入者在載入期間短暫看到後台連結。
+   */
+  const demoMode = auth !== null && !authEnabled;
   const isAdmin = role === "admin";
   const isStaff = role === "teacher" || isAdmin;
   const showTeacherNav = demoMode || isStaff;
@@ -115,37 +119,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {health.demoMode ? "示範模式（無需 API key）" : health.llmProviderLabel}
               </span>
             ) : null}
-            {auth?.enabled ? (
-              auth.user ? (
-                <span className="flex items-center gap-2 text-xs">
-                  <span
-                    className={`badge ${
-                      auth.user.role === "student" ? "badge-success" : "badge-accent"
-                    }`}
-                    title={auth.user.email}
-                  >
-                    {SIGN_IN_ROLE_LABELS[auth.user.role]}｜{auth.user.email}
-                  </span>
-                  {auth.user.role === "student" ? (
-                    <span className="badge" title="來自學生名冊（班別 班號）">
-                      {[auth.user.className, auth.user.studentNumber].filter(Boolean).join(" ") ||
-                        (auth.user.rosterVerified ? "名冊已核對" : "名冊未核對")}
-                    </span>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={handleSignOut}
-                    disabled={signingOut}
-                  >
-                    {signingOut ? "登出中…" : "登出"}
-                  </button>
+            {auth?.enabled && auth.user ? (
+              <span className="flex items-center gap-2 text-xs">
+                <span
+                  className={`badge ${
+                    auth.user.role === "student" ? "badge-success" : "badge-accent"
+                  }`}
+                  title={auth.user.email}
+                >
+                  {SIGN_IN_ROLE_LABELS[auth.user.role]}｜{auth.user.email}
                 </span>
-              ) : (
-                <Link href="/login" className="btn">
-                  登入
-                </Link>
-              )
+                {auth.user.role === "student" ? (
+                  <span className="badge" title="來自學生名冊（班別 班號）">
+                    {[auth.user.className, auth.user.studentNumber].filter(Boolean).join(" ") ||
+                      (auth.user.rosterVerified ? "名冊已核對" : "名冊未核對")}
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                >
+                  {signingOut ? "登出中…" : "登出"}
+                </button>
+              </span>
             ) : null}
           </div>
         </div>

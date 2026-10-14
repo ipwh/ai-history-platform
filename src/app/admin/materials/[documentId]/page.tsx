@@ -1,7 +1,7 @@
 import { MaterialManager } from "@/components/MaterialManager";
 import { guardAdminPage } from "@/server/auth/guards";
 
-export const metadata = { title: "教材內容 ｜ 歷史自學互動網站" };
+export const metadata = { title: "教材內容 ｜ 歷史科自學網站" };
 
 /**
  * 管理員端：單一教材文件（段落、OCR 狀態、分節對應及教材依據修正）。
