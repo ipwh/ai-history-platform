@@ -1,0 +1,30 @@
+# Docker 建置時忽略的檔案（映像檔只需要原始碼、materials 及依賴）
+node_modules
+.next
+out
+build
+coverage
+
+# 本機資料（資料庫、上載教材、OCR 快取）不應進入映像檔
+data
+tmp
+
+# 版本控制及編輯器檔案
+.git
+.gitignore
+.github
+.vscode
+*.md
+!README.md
+# materials/ 的說明檔要保留，否則 Dockerfile 的 COPY materials 會失敗
+!materials/README.md
+
+# 環境變數只由執行環境注入，不打包
+.env
+.env.*
+!.env.example
+
+# 本機暫存
+*.log
+*.tsbuildinfo
+.DS_Store

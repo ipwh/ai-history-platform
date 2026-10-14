@@ -1,0 +1,62 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# 本機資料庫及上載的教材（不應提交）
+/data
+/tmp
+
+# 教材來源檔案（教育局課程指引、出版社溫習筆記及校內試題庫）
+# 這些內容屬第三方版權，不應上載到公開倉庫；請在各部電腦自行放入 materials/。
+/materials/*
+!/materials/README.md
+
+# Next.js 產生的型別檔案（含同步工具產生的變體，例如 next-env.d-電腦名.ts）
+next-env.d*.ts
+
+# 服務帳戶金鑰等機密（由 scripts/deploy-cloud-run.ps1 產生）
+/secrets
+
+# 本機環境變數（可使用 .env.example 作為範本；.env.example 本身會提交）
+.env
+.env.local
+.env*.local
+!.env.example

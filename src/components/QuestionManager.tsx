@@ -1,0 +1,911 @@
+﻿"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { api } from "@/lib/api-client";
+import {
+  DIFFICULTIES,
+  DIFFICULTY_LABELS,
+  QUESTION_ORIGIN_LABELS,
+  QUESTION_REPORT_STATUS_LABELS,
+  QUESTION_STATUS_LABELS,
+  QUESTION_TYPES,
+  QUESTION_TYPE_LABELS,
+  type Difficulty,
+  type GeneratedQuestionPreview,
+  type Question,
+  type QuestionReportDetail,
+  type QuestionReportStatus,
+  type QuestionStatus,
+  type QuestionType,
+  type TopicOverview,
+} from "@/lib/types";
+import { ErrorNotice, Loading, Notice } from "@/components/ui";
+import { QuestionReportPanel } from "@/components/QuestionReportPanel";
+
+interface GenerateResult extends GeneratedQuestionPreview {
+  notice: string | null;
+  usable: boolean;
+}
+
+/**
+ * 題目管理（教師端）。
+ *
+ * @param focusGenerate 由 /teacher/questions/generate 進入時，把生成區塊放在最前並自動捲動。
+ */
+export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boolean } = {}) {
+  const [topics, setTopics] = useState<TopicOverview[]>([]);
+  const [topicId, setTopicId] = useState<string>("");
+  const [sectionId, setSectionId] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [originFilter, setOriginFilter] = useState<string>("");
+  const [questions, setQuestions] = useState<Question[] | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const [generateSections, setGenerateSections] = useState<string[]>([]);
+  const [generateTypes, setGenerateTypes] = useState<QuestionType[]>(["mc"]);
+  const [generateDifficulty, setGenerateDifficulty] = useState<Difficulty>("basic");
+  const [generateCount, setGenerateCount] = useState(5);
+  const [generating, setGenerating] = useState(false);
+  const [generateResult, setGenerateResult] = useState<GenerateResult | null>(null);
+  const [generateError, setGenerateError] = useState<unknown>(null);
+
+  const [editorState, setEditorState] = useState<{ mode: "new" | "edit"; question?: Question } | null>(
+    null,
+  );
+
+  const [questionsReloadToken, setQuestionsReloadToken] = useState(0);
+  const generateSectionRef = useRef<HTMLElement | null>(null);
+
+  /** 由 /teacher/questions/generate 進入時，把生成區塊捲入畫面（方便直接開始生成） */
+  useEffect(() => {
+    if (!focusGenerate) return;
+    generateSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [focusGenerate]);
+
+  const [reports, setReports] = useState<QuestionReportDetail[]>([]);
+  const [reportStatusFilter, setReportStatusFilter] = useState<QuestionReportStatus | "">("open");
+  const [reportTopicFilter, setReportTopicFilter] = useState<string>("");
+  const [busyReportId, setBusyReportId] = useState<string | null>(null);
+  const [reportsReloadToken, setReportsReloadToken] = useState(0);
+
+  const refreshReports = useCallback(async () => {
+    setReportsReloadToken((token) => token + 1);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const query = new URLSearchParams({ limit: "50" });
+    if (reportStatusFilter) query.set("status", reportStatusFilter);
+    if (reportTopicFilter) query.set("topicId", reportTopicFilter);
+    api
+      .get<{ reports: QuestionReportDetail[] }>(`/api/teacher/reports?${query.toString()}`)
+      .then((data) => {
+        if (!cancelled) setReports(data.reports);
+      })
+      .catch((caught: unknown) => {
+        if (!cancelled) setError(caught);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [reportStatusFilter, reportTopicFilter, reportsReloadToken]);
+
+  const openReportCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const report of reports) {
+      if (report.status !== "open") continue;
+      counts.set(report.questionId, (counts.get(report.questionId) ?? 0) + 1);
+    }
+    return counts;
+  }, [reports]);
+
+  async function handleResolveReport(reportId: string, status: QuestionReportStatus) {
+    setBusyReportId(reportId);
+    setError(null);
+    try {
+      await api.patch(`/api/teacher/reports?reportId=${encodeURIComponent(reportId)}`, { status });
+      setMessage(
+        status === "open" ? "已重設為待覆核。" : `已將回報標記為「${QUESTION_REPORT_STATUS_LABELS[status]}」。`,
+      );
+      await refreshReports();
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setBusyReportId(null);
+    }
+  }
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<{ topics: TopicOverview[] }>("/api/topics")
+      .then((data) => {
+        if (cancelled) return;
+        setTopics(data.topics);
+        setTopicId((current) => {
+          if (current !== "" || data.topics.length === 0) return current;
+          const firstSection = data.topics[0].sections[0];
+          if (firstSection) setGenerateSections([firstSection.id]);
+          return data.topics[0].id;
+        });
+      })
+      .catch((caught: unknown) => {
+        if (!cancelled) setError(caught);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!topicId) return;
+    let cancelled = false;
+    const query = new URLSearchParams({ topicId });
+    if (sectionId) query.set("sectionId", sectionId);
+    if (statusFilter) query.set("status", statusFilter);
+    if (originFilter) query.set("origin", originFilter);
+
+    api
+      .get<{ questions: Question[] }>(`/api/teacher/questions?${query.toString()}`)
+      .then((data) => {
+        if (cancelled) return;
+        setQuestions(data.questions);
+        setError(null);
+      })
+      .catch((caught: unknown) => {
+        if (!cancelled) setError(caught);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [topicId, sectionId, statusFilter, originFilter, questionsReloadToken]);
+
+  const refreshQuestions = useCallback(async () => {
+    if (!topicId) return;
+    const query = new URLSearchParams({ topicId });
+    if (sectionId) query.set("sectionId", sectionId);
+    if (statusFilter) query.set("status", statusFilter);
+    if (originFilter) query.set("origin", originFilter);
+    const data = await api.get<{ questions: Question[] }>(
+      `/api/teacher/questions?${query.toString()}`,
+    );
+    setQuestions(data.questions);
+  }, [topicId, sectionId, statusFilter, originFilter]);
+
+  const topic = useMemo(() => topics.find((item) => item.id === topicId) ?? null, [topics, topicId]);
+  const sectionOptions = useMemo(
+    () =>
+      topic
+        ? topic.sections.flatMap((section) => [
+            { id: section.id, label: section.title },
+            ...section.children.map((child) => ({
+              id: child.id,
+              label: `　${child.title}`,
+            })),
+          ])
+        : [],
+    [topic],
+  );
+
+  /** 有品質警告的題目數目（警告只提示教師核對，題目不會被丟棄） */
+  const warningCount = useMemo(
+    () =>
+      generateResult
+        ? generateResult.questions.filter((question) => question.qualityWarnings.length > 0).length
+        : 0,
+    [generateResult],
+  );
+
+  async function handleGenerate() {
+    if (!topic || generateSections.length === 0 || generateTypes.length === 0) {
+      setGenerateError(new Error("請選擇分節及題型。"));
+      return;
+    }
+    setGenerating(true);
+    setGenerateError(null);
+    setGenerateResult(null);
+    try {
+      const result = await api.post<GenerateResult>("/api/teacher/questions/generate", {
+        topicId: topic.id,
+        sectionIds: generateSections,
+        questionTypes: generateTypes,
+        difficulty: generateDifficulty,
+        questionCount: generateCount,
+      });
+      setGenerateResult(result);
+      await refreshQuestions();
+    } catch (caught) {
+      setGenerateError(caught);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleStatus(questionId: string, status: QuestionStatus) {
+    setError(null);
+    try {
+      await api.patch(`/api/teacher/questions/${questionId}`, { action: "status", status });
+      setMessage(`已更新題目狀態為「${QUESTION_STATUS_LABELS[status]}」。`);
+      await refreshQuestions();
+    } catch (caught) {
+      setError(caught);
+    }
+  }
+
+  async function handleDelete(questionId: string) {
+    setError(null);
+    try {
+      await api.delete(`/api/teacher/questions/${questionId}`);
+      setMessage("已刪除題目。");
+      await refreshQuestions();
+    } catch (caught) {
+      setError(caught);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="text-xl font-bold">題目管理</h1>
+        <p className="text-sm text-gray-600">
+          生成題目時只會把相關教材段落傳給 LLM，輸出會經過 schema 驗證及教材依據核對；
+          沒有教材依據的題目不會儲存。所有新生成題目預設為草稿，教師查核後才發布給學生。
+        </p>
+      </div>
+
+      {message ? <Notice tone="success">{message}</Notice> : null}
+      {error ? <ErrorNotice error={error} onRetry={() => setQuestionsReloadToken((t) => t + 1)} /> : null}
+
+      <section className="card flex flex-col gap-3" ref={generateSectionRef}>
+        <h2 className="font-semibold">生成題目預覽</h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="text-sm">
+            課題
+            <select
+              value={topicId}
+              onChange={(event) => {
+                setTopicId(event.target.value);
+                setGenerateSections([]);
+                setSectionId("");
+              }}
+            >
+              {topics.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm">
+            題數
+            <select
+              value={generateCount}
+              onChange={(event) => setGenerateCount(Number(event.target.value))}
+            >
+              {[3, 5, 10, 15].map((count) => (
+                <option key={count} value={count}>
+                  {count} 題
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="text-sm">
+          分節（可多選）
+          <div className="flex flex-wrap gap-2 mt-1">
+            {sectionOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className="chip"
+                data-selected={generateSections.includes(option.id)}
+                onClick={() =>
+                  setGenerateSections((current) =>
+                    current.includes(option.id)
+                      ? current.filter((item) => item !== option.id)
+                      : [...current, option.id],
+                  )
+                }
+              >
+                {option.label.trim()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-4">
+          <div className="text-sm">
+            題型
+            <div className="flex flex-wrap gap-2 mt-1">
+              {QUESTION_TYPES.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  className="chip"
+                  data-selected={generateTypes.includes(type)}
+                  onClick={() =>
+                    setGenerateTypes((current) =>
+                      current.includes(type)
+                        ? current.filter((item) => item !== type)
+                        : [...current, type],
+                    )
+                  }
+                >
+                  {QUESTION_TYPE_LABELS[type]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="text-sm">
+            難度
+            <div className="flex flex-wrap gap-2 mt-1">
+              {DIFFICULTIES.map((difficulty) => (
+                <button
+                  key={difficulty}
+                  type="button"
+                  className="chip"
+                  data-selected={generateDifficulty === difficulty}
+                  onClick={() => setGenerateDifficulty(difficulty)}
+                >
+                  {DIFFICULTY_LABELS[difficulty]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {generateError ? <ErrorNotice error={generateError} /> : null}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => void handleGenerate()}
+            disabled={generating}
+          >
+            {generating ? "正在生成及驗證…" : "生成題目"}
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setEditorState({ mode: "new" })}
+            disabled={!topic}
+          >
+            手動新增題目
+          </button>
+        </div>
+
+        {generateResult ? (
+          <div className="flex flex-col gap-3">
+            <Notice tone={generateResult.usedDemoFallback || warningCount > 0 ? "warning" : "success"}>
+              來源：{generateResult.providerLabel}
+              {generateResult.discardedCount > 0
+                ? `；已捨棄 ${generateResult.discardedCount} 題（不合規或沒有教材依據）`
+                : "；全部題目均通過驗證"}
+              {warningCount > 0
+                ? `；${warningCount} 題有品質警告（教材未提及的人名或條約名），題目已保留，請核對後才發布`
+                : ""}
+              {generateResult.notice ? `。${generateResult.notice}` : ""}
+            </Notice>
+            {generateResult.discardReasons.length > 0 ? (
+              <details className="text-sm">
+                <summary className="cursor-pointer">查看被捨棄題目的原因</summary>
+                <ul className="list-disc pl-5 mt-1 text-gray-600">
+                  {generateResult.discardReasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+            <QuestionListCard
+              questions={generateResult.questions}
+              openReportCounts={openReportCounts}
+              onStatus={handleStatus}
+              onDelete={handleDelete}
+              onEdit={(question) => setEditorState({ mode: "edit", question })}
+            />
+          </div>
+        ) : null}
+      </section>
+
+      <QuestionReportPanel
+        reports={reports}
+        topics={topics}
+        statusFilter={reportStatusFilter}
+        topicFilter={reportTopicFilter}
+        busyReportId={busyReportId}
+        onStatusFilterChange={setReportStatusFilter}
+        onTopicFilterChange={setReportTopicFilter}
+        onRefresh={() => void refreshReports()}
+        onResolve={(reportId, status) => void handleResolveReport(reportId, status)}
+      />
+
+      {editorState && topic ? (
+        <QuestionEditor
+          topic={topic}
+          question={editorState.question}
+          onCancel={() => setEditorState(null)}
+          onSaved={async () => {
+            setEditorState(null);
+            setMessage("已儲存題目。");
+            await refreshQuestions();
+          }}
+        />
+      ) : null}
+
+      <section className="card flex flex-col gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <h2 className="font-semibold">題庫</h2>
+          <div className="flex flex-wrap items-end gap-2 text-sm">
+            <label>
+              分節
+              <select value={sectionId} onChange={(event) => setSectionId(event.target.value)}>
+                <option value="">全部分節</option>
+                {sectionOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label.trim()}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              狀態
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                <option value="">全部</option>
+                <option value="published">已發布</option>
+                <option value="draft">草稿</option>
+                <option value="disabled">已停用</option>
+              </select>
+            </label>
+            <label>
+              來源
+              <select
+                value={originFilter}
+                onChange={(event) => setOriginFilter(event.target.value)}
+              >
+                <option value="">全部</option>
+                <option value="school-paper">校內試卷</option>
+                <option value="material-ai">教材 + AI 生成</option>
+                <option value="material-mock">教材 + 示範生成</option>
+                <option value="demo">示範題庫</option>
+                <option value="manual">教師手動建立</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        {!questions ? (
+          <Loading label="正在載入題目…" />
+        ) : questions.length === 0 ? (
+          <p className="text-sm text-gray-600">沒有符合條件的題目。</p>
+        ) : (
+          <QuestionListCard
+            questions={questions}
+            openReportCounts={openReportCounts}
+            onStatus={handleStatus}
+            onDelete={handleDelete}
+            onEdit={(question) => setEditorState({ mode: "edit", question })}
+          />
+        )}
+      </section>
+    </div>
+  );
+}
+
+function QuestionListCard({
+  questions,
+  openReportCounts,
+  onStatus,
+  onDelete,
+  onEdit,
+}: {
+  questions: Question[];
+  /** 每題的未處理回報數（顯示「待覆核」） */
+  openReportCounts?: Map<string, number>;
+  onStatus: (questionId: string, status: QuestionStatus) => Promise<void>;
+  onDelete: (questionId: string) => Promise<void>;
+  onEdit: (question: Question) => void;
+}) {
+  return (
+    <ul className="flex flex-col gap-3">
+      {questions.map((question) => (
+        <li
+          key={question.id}
+          className="rounded-xl border p-3 text-sm flex flex-col gap-2"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="badge">{QUESTION_TYPE_LABELS[question.questionType]}</span>
+            <span className="badge">{DIFFICULTY_LABELS[question.difficulty]}</span>
+            <span className="badge badge-accent">{QUESTION_ORIGIN_LABELS[question.origin]}</span>
+            <span
+              className={`badge ${
+                question.status === "published"
+                  ? "badge-success"
+                  : question.status === "draft"
+                    ? "badge-warning"
+                    : "badge-danger"
+              }`}
+            >
+              {QUESTION_STATUS_LABELS[question.status]}
+            </span>
+            {question.origin === "school-paper" ? (
+              <span className="badge">來源：校內試卷</span>
+            ) : (
+              <span
+                className={question.sourceVerified ? "badge badge-success" : "badge badge-danger"}
+              >
+                {question.sourceVerified ? "已核對教材依據" : "未通過教材依據核對"}
+              </span>
+            )}
+            {question.qualityWarnings.length > 0 ? (
+              <span className="badge badge-warning">品質警告 {question.qualityWarnings.length} 項</span>
+            ) : null}
+            {(openReportCounts?.get(question.id) ?? 0) > 0 ? (
+              <span className="badge badge-danger">
+                待覆核回報 {openReportCounts?.get(question.id)} 筆
+              </span>
+            ) : null}
+          </div>
+
+          {question.qualityWarnings.length > 0 ? (
+            <div
+              className="rounded-lg px-3 py-2"
+              style={{ background: "var(--warning-soft)", border: "1px solid #f2ddb0" }}
+            >
+              <p className="font-semibold" style={{ color: "var(--warning)" }}>
+                品質警告（題目已保留，請核對教材後才發布）
+              </p>
+              <ul className="list-disc pl-5 mt-1">
+                {question.qualityWarnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <p className="font-medium whitespace-pre-wrap">{question.question}</p>
+
+          {question.options.length > 0 ? (
+            <ul className="list-disc pl-5 text-gray-700">
+              {question.options.map((option) => (
+                <li key={option}>
+                  {option}
+                  {option === question.correctAnswer ? (
+                    <span className="badge badge-success ml-2">正確答案</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>
+              <span className="font-semibold">答案：</span>
+              {question.correctAnswer}
+            </p>
+          )}
+
+          <p>
+            <span className="font-semibold">解釋：</span>
+            {question.explanation}
+          </p>
+          <p>
+            <span className="font-semibold">知識點：</span>
+            {question.knowledgePoint}
+          </p>
+          {question.gradingPoints.length > 0 ? (
+            <div>
+              <span className="font-semibold">得分要點：</span>
+              <ul className="list-disc pl-5">
+                {question.gradingPoints.map((point) => (
+                  <li key={point}>{point}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <div className="source-box">
+            <div className="text-xs text-gray-600 mb-1">
+              教材依據：{question.sourceLocation}
+              {question.sourceBlockIds.length > 0
+                ? `（段落 ${question.sourceBlockIds.join("、")}）`
+                : "（未連結教材段落）"}
+            </div>
+            <div className="whitespace-pre-wrap">{question.sourceExcerpt}</div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {question.status !== "published" ? (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => void onStatus(question.id, "published")}
+              >
+                發布
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => void onStatus(question.id, "draft")}
+              >
+                轉為草稿
+              </button>
+            )}
+            {question.status !== "disabled" ? (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => void onStatus(question.id, "disabled")}
+              >
+                停用
+              </button>
+            ) : null}
+            <button type="button" className="btn" onClick={() => onEdit(question)}>
+              編輯
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={() => void onDelete(question.id)}
+            >
+              刪除
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function QuestionEditor({
+  topic,
+  question,
+  onCancel,
+  onSaved,
+}: {
+  topic: TopicOverview;
+  question?: Question;
+  onCancel: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const sections = useMemo(
+    () =>
+      topic.sections.flatMap((section) => [
+        { id: section.id, label: section.title },
+        ...section.children.map((child) => ({ id: child.id, label: `　${child.title}` })),
+      ]),
+    [topic],
+  );
+
+  const [form, setForm] = useState({
+    sectionId: question?.sectionId ?? sections[0]?.id ?? "",
+    questionType: question?.questionType ?? ("mc" as QuestionType),
+    difficulty: question?.difficulty ?? ("basic" as Difficulty),
+    question: question?.question ?? "",
+    optionsText: (question?.options ?? ["", "", "", ""]).join("\n"),
+    correctAnswer: question?.correctAnswer ?? "",
+    explanation: question?.explanation ?? "",
+    knowledgePoint: question?.knowledgePoint ?? "",
+    sourceExcerpt: question?.sourceExcerpt ?? "",
+    sourceLocation: question?.sourceLocation ?? "",
+    gradingPointsText: (question?.gradingPoints ?? []).join("\n"),
+    status: question?.status ?? ("draft" as QuestionStatus),
+  });
+  const [saving, setSaving] = useState(false);
+  const [editorError, setEditorError] = useState<unknown>(null);
+
+  async function handleSave() {
+    setSaving(true);
+    setEditorError(null);
+    try {
+      const payload = {
+        topicId: topic.id,
+        sectionId: form.sectionId,
+        questionType: form.questionType,
+        difficulty: form.difficulty,
+        question: form.question,
+        options:
+          form.questionType === "mc"
+            ? form.optionsText
+                .split("\n")
+                .map((option) => option.trim())
+                .filter((option) => option.length > 0)
+            : [],
+        correctAnswer: form.correctAnswer,
+        acceptedAnswers: question?.acceptedAnswers ?? [],
+        explanation: form.explanation,
+        knowledgePoint: form.knowledgePoint,
+        sourceExcerpt: form.sourceExcerpt || "（教師手動建立，未提供教材節錄）",
+        sourceLocation: form.sourceLocation || "教師手動建立",
+        sourceBlockIds: question?.sourceBlockIds ?? [],
+        gradingPoints: form.gradingPointsText
+          .split("\n")
+          .map((point) => point.trim())
+          .filter((point) => point.length > 0),
+        origin: question?.origin ?? "manual",
+        status: form.status,
+      };
+
+      if (question) {
+        await api.patch(`/api/teacher/questions/${question.id}`, {
+          action: "edit",
+          question: payload,
+        });
+      } else {
+        await api.post("/api/teacher/questions", payload);
+      }
+      await onSaved();
+    } catch (caught) {
+      setEditorError(caught);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="card flex flex-col gap-3">
+      <h2 className="font-semibold">{question ? "編輯題目" : "新增題目"}</h2>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <label className="text-sm">
+          分節
+          <select
+            value={form.sectionId}
+            onChange={(event) => setForm({ ...form, sectionId: event.target.value })}
+          >
+            {sections.map((section) => (
+              <option key={section.id} value={section.id}>
+                {section.label.trim()}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm">
+          題型
+          <select
+            value={form.questionType}
+            onChange={(event) =>
+              setForm({ ...form, questionType: event.target.value as QuestionType })
+            }
+          >
+            {QUESTION_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {QUESTION_TYPE_LABELS[type]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm">
+          難度
+          <select
+            value={form.difficulty}
+            onChange={(event) =>
+              setForm({ ...form, difficulty: event.target.value as Difficulty })
+            }
+          >
+            {DIFFICULTIES.map((difficulty) => (
+              <option key={difficulty} value={difficulty}>
+                {DIFFICULTY_LABELS[difficulty]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <label className="text-sm">
+        題目
+        <textarea
+          rows={2}
+          value={form.question}
+          onChange={(event) => setForm({ ...form, question: event.target.value })}
+        />
+      </label>
+
+      {form.questionType === "mc" ? (
+        <label className="text-sm">
+          選項（每行一個，其中一行必須與標準答案完全相同）
+          <textarea
+            rows={4}
+            value={form.optionsText}
+            onChange={(event) => setForm({ ...form, optionsText: event.target.value })}
+          />
+        </label>
+      ) : null}
+
+      <label className="text-sm">
+        {form.questionType === "short" ? "參考答案" : "標準答案"}
+        <input
+          type="text"
+          value={form.correctAnswer}
+          onChange={(event) => setForm({ ...form, correctAnswer: event.target.value })}
+        />
+      </label>
+
+      {form.questionType === "short" ? (
+        <label className="text-sm">
+          得分要點（每行一點，供學生自我檢查）
+          <textarea
+            rows={3}
+            value={form.gradingPointsText}
+            onChange={(event) => setForm({ ...form, gradingPointsText: event.target.value })}
+          />
+        </label>
+      ) : null}
+
+      <label className="text-sm">
+        解釋
+        <textarea
+          rows={2}
+          value={form.explanation}
+          onChange={(event) => setForm({ ...form, explanation: event.target.value })}
+        />
+      </label>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <label className="text-sm">
+          知識點
+          <input
+            type="text"
+            value={form.knowledgePoint}
+            onChange={(event) => setForm({ ...form, knowledgePoint: event.target.value })}
+          />
+        </label>
+        <label className="text-sm">
+          教材來源位置
+          <input
+            type="text"
+            value={form.sourceLocation}
+            placeholder="例如：HNC2A2E_T5_SN_TE.docx · 第 12 段（清單）"
+            onChange={(event) => setForm({ ...form, sourceLocation: event.target.value })}
+          />
+        </label>
+      </div>
+
+      <label className="text-sm">
+        教材原文節錄（用於核對題目依據）
+        <textarea
+          rows={2}
+          value={form.sourceExcerpt}
+          onChange={(event) => setForm({ ...form, sourceExcerpt: event.target.value })}
+        />
+      </label>
+
+      <label className="text-sm max-w-xs">
+        狀態
+        <select
+          value={form.status}
+          onChange={(event) => setForm({ ...form, status: event.target.value as QuestionStatus })}
+        >
+          <option value="draft">草稿</option>
+          <option value="published">已發布</option>
+          <option value="disabled">已停用</option>
+        </select>
+      </label>
+
+      {editorError ? <ErrorNotice error={editorError} /> : null}
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => void handleSave()}
+          disabled={saving}
+        >
+          {saving ? "儲存中…" : "儲存"}
+        </button>
+        <button type="button" className="btn" onClick={onCancel}>
+          取消
+        </button>
+      </div>
+    </section>
+  );
+}
+
+

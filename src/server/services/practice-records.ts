@@ -1,0 +1,190 @@
+/**
+ * 學生練習記錄的查閱與匯出（教師端）。
+ *
+ * 練習記錄一律由資料庫的練習快照及作答記錄讀取，並不會回傳學生的其他個人資料；
+ * 學習者只以帳戶電郵（已登入學生）或匿名 ID 顯示。
+ */
+import {
+  DIFFICULTY_LABELS,
+  QUESTION_TYPE_LABELS,
+  type PracticeRecordQuestion,
+  type PracticeRecordSession,
+} from "../../lib/types";
+import { getTopic, sectionTitleMap } from "../repositories/topics";
+import {
+  getSessionQuestions,
+  listAttempts,
+  listSessionsForRecords,
+  type SessionRecordFilter,
+} from "../repositories/practice";
+
+export type { PracticeRecordQuestion, PracticeRecordSession };
+
+/**
+ * 把學習者 ID 轉成教師易讀的標示。
+ * 學生帳戶為 school:<電郵>，教師測試為 teacher:<電郵>，管理員測試為 admin:<電郵>，
+ * 其餘為匿名 ID。
+ */
+export function learnerLabel(learnerId: string): string {
+  if (learnerId.startsWith("school:")) return learnerId.slice("school:".length);
+  if (learnerId.startsWith("admin:")) return `${learnerId.slice("admin:".length)}（管理員測試）`;
+  if (learnerId.startsWith("teacher:")) return `${learnerId.slice("teacher:".length)}（教師測試）`;
+  return `匿名 ${learnerId.slice(0, 8)}`;}
+
+function buildSessionRecord(
+  session: ReturnType<typeof listSessionsForRecords>[number],
+  topicTitle: string,
+  sectionTitles: Map<string, string>,
+): PracticeRecordSession {
+  const questions = getSessionQuestions(session.id);
+  const attempts = new Map(listAttempts(session.id).map((attempt) => [attempt.questionId, attempt]));
+
+  const rows: PracticeRecordQuestion[] = questions.map((question) => {
+    const attempt = attempts.get(question.id) ?? null;
+    return {
+      questionId: question.id,
+      questionType: question.questionType,
+      questionTypeLabel: QUESTION_TYPE_LABELS[question.questionType],
+      question: question.question,
+      sectionTitle: sectionTitles.get(question.sectionId) ?? "",
+      studentAnswer: attempt?.answer ?? "",
+      correctAnswer: question.correctAnswer,
+      isCorrect: attempt?.isCorrect ?? null,
+      selfAssessment: attempt?.selfAssessment ?? null,
+      aiVerdict: attempt?.aiGrading?.verdict ?? null,
+      answered: attempt !== null && attempt.answer.trim().length > 0,
+    };
+  });
+
+  const graded = rows.filter((row) => row.isCorrect !== null);
+  const correctCount = graded.filter((row) => row.isCorrect === true).length;
+
+  return {
+    sessionId: session.id,
+    learnerId: session.learnerId,
+    learnerLabel: learnerLabel(session.learnerId),
+    topicId: session.topicId,
+    topicTitle,
+    createdAt: session.createdAt,
+    completedAt: session.completedAt,
+    questionTypes: session.questionTypes,
+    questionTypeLabels: session.questionTypes.map((type) => QUESTION_TYPE_LABELS[type]),
+    difficulty: session.difficulty,
+    difficultyLabel: DIFFICULTY_LABELS[session.difficulty],
+    totalQuestions: rows.length,
+    answeredCount: rows.filter((row) => row.answered).length,
+    correctCount,
+    wrongCount: graded.length - correctCount,
+    accuracy: graded.length > 0 ? Number((correctCount / graded.length).toFixed(4)) : null,
+    questions: rows,
+  };
+}
+
+/** 列出練習記錄（最新在前），供教師端查閱及匯出 */
+export function listPracticeRecords(filter: SessionRecordFilter = {}): PracticeRecordSession[] {
+  const sessions = listSessionsForRecords(filter);
+  const topicTitles = new Map<string, string>();
+  const sectionTitleCache = new Map<string, Map<string, string>>();
+
+  const sectionTitlesFor = (topicId: string): Map<string, string> => {
+    const cached = sectionTitleCache.get(topicId);
+    if (cached) return cached;
+    const titles = sectionTitleMap(topicId);
+    sectionTitleCache.set(topicId, titles);
+    return titles;
+  };
+
+  return sessions.map((session) => {
+    let topicTitle = topicTitles.get(session.topicId);
+    if (topicTitle === undefined) {
+      topicTitle = getTopic(session.topicId)?.title ?? session.topicId;
+      topicTitles.set(session.topicId, topicTitle);
+    }
+    return buildSessionRecord(session, topicTitle, sectionTitlesFor(session.topicId));
+  });
+}
+
+/** 由查詢參數建立篩選條件（教師端 API 共用） */
+export function recordFilterFromParams(
+  params: URLSearchParams,
+  defaultLimit = 200,
+): SessionRecordFilter {
+  const limit = Number.parseInt(params.get("limit") ?? String(defaultLimit), 10);
+  return {
+    topicId: params.get("topicId")?.trim() || null,
+    learnerId: params.get("learnerId")?.trim() || null,
+    from: params.get("from")?.trim() || null,
+    to: params.get("to")?.trim() || null,
+    limit: Number.isFinite(limit) ? limit : defaultLimit,
+  };
+}
+
+/** CSV 欄位轉義：含逗號、引號或換行時以雙引號包住 */
+function csvCell(value: string | number | null): string {
+  if (value === null) return "";
+  const text = String(value);
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+const OUTCOME_LABELS: Record<"correct" | "wrong" | "ungraded" | "unanswered", string> = {
+  correct: "答對",
+  wrong: "答錯",
+  ungraded: "待自我檢查",
+  unanswered: "未作答",
+};
+
+function outcomeOf(row: PracticeRecordQuestion): keyof typeof OUTCOME_LABELS {
+  if (!row.answered) return "unanswered";
+  if (row.isCorrect === true) return "correct";
+  if (row.isCorrect === false) return "wrong";
+  return "ungraded";
+}
+
+/**
+ * 把練習記錄轉成 CSV 文字（每題一列）。
+ * 欄位包含作答日子、課題、分節、題型、題目、學生答案、正確答案及答對／答錯。
+ */
+export function buildRecordsCsv(records: PracticeRecordSession[]): string {
+  const header = [
+    "作答日期",
+    "學習者",
+    "課題",
+    "分節",
+    "題型",
+    "難度",
+    "題目",
+    "學生答案",
+    "正確答案",
+    "結果",
+    "練習編號",
+  ];
+
+  const lines: string[] = [header.map(csvCell).join(",")];
+  for (const record of records) {
+    for (const row of record.questions) {
+      const outcome = outcomeOf(row);
+      const result =
+        outcome === "ungraded" && row.selfAssessment === "needs-review"
+          ? "待自我檢查（需重溫）"
+          : OUTCOME_LABELS[outcome];
+      lines.push(
+        [
+          record.createdAt,
+          record.learnerLabel,
+          record.topicTitle,
+          row.sectionTitle,
+          row.questionTypeLabel,
+          record.difficultyLabel,
+          row.question,
+          row.studentAnswer,
+          row.correctAnswer,
+          result,
+          record.sessionId,
+        ]
+          .map(csvCell)
+          .join(","),
+      );
+    }
+  }
+  return lines.join("\r\n");
+}

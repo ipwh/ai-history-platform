@@ -1,0 +1,113 @@
+# Google Cloud Build：建置映像檔並部署到 Cloud Run
+#
+# 用法（在專案根目錄，先安裝並登入 gcloud）：
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --substitutions=_REGION=asia-east2,_SERVICE=history-self-study,_REPOSITORY=history
+#
+# 需要的變數（可用 --substitutions 或觸發程序帶入；有預設值者可不填）：
+#   _REGION        部署區域（預設 asia-east2，香港最近）
+#   _SERVICE       Cloud Run 服務名稱
+#   _REPOSITORY    Artifact Registry 倉庫名稱
+#   _IMAGE_NAME    映像檔名稱（預設 hk-history-self-study）
+#   _MAX_INSTANCES 最大執行個體數（SQLite 需要 1；改用 Cloud SQL 後可調高）
+#   _ROSTER_SHEET_ID／_ROSTER_SHEET_NAME  學生名冊所在的 Google Sheet
+#   _ROSTER_COLUMN_NAME  學生姓名取自名冊哪一欄（預設 CHNAME = 中文姓名）
+#   _ROSTER_CLASS_PREFIXES  只開放的班別前綴（預設 1;2;3 = 中一至中三；留空 = 不設限）
+#                           清單以分號分隔，避免與 gcloud 的逗號分隔衝突
+#   _AUTH_FLAG     存取控制旗標：--allow-unauthenticated（預設）或留空（搭配 IAP／身分權杖）
+#   _RUNTIME_SA    Cloud Run 執行身分（服務帳戶電郵；留空 = 專案預設的 Compute Engine 服務帳戶）
+#   _BACKUP_BUCKET 資料庫備份的 Cloud Storage bucket（留空 = 不備份，重新部署後資料會遺失）
+#   _BACKUP_PREFIX bucket 內的物件前置路徑（預設 history）
+#   _BACKUP_INTERVAL_SECONDS 最長備份間隔秒數（預設 300）
+#   _BACKUP_MIN_SPACING_SECONDS 資料有變更時的備份最短間隔秒數（預設 60）
+#
+# 資料持久化（免費方案）：Cloud Run 的容器檔案系統不會保留資料，因此以 SQLite 快照
+# （VACUUM INTO）+ Cloud Storage 備份，啟動時自動還原。bucket 由
+# scripts/deploy-cloud-run.ps1 -Apply 建立，並只授權執行身分讀寫該 bucket。
+#
+# 敏感資料（AUTH_SECRET、LLM API key、Google OAuth 憑證、名冊服務帳戶 JSON）一律放在
+# Secret Manager，以 --set-secrets 注入，不會出現在建置記錄或映像檔內。
+# 這些 Secret 由 scripts/deploy-cloud-run.ps1 -Apply 建立（名稱見下方 _*_SECRET）。
+
+substitutions:
+  _REGION: asia-east2
+  _SERVICE: history-self-study
+  _REPOSITORY: history
+  _IMAGE_NAME: hk-history-self-study
+  _MAX_INSTANCES: "1"
+  _MIN_INSTANCES: "0"
+  _MEMORY: 1Gi
+  _CPU: "1"
+  _AUTH_FLAG: "--allow-unauthenticated"
+  _RUNTIME_SA: ""
+  _ROSTER_SHEET_ID: ""
+  _ROSTER_SHEET_NAME: ""
+  # 學生姓名取自名冊的哪一欄（此校名冊欄名為 CLASSCODE/CLASSNO/ENNAME/CHNAME/SEX/EMAIL）
+  _ROSTER_COLUMN_NAME: "CHNAME"
+  # 只開放的班別（前綴比對）；此平台為中一至中三，因此只接受 1x／2x／3x 班
+  # 註：gcloud --set-env-vars 以逗號分隔多個變數，因此清單內用分號（設定層同時接受逗號、分號及空白）
+  _ROSTER_CLASS_PREFIXES: "1;2;3"
+  _BACKUP_BUCKET: ""
+  _BACKUP_PREFIX: "history"
+  _BACKUP_INTERVAL_SECONDS: "300"
+  # 資料有變更時的備份最短間隔（秒）；令使用期間的資料遺失窗口更小
+  _BACKUP_MIN_SPACING_SECONDS: "60"
+  _AUTH_SECRET: history-auth-secret
+  _LLM_SECRET: history-deepseek-api-key
+  _ROSTER_SECRET: history-roster-service-account
+  _GOOGLE_CLIENT_ID_SECRET: history-google-client-id
+  _GOOGLE_CLIENT_SECRET_SECRET: history-google-client-secret
+
+steps:
+  - id: build-image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --tag
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:$BUILD_ID
+      - --tag
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:latest
+      - .
+
+  - id: push-image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}
+
+  # 以 bash 執行，令 _AUTH_FLAG 可以留空（IAP 模式）而不會變成無效的空參數
+  - id: deploy-cloud-run
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        # ${_...} 由 Cloud Build 取代；`$$` 會變成一個字面 `$`，交由 bash 處理，
+        # 令 AUTH_FLAG／RUNTIME_SA 可以留空而不會產生無效參數
+        AUTH_FLAG="${_AUTH_FLAG}"
+        RUNTIME_SA="${_RUNTIME_SA}"
+        BACKUP_BUCKET="${_BACKUP_BUCKET}"
+        BACKUP_PREFIX="${_BACKUP_PREFIX}"
+        BACKUP_INTERVAL_SECONDS="${_BACKUP_INTERVAL_SECONDS}"
+        BACKUP_MIN_SPACING_SECONDS="${_BACKUP_MIN_SPACING_SECONDS}"
+        gcloud run deploy "${_SERVICE}" \
+          --image="${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:$BUILD_ID" \
+          --region="${_REGION}" \
+          --platform=managed \
+          --port=8080 \
+          --memory="${_MEMORY}" \
+          --cpu="${_CPU}" \
+          --min-instances="${_MIN_INSTANCES}" \
+          --max-instances="${_MAX_INSTANCES}" \
+          $$AUTH_FLAG \
+          $${RUNTIME_SA:+--service-account=$$RUNTIME_SA} \
+          --set-env-vars="NODE_ENV=production,LLM_PROVIDER=deepseek,LLM_MODEL=deepseek-flash,LLM_THINKING=disabled,LLM_MAX_TOKENS=8192,APP_DATABASE_PATH=/tmp/data/app.db,APP_UPLOADS_DIR=/tmp/data/uploads,OCR_CACHE_PATH=/tmp/data/ocr-cache,OCR_LANG_PATH=/app/ocr-lang,APP_MATERIALS_DIR=/app/materials,AUTH_REQUIRE_SIGN_IN=true,AUTH_SCHOOL_DOMAINS=pochiu.edu.hk,STUDENT_ROSTER_ENABLED=true,STUDENT_ROSTER_ENFORCE=true,STUDENT_ROSTER_SOURCE=sheets-api,STUDENT_ROSTER_SHEET_ID=${_ROSTER_SHEET_ID},STUDENT_ROSTER_SHEET_NAME=${_ROSTER_SHEET_NAME},STUDENT_ROSTER_COLUMN_NAME=${_ROSTER_COLUMN_NAME},STUDENT_ROSTER_CLASS_PREFIXES=${_ROSTER_CLASS_PREFIXES},DEMO_AUTO_PUBLISH_QUESTIONS=false,BACKUP_BUCKET=$${BACKUP_BUCKET},BACKUP_PREFIX=$${BACKUP_PREFIX},BACKUP_INTERVAL_SECONDS=$${BACKUP_INTERVAL_SECONDS},BACKUP_MIN_SPACING_SECONDS=$${BACKUP_MIN_SPACING_SECONDS},BACKUP_RESTORE_ON_START=true,BACKUP_PREFER_CLOUD=true" \
+          --set-secrets="AUTH_SECRET=${_AUTH_SECRET}:latest,DEEPSEEK_API_KEY=${_LLM_SECRET}:latest,STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=${_ROSTER_SECRET}:latest,GOOGLE_CLIENT_ID=${_GOOGLE_CLIENT_ID_SECRET}:latest,GOOGLE_CLIENT_SECRET=${_GOOGLE_CLIENT_SECRET_SECRET}:latest"
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:$BUILD_ID
+
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -1,0 +1,190 @@
+/**
+ * 生成題目的提示詞。
+ * 重點：只可使用提供的教材段落、必須切合香港歷史科課程要求（課題脈絡、歷史概念及技能、用語）、
+ * 必須以 JSON 回應、不得在題目中出現「根據教材」等提示。
+ */
+import {
+  DIFFICULTY_LABELS,
+  HISTORY_CONCEPTS,
+  HISTORY_SKILLS,
+  QUESTION_TYPE_LABELS,
+  type Difficulty,
+  type QuestionType,
+} from "../../lib/types";
+import type { QuestionGenerationInput } from "./provider";
+import type { AnswerGradingInput } from "./grader";
+import { historyLearningGoalsText } from "../seed/curriculum-focus";
+
+export const SYSTEM_PROMPT = `你是一位香港中學歷史科教師，熟悉教育局《歷史科課程指引》（中一至中三），負責按教材內容設計練習題。
+你必須嚴格遵守以下規則：
+1. 只可使用使用者提供的「教材段落」內容出題，不得加入教材沒有交代的歷史事實、人物、事件、地名、數字或年份。
+   題目、參考答案及解釋中出現的年份，必須與教材段落的寫法一致；教材沒有提及的年份一律不可出現。
+2. 如果教材段落不足以支持一條題目或答案，就不要出該題；寧可少出，不可猜測。
+3. 學生作答時**不會看到教材**：題目、選項及參考答案都不可提及「教材」、「課本」、「上文」、「文件」、「標題」或「課題內容」，也不可要求學生根據教材作答（例如「根據教材」、「綜合教材所述」、「教材中提及的主題」）。若題目需要提供資料，必須把該段資料完整寫在題目文字之內。
+4. 每條題目都必須指出答案的教材依據：
+   - sourceBlockIds：填寫你實際引用的教材段落編號。
+   - sourceExcerpt：必須是「同一段落內連續、逐字抄錄」的原文（10 至 120 字）。
+     不可合併多個段落、不可改寫或概括、不可只寫關鍵詞或答案本身。
+     抄錄前請先確認該段文字與你提供的內容完全一致；如無法逐字抄錄，請改出另一條題目。
+5. 題目必須切合使用者指出的年級、課程主題、課題及分節，不可離題，亦不可考核課程以外的內容。
+   課程在學習重點中明確表示「不須強記」的內容不可拿來考核（例如課程只要求介紹 1 至 2 位代表人物時，
+   不可考核其他人名或作品名稱；課程不要求背誦事件細節時，不可考核繁瑣的過程或年份）。
+6. 題目要環繞香港歷史科課程重視的歷史概念：${HISTORY_CONCEPTS.join("、")}。
+   因應難度考核相應的歷史技能：${HISTORY_SKILLS.join("；")}。
+   基礎題以辨認關鍵字詞及史實為主；進階題要理解整句意思；挑戰題要分析、比較、綜合，或考核時序、因果、轉變與延續。不可把不屬於該難度的要求當作基礎題，亦不可只要求背誦。
+   以下是教育局《歷史科學習目標》的精簡摘要，題目的要求不可超出這個範圍：
+${historyLearningGoalsText()}
+7. 用語必須符合香港歷史科的書面語：使用繁體中文（香港用法），專有名詞、人名、地名、條約及著作名稱、年份寫法一律沿用教材的寫法，不可自行翻譯、簡化或改寫，不可混用簡體字。
+   提問用語要符合香港歷史科的慣常用法（例如「試說明」、「試比較」、「試舉例說明」、「何以見得」、「哪一項最能解釋」），不可使用課程以外的考核形式或簡體字題目。
+8. **所有欄位（題目、選項、答案、解釋、知識點、得分要點）都必須是純文字**：
+   - 不可使用 Markdown 或任何標題符號（例如 #、##、**、__、-、*、\`、>）。
+   - 不可在句子中間或開頭加上「#」、「##」、「**」等記號，也不可以自行加上題號（例如「1.」「(1)」）或「題目：」「答案：」等標籤。
+   - 不要用項目符號排版；多個要點請用完整句子表達，或在 gradingPoints 陣列中分開列出。
+9. 選擇題要有 4 個選項，錯誤選項必須是真實存在、同類而且看似合理的歷史人物／事件／概念，容易與正確答案混淆，不可明顯荒謬，也不可虛構不存在的人物、事件、年份或條約。
+10. 選擇題必須只有一個明確的正確答案，而且該答案要能以教材段落支持；不可出多於一個正確答案或模稜兩可的題目。
+11. 短答題必須提供 correctAnswer（一至兩句參考答案，不可留空）及 gradingPoints（得分要點），每點用一句完整、通順的中文短句表達，不要加編號或標題符號；不要自稱進行正式 HKDSE 評分。
+12. 只輸出 JSON，不要輸出任何解釋文字或 Markdown 代碼標記。`;
+
+function formatUnits(input: QuestionGenerationInput): string {
+  return input.materialUnits
+    .map((unit, index) => `[${index + 1}] 段落編號：${unit.blockId}\n位置：${unit.sourceLocation}\n內容：${unit.text}`)
+    .join("\n\n");
+}
+
+function formatTypeDistribution(types: QuestionType[]): string {
+  return types.map((type) => QUESTION_TYPE_LABELS[type]).join("、");
+}
+
+/**
+ * 各難度對題目的要求。
+ * 讓 AI 出題的難度亦有分層（不只是標籤）：基礎考辨認、進階考理解、挑戰考分析綜合。
+ */
+const DIFFICULTY_EXPECTATIONS: Record<Difficulty, string> = {
+  basic:
+    "直接辨認教材的關鍵字詞或史實（詞語、年份、人物、事件名稱），答案可在教材同一句之中找到。",
+  advanced:
+    "需要理解教材的說明：選擇題宜考核「哪一項是……的說明／特點／影響」，須讀懂整句意思，不能只靠字詞配對。",
+  challenge:
+    "需要分析、比較或綜合多於一項教材資料，或考核時序、因果關係及轉變與延續；選擇題的錯誤選項必須與正確答案同類而且容易混淆。",
+};
+
+export function buildUserPrompt(input: QuestionGenerationInput): string {
+  const courseContext = [
+    input.levelLabel ? `年級：${input.levelLabel}` : null,
+    input.themeText ? `課程主題：${input.themeText}` : null,
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
+
+  const learningFocus = input.learningFocusText
+    ? `
+課程學習重點（教育局《預期學習內容》精簡摘要）：
+${input.learningFocusText}
+注意：學習重點只說明課程的範圍及考核要求，不是史實依據；
+史實一律以「教材段落」為準，學習重點提到的內容若教材沒有交代，就不可以出題。`
+    : "";
+
+  return `${courseContext ? `${courseContext}\n` : ""}課題：${input.topicTitle}
+分節：${input.sectionTitle}
+難度：${DIFFICULTY_LABELS[input.difficulty]}
+難度要求：${DIFFICULTY_EXPECTATIONS[input.difficulty]}
+需要題型：${formatTypeDistribution(input.questionTypes)}
+題目數量：${input.count} 題（盡量平均分配於上述題型）
+${learningFocus}
+教材段落：
+${formatUnits(input)}
+
+請以下列 JSON 格式回應（questions 陣列內每題都要有全部欄位）：
+{
+  "questions": [
+    {
+      "questionType": "mc | fill | short",
+      "difficulty": "basic | advanced | challenge",
+      "question": "題目文字",
+      "options": ["選項文字", "選項文字", "選項文字", "選項文字"],
+      "correctAnswerIndex": 0,
+      "correctAnswer": "標準答案（選擇題須與其中一個選項完全相同）",
+      "explanation": "解釋",
+      "knowledgePoint": "知識點",
+      "sourceExcerpt": "逐字取自教材段落的原文節錄",
+      "sourceBlockIds": ["段落編號"],
+      "gradingPoints": ["短答題得分要點"]
+    }
+  ]
+}
+
+注意：
+- 所有文字欄位（question、options、correctAnswer、explanation、knowledgePoint、gradingPoints）都必須是純文字，不可出現 #、##、**、-、*、> 等 Markdown 或標題符號，也不可加題號。
+- 題目及選項不可提及「教材」、「課本」、「上文」、「標題」或「課題內容」等（學生作答時不會看到教材）；如需提供資料，請把資料完整寫在題目之內。
+- 題目、參考答案、解釋及得分要點中出現的年份，必須與教材段落的寫法一致；教材沒有交代的年份、人物、事件或條約不可出現（系統會逐題核對，不符者會被丟棄）。
+- 題目、參考答案、解釋及得分要點中出現的人名、條約／文件及著作名稱，同樣必須見於教材段落（系統會核對，未見於教材者會標示警告，交由教師核對，不會自動丟棄）。
+- 選擇題提供 3 至 4 個選項，options 及 correctAnswerIndex 必須一致。
+- 選擇題的正確答案不可每題都放在第一個選項；請把正確答案隨機放在不同位置（A、B、C、D），各位置的分佈要大致平均。
+- 選擇題的錯誤選項必須是真實存在、同類而且容易被混淆的歷史人物／事件／概念，不可虛構不存在的人物、事件或年份。
+- sourceExcerpt 必須逐字、連續地抄自單一教材段落（10 至 120 字），否則該題會被視為沒有教材依據而捨棄。
+- 填充題的 correctAnswer 為需要填寫的字詞；選項欄位留空陣列。
+- 短答題的 options 留空陣列、correctAnswerIndex 填 null，**但 correctAnswer 必須填寫一至兩句「參考答案」**（不可留空），並提供 3 至 5 個 gradingPoints。
+- 用語須符合香港歷史科的書面語（繁體中文），專有名詞、人名、地名及年份沿用教材寫法。`;
+}
+
+/* ------------------------------------------------------------------ */
+/* AI 語意批改                                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 語意批改的系統提示。
+ * 重點：以「意思是否達到要求」判斷，不可因為用字、次序或補充說明而判錯，
+ * 亦不可改變標準答案或加入教材以外的新史實。
+ */
+export const GRADING_SYSTEM_PROMPT = `你是一位香港中學歷史科教師，負責以「語意」判斷學生的答案。
+你必須嚴格遵守以下規則：
+1. 只判斷學生的答案在意思上是否達到題目的要求，不要因為用字、詞序、繁簡體、標點、
+   同義詞、簡稱、俗稱或補充說明而判定錯誤。
+2. 學生的答案比參考答案更詳細，只要意思正確，即當作正確（verdict = "correct"）。
+3. 學生的答案若只達到部分要求（例如短答題只達到部分得分要點），
+   用 verdict = "partial"；完全未達到要求（包括答非所問、明顯錯誤）才用 "incorrect"。
+   不要因為語文表達欠佳、錯別字（意思仍可辨識）或句子不完整而判為 incorrect。
+4. 只根據題目、參考答案、得分要點及解釋判斷，不可加入新的歷史事實，也不可改寫參考答案。
+   回饋（feedback）同樣不可加入教材及參考答案以外的史實，以免向學生傳遞未經核實的歷史資訊。
+5. 短答題要逐項檢查「得分要點」是否已達到，並把已達到的要點索引（由 0 起計）填在 hitPointIndexes。
+6. feedback 用一至三句繁體中文，具體指出答案已達到／未達到甚麼，語氣要鼓勵及具體。
+7. 只輸出 JSON，不要輸出任何解釋文字或 Markdown 代碼標記，也不要在文字中使用 #、* 等符號。`;
+
+export function buildGradingPrompt(input: AnswerGradingInput): string {
+  const pointLines =
+    input.questionType === "short" && input.gradingPoints.length > 0
+      ? input.gradingPoints
+          .map((point, index) => `[${index}] ${point}`)
+          .join("\n")
+      : "（這題是填充題，沒有得分要點）";
+
+  const accepted =
+    input.acceptedAnswers.length > 0
+      ? `\n其他可接受寫法：${input.acceptedAnswers.join("、")}`
+      : "";
+
+  return `課題：${input.topicTitle}
+題型：${input.questionType === "short" ? "短答題" : "填充題"}
+題目：${input.question}
+標準答案：${input.referenceAnswer}${accepted}
+知識點：${input.knowledgePoint}
+解釋：${input.explanation}
+
+得分要點（索引由 0 起計）：
+${pointLines}
+
+學生的答案：
+${input.studentAnswer}
+
+請以語意判斷學生的答案，並以下列 JSON 格式回應：
+{
+  "verdict": "correct | partial | incorrect",
+  "hitPointIndexes": [0, 2],
+  "feedback": "一至三句繁體中文回饋"
+}
+
+注意：
+- hitPointIndexes 只填寫學生答案中「已達到」的得分要點索引；填充題請填空陣列。
+- 意思相同即可當作正確，不要因為用字不同而判錯。
+- 只輸出 JSON。`;
+}

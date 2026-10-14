@@ -1,0 +1,186 @@
+import { describe, expect, it } from "vitest";
+
+import { generateQuestionsFromMaterial } from "@/server/llm/mock-provider";
+import { validateLlmQuestions } from "@/server/llm/validation";
+import { normalizeForMatch } from "@/server/materials/text-utils";
+import type { MaterialUnit } from "@/server/llm/provider";
+
+const UNITS: MaterialUnit[] = [
+  {
+    blockId: "blk_1",
+    sourceLocation: "教材 · 第 1 段",
+    text: "家庭手工業制度：在家中以人手及簡單工具進行生產，屬於小規模生產。",
+  },
+  {
+    blockId: "blk_2",
+    sourceLocation: "教材 · 第 2 段",
+    text: "工廠制度：工人在工廠內操作機器進行生產，屬於大規模生產。",
+  },
+  {
+    blockId: "blk_3",
+    sourceLocation: "教材 · 第 3 段",
+    text: "十八世紀，英國人瓦特改良了「蒸汽機」，使蒸汽成為穩定可靠的新能源。",
+  },
+  {
+    blockId: "blk_4",
+    sourceLocation: "教材 · 第 4 段",
+    text: "珍妮紡紗機的發明（1764年）令紡織業的生產效率大幅提升。",
+  },
+  {
+    blockId: "blk_5",
+    sourceLocation: "教材 · 第 5 段",
+    text: "城市化與工業化密切相關，工業革命期間城鎮人口持續上升。",
+  },
+  {
+    blockId: "blk_6",
+    sourceLocation: "教材 · 第 6 段",
+    text: "權力分立：政府權力分為行政、立法與司法權，並由不同機關行使。",
+  },
+];
+
+function baseInput(overrides: Partial<Parameters<typeof generateQuestionsFromMaterial>[0]> = {}) {
+  return {
+    topicTitle: "課題5：近代歐洲的興起",
+    sectionTitle: "工業革命",
+    questionTypes: ["mc", "fill", "short"] as ("mc" | "fill" | "short")[],
+    difficulty: "basic" as const,
+    count: 6,
+    materialUnits: UNITS,
+    ...overrides,
+  };
+}
+
+describe("本地示範生成（mock provider）", () => {
+  it("會產生題目，且每題的教材節錄都真的出現在教材之中", () => {
+    const questions = generateQuestionsFromMaterial(baseInput());
+    expect(questions.length).toBeGreaterThan(0);
+
+    const allText = UNITS.map((unit) => normalizeForMatch(unit.text)).join("|");
+    for (const question of questions) {
+      expect(allText).toContain(normalizeForMatch(question.sourceExcerpt));
+      expect(question.sourceBlockIds.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("選擇題的標準答案必定是選項之一", () => {
+    const questions = generateQuestionsFromMaterial(baseInput({ questionTypes: ["mc"] }));
+    const mcQuestions = questions.filter((question) => question.questionType === "mc");
+    expect(mcQuestions.length).toBeGreaterThan(0);
+    for (const question of mcQuestions) {
+      expect(question.options).toContain(question.correctAnswer);
+      expect(question.options.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("短答題一定附有得分要點", () => {
+    const questions = generateQuestionsFromMaterial(baseInput({ questionTypes: ["short"] }));
+    const shortQuestions = questions.filter((question) => question.questionType === "short");
+    expect(shortQuestions.length).toBeGreaterThan(0);
+    for (const question of shortQuestions) {
+      expect(question.gradingPoints.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("題目文字不會出現「根據教材」等提示語", () => {
+    const questions = generateQuestionsFromMaterial(baseInput());
+    for (const question of questions) {
+      expect(question.question).not.toMatch(/根據教材|根據上文|根據上載文件/);
+    }
+  });
+
+  it("遵守題目數量上限", () => {
+    const questions = generateQuestionsFromMaterial(baseInput({ count: 2 }));
+    expect(questions.length).toBeLessThanOrEqual(2);
+  });
+
+  it("不會用寬表格的一整列出題（欄位並列無法問得通）", () => {
+    const tableRow: MaterialUnit = {
+      blockId: "blk_table",
+      sourceLocation: "教材 · 第 7 段（表格）（表格第 2 列）",
+      text: "能源 ｜ 人力、畜力、風力、水力與煤炭為主要能源 ｜ 大量燃燒煤炭，並廣泛使用蒸汽及電力",
+    };
+    const questions = generateQuestionsFromMaterial(
+      baseInput({ materialUnits: [tableRow, ...UNITS], count: 3 }),
+    );
+
+    expect(questions.length).toBeGreaterThan(0);
+    expect(questions.every((question) => question.sourceBlockIds[0] !== "blk_table")).toBe(true);
+  });
+
+  it("生成的題目全部通過驗證（可轉成內部題目格式）", () => {
+    const questions = generateQuestionsFromMaterial(baseInput());
+    const result = validateLlmQuestions(
+      { questions },
+      {
+        topicId: "topic-5",
+        sectionId: "topic-5-industrial",
+        questionTypes: ["mc", "fill", "short"],
+        difficulty: "basic",
+        origin: "material-mock",
+        units: UNITS,
+        now: "2026-01-01T00:00:00.000Z",
+        idFor: (index) => `mock-${index}`,
+      },
+    );
+    expect(result.discardedReasons).toEqual([]);
+    expect(result.accepted).toHaveLength(questions.length);
+  });
+
+  it("不同難度採用不同的出題規則", () => {
+    const units: MaterialUnit[] = [
+      {
+        blockId: "d1",
+        sourceLocation: "教材 · 第 1 段",
+        text: "家庭手工業制度：在家中以人手及簡單工具進行生產，屬於小規模生產。",
+      },
+      {
+        blockId: "d2",
+        sourceLocation: "教材 · 第 2 段",
+        text: "工廠制度：工人在工廠內操作機器進行生產，屬於大規模生產。",
+      },
+      {
+        blockId: "d3",
+        sourceLocation: "教材 · 第 3 段",
+        text: "權力分立：政府權力分為行政、立法與司法權，並由不同機關行使。",
+      },
+      {
+        blockId: "y1",
+        sourceLocation: "教材 · 第 4 段",
+        text: "1764年，珍妮紡紗機的發明令紡織業的生產效率大幅提升。",
+      },
+      {
+        blockId: "y2",
+        sourceLocation: "教材 · 第 5 段",
+        text: "1785年，英國人瓦特改良蒸汽機。",
+      },
+      {
+        blockId: "y3",
+        sourceLocation: "教材 · 第 6 段",
+        text: "1840年，英國向中國發動鴉片戰爭。",
+      },
+    ];
+
+    const build = (
+      difficulty: "basic" | "advanced" | "challenge",
+      questionTypes: ("mc" | "fill" | "short")[],
+    ) =>
+      generateQuestionsFromMaterial({
+        ...baseInput(),
+        difficulty,
+        questionTypes,
+        count: 1,
+        materialUnits: units,
+      })[0];
+
+    // 基礎：直接辨認教材的關鍵詞語
+    expect(build("basic", ["mc"]).question).toContain("是指以下哪一個詞語？");
+    expect(build("basic", ["fill"]).correctAnswer).toBe("家庭手工業制度");
+
+    // 進階：選出詞語的說明
+    expect(build("advanced", ["mc"]).question).toContain("的說明？");
+
+    // 挑戰：以年份（時序）挖空為主
+    expect(build("challenge", ["mc"]).question).toContain("＿＿＿");
+    expect(build("challenge", ["fill"]).correctAnswer).toMatch(/\d{3,4}年/);
+  });
+});

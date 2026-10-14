@@ -1,0 +1,391 @@
+/**
+ * 資料表結構。以簡單、順序執行的 migration 清單管理，
+ * 每次啟動時會套用尚未執行的項目。
+ */
+import type { DatabaseSync } from "node:sqlite";
+
+interface Migration {
+  id: string;
+  statements: string[];
+}
+
+const MIGRATIONS: Migration[] = [
+  {
+    id: "0001-initial-schema",
+    statements: [
+      `CREATE TABLE IF NOT EXISTS learners (
+        id TEXT PRIMARY KEY,
+        created_at TEXT NOT NULL
+      )`,
+      `CREATE TABLE IF NOT EXISTS topics (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        published INTEGER NOT NULL DEFAULT 0,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`,
+      `CREATE TABLE IF NOT EXISTS sections (
+        id TEXT PRIMARY KEY,
+        topic_id TEXT NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+        parent_id TEXT REFERENCES sections(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        summary TEXT NOT NULL DEFAULT '',
+        match_keywords_json TEXT NOT NULL DEFAULT '[]',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_sections_topic ON sections(topic_id, sort_order)`,
+      `CREATE TABLE IF NOT EXISTS material_documents (
+        id TEXT PRIMARY KEY,
+        file_name TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        mime_type TEXT NOT NULL DEFAULT '',
+        size_bytes INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL,
+        error_message TEXT,
+        limitation_note TEXT,
+        block_count INTEGER NOT NULL DEFAULT 0,
+        image_count INTEGER NOT NULL DEFAULT 0,
+        topic_id TEXT REFERENCES topics(id) ON DELETE SET NULL,
+        source_note TEXT,
+        created_at TEXT NOT NULL
+      )`,
+      `CREATE TABLE IF NOT EXISTS material_blocks (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL REFERENCES material_documents(id) ON DELETE CASCADE,
+        topic_id TEXT REFERENCES topics(id) ON DELETE SET NULL,
+        section_id TEXT REFERENCES sections(id) ON DELETE SET NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        type TEXT NOT NULL,
+        level INTEGER,
+        text TEXT NOT NULL DEFAULT '',
+        table_json TEXT,
+        source_location TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_blocks_document ON material_blocks(document_id, sort_order)`,
+      `CREATE INDEX IF NOT EXISTS idx_blocks_section ON material_blocks(section_id)`,
+      `CREATE TABLE IF NOT EXISTS questions (
+        id TEXT PRIMARY KEY,
+        topic_id TEXT NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+        section_id TEXT NOT NULL REFERENCES sections(id) ON DELETE CASCADE,
+        question_type TEXT NOT NULL,
+        difficulty TEXT NOT NULL,
+        question TEXT NOT NULL,
+        options_json TEXT NOT NULL DEFAULT '[]',
+        correct_answer TEXT NOT NULL,
+        accepted_answers_json TEXT NOT NULL DEFAULT '[]',
+        explanation TEXT NOT NULL,
+        knowledge_point TEXT NOT NULL,
+        source_excerpt TEXT NOT NULL,
+        source_location TEXT NOT NULL,
+        source_block_ids_json TEXT NOT NULL DEFAULT '[]',
+        grading_points_json TEXT NOT NULL DEFAULT '[]',
+        origin TEXT NOT NULL,
+        status TEXT NOT NULL,
+        source_verified INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_questions_section ON questions(topic_id, section_id, status)`,
+      `CREATE TABLE IF NOT EXISTS practice_sessions (
+        id TEXT PRIMARY KEY,
+        learner_id TEXT NOT NULL,
+        topic_id TEXT NOT NULL,
+        section_ids_json TEXT NOT NULL DEFAULT '[]',
+        question_types_json TEXT NOT NULL DEFAULT '[]',
+        difficulty TEXT NOT NULL,
+        question_count INTEGER NOT NULL DEFAULT 0,
+        mode TEXT NOT NULL,
+        source_session_id TEXT,
+        origin TEXT NOT NULL,
+        question_snapshot_json TEXT NOT NULL DEFAULT '[]',
+        notice TEXT,
+        created_at TEXT NOT NULL,
+        completed_at TEXT
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_sessions_learner ON practice_sessions(learner_id, topic_id)`,
+      `CREATE TABLE IF NOT EXISTS attempts (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL REFERENCES practice_sessions(id) ON DELETE CASCADE,
+        question_id TEXT NOT NULL,
+        learner_id TEXT NOT NULL,
+        answer TEXT NOT NULL DEFAULT '',
+        auto_graded INTEGER NOT NULL DEFAULT 0,
+        is_correct INTEGER,
+        self_assessment TEXT,
+        answered_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_attempts_session ON attempts(session_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_attempts_learner ON attempts(learner_id, question_id)`,
+    ],
+  },
+  {
+    id: "0002-curriculum-levels-and-ocr",
+    statements: [
+      // 課程年級（0 教師參考、1 中一、2 中二、3 中三）及教育局課題編號
+      `ALTER TABLE topics ADD COLUMN level INTEGER NOT NULL DEFAULT 1`,
+      `ALTER TABLE topics ADD COLUMN topic_number INTEGER`,
+      // OCR（光學文字辨識）狀態及統計
+      `ALTER TABLE material_documents ADD COLUMN ocr_status TEXT NOT NULL DEFAULT 'not-run'`,
+      `ALTER TABLE material_documents ADD COLUMN ocr_provider TEXT`,
+      `ALTER TABLE material_documents ADD COLUMN ocr_message TEXT`,
+      `ALTER TABLE material_documents ADD COLUMN ocr_recognized_count INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE material_documents ADD COLUMN ocr_skipped_count INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE material_documents ADD COLUMN ocr_updated_at TEXT`,
+      // 段落取得方式（native = 原文擷取、ocr = 圖片文字辨識）
+      `ALTER TABLE material_blocks ADD COLUMN extraction_method TEXT NOT NULL DEFAULT 'native'`,
+      `ALTER TABLE material_blocks ADD COLUMN ocr_source TEXT`,
+      // 原始檔案在本機的存放位置（OCR 需要重新讀取原始檔以取得內嵌圖片）
+      `ALTER TABLE material_documents ADD COLUMN stored_path TEXT`,
+      `CREATE INDEX IF NOT EXISTS idx_blocks_extraction ON material_blocks(document_id, extraction_method)`,
+      `CREATE INDEX IF NOT EXISTS idx_topics_level ON topics(level, sort_order)`,
+    ],
+  },
+  {
+    id: "0003-attempt-ai-grading",
+    statements: [
+      // AI 語意批改結果（填充題／短答題）；未使用 AI 時為 NULL
+      `ALTER TABLE attempts ADD COLUMN ai_grading_json TEXT`,
+      // 只抽出判斷結果，方便統計及查詢需要重溫的題目
+      `ALTER TABLE attempts ADD COLUMN ai_verdict TEXT`,
+    ],
+  },
+  {
+    id: "0004-question-quality-warnings",
+    statements: [
+      // 教師查核用的品質警告（例如題目出現教材未提及的人名或條約名），以 JSON 陣列儲存
+      `ALTER TABLE questions ADD COLUMN quality_warnings_json TEXT`,
+    ],
+  },
+  {
+    id: "0005-reports-and-observability",
+    statements: [
+      // 學生回報題目（供教師覆核；不會自動刪除或停用題目）
+      `CREATE TABLE IF NOT EXISTS question_reports (
+        id TEXT PRIMARY KEY,
+        question_id TEXT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+        session_id TEXT REFERENCES practice_sessions(id) ON DELETE SET NULL,
+        learner_id TEXT NOT NULL,
+        topic_id TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        detail TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'open',
+        created_at TEXT NOT NULL,
+        resolved_at TEXT,
+        resolved_by TEXT
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_reports_question ON question_reports(question_id, status)`,
+      `CREATE INDEX IF NOT EXISTS idx_reports_status ON question_reports(status, created_at)`,
+      // AI 語意批改監控（成功率、是否回退、回應時間、錯誤類別）
+      `CREATE TABLE IF NOT EXISTS ai_grading_logs (
+        id TEXT PRIMARY KEY,
+        question_id TEXT,
+        session_id TEXT,
+        question_type TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        success INTEGER NOT NULL DEFAULT 0,
+        fell_back INTEGER NOT NULL DEFAULT 0,
+        duration_ms INTEGER NOT NULL DEFAULT 0,
+        error_type TEXT,
+        created_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_grading_logs_created ON ai_grading_logs(created_at)`,
+      // LLM 用量及延遲（即時出題／題庫生成／AI 批改）
+      `CREATE TABLE IF NOT EXISTS llm_usage_logs (
+        id TEXT PRIMARY KEY,
+        request_type TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        model TEXT,
+        topic_id TEXT,
+        success INTEGER NOT NULL DEFAULT 0,
+        duration_ms INTEGER NOT NULL DEFAULT 0,
+        input_tokens INTEGER,
+        output_tokens INTEGER,
+        error_type TEXT,
+        created_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_llm_usage_created ON llm_usage_logs(created_at)`,
+    ],
+  },
+  {
+    id: "0006-reports-for-snapshot-questions",
+    statements: [
+      // AI 即時生成的題目只存在於練習快照，不會寫入題庫，因此回報的 question_id
+      // 不能有指向 questions(id) 的外鍵（否則學生無法回報最常遇到的即時生成題目）。
+      // 題目是否存在一律由服務層核對（題庫或該次練習的快照）。
+      `CREATE TABLE question_reports_v2 (
+        id TEXT PRIMARY KEY,
+        question_id TEXT NOT NULL,
+        session_id TEXT REFERENCES practice_sessions(id) ON DELETE SET NULL,
+        learner_id TEXT NOT NULL,
+        topic_id TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        detail TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'open',
+        created_at TEXT NOT NULL,
+        resolved_at TEXT,
+        resolved_by TEXT
+      )`,
+      `INSERT INTO question_reports_v2
+        (id, question_id, session_id, learner_id, topic_id, reason, detail, status, created_at, resolved_at, resolved_by)
+       SELECT id, question_id, session_id, learner_id, topic_id, reason, detail, status, created_at, resolved_at, resolved_by
+       FROM question_reports`,
+      `DROP TABLE question_reports`,
+      `ALTER TABLE question_reports_v2 RENAME TO question_reports`,
+      `CREATE INDEX IF NOT EXISTS idx_reports_question ON question_reports(question_id, status)`,
+      `CREATE INDEX IF NOT EXISTS idx_reports_status ON question_reports(status, created_at)`,
+    ],
+  },
+  {
+    id: "0007-remove-non-assessed-sections",
+    statements: [
+      // 課程只考核「黃河、長江流域文明」，新月沃土／尼羅河流域／印度河流域文明
+      // 不會寫入資料庫，亦不可作為題材；這裡清除舊資料庫已存在的相關段落及題目。
+      `DELETE FROM questions WHERE section_id IN (
+         'topic-1-four-civilisations-mesopotamia',
+         'topic-1-four-civilisations-nile',
+         'topic-1-four-civilisations-indus'
+       )`,
+      `DELETE FROM material_blocks WHERE section_id IN (
+         'topic-1-four-civilisations-mesopotamia',
+         'topic-1-four-civilisations-nile',
+         'topic-1-four-civilisations-indus'
+       )`,
+      `DELETE FROM sections WHERE id IN (
+         'topic-1-four-civilisations-mesopotamia',
+         'topic-1-four-civilisations-nile',
+         'topic-1-four-civilisations-indus'
+       )`,
+      // 舊教材中提及這些文明的段落（例如四大古代文明的導言）亦一併移除
+      `DELETE FROM material_blocks
+        WHERE topic_id = 'topic-1'
+          AND (
+            text LIKE '%新月沃土%'
+            OR text LIKE '%尼羅河%'
+            OR text LIKE '%印度河%'
+          )`,
+      `DELETE FROM questions
+        WHERE topic_id = 'topic-1'
+          AND (
+            question LIKE '%新月沃土%'
+            OR question LIKE '%尼羅河%'
+            OR question LIKE '%印度河%'
+          )`,
+    ],
+  },
+  {
+    id: "0008-topic1-case-study-egypt",
+    statements: [
+      // 校本課程改以「古埃及文明（尼羅河流域）」作個案研習。
+      // 先建立新的分節（沿用原分節的排序位置），令舊資料庫亦有此分節；
+      // 課程資料庫尚未建立課題時（全新資料庫）則留給 seedCurriculum 建立。
+      `INSERT INTO sections
+        (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+       SELECT 'topic-1-four-civilisations-egypt',
+              'topic-1',
+              'topic-1-four-civilisations',
+              '古埃及文明（尼羅河流域）',
+              '位置、民族、衰落及文明特徵。',
+              '["尼羅河流域文明","古代埃及文明","古埃及文明","古埃及","尼羅河"]',
+              COALESCE((SELECT sort_order FROM sections WHERE id = 'topic-1-four-civilisations-yellow'), 0),
+              strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+              strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE EXISTS (SELECT 1 FROM topics WHERE id = 'topic-1')
+         AND EXISTS (SELECT 1 FROM sections WHERE id = 'topic-1-four-civilisations')
+         AND NOT EXISTS (SELECT 1 FROM sections WHERE id = 'topic-1-four-civilisations-egypt')`,
+      // 其餘三個不再考核的文明，以及原本的黃河、長江流域文明分節，
+      // 連同其所屬段落及題目一併移除。
+      `DELETE FROM questions WHERE section_id IN (
+         'topic-1-four-civilisations-mesopotamia',
+         'topic-1-four-civilisations-nile',
+         'topic-1-four-civilisations-indus',
+         'topic-1-four-civilisations-yellow'
+       )`,
+      `DELETE FROM material_blocks WHERE section_id IN (
+         'topic-1-four-civilisations-mesopotamia',
+         'topic-1-four-civilisations-nile',
+         'topic-1-four-civilisations-indus',
+         'topic-1-four-civilisations-yellow'
+       )`,
+      `DELETE FROM sections WHERE id IN (
+         'topic-1-four-civilisations-mesopotamia',
+         'topic-1-four-civilisations-nile',
+         'topic-1-four-civilisations-indus',
+         'topic-1-four-civilisations-yellow'
+       )`,
+      // 舊教材中提及這些文明的段落（例如四大古代文明的導言及比較表）亦一併移除；
+      // 表格內容放在 table_json，因此必須同時檢查。
+      `DELETE FROM material_blocks
+        WHERE topic_id = 'topic-1'
+          AND (
+            text LIKE '%新月沃土%'
+            OR text LIKE '%印度河%'
+            OR text LIKE '%幼發拉底%'
+            OR text LIKE '%底格里斯%'
+            OR text LIKE '%蘇美爾%'
+            OR text LIKE '%巴比倫%'
+            OR text LIKE '%哈拉巴%'
+            OR text LIKE '%摩亨佐%'
+            OR text LIKE '%吾珥%'
+            OR text LIKE '%塔廟%'
+            OR text LIKE '%黃河%'
+            OR text LIKE '%長江%'
+            OR text LIKE '%中華文明%'
+            OR text LIKE '%甲骨文%'
+            OR table_json LIKE '%新月沃土%'
+            OR table_json LIKE '%印度河%'
+            OR table_json LIKE '%黃河%'
+            OR table_json LIKE '%長江%'
+            OR table_json LIKE '%中華文明%'
+          )`,
+      `DELETE FROM questions
+        WHERE topic_id = 'topic-1'
+          AND (
+            question LIKE '%新月沃土%'
+            OR question LIKE '%印度河%'
+            OR question LIKE '%蘇美爾%'
+            OR question LIKE '%巴比倫%'
+            OR question LIKE '%黃河%'
+            OR question LIKE '%長江%'
+            OR question LIKE '%中華文明%'
+            OR question LIKE '%甲骨文%'
+            OR explanation LIKE '%新月沃土%'
+            OR explanation LIKE '%印度河%'
+            OR explanation LIKE '%黃河%'
+            OR explanation LIKE '%長江%'
+            OR explanation LIKE '%中華文明%'
+          )`,
+    ],
+  },
+];
+
+export function runMigrations(db: DatabaseSync): void {
+  db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
+    id TEXT PRIMARY KEY,
+    applied_at TEXT NOT NULL
+  )`);
+
+  const appliedRows = db.prepare("SELECT id FROM schema_migrations").all() as { id: string }[];
+  const applied = new Set(appliedRows.map((row) => row.id));
+
+  for (const migration of MIGRATIONS) {
+    if (applied.has(migration.id)) continue;
+    db.exec("BEGIN");
+    try {
+      for (const statement of migration.statements) {
+        db.exec(statement);
+      }
+      db.prepare("INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)").run(
+        migration.id,
+        new Date().toISOString(),
+      );
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+}

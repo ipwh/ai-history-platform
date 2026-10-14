@@ -1,0 +1,219 @@
+/**
+ * 設定診斷：集中檢查環境變數是否完整、是否適合部署到 Google Cloud Run。
+ *
+ * 只回報「問題」與「提示」，不會洩漏任何憑證內容（不回傳金鑰、密碼或完整路徑），
+ * 供管理員端系統狀態頁及 /api/admin/system/health 使用。
+ */
+import fs from "node:fs";
+import path from "node:path";
+
+import { getServerConfig } from "./config";
+
+export interface ConfigIssue {
+  /** error = 功能會受影響；warning = 可以運作但需注意；info = 提示 */
+  level: "error" | "warning" | "info";
+  code: string;
+  message: string;
+}
+
+export interface DeploymentInfo {
+  /** local = 本機開發；cloud-run = 執行於 Cloud Run（偵測 K_SERVICE）；other = 其他環境 */
+  platform: "local" | "cloud-run" | "other";
+  /** 資料庫或上載檔案是否位於容器／暫時性檔案系統 */
+  ephemeralStorage: boolean;
+  notes: string[];
+}
+
+/** 應用程式版本（讀取 package.json，失敗時回報 unknown） */
+export function appVersion(): string {
+  try {
+    const candidates = [
+      path.join(process.cwd(), "package.json"),
+      path.join(process.cwd(), "..", "package.json"),
+    ];
+    for (const candidate of candidates) {
+      if (!fs.existsSync(candidate)) continue;
+      const parsed = JSON.parse(fs.readFileSync(candidate, "utf8")) as { version?: unknown };
+      if (typeof parsed.version === "string" && parsed.version.length > 0) return parsed.version;
+    }
+  } catch {
+    // 讀不到版本不影響運作
+  }
+  return "unknown";
+}
+
+export function describeDeployment(): DeploymentInfo {
+  const config = getServerConfig();
+  const onCloudRun = (process.env.K_SERVICE ?? "").trim().length > 0;
+  const platform: DeploymentInfo["platform"] = onCloudRun
+    ? "cloud-run"
+    : process.env.NODE_ENV === "production"
+      ? "other"
+      : "local";
+
+  const notes: string[] = [];
+  const backupEnabled = config.backup.enabled;
+  const databaseInProject = config.databasePath.startsWith(process.cwd());
+  const uploadsInProject = config.uploadsDir.startsWith(process.cwd());
+  // 已啟用 Cloud Storage 備份時，資料庫即使位於容器目錄也可還原，故不算「隨時會遺失」。
+  const ephemeralStorage = !backupEnabled && (databaseInProject || uploadsInProject);
+
+  if (platform === "cloud-run") {
+    notes.push(
+      backupEnabled
+        ? `資料庫以 Cloud Storage 備份持久化（bucket：${config.backup.bucket}，每 ${config.backup.intervalSeconds} 秒備份，啟動時還原）。教材檔案仍存於容器目錄，重建執行個體後需重新匯入。`
+        : "偵測到 Cloud Run（K_SERVICE）：容器檔案系統不會保留資料，請設定 BACKUP_BUCKET 以啟用 Cloud Storage 備份，或改用 Cloud SQL 及 Cloud Storage。",
+    );
+  }
+
+  return { platform, ephemeralStorage, notes };
+}
+
+export function describeConfigIssues(): ConfigIssue[] {
+  const config = getServerConfig();
+  const issues: ConfigIssue[] = [];
+  const deployment = describeDeployment();
+
+  // LLM
+  const providerFromEnv = (process.env.LLM_PROVIDER ?? "mock").trim().toLowerCase();
+  if (providerFromEnv !== "" && providerFromEnv !== "mock" && !config.llm.configured) {
+    issues.push({
+      level: "warning",
+      code: "llm-missing-credentials",
+      message: `已設定 LLM_PROVIDER=${providerFromEnv}，但缺少對應的 API key，現時會使用本地示範生成（題目質素較基本）。`,
+    });
+  }
+  if (config.llm.allowMockFallback && !config.llm.configured) {
+    issues.push({
+      level: "info",
+      code: "llm-demo-mode",
+      message: "現時使用本地示範生成：題目由教材原文以規則組成，適合示範及離線使用。",
+    });
+  }
+
+  // OCR
+  if ((process.env.OCR_PROVIDER ?? "").trim().toLowerCase() === "google-vision" && !config.ocr.apiKey) {
+    issues.push({
+      level: "warning",
+      code: "ocr-missing-key",
+      message: "已設定 OCR_PROVIDER=google-vision，但缺少 OCR_API_KEY，OCR 功能會停用。",
+    });
+  }
+  if (config.ocr.provider === "tesseract") {
+    issues.push({
+      level: "info",
+      code: "ocr-local-model",
+      message:
+        "本機 OCR 首次執行需要下載語言資料；如要離線或部署到容器，請把 chi_tra.traineddata 放入映像檔並設定 OCR_LANG_PATH。",
+    });
+  }
+
+  // 登入與後台
+  if (!config.auth.enabled) {
+    const onCloudRun = deployment.platform === "cloud-run";
+    issues.push({
+      level: onCloudRun ? "error" : "warning",
+      code: "auth-disabled",
+      message: onCloudRun
+        ? "在 Cloud Run 上未啟用學校 Google 帳戶登入：後台 API 會被拒絕（除非設定 HISTORY_ALLOW_UNSAFE_DEMO_MODE=true）。請設定 GOOGLE_CLIENT_ID、GOOGLE_CLIENT_SECRET 及 AUTH_SECRET。"
+        : "尚未啟用學校 Google 帳戶登入：學生以匿名 ID 使用，教師端及管理員端與學生端完全開放，只適合本機開發及示範。",
+    });
+  } else {
+    if (config.auth.secret === null) {
+      issues.push({
+        level: "warning",
+        code: "auth-secret-missing",
+        message:
+          "未設定 AUTH_SECRET：工作階段密鑰會在 data/ 目錄自動產生，多個執行個體或容器重建後會令已登入的使用者被登出，正式部署前請改由 Secret Manager 注入。",
+      });
+    }
+    if (!config.auth.requireSignIn) {
+      issues.push({
+        level: "warning",
+        code: "auth-optional",
+        message: "已設定 AUTH_REQUIRE_SIGN_IN=false：未登入者仍可使用學生功能（示範用）。",
+      });
+    }
+  }
+
+  // 學生名冊
+  if (!config.roster.enabled) {
+    issues.push({
+      level: config.auth.enabled ? "warning" : "info",
+      code: "roster-disabled",
+      message:
+        "尚未連接學生名冊：任何校內學生帳戶都可登入，亦不會顯示班別及學號。設定 STUDENT_ROSTER_FILE／STUDENT_ROSTER_CSV_URL／STUDENT_ROSTER_SHEET_ID 即可啟用。",
+    });
+  } else {
+    if (config.roster.source === "sheets-api" && config.roster.serviceAccountJson === null) {
+      issues.push({
+        level: "error",
+        code: "roster-service-account-missing",
+        message:
+          "名冊來源為 Google Sheets API，但未設定 STUDENT_ROSTER_SERVICE_ACCOUNT_JSON，名冊無法讀取（登入會被拒絕）。",
+      });
+    }
+    if (config.roster.source === "csv") {
+      issues.push({
+        level: "info",
+        code: "roster-csv",
+        message:
+          "名冊以 CSV 網址讀取：請把 Google Sheet 設為「知道連結的任何人可檢視」，或改用 sheets-api 配合服務帳戶。",
+      });
+    }
+    if (!config.roster.enforce) {
+      issues.push({
+        level: "warning",
+        code: "roster-not-enforced",
+        message:
+          "已設定 STUDENT_ROSTER_ENFORCE=false：名冊只作顯示班別及學號，不會阻止名冊以外的學生登入。",
+      });
+    }
+    if (config.roster.failOpen) {
+      issues.push({
+        level: "warning",
+        code: "roster-fail-open",
+        message:
+          "已設定 STUDENT_ROSTER_FAIL_OPEN=true：名冊暫時無法讀取時仍允許登入（安全性較低，不建議正式環境使用）。",
+      });
+    }
+  }
+
+  // 資料儲存
+  if (deployment.ephemeralStorage) {
+    issues.push({
+      level: deployment.platform === "cloud-run" ? "error" : "info",
+      code: "ephemeral-storage",
+      message:
+        "資料庫及教材檔案現時放在專案／容器目錄：本機開發沒有問題，部署到 Cloud Run 應設定 BACKUP_BUCKET 啟用 Cloud Storage 備份，或改用 Cloud SQL。",
+    });
+  }
+
+  // 備份
+  if (!config.backup.enabled && deployment.platform === "cloud-run") {
+    issues.push({
+      level: "warning",
+      code: "backup-disabled",
+      message:
+        "未設定 BACKUP_BUCKET：Cloud Run 執行個體停止或重新部署後，練習記錄、題庫及教材匯入結果會遺失。",
+    });
+  }
+  if (config.backup.enabled && !config.backup.restoreOnStart) {
+    issues.push({
+      level: "warning",
+      code: "backup-restore-disabled",
+      message: "已設定 BACKUP_BUCKET 但 BACKUP_RESTORE_ON_START=false：啟動時不會還原雲端備份。",
+    });
+  }
+
+  // 管理權杖
+  if ((process.env.ADMIN_TOKEN ?? "").trim().length > 0) {
+    issues.push({
+      level: "info",
+      code: "admin-token",
+      message: "已設定 ADMIN_TOKEN：自動化腳本可使用 x-admin-token 標頭呼叫後台 API。",
+    });
+  }
+
+  return issues;
+}
