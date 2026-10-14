@@ -44,7 +44,7 @@ next-env.d.ts
 /data
 /tmp
 
-# 教材來源檔案（教育局課程指引、出版社溫習筆記及校內試題庫）
+# 教材來源檔案（教科書內容、出版社溫習筆記及校內試題庫）
 # 這些內容屬第三方版權，不應上載到公開倉庫；請在各部電腦自行放入 materials/。
 /materials/*
 !/materials/README.md

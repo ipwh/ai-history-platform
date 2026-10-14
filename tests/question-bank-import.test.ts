@@ -241,9 +241,9 @@ describe("試題檔類型判斷", () => {
     expect(bank.detectQuestionBankType("HNC1A2E_QB_T1_7.DBQ.docx")).toBe("DBQ");
   });
 
-  it("書本內容與課程指引不會被當成試題檔", () => {
+  it("書本內容及一般 PDF 不會被當成試題檔", () => {
     expect(bank.detectQuestionBankType("課題1人類的需要 古與今.docx")).toBeNull();
-    expect(bank.detectQuestionBankType("歷史科課程指引.pdf")).toBeNull();
+    expect(bank.detectQuestionBankType("教師筆記.pdf")).toBeNull();
     expect(bank.isQuestionBankFileName("HNC2A2E_QB_T5_1.MCQ.docx")).toBe(true);
     expect(bank.isQuestionBankFileName("課題5 近代歐洲的興起.docx")).toBe(false);
   });

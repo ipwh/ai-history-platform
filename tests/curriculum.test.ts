@@ -29,16 +29,14 @@ beforeAll(async () => {
 });
 
 describe("教育局歷史科課程結構", () => {
-  it("包含 12 個課題及教師參考資料", () => {
+  it("包含 12 個課題，全部屬於中一至中三", () => {
     const courseTopics = curriculum.CURRICULUM_TOPICS.filter((topic) => topic.level !== 0);
     expect(courseTopics).toHaveLength(12);
     expect(courseTopics.map((topic) => topic.topicNumber)).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
     ]);
 
-    const reference = curriculum.CURRICULUM_TOPICS.filter((topic) => topic.level === 0);
-    expect(reference).toHaveLength(1);
-    expect(reference[0].published).toBe(false);
+    expect(curriculum.CURRICULUM_TOPICS).toHaveLength(12);
   });
 
   it("課題按年級正確編排（中一 1-4、中二 5-8、中三 9-12）", () => {
@@ -100,11 +98,11 @@ describe("教育局歷史科課程結構", () => {
 describe("課程結構寫入資料庫", () => {
   it("建立全部課題及分節，並記錄年級及課題編號", () => {
     const report = seed.seedCurriculum();
-    expect(report.topics).toBe(13);
+    expect(report.topics).toBe(12);
     expect(report.sections).toBeGreaterThan(80);
 
     const stored = topics.listTopics();
-    expect(stored).toHaveLength(13);
+    expect(stored).toHaveLength(12);
     expect(topics.listTopics({ publishedOnly: true })).toHaveLength(12);
 
     const topic5 = topics.getTopic("topic-5");
@@ -128,7 +126,7 @@ describe("課程結構寫入資料庫", () => {
   it("重複執行課程種子不會產生重複課題", () => {
     seed.seedCurriculum();
     seed.seedCurriculum();
-    expect(topics.listTopics()).toHaveLength(13);
+    expect(topics.listTopics()).toHaveLength(12);
     expect(questions.countQuestions({ topicId: "topic-1" })).toBe(0);
   });
 });

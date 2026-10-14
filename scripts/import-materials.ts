@@ -6,7 +6,6 @@
  *     課題N 課題名稱.docx          ← 書本內容（作為 AI 出題依據）
  *     HNCxY2E_QB_TN_1.MCQ.docx    ← 校內試題（匯入題庫，草稿待教師審核）
  *     …_2.FBQ / _3.TFQ / _4.MUQ / _5.COQ / _6.LAQ / _7.DBQ
- *   歷史科課程指引.pdf、官方_…課程指引.pdf   ← 教師參考（不屬於任何課題）
  *
  * 用法：
  *   npm run import:materials                       # 匯入全部課題（書本內容 + 校內試題）

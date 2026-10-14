@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
@@ -24,9 +25,9 @@ process.env.APP_DATABASE_PATH = testDbPath;
 const { materialsDir } = getServerConfig();
 // 書本內容以課題分資料夾存放，路徑由共用解析器找出（相容舊的檔名寫法）
 const pilotPath = resolveMaterialPath(materialsDir, "課題5 近代歐洲的興起/課題5 近代歐洲的興起.docx");
-const pdfPath = resolveMaterialPath(materialsDir, "歷史科課程指引.pdf");
+// PDF 解析用倉庫內自製的最小樣本，不依賴 materials/ 內具版權的教材
+const pdfFixturePath = fileURLToPath(new URL("./fixtures/sample-guideline.pdf", import.meta.url));
 const hasPilot = pilotPath !== null;
-const hasPdf = pdfPath !== null;
 const pilotFileName = pilotPath ? path.basename(pilotPath) : "";
 
 describe.skipIf(!hasPilot)("試點 DOCX 解析", () => {
@@ -146,11 +147,14 @@ describe.skipIf(!hasPilot)("試點 DOCX 解析", () => {
   });
 });
 
-describe.skipIf(!hasPdf)("PDF 解析", () => {
+describe("PDF 解析", () => {
   it("可以擷取文字層並回報限制", async () => {
-    const result = await parsePdf(fs.readFileSync(pdfPath as string), "歷史科課程指引.pdf");
-    expect(result.pageCount).toBeGreaterThan(50);
-    expect(result.blocks.length).toBeGreaterThan(50);
-    expect(result.limitationNote).not.toBeNull();
+    const result = await parsePdf(fs.readFileSync(pdfFixturePath), "sample-guideline.pdf");
+
+    expect(result.pageCount).toBe(3);
+    expect(result.blocks.length).toBeGreaterThan(0);
+    expect(result.blocks.every((block) => block.text.length > 0)).toBe(true);
+    expect(result.imageCount).toBe(0);
+    expect(result.limitationNote).toContain("文字層");
   });
 });

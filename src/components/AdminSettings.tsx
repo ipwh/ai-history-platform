@@ -75,7 +75,6 @@ export function AdminSettings() {
   if (!topics || !status) return <Loading label="正在載入課題及系統狀態…" />;
 
   const curriculum = topics.filter((topic) => topic.level !== 0);
-  const reference = topics.filter((topic) => topic.level === 0);
   const authEnabled = status.auth.enabled;
 
   return (
@@ -121,11 +120,6 @@ export function AdminSettings() {
             </li>
           ))}
         </ul>
-        {reference.length > 0 ? (
-          <p className="text-sm text-gray-600">
-            另有 {reference.length} 個「教師參考資料」分類（課程指引 PDF），不會顯示給學生。
-          </p>
-        ) : null}
       </section>
 
       <section className="card flex flex-col gap-3">

@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 const schema = z.object({
   /** 要匯入的教材檔案名稱（可為相對路徑；必須存在於 materials 資料夾）；all = true 時可省略 */
   fileName: z.string().optional(),
-  /** 匯入 materials 資料夾內全部教材（書本內容、校內試題及教師參考 PDF） */
+  /** 匯入 materials 資料夾內全部教材（書本內容及校內試題） */
   all: z.boolean().default(false),
   /** 匯入後是否執行 OCR（背景執行） */
   runOcr: z.boolean().default(false),
@@ -53,8 +53,8 @@ export async function GET(request: Request) {
       throw new ApiRouteError("請提供要匯入的教材檔案名稱，或設定 all = true 匯入全部課程教材。", 400);
     }
     const targets = body.all
-      ? // 匯入 materials 資料夾內全部教材：12 個課題的書本內容、校內試題（匯入題庫草稿）
-        // 及教師參考 PDF。以實際掃描結果為準（含課題子資料夾），
+      ? // 匯入 materials 資料夾內全部教材：12 個課題的書本內容及校內試題（匯入題庫草稿）。
+        // 以實際掃描結果為準（含課題子資料夾），
         // 不依賴課程種子記錄的檔名，避免新增檔案時漏匯。
         collectMaterialFiles(getServerConfig().materialsDir).map((entry) => entry.relativePath)
       : [body.fileName as string];

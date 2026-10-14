@@ -67,7 +67,7 @@ export function findAnchorSource(topicId: string, anchor: string): AnchorSource 
 }
 
 /**
- * 建立／更新全部 12 個課題（中一至中三）及教師參考資料的結構。
+ * 建立／更新全部 12 個課題（中一至中三）的結構。
  * 可重複執行（具幂等性）。
  */
 export function seedCurriculum(options: { levels?: (0 | 1 | 2 | 3)[] } = {}): CurriculumSeedReport {
@@ -98,7 +98,7 @@ export function seedCurriculum(options: { levels?: (0 | 1 | 2 | 3)[] } = {}): Cu
   }
 
   const labels: Record<number, string> = {
-    0: "教師參考資料",
+    0: "未分類",
     1: "中一",
     2: "中二",
     3: "中三",

@@ -499,7 +499,7 @@ export const TOPIC_LEARNING_FOCUS: Record<number, TopicLearningFocus> = {
 
 /**
  * 產生單一課題的「學習重點（精簡摘要）」文字，供提示詞使用。
- * 沒有對應課題（例如教師參考資料）時回傳空字串，避免在提示詞留下空標籤。
+ * 沒有對應課題時回傳空字串，避免在提示詞留下空標籤。
  */
 export function topicLearningFocusText(topicNumber: number | null | undefined): string {
   if (typeof topicNumber !== "number") return "";

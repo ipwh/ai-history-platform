@@ -360,6 +360,22 @@ const MIGRATIONS: Migration[] = [
           )`,
     ],
   },
+  {
+    id: "0009-remove-curriculum-guide-reference",
+    statements: [
+      // 「教師參考：歷史科課程指引」課題只為存放兩份課程指引 PDF 而設，
+      // 兩份 PDF 對出題沒有貢獻（出題檢索以課題為範圍，批次生成亦排除 level = 0），
+      // 因此移除該課題、其分節、教材及相關題目。
+      // material_documents.topic_id 是 ON DELETE SET NULL，必須先刪文件才不會留下孤兒資料。
+      `DELETE FROM material_blocks
+        WHERE topic_id = 'reference-curriculum'
+           OR document_id IN (SELECT id FROM material_documents WHERE topic_id = 'reference-curriculum')`,
+      `DELETE FROM material_documents WHERE topic_id = 'reference-curriculum'`,
+      `DELETE FROM questions WHERE topic_id = 'reference-curriculum'`,
+      `DELETE FROM sections WHERE topic_id = 'reference-curriculum'`,
+      `DELETE FROM topics WHERE id = 'reference-curriculum'`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

@@ -27,7 +27,7 @@ describe("課程學習重點（精簡摘要）", () => {
     }
   });
 
-  it("沒有課題編號（教師參考資料或未知課題）時不會產生學習重點", () => {
+  it("沒有課題編號（未知課題）時不會產生學習重點", () => {
     expect(topicLearningFocusText(null)).toBe("");
     expect(topicLearningFocusText(undefined)).toBe("");
     expect(topicLearningFocusText(99)).toBe("");

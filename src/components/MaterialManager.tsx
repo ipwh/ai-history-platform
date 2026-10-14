@@ -344,13 +344,13 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
     }
   }
 
-  // 依課程年級分組顯示教材
+  // 依課程年級分組顯示教材（level 0 為未對應任何課題的教材）
   const groupedDocuments = [1, 2, 3, 0].map((level) => ({
     level,
-    label: CURRICULUM_LEVEL_LABELS[level as 0 | 1 | 2 | 3],
+    label: level === 0 ? "未對應課題的教材" : CURRICULUM_LEVEL_LABELS[level as 1 | 2 | 3],
     documents: (data?.documents ?? []).filter((document) => {
       const topic = topics.find((item) => item.id === document.topicId);
-      if (level === 0) return document.topicId === null || topic?.level === 0;
+      if (level === 0) return document.topicId === null || topic === undefined;
       return topic?.level === level;
     }),
   }));

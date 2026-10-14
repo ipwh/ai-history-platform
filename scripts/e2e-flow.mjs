@@ -149,8 +149,7 @@ async function main() {
     const allTopics = topics.payload?.topics ?? [];
     const courseTopics = allTopics.filter((item) => item.level !== 0);
     check("包含 12 個課程課題", courseTopics.length === 12, `實際 ${courseTopics.length}`);
-    const referenceTopics = allTopics.filter((item) => item.level === 0);
-    check("教師參考資料不會出現在學生端", referenceTopics.every((item) => !item.published));
+    check("學生端只看到 12 個課程課題", allTopics.length === 12, `實際 ${allTopics.length}`);
 
     const levelGroups = [1, 2, 3].map((level) => ({
       level,

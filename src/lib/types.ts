@@ -99,7 +99,7 @@ export const IMAGE_PLACEHOLDER_MESSAGE = "圖片內容未能自動擷取";
  *   中一（level 1）古代世界（史前時期至14世紀）：區域文明的誕生與交流 → 課題1-4
  *   中二（level 2）近代世界（15至19世紀）：西力的形成與外延     → 課題5-8
  *   中三（level 3）現代世界（20世紀至今）：邁向多極與相互依存    → 課題9-12
- * level 0 表示「教師參考資料」，不屬於任何年級，學生端不會顯示。
+ * level 0 保留給未對應任何年級的教材，學生端不會顯示。
  */
 export const curriculumLevelSchema = z.union([
   z.literal(0),
@@ -110,7 +110,7 @@ export const curriculumLevelSchema = z.union([
 export type CurriculumLevel = z.infer<typeof curriculumLevelSchema>;
 
 export const CURRICULUM_LEVEL_LABELS: Record<CurriculumLevel, string> = {
-  0: "教師參考資料",
+  0: "未分類",
   1: "中一",
   2: "中二",
   3: "中三",
@@ -207,9 +207,9 @@ export const topicSchema = z.object({
   description: z.string().default(""),
   published: z.boolean(),
   order: z.number().int(),
-  /** 課程年級：0 教師參考、1 中一、2 中二、3 中三 */
+  /** 課程年級：1 中一、2 中二、3 中三（0 為未分類） */
   level: curriculumLevelSchema.default(1),
-  /** 教育局課程的課題編號（例如 5）；教師參考資料為 null */
+  /** 教育局課程的課題編號（例如 5）；未對應者為 null */
   topicNumber: z.number().int().nullable().default(null),
   createdAt: z.string(),
   updatedAt: z.string(),

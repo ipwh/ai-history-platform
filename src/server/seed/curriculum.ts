@@ -31,8 +31,6 @@ export interface TopicSeed {
   published: boolean;
   /** 對應的教材檔案名稱（用於自動匯入） */
   materialFile: string | null;
-  /** 教師參考資料可包含多個檔案 */
-  extraMaterialFiles?: string[];
   sections: SectionSeed[];
 }
 
@@ -831,37 +829,6 @@ const TOPIC_12: TopicSeed = {
   ],
 };
 
-/* ------------------------------------------------------------------ */
-/* 教師參考資料                                                        */
-/* ------------------------------------------------------------------ */
-
-const REFERENCE_TOPIC: TopicSeed = {
-  id: "reference-curriculum",
-  topicNumber: null,
-  level: 0,
-  title: "教師參考：歷史科課程指引",
-  description:
-    "教育局《歷史科課程指引》及《個人、社會及人文教育學習領域課程指引》。只供教師參考及題目生成的背景資料，學生端不會顯示。",
-  order: 99,
-  published: false,
-  materialFile: "歷史科課程指引.pdf",
-  extraMaterialFiles: ["官方_個人、社會及人文教育_課程指引.pdf"],
-  sections: [
-    {
-      id: "reference-curriculum-guide",
-      title: "歷史科課程指引",
-      summary: "課程宗旨、學習目標、課程架構及內容大綱。",
-      matchKeywords: ["課程宗旨", "學習目標", "課程架構", "內容大綱", "歷史科"],
-    },
-    {
-      id: "reference-pshe-guide",
-      title: "個人、社會及人文教育課程指引",
-      summary: "學習領域的整體課程規劃。",
-      matchKeywords: ["個人、社會及人文教育", "學習領域"],
-    },
-  ],
-};
-
 export const CURRICULUM_TOPICS: TopicSeed[] = [
   TOPIC_1,
   TOPIC_2,
@@ -875,7 +842,6 @@ export const CURRICULUM_TOPICS: TopicSeed[] = [
   TOPIC_10,
   TOPIC_11,
   TOPIC_12,
-  REFERENCE_TOPIC,
 ];
 
 /** 試點課題（課題5）保持獨立匯出，供示範題庫使用 */
@@ -897,10 +863,7 @@ export function findTopicSeedByFile(fileName: string): TopicSeed | null {
   const matches = (candidate: string | null): boolean =>
     candidate !== null && (candidate.split(/[\\/]/).pop() ?? candidate) === base;
 
-  const exact = CURRICULUM_TOPICS.find(
-    (topic) =>
-      matches(topic.materialFile) || (topic.extraMaterialFiles ?? []).some((file) => matches(file)),
-  );
+  const exact = CURRICULUM_TOPICS.find((topic) => matches(topic.materialFile));
   if (exact) return exact;
 
   // 由檔名判斷年級及課題編號，例如 HNC2A2E_T5_SN_TE.docx → 中二課題5
@@ -919,12 +882,9 @@ export function findTopicSeedByFile(fileName: string): TopicSeed | null {
   return null;
 }
 
-/** 所有課程教材檔案（含教師參考資料） */
+/** 所有課程教材檔案 */
 export function allCurriculumMaterialFiles(): string[] {
-  return CURRICULUM_TOPICS.flatMap((topic) => [
-    ...(topic.materialFile ? [topic.materialFile] : []),
-    ...(topic.extraMaterialFiles ?? []),
-  ]);
+  return CURRICULUM_TOPICS.flatMap((topic) => (topic.materialFile ? [topic.materialFile] : []));
 }
 
 export function flatSectionSeeds(sections: SectionSeed[]): SectionSeed[] {

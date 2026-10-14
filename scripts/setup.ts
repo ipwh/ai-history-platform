@@ -53,10 +53,9 @@ async function main() {
 
   const targets = pilotOnly
     ? [{ fileName: PILOT_FILE, topicId: "topic-5" }]
-    : CURRICULUM_TOPICS.flatMap((topic) => [
-        ...(topic.materialFile ? [{ fileName: topic.materialFile, topicId: topic.id }] : []),
-        ...(topic.extraMaterialFiles ?? []).map((fileName) => ({ fileName, topicId: topic.id })),
-      ]);
+    : CURRICULUM_TOPICS.flatMap((topic) =>
+        topic.materialFile ? [{ fileName: topic.materialFile, topicId: topic.id }] : [],
+      );
 
   const importedDocuments: { id: string; fileName: string }[] = [];
 
