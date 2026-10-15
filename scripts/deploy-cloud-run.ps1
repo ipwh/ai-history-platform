@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     建置並部署「香港中學歷史科自學互動網站」到 Google Cloud Run。
 
