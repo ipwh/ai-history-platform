@@ -346,22 +346,38 @@ export type Section = z.infer<typeof sectionSchema>;
 export const sectionWithCountSchema = sectionSchema.extend({
   publishedQuestionCount: z.number().int().default(0),
   /**
-   * 此分節（含子分節）已匯入的教材段落數。
+   * 此分節（含子分節）已匯入的教材段落數（教師可見的**全部**教材，
+   * 包含校內試題檔及尚未開放給學生的教材）。
    * 0 表示沒有教材依據，即時生成無法出題，介面會提示教師先補充教材。
    */
   materialBlockCount: z.number().int().default(0),
+  /**
+   * 此分節（含子分節）中「學生實際可用來出題」的教材段落數。
+   *
+   * 只有已確認可向學生發布、且非教師專用內容的段落才計入（見
+   * `studentMaterialBlockCounts`）。0 表示學生即時出題**必定**被版權閘門擋下，
+   * 因此介面不可讓學生選取這樣的主題（見 `isSectionPractisable`）。
+   */
+  studentMaterialBlockCount: z.number().int().default(0),
 });
 export type SectionWithCount = z.infer<typeof sectionWithCountSchema>;
 
 /**
- * 此分節是否可以出題：題庫已有已發布題目，或已匯入教材（可由 AI 即時生成）。
- * 介面用它提醒學生哪些主題暫不可選，避免出現「選了卻出不到題」的情況。
+ * 這個分節對學生是否真的可以出題。出題方式不同，條件亦不同：
+ *   ai：必須有「學生可用」的教材段落，否則即時出題會被版權閘門擋下（409）。
+ *   bank：題庫已有已發布題目即可；題目不足時系統會以同一批可用教材補足，
+ *         生成失敗亦會回退題庫，因此不會令學生無法開始練習。
+ *
+ * 介面用它提醒學生哪些主題暫不可選，避免出現「選了卻出不到題」的情況——
+ * 判定必須用 `studentMaterialBlockCount`（學生可用），而不是包含校內試題檔及
+ * 未開放教材的 `materialBlockCount`。
  */
-export function isSectionPractisable(section: {
-  publishedQuestionCount: number;
-  materialBlockCount: number;
-}): boolean {
-  return section.publishedQuestionCount > 0 || section.materialBlockCount > 0;
+export function isSectionPractisable(
+  section: { publishedQuestionCount: number; studentMaterialBlockCount: number },
+  source: PracticeQuestionSource,
+): boolean {
+  if (source === "ai") return section.studentMaterialBlockCount > 0;
+  return section.publishedQuestionCount > 0 || section.studentMaterialBlockCount > 0;
 }
 
 /** 首頁需要的課題概覽（含分節樹及進度） */

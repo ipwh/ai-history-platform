@@ -1,0 +1,101 @@
+{
+  "decisions": [
+    {
+      "decision": "owner-authorized-student-distribution",
+      "label": "local",
+      "target": "C:\\Users\\TC-37\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+      "ownerEmail": "ipwh@pochiu.edu.hk",
+      "reason": "擁有者指示：全開放教材，讓學生自行用 AI 生成練習（校方確認課本可在校內平台向學生發布）",
+      "decidedAt": "2026-10-15T09:54:03.829Z",
+      "openedCount": 12,
+      "distributionChanges": 12,
+      "openedDocuments": [
+        {
+          "id": "doc_1432c7c4ad8848d3",
+          "topicId": "topic-1",
+          "fileName": "課題1人類的需要 古與今.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_5093d6d1b68f4ade",
+          "topicId": "topic-12",
+          "fileName": "HNC3B2E_T12_SN_TE.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_cd1eb176fd6d46bc",
+          "topicId": "topic-11",
+          "fileName": "HNC3B_T11_SN_TE.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        },
+        {
+          "id": "doc_1919c369756e43cd",
+          "topicId": "topic-10",
+          "fileName": "HNC3A2E_T10_SN_TE.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_ad61c2a9e96549ce",
+          "topicId": "topic-9",
+          "fileName": "HNC3A2E_T9_SN_TE.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_5bf4a8ec7db04c16",
+          "topicId": "topic-8",
+          "fileName": "HNC2B2E_T8_SN_TE.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_c66170c5376b43e3",
+          "topicId": "topic-7",
+          "fileName": "HNC2B2E_T7_SN_TE.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_d1f73052745740ec",
+          "topicId": "topic-6",
+          "fileName": "HNC2A2E_T6_SN_TE.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_be24ac8b31c248b7",
+          "topicId": "topic-4",
+          "fileName": "HNC1B2E_T4_SN_TE.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_51e7919110774ffd",
+          "topicId": "topic-3",
+          "fileName": "HNC1B2E_T3_SN_TE.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_4f1eb21ccc8f450f",
+          "topicId": "topic-2",
+          "fileName": "HNC1A2E_T2_SN_TE.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_ec509a4d2fed4908",
+          "topicId": "topic-1",
+          "fileName": "HNC1A2E_T1_SN_TE.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 2
+        }
+      ],
+      "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
+    }
+  ]
+}

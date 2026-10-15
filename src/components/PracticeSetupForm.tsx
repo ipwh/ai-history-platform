@@ -17,6 +17,7 @@ import {
   type Health,
   type PracticeQuestionSource,
   type QuestionType,
+  type SectionWithCount,
   type TopicOverview,
 } from "@/lib/types";
 import { ErrorNotice, Loading, Notice } from "@/components/ui";
@@ -26,6 +27,32 @@ const QUESTION_COUNTS = [5, 10, 15];
 interface StartAttempt {
   mode: "standard" | "wrong-only";
   questionSource: PracticeQuestionSource;
+}
+
+/**
+ * 主題不可選時的原因。
+ *
+ * 「教材未開放給學生」（版權閘門）與「未匯入教材」對學生是兩件不同的事：前者要改用
+ * 題庫題目或請教師開放，後者只能改用其他主題。若一律顯示「未有教材」，學生會以為
+ * 平台沒有內容，而不是教材尚未通過版權確認。
+ */
+function unavailableReason(
+  section: SectionWithCount,
+  source: PracticeQuestionSource,
+): string {
+  if (section.materialBlockCount === 0) {
+    return "此主題暫未匯入教材，教師可在後台補充";
+  }
+  if (source === "ai") {
+    return "此主題的教材仍未開放給學生，AI 不能據此出題；可改用「使用題庫題目」或請歷史科教師開放教材";
+  }
+  return "此主題暫時沒有已發布的題目，教師可在後台發布題目或開放教材";
+}
+
+/** 主題不可選時顯示的短標示（與 unavailableReason 對應） */
+function unavailableLabel(section: SectionWithCount, source: PracticeQuestionSource): string {
+  if (section.materialBlockCount === 0) return "未有教材";
+  return source === "ai" ? "AI 未開放" : "未有題目";
 }
 
 /**
@@ -128,6 +155,7 @@ export function PracticeSetupForm() {
   const [failedAttempt, setFailedAttempt] = useState<StartAttempt | null>(null);
 
   const [reloadToken, setReloadToken] = useState(0);
+  const [sourceChangeNotice, setSourceChangeNotice] = useState<string | null>(null);
   const initialSelectionApplied = useRef(false);
 
   useEffect(() => {
@@ -188,6 +216,31 @@ export function PracticeSetupForm() {
     };
   }, []);
 
+  /** 主題 ID → 分節（含子分節），用於判斷所選主題是否仍可出題 */
+  const themeById = useMemo(() => {
+    const map = new Map<string, SectionWithCount>();
+    for (const section of topic?.sections ?? []) {
+      map.set(section.id, section);
+      for (const child of section.children) map.set(child.id, child);
+    }
+    return map;
+  }, [topic]);
+
+  /**
+   * 已選、但依目前出題方式無法出題的主題。
+   *
+   * 反白的晶片已不能按，但學生可能先選好主題再切換出題方式（或由首頁連結直接帶入主題），
+   * 因此仍需把這個情況顯示出來，而不是等到按下「開始練習」才失敗。
+   */
+  const blockedSelectedThemes = useMemo(
+    () =>
+      selectedSections
+        .map((id) => themeById.get(id))
+        .filter((section): section is SectionWithCount => section !== undefined)
+        .filter((section) => !isSectionPractisable(section, questionSource)),
+    [selectedSections, themeById, questionSource],
+  );
+
   /**
    * 把分節及其主題整理成群組，用於「可多選」介面：
    * 分節有子分節時，以子分節為可選主題；沒有子分節時，分節本身就是一個主題。
@@ -201,12 +254,29 @@ export function PracticeSetupForm() {
       return {
         section,
         themeIds,
-        available: isSectionPractisable(section),
+        available: isSectionPractisable(section, questionSource),
         selectedCount,
         allSelected: selectedCount === themeIds.length,
       };
     });
-  }, [topic, selectedSections]);
+  }, [topic, selectedSections, questionSource]);
+
+  /** 切換出題方式：AI 只能使用已開放給學生的教材，因此同時取消不可用的主題 */
+  function handleQuestionSourceChange(source: PracticeQuestionSource) {
+    setQuestionSource(source);
+    setSourceChangeNotice(null);
+    if (source !== "ai") return;
+    const blocked = selectedSections.filter((id) => {
+      const section = themeById.get(id);
+      return section !== undefined && !isSectionPractisable(section, "ai");
+    });
+    if (blocked.length === 0) return;
+    setSelectedSections((current) => current.filter((id) => !blocked.includes(id)));
+    setSourceChangeNotice(
+      `已取消 ${blocked.length} 個主題：它們的教材仍未開放給學生，AI 不能據此出題。` +
+        "可改用「使用題庫題目」練習，或請歷史科教師開放教材。",
+    );
+  }
 
   const totalSelectedThemes = sectionGroups.reduce((total, group) => total + group.selectedCount, 0);
 
@@ -314,7 +384,33 @@ export function PracticeSetupForm() {
         </div>
         <p className="text-xs text-gray-500">
           每個分節之下有多個主題：可按「全選此分節」一次選取，或逐個主題挑選，系統會按你所選的主題出題。
+          反白的主題目前未能出題（未有教材，或教材仍未開放給學生），可改用其他主題或題庫題目。
         </p>
+
+        {sourceChangeNotice ? <Notice tone="warning">{sourceChangeNotice}</Notice> : null}
+
+        {blockedSelectedThemes.length > 0 ? (
+          <Notice tone="warning">
+            <p>
+              已選的主題中有 {blockedSelectedThemes.length} 個在目前的出題方式下無法出題
+              {questionSource === "ai" ? "（教材仍未開放給學生）" : null}
+              。請改用「使用題庫題目」、改選其他主題，或先取消這些主題。
+            </p>
+            <button
+              type="button"
+              className="btn mt-2"
+              onClick={() =>
+                setSelectedSections((current) =>
+                  current.filter(
+                    (id) => !blockedSelectedThemes.some((section) => section.id === id),
+                  ),
+                )
+              }
+            >
+              取消這 {blockedSelectedThemes.length} 個主題
+            </button>
+          </Notice>
+        ) : null}
 
         <div className="flex flex-col gap-3">
           {sectionGroups.map(({ section, themeIds, available, allSelected, selectedCount }) => (
@@ -342,8 +438,8 @@ export function PracticeSetupForm() {
                         : "選取此分節"}
                   </button>
                 ) : (
-                  <span className="badge badge-warning" title="此分節暫未匯入教材，教師可在後台補充">
-                    未有教材
+                  <span className="badge badge-warning" title={unavailableReason(section, questionSource)}>
+                    {unavailableLabel(section, questionSource)}
                   </span>
                 )}
               </div>
@@ -351,7 +447,7 @@ export function PracticeSetupForm() {
               {section.children.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {section.children.map((child) => {
-                    const childAvailable = isSectionPractisable(child);
+                    const childAvailable = isSectionPractisable(child, questionSource);
                     return (
                       <button
                         key={child.id}
@@ -359,14 +455,14 @@ export function PracticeSetupForm() {
                         className="chip"
                         data-selected={selectedSections.includes(child.id)}
                         disabled={!childAvailable}
-                        title={
-                          childAvailable ? undefined : "此主題暫未匯入教材，教師可在後台補充"
-                        }
+                        title={childAvailable ? undefined : unavailableReason(child, questionSource)}
                         onClick={() => toggleSection(child.id)}
                       >
                         {child.title}
                         {childAvailable ? null : (
-                          <span className="text-xs ml-1 opacity-70">（未有教材）</span>
+                          <span className="text-xs ml-1 opacity-70">
+                            （{unavailableLabel(child, questionSource)}）
+                          </span>
                         )}
                       </button>
                     );
@@ -442,7 +538,7 @@ export function PracticeSetupForm() {
               type="button"
               className="chip"
               data-selected={questionSource === source}
-              onClick={() => setQuestionSource(source)}
+              onClick={() => handleQuestionSourceChange(source)}
               disabled={mode === "wrong-only"}
             >
               {PRACTICE_QUESTION_SOURCE_LABELS[source]}
@@ -454,6 +550,8 @@ export function PracticeSetupForm() {
         ) : questionSource === "ai" ? (
           <p className="text-xs text-gray-500">
             AI 會按你揀選的主題即時出題（每題都會核對教材依據），需時約 10 至 60 秒。
+            AI 只會使用已確認可向學生發布的教材，因此教材未開放的主題不能選；
+            如需在那些主題練習，請改用「使用題庫題目」。
             {demoMode === true ? " 現時為示範模式，會使用本地示範生成（未使用 AI）。" : null}
           </p>
         ) : (

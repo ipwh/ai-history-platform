@@ -14,6 +14,7 @@
     "import:materials": "tsx scripts/import-materials.ts",
     "generate:questions": "tsx scripts/generate-question-bank.ts",
     "publish:drafts": "tsx scripts/publish-draft-questions.ts",
+    "open:materials": "tsx scripts/open-materials.ts",
     "snapshot:production": "tsx scripts/export-production-snapshot.ts",
     "e2e": "node scripts/e2e-flow.mjs"
   },

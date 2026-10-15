@@ -3,6 +3,7 @@
  */
 import { getDb, nowIso, toSqlBool, fromSqlBool, withTransaction } from "../db/connection";
 import { getLearnerProgress } from "./learners";
+import { studentMaterialBlockCounts } from "./materials";
 import {
   CURRICULUM_LEVEL_LABELS,
   curriculumThemeText,
@@ -295,6 +296,7 @@ export function getTopicOverview(topicId: string, learnerId: string | null): Top
 function buildOverview(topic: Topic, learnerId: string | null): TopicOverview {
   const counts = publishedQuestionCounts(topic.id);
   const materialCounts = directMaterialBlockCounts(topic.id);
+  const studentMaterialCounts = studentMaterialBlockCounts(topic.id);
   const allSections = listSections(topic.id);
   const byParent = new Map<string | null, Section[]>();
   for (const section of allSections) {
@@ -309,11 +311,12 @@ function buildOverview(topic: Topic, learnerId: string | null): TopicOverview {
     ...(byParent.get(section.id) ?? []).flatMap(withDescendants),
   ];
 
-  const materialFor = (section: Section): number =>
-    withDescendants(section).reduce(
-      (total, item) => total + (materialCounts.get(item.id) ?? 0),
-      0,
-    );
+  const sumFor = (lookup: Map<string, number>, section: Section): number =>
+    withDescendants(section).reduce((total, item) => total + (lookup.get(item.id) ?? 0), 0);
+
+  const materialFor = (section: Section): number => sumFor(materialCounts, section);
+  // 學生端介面只可用這個數字判斷可否出題（見 studentMaterialBlockCounts 的說明）
+  const studentMaterialFor = (section: Section): number => sumFor(studentMaterialCounts, section);
 
   const topLevel = (byParent.get(null) ?? []).map((section) => {
     const descendants = withDescendants(section);
@@ -321,6 +324,7 @@ function buildOverview(topic: Topic, learnerId: string | null): TopicOverview {
       ...child,
       publishedQuestionCount: counts.get(child.id) ?? 0,
       materialBlockCount: materialFor(child),
+      studentMaterialBlockCount: studentMaterialFor(child),
     }));
     return {
       ...section,
@@ -330,6 +334,7 @@ function buildOverview(topic: Topic, learnerId: string | null): TopicOverview {
         0,
       ),
       materialBlockCount: materialFor(section),
+      studentMaterialBlockCount: studentMaterialFor(section),
     };
   });
 

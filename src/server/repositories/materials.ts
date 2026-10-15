@@ -2,7 +2,7 @@
  * 教材文件及教材段落的資料存取。
  */
 import { getDb, nowIso, newId } from "../db/connection";
-import { looksLikeTeacherEdition } from "../materials/teacher-content";
+import { isTeacherOnlyBlockText, looksLikeTeacherEdition } from "../materials/teacher-content";
 import {
   materialBlockSchema,
   type ExtractionMethod,
@@ -731,4 +731,81 @@ export function listStudentDistributableDocumentIds(): Set<string> {
       )
       .map((row) => row.id),
   );
+}
+
+/** 判斷分節可用性時需要的段落欄位（連同所屬文件的發布治理狀態） */
+interface StudentMaterialRow {
+  section_id: string | null;
+  type: string;
+  text: string;
+  table_json: string | null;
+  extraction_method: string | null;
+  kind: string;
+  file_name: string;
+  student_distribution: number | null;
+  rights_confirmed_at: string | null;
+  content_reviewed_at: string | null;
+}
+
+/** 表格段落的儲存格文字（與 buildMaterialUnits 讀取 table 的方式一致） */
+function tableCellTexts(tableJson: string | null): string[] {
+  if (!tableJson) return [];
+  try {
+    const table = JSON.parse(tableJson) as TableCell[][];
+    return table.flat().map((cell) => cell.text ?? "");
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 每個分節「學生實際可用來出題」的教材段落數。
+ *
+ * 與 [buildMaterialUnits](../services/material-units.ts) 的 `audience: "student"` 使用同一套條件：
+ * 文件須符合 `isStudentVisible`（已開放、已確認版權，教師版另需內容覆核）、非標題、
+ * 圖片須有 OCR 文字，且段落不含教師專用字樣。
+ *
+ * 學生選了沒有任何可用段落的主題時，即時出題**必定**被版權閘門擋下（409）。因此學生端
+ * 介面必須用這個數字判斷「可不可以選」，而**不是** `materialBlockCount`——後者包含校內
+ * 試題檔（`kind = 'question-bank'`，永不作為學生讀物或用作出題依據）及尚未開放的教材。
+ */
+export function studentMaterialBlockCounts(topicId: string): Map<string, number> {
+  const rows = getDb()
+    .prepare(
+      `SELECT b.section_id, b.type, b.text, b.table_json, b.extraction_method,
+              d.kind, d.file_name, d.student_distribution, d.rights_confirmed_at, d.content_reviewed_at
+         FROM material_blocks b
+         JOIN material_documents d ON d.id = b.document_id
+        WHERE b.topic_id = ? AND b.section_id IS NOT NULL AND b.type <> 'heading'`,
+    )
+    .all(topicId) as unknown as StudentMaterialRow[];
+
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    if (row.section_id === null) continue;
+    if (
+      !isStudentVisible({
+        kind: row.kind,
+        fileName: row.file_name,
+        studentDistribution: row.student_distribution === 1,
+        rightsConfirmedAt: row.rights_confirmed_at,
+        contentReviewedAt: row.content_reviewed_at,
+      })
+    ) {
+      continue;
+    }
+    // 沒有 OCR 文字的圖片沒有任何可用內容
+    if (row.type === "image" && row.extraction_method !== "ocr") continue;
+
+    const cells = row.type === "table" ? tableCellTexts(row.table_json) : [];
+    // 與 buildMaterialUnits 相同：整段（含表格）只要帶有教師專用字樣即整段略去
+    if (isTeacherOnlyBlockText([row.text, ...cells].join("\n"))) continue;
+
+    const parts = row.type === "table" ? cells : row.type === "list" ? row.text.split("\n") : [row.text];
+    // 段落太短的內容不會成為出題單位（與 pushUnit 的長度門檻一致）
+    if (!parts.some((part) => part.trim().length >= 8)) continue;
+
+    counts.set(row.section_id, (counts.get(row.section_id) ?? 0) + 1);
+  }
+  return counts;
 }

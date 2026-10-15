@@ -260,19 +260,67 @@ describe("分節可用性（介面顯示用，取代容易誤解的題目數量�
     expect(renaissance!.children.length).toBeGreaterThan(0);
     // 每個主題都有自己的教材段落，因此學生可以逐個主題選取
     expect(renaissance!.children.every((child) => child.materialBlockCount > 0)).toBe(true);
-    expect(renaissance!.children.every((child) => types.isSectionPractisable(child))).toBe(true);
+    // 教材已確認可向學生發布，因此學生端也看得到可用段落
+    expect(renaissance!.studentMaterialBlockCount).toBeGreaterThan(0);
+    expect(renaissance!.children.every((child) => child.studentMaterialBlockCount > 0)).toBe(true);
+    expect(renaissance!.children.every((child) => types.isSectionPractisable(child, "ai"))).toBe(
+      true,
+    );
   });
 
-  it("沒有教材亦沒有題目的分節不可出題，有其一即可", () => {
-    expect(types.isSectionPractisable({ publishedQuestionCount: 0, materialBlockCount: 0 })).toBe(
-      false,
-    );
-    expect(types.isSectionPractisable({ publishedQuestionCount: 0, materialBlockCount: 3 })).toBe(
-      true,
-    );
-    expect(types.isSectionPractisable({ publishedQuestionCount: 2, materialBlockCount: 0 })).toBe(
-      true,
-    );
+  it("教材未開放給學生時，學生端可用段落數為 0，AI 出題不可選（但題庫仍可）", () => {
+    revokeDistribution();
+    try {
+      const overview = topicService.getTopicDetail("topic-5", null);
+      const renaissance = overview!.sections.find((section) => section.id === "topic-5-renaissance");
+      expect(renaissance).toBeDefined();
+      // 教師可見的教材段落數不受影響（教材仍在，只是未開放）
+      expect(renaissance!.materialBlockCount).toBeGreaterThan(0);
+      // 學生可用段落數必須為 0，介面才不會承諾做不到的 AI 出題
+      expect(renaissance!.studentMaterialBlockCount).toBe(0);
+      expect(renaissance!.children.every((child) => child.studentMaterialBlockCount === 0)).toBe(
+        true,
+      );
+      expect(renaissance!.children.every((child) => !types.isSectionPractisable(child, "ai"))).toBe(
+        true,
+      );
+      // 題庫題目不受版權閘門影響，有已發布題目的主題仍可練習
+      const bankPractisable = renaissance!.children.filter(
+        (child) => child.publishedQuestionCount > 0,
+      );
+      expect(bankPractisable.length).toBeGreaterThan(0);
+      expect(bankPractisable.every((child) => types.isSectionPractisable(child, "bank"))).toBe(
+        true,
+      );
+    } finally {
+      grantDistributionForTopic("topic-5");
+    }
+  });
+
+  it("沒有可用教材亦沒有題目的分節不可出題，有其一即可", () => {
+    expect(
+      types.isSectionPractisable({ publishedQuestionCount: 0, studentMaterialBlockCount: 0 }, "ai"),
+    ).toBe(false);
+    expect(
+      types.isSectionPractisable({ publishedQuestionCount: 0, studentMaterialBlockCount: 3 }, "ai"),
+    ).toBe(true);
+    // AI 出題必須有學生可用教材：只有題庫題目不足以即時生成
+    expect(
+      types.isSectionPractisable({ publishedQuestionCount: 2, studentMaterialBlockCount: 0 }, "ai"),
+    ).toBe(false);
+    // 題庫出題有已發布題目即可，教材只是補足來源
+    expect(
+      types.isSectionPractisable(
+        { publishedQuestionCount: 2, studentMaterialBlockCount: 0 },
+        "bank",
+      ),
+    ).toBe(true);
+    expect(
+      types.isSectionPractisable(
+        { publishedQuestionCount: 0, studentMaterialBlockCount: 2 },
+        "bank",
+      ),
+    ).toBe(true);
   });
 
   it("課題的主題數以子分節計算，沒有子分節時以分節本身計算", () => {

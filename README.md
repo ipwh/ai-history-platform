@@ -59,6 +59,7 @@ npm run dev          # 啟動開發伺服器
 | `npm run import:materials` | 由命令列匯入 `materials/` 內的教材及校內試題（可加 `--books`、`--questions`、`--topic`、`--ocr`） |
 | `npm run generate:questions` | 為各課題生成題目（`--topic`、`--count`、`--draft-only`） |
 | `npm run publish:drafts` | **擁有者授權**的批次發布草稿題目（預設模擬；`--owner-email`、`--reason`、`--origins`、`--apply`，見第十節） |
+| `npm run open:materials` | **擁有者授權**的批次開放教材給學生（預設模擬；`--owner-email`、`--reason`、`--topics`、`--apply`，見第十節） |
 | `npm run snapshot:production` | 匯出正式環境用的乾淨資料庫快照（清除教材開放紀錄；只適用於全新正式環境，見第十節） |
 | `docker build -t hk-history-self-study .` | 建立 Cloud Run 用的容器映像檔（見第十節） |
 | `./scripts/deploy-cloud-run.ps1 -Project <專案ID>` | 部署到 Google Cloud Run（預設只顯示指令，加 `-Apply` 才執行） |
@@ -233,6 +234,12 @@ materials/
 - **每次變更都留有稽核記錄**：`distribution_audit` 會記錄操作者（取自伺服器端的工作階段，前端提供的值不會被採用）、角色、開啟或關閉及時間。只更新課題（`topicId`）或重複設定相同值都不會產生記錄。
 - **校內試題永遠不會成為學生讀物**：`kind = 'question-bank'` 的文件（題目與答案）即使被標示為可發布，亦會被排除（`listStudentDistributableDocumentIds`）。
 - **學生即時 AI 出題同樣受此閘門限制（Sprint 5 修正）**：學生自行觸發的 AI 出題只可使用已確認可發布、且非教師專用的教材段落（見 [src/server/services/material-units.ts](src/server/services/material-units.ts) 的 `audience: "student"`）；沒有可用段落時會回 `409` 並說明教材尚未開放，**不會**改用未確認的內容。修正前這個途徑會繞過閘門，把教師版內容（包括答案段落）引出成題目及節錄。教師／管理員生成題目不受限（他們本來就可以看到教材內容）。
+- **學生端只會顯示真正可以出題的主題（介面提示修正）**：練習設定頁的「可不可以選」以 `studentMaterialBlockCount` 判斷——該數字與 `buildMaterialUnits(audience: "student")` 用同一套規則計算（文件須已確認可向學生發布、非標題、圖片須有 OCR 文字、段落不含教師專用字樣），**不**採用 `materialBlockCount`（後者包含校內試題檔及尚未開放的教材，只用來向教師說明教材匯入狀況）。因此：
+  - AI 出題模式下，教材未開放的主題會反白並標示原因，學生不會按下去才發現必定失敗；
+  - 題庫出題模式只要該主題有**已發布題目**即可選（版權閘門不影響題庫）；
+  - 由首頁連結直接帶入、或先選好主題再切換出題方式時，頁面會列出「已選但無法出題」的主題並提供一鍵取消，而不是讓學生按下「開始練習」後才收到 `409`。
+  相關測試見 [tests/practice-ai-mode.test.ts](tests/practice-ai-mode.test.ts) 的「分節可用性」。
+- **擁有者授權的批次開放（`npm run open:materials`）**：學生的 AI 出題與閱讀頁都受同一個閘門限制，因此課題若未開放教材，學生會收到 409「教材尚未開放學生使用」。如擁有者／校方決定一次過開放多份教材（或需要在正式環境快照上離線開放），可用此腳本：它仍然要**同一組**兩項確認（版權／發行權，教師版另需內容覆核），只是由擁有者一次過作出並留下紀錄——`rights_confirmed_by` 是下達指示的擁有者電郵，教師版的 `content_reviewed_by` 會如實標明「擁有者授權批次開放，未逐段人工核對」，決定寫入 `docs/teacher-review/owner-material-openings.json`。腳本預設**模擬模式**，只在加 `--apply` 時寫入，並在正式環境（Cloud Run／`NODE_ENV=production`）**拒絕執行**。校內試題文件（`kind = 'question-bank'`）一律略過。
 - **學生端的教材節錄同樣受此閘門限制（Sprint 6 修正）**：學生作答後的「教材來源」只會顯示題目所引用**全部**段落都屬於已確認可向學生發布、且非教師專用的文件時的節錄。任何一段未確認（文件未確認、屬教師版且未逐段核對、段落帶有答案／評分參考字樣、段落已不存在）時，回饋會回傳 `sourceWithheld: true`，而 `sourceExcerpt`、`sourceLocation` 及 `sourceBlockIds` 都不會回傳（介面改為說明「尚未經教師確認可向學生發布」）。撤回發行權後，**即使是較早完成的練習**亦立即不再顯示節錄（每次讀取都重新判定）。題目若沒有引用任何教材段落（示範題庫的作者註記、教師手寫節錄），節錄並非擷取自教材，因此維持顯示。相關測試見 [tests/source-excerpt-policy.test.ts](tests/source-excerpt-policy.test.ts)，**路由層**驗證（`POST .../answers`、`GET .../result`，包括其他欄位及錯誤路徑都不含原文）見 [tests/practice-result-excerpt.test.ts](tests/practice-result-excerpt.test.ts)，端對端則見 `scripts/e2e-flow.mjs` 的「撤回後不再回傳教材原文節錄」。
 - **教師端會顯示學生實際能看到甚麼（Sprint 7.2）**：題目清單會為每題標示「學生看不到節錄」及原因（教材未確認／教師版段落／引用的段落已不存在）。判定與學生端共用同一個模組（[src/server/services/source-visibility.ts](src/server/services/source-visibility.ts)），因此教師不會誤以為學生已看到節錄；同時學生作答前的題目物件**不含** `sourceExcerpt`、`sourceLocation` 及 `sourceBlockIds`（作答後才由回饋按同一規則決定是否提供）。
 - **教材 → 題目的依據鏈（學生路徑）**：以下每一步都失敗即停，不會「退而求其次」使用未確認內容。
@@ -1071,6 +1078,7 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 > **警告**：做法 B 會以本機資料**取代**正式環境資料。本機通常是較小的開發資料集（本專案實例：本機 20 份文件／9,006 段落，正式環境 96 份文件／58,528 段落），誤用會令學生的練習記錄及教師的覆核紀錄消失。修改前務必先下載及檢查正式環境快照，並保留 `app.db.pre-*-backup` 回滾副本。
 
 - `npm run publish:drafts`：**擁有者授權**的批次發布（見下）。
+- `npm run open:materials`：**擁有者授權**的批次開放教材給學生（見下；同樣預設模擬模式）。
 - `npm run snapshot:production`：由本機資料庫產生乾淨快照（`VACUUM INTO`），並**清除**當中的教材開放／版權確認欄位與 `distribution_audit`，確保正式環境的教材維持 fail-closed（確認一律由擁有者／管理員在管理端進行）。
 
 ##### 擁有者授權的批次發布（`npm run publish:drafts`）
@@ -1089,6 +1097,24 @@ npm run publish:drafts -- --owner-email ipwh@pochiu.edu.hk --reason "…" --orig
 - `sourceVerified` 只代表「節錄與所引教材段落逐字相符」，**不代表**史實正確；腳本亦不作任何歷史準確性判斷。
 - 每次執行都會把決定寫入 `docs/teacher-review/owner-publication-overrides.json`（`decisions[]`：擁有者電郵、原因、時間、數量、來源分佈；200 題以內記錄全部題目 ID，更多時記錄排序後 ID 的 SHA-256 摘要及頭尾樣本）。
 - 正式環境（Cloud Run／`NODE_ENV=production`）會**拒絕執行**：正式環境的資料更新須以做法 A（離線修改正式環境快照）進行。
+
+##### 擁有者授權的批次開放教材（`npm run open:materials`）
+
+同樣的原則適用於**教材版權閘門**：學生的閱讀頁及學生自行觸發的 AI 出題都只可用「已確認可向學生發布」的教材，因此未開放的課題會令學生收到 409「教材尚未開放學生使用」。擁有者／校方確認可在校內平台向學生發布課本內容時，可批次開放：
+
+```powershell
+# 模擬模式（預設，不會改動資料）：先看清楚會開放哪幾份、有多少段落會被判定為教師專用
+npm run open:materials -- --owner-email ipwh@pochiu.edu.hk --reason "校方已確認課本可在校內平台向學生發布"
+
+# 只開放指定課題
+npm run open:materials -- --owner-email ipwh@pochiu.edu.hk --reason "…" --topics topic-1,topic-3 --apply
+```
+
+- 開放的條件與管理端 `PATCH /api/admin/materials/[documentId]` **完全相同**（版權／發行權一律必要；教師版文件另需內容覆核），腳本不會繞過任何一項，只是由擁有者一次過作出確認。
+- `rights_confirmed_by` 記錄下達指示的擁有者電郵；教師版文件的 `content_reviewed_by` 會如實標明「擁有者授權批次開放，未逐段人工核對」，並寫入 `distribution_audit`。
+- 學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考）；該判斷是**模式比對**、不是內容理解，可能漏掉以其他方式書寫的答案（見 [src/server/materials/teacher-content.ts](src/server/materials/teacher-content.ts)）。
+- 校內試題文件（`kind = 'question-bank'`）一律略過（永不列為學生讀物）。
+- 每次執行都會把決定寫入 `docs/teacher-review/owner-material-openings.json`；撤回開放不需確認且立即生效（在 `/admin/materials` 逐份關閉）。
 
 
 
@@ -1536,6 +1562,12 @@ node scripts/e2e-flow.mjs --start   # 端對端 131 項檢查全部通過（含�
 
 **Q：為什麼有些課題顯示 0 題可用？**
 表示該課題的分節教材尚不足以產生題目（例如教材尚未匯入，或內容以敘述為主）。先執行 `npm run import:materials` 匯入教材，再執行 `npm run generate:questions` 補足題目。
+
+**Q：學生說「未能開始練習：所選主題的教材仍未開放給學生使用」？**
+這是教材版權閘門（fail-closed）按設計運作，不是系統錯誤：學生自行觸發的 AI 出題只可使用**已確認可向學生發布**的教材，未確認的文件對學生完全不顯示（見「教材版權與學生閱讀範圍」）。可行的處理：
+1. 由管理員在 `/admin/materials` 逐份勾選「版權確認」（教師版另需內容覆核）後開放；或
+2. 由擁有者授權批次開放：`npm run open:materials -- --owner-email <電郵> --reason "<理由>" --apply`（預設模擬模式，見第十節）。
+學生仍可改用「使用題庫題目」練習（題庫題目不受版權閘門影響）；練習設定頁亦會把未開放的主題反白並說明原因，學生不會按下去才失敗。
 
 **Q：如何辨識教材圖片內的文字（OCR）？**
 在 `/admin/materials` 按文件的「執行 OCR」，或執行 `npm run setup -- --ocr`（首次會下載語言資料，之後可離線使用）。辨識結果會加入教材段落並標示「OCR 擷取」，教師可在段落預覽勾選「只顯示 OCR 段落」集中檢查。
