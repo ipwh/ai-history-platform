@@ -96,6 +96,103 @@
         }
       ],
       "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
+    },
+    {
+      "decision": "owner-authorized-student-distribution",
+      "label": "production-snapshot",
+      "target": "C:\\Users\\steve\\AppData\\Local\\Temp\\production-next.db",
+      "ownerEmail": "ipwh@pochiu.edu.hk",
+      "reason": "擁有者指示：全開放教材，讓學生自行用 AI 生成練習（校方確認課本可在校內平台向學生發布）",
+      "decidedAt": "2026-10-15T12:31:47.234Z",
+      "openedCount": 12,
+      "distributionChanges": 12,
+      "openedDocuments": [
+        {
+          "id": "doc_56d73ec7a64f4d80",
+          "topicId": "topic-1",
+          "fileName": "課題1人類的需要 古與今.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_6f9ebf20fe8049e3",
+          "topicId": "topic-9",
+          "fileName": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_7925ca44a57e4dc9",
+          "topicId": "topic-8",
+          "fileName": "課題8 直至二十世紀初香港的成長與發展.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_61b6c9bfa3ab4a75",
+          "topicId": "topic-7",
+          "fileName": "課題7 美國的成立及發展.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_ff7f417d6b1348c3",
+          "topicId": "topic-6",
+          "fileName": "課題6 歐洲國家的殖民擴張.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_de570e4f1a454754",
+          "topicId": "topic-5",
+          "fileName": "課題5 近代歐洲的興起.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_54a4208d7eab4248",
+          "topicId": "topic-4",
+          "fileName": "課題4 早期香港地區的歷史.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_1f232c7fb3034344",
+          "topicId": "topic-3",
+          "fileName": "課題3 伊斯蘭文明的興起.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_a8b65a7f8c3f4456",
+          "topicId": "topic-2",
+          "fileName": "課題2 歐洲文明的發展.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_29e8ba09c89d4d4c",
+          "topicId": "topic-12",
+          "fileName": "課題12 二十世紀香港的成長與蛻變.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_8944b2cfe0cf4b9c",
+          "topicId": "topic-11",
+          "fileName": "課題11 20世紀以來的國際合作.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        },
+        {
+          "id": "doc_164faf362d9e455a",
+          "topicId": "topic-10",
+          "fileName": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        }
+      ],
+      "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
     }
   ]
 }

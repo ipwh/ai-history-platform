@@ -1072,10 +1072,12 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 
 | 做法 | 步驟 | 適用情況 |
 | --- | --- | --- |
-| **A. 以正式環境快照為基礎離線修改（建議）** | 1. 下載現有快照：`gcloud storage cp gs://<專案ID>-history-backup/history/data/app.db data/exports/production-current.db`<br>2. 先建立回滾副本：`gcloud storage cp …/app.db …/app.db.pre-change-backup`<br>3. 修改副本（`APP_DATABASE_PATH=… npm run <腳本>`，例如 `npm run publish:drafts`）<br>4. 上載回去：`gcloud storage cp data/exports/production-next.db gs://<專案ID>-history-backup/history/data/app.db`<br>5. 部署新 revision（新執行個體啟動時會還原這份快照） | 正式環境已有真實內容（教材、題目、覆核紀錄、練習記錄）時**必須**用此法 |
+| **A. 以正式環境快照為基礎離線修改（建議）** | 1. 下載現有快照：`gcloud storage cp gs://<專案ID>-history-backup/history/data/app.db data/exports/production-current.db`<br>2. 先建立回滾副本：`gcloud storage cp …/app.db …/app.db.pre-change-backup`<br>3. 修改副本（`APP_DATABASE_PATH=… npm run <腳本>`，例如 `npm run publish:drafts`）<br>4. 上載回去：`gcloud storage cp data/exports/production-next.db gs://<專案ID>-history-backup/history/data/app.db`<br>5. **立即**部署新 revision（`gcloud run services update <服務> --region=<區域> --image <同一映像檔>`；新執行個體啟動時才會還原這份快照）<br>6. 覆核：重新下載 bucket 物件並檢查內容（開放的份數、`distribution_audit` 筆數、更新時間是否由執行個體在你上載之後寫入），不要只確認「上載成功」 | 正式環境已有真實內容（教材、題目、覆核紀錄、練習記錄）時**必須**用此法 |
 | **B. 由本機快照建立正式環境內容** | `npm run snapshot:production`（產生乾淨快照）→ 上載到 bucket → 部署 | **只適用於全新的正式環境**：上載本機快照會**覆蓋並刪去**正式環境既有的教材、題目、覆核紀錄及練習記錄 |
 
 > **警告**：做法 B 會以本機資料**取代**正式環境資料。本機通常是較小的開發資料集（本專案實例：本機 20 份文件／9,006 段落，正式環境 96 份文件／58,528 段落），誤用會令學生的練習記錄及教師的覆核紀錄消失。修改前務必先下載及檢查正式環境快照，並保留 `app.db.pre-*-backup` 回滾副本。
+
+> **最容易失效的一步：只上載快照而沒有重新部署**。上載只會改變 bucket 內的檔案；線上執行個體仍繼續用它啟動時還原的那份資料庫，並在資料有變更後（最短 60 秒、最長 300 秒）把**它自己那份**備份上載，把 bucket 覆蓋回舊狀態——於是「上載成功」卻從未生效，而重新下載 bucket 物件時看到的正是那份被覆蓋的檔案。實際例子（2026-10-15）：18:2x 上載了「已開放教材」的快照但沒有重新部署（最新 revision 仍是 16:56 的 `00006`），線上執行個體在 20:18 把未開放的資料庫覆蓋回 bucket，學生在所有課題都收到「教材仍未開放學生使用」（409）。因此做法 A 的第 5 步**不可省略**（上載後立即部署，縮短被覆蓋的窗口），並必須用第 6 步重新下載核對；亦可用 `gcloud run revisions list --service <服務> --region <區域>` 確認上載之後有沒有建立新 revision。
 
 - `npm run publish:drafts`：**擁有者授權**的批次發布（見下）。
 - `npm run open:materials`：**擁有者授權**的批次開放教材給學生（見下；同樣預設模擬模式）。
