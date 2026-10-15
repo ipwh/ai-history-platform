@@ -7,6 +7,7 @@
 import {
   practiceSetupSchema,
   studentQuestionSchema,
+  QUESTION_TYPE_LABELS,
   type AiGrading,
   type AssembledPractice,
   type Difficulty,
@@ -501,6 +502,22 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
 
   // 凍結題目快照前先打亂選擇題選項，令正確答案平均分佈於各選項位置
   const prepared = selected.map(shuffleQuestionOptions);
+
+  // 選了多於一種題型時，如實列出這次練習包含的題型及題數：
+  // 題型是可多選的（選擇題預設已選），學生若只打算練一種題型，會在練習頁即時看到實際組合。
+  if (parsed.questionTypes.length > 1) {
+    const counts = new Map<QuestionType, number>();
+    for (const question of prepared) {
+      counts.set(question.questionType, (counts.get(question.questionType) ?? 0) + 1);
+    }
+    if (counts.size > 1) {
+      notices.push(
+        `這次練習包含 ${[...counts.entries()]
+          .map(([type, count]) => `${QUESTION_TYPE_LABELS[type]} ${count} 題`)
+          .join("、")}。`,
+      );
+    }
+  }
 
   const session = createSession({
     learnerId: parsed.learnerId,

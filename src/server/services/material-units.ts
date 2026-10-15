@@ -13,6 +13,7 @@ import {
 } from "../repositories/materials";
 import { stripPageReferences, truncate, joinTableRow } from "../materials/text-utils";
 import { isTeacherOnlyBlockText } from "../materials/teacher-content";
+import { isNonLessonContent, stripImageMarkers } from "../materials/content-policy";
 import { stripOcrAnnotation } from "./ocr-text";
 import type { MaterialUnit } from "../llm/provider";
 
@@ -20,7 +21,8 @@ const MAX_UNITS = 120;
 const MAX_UNIT_LENGTH = 400;
 
 function pushUnit(units: MaterialUnit[], block: MaterialBlock, text: string, note?: string) {
-  const trimmed = text.trim();
+  // 移除匯入時插入的圖片佔位標記（學生會看到題目的來源節錄，不應出現這些標記文字）
+  const trimmed = stripImageMarkers(text);
   if (trimmed.length < 8) return;
   // 圖片的 OCR 文字已在來源位置標示，避免重複加上「OCR 擷取」
   const alreadyLabelled = block.sourceLocation.includes("OCR");
@@ -58,6 +60,14 @@ export function buildMaterialUnits(
   if (blocks.length === 0) {
     blocks = listGroundingBlocksByTopic(topicId);
   }
+
+  // 非課文內容（教師版教材的練習題目、評分參考及答案、圖片佔位標記、零散數字）
+  // 不可成為出題依據：它們不是課文，部分更是答案（見 materials/content-policy.ts）。
+  // 所有受眾都套用——教師生成題目時亦不應以評分參考的句子作依據。
+  blocks = blocks.filter((block) => {
+    const blockText = [block.text, ...(block.table ?? []).flat().map((cell) => cell.text)].join("\n");
+    return !isNonLessonContent(blockText, { fromOcr: block.extractionMethod === "ocr" });
+  });
 
   if (distributable !== null) {
     blocks = blocks.filter((block) => {

@@ -10,10 +10,10 @@ import { encodeRawImageToPng } from "@/server/ocr/png-encoder";
 import { buildOcrBlockText } from "@/server/ocr/sources";
 import {
   extractOcrAnnotation,
-  isGarbledOcrText,
   looksLikeOcrText,
   stripOcrAnnotation,
 } from "@/server/services/ocr-text";
+import { isGarbledOcrText } from "@/server/materials/text-utils";
 import { generateQuestionsFromMaterial } from "@/server/llm/mock-provider";
 
 describe("OCR 文字正規化", () => {  it("移除中文字之間多餘的空格並整理空白行", () => {

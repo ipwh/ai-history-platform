@@ -208,6 +208,49 @@ describe("AI 即時出題模式", () => {
     const retryIds = retry.questions.map((question) => question.id);
     expect(retryIds.every((id) => first.questions.some((item) => item.id === id))).toBe(true);
   });
+
+  it("選了多種題型時，練習頁會列出這次包含的題型及題數（學生可即時發現題型組合）", async () => {
+    const assembled = await practice.createPractice({
+      learnerId: LEARNER,
+      topicId: "topic-5",
+      sectionIds: SECTIONS,
+      // 題型可多選（介面預設已選「選擇題」），若學生以為只選了填充題，這個說明可即時顯示實際組合
+      questionTypes: ["mc", "fill"],
+      difficulty: "basic",
+      questionCount: 4,
+      mode: "standard",
+      questionSource: "ai",
+      sourceSessionId: null,
+    });
+
+    const usedTypes = new Set(assembled.questions.map((question) => question.questionType));
+    expect(usedTypes.size).toBeGreaterThan(1);
+    expect(assembled.notice).toContain("這次練習包含");
+    for (const type of usedTypes) {
+      expect(assembled.notice).toContain(types.QUESTION_TYPE_LABELS[type]);
+    }
+    // 學生重新載入頁面後仍看到同樣說明（快照的一部分）
+    expect(practice.getPracticeView(assembled.session.id, LEARNER).notice).toContain(
+      "這次練習包含",
+    );
+  });
+
+  it("只選一種題型時不會加入題型說明", async () => {
+    const assembled = await practice.createPractice({
+      learnerId: LEARNER,
+      topicId: "topic-5",
+      sectionIds: SECTIONS,
+      questionTypes: ["fill"],
+      difficulty: "basic",
+      questionCount: 2,
+      mode: "standard",
+      questionSource: "ai",
+      sourceSessionId: null,
+    });
+
+    expect(assembled.questions.every((question) => question.questionType === "fill")).toBe(true);
+    expect(assembled.notice ?? "").not.toContain("這次練習包含");
+  });
 });
 
 /**

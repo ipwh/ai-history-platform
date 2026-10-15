@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { checkHistoricalAnswer } from "@/server/llm/historical-answer";
 import { generateQuestionsFromMaterial } from "@/server/llm/mock-provider";
 import { validateLlmQuestions } from "@/server/llm/validation";
 import { normalizeForMatch } from "@/server/materials/text-utils";
@@ -182,5 +183,91 @@ describe("本地示範生成（mock provider）", () => {
     // 挑戰：以年份（時序）挖空為主
     expect(build("challenge", ["mc"]).question).toContain("＿＿＿");
     expect(build("challenge", ["fill"]).correctAnswer).toMatch(/\d{3,4}年/);
+  });
+
+  it("填充題的答案一定是歷史元素，不會用教材欄位名稱作答", () => {
+    const units: MaterialUnit[] = [
+      {
+        blockId: "label-1",
+        sourceLocation: "教材 · 第 1 段",
+        text: "展開時間：約公元前3,500年",
+      },
+      {
+        blockId: "label-2",
+        sourceLocation: "教材 · 第 2 段",
+        text: "為生方法：主要以採摘野果及狩獵為生",
+      },
+      {
+        blockId: "label-3",
+        sourceLocation: "教材 · 第 3 段",
+        text: "定居與建房：村落陸續出現，以村落為基礎的農耕社會形成",
+      },
+      {
+        blockId: "term-1",
+        sourceLocation: "教材 · 第 4 段",
+        text: "封建制度：國王把土地分封給諸侯，諸侯須向國王效忠。",
+      },
+      {
+        blockId: "year-1",
+        sourceLocation: "教材 · 第 5 段",
+        text: "1517年，馬丁路德發表《九十五條論證》，批評教會濫用贖罪券。",
+      },
+    ];
+    const materialText = units.map((unit) => unit.text).join("\n");
+
+    for (const difficulty of ["basic", "advanced", "challenge"] as const) {
+      const questions = generateQuestionsFromMaterial({
+        ...baseInput(),
+        difficulty,
+        questionTypes: ["fill"],
+        count: 5,
+        materialUnits: units,
+      });
+      expect(questions.length).toBeGreaterThan(0);
+      for (const question of questions) {
+        expect(
+          checkHistoricalAnswer(question.correctAnswer, materialText).ok,
+          `${difficulty}：「${question.correctAnswer}」`,
+        ).toBe(true);
+      }
+      const answers = questions.map((question) => question.correctAnswer);
+      for (const rejected of ["展開時間", "為生方法", "定居與建房", "約公元前3,500年"]) {
+        expect(answers, difficulty).not.toContain(rejected);
+      }
+    }
+
+    // 合格素材仍然會出題：制度名稱及年份
+    const basic = generateQuestionsFromMaterial({
+      ...baseInput(),
+      difficulty: "basic",
+      questionTypes: ["fill"],
+      count: 5,
+      materialUnits: units,
+    }).map((question) => question.correctAnswer);
+    expect(basic).toContain("封建制度");
+  });
+
+  it("不會把時間軸句式當成定義句（「約公元前3,200年」是指…）", () => {
+    const units: MaterialUnit[] = [
+      {
+        blockId: "tl-1",
+        sourceLocation: "教材 · 第 1 段",
+        text: "約公元前3,200年：人類發明文字以作記錄及溝通之用",
+      },
+    ];
+    const questions = generateQuestionsFromMaterial({
+      ...baseInput(),
+      difficulty: "basic",
+      questionTypes: ["fill", "mc", "short"],
+      count: 3,
+      materialUnits: units,
+    });
+
+    // 可以挖空年份出題（時序），但不可把年份當成被定義的「詞語」
+    for (const question of questions) {
+      if (question.question.includes("」是指")) {
+        expect(question.correctAnswer, question.question).not.toMatch(/公元前/);
+      }
+    }
   });
 });

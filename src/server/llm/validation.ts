@@ -12,8 +12,11 @@
  *      否則整條題目被丟棄。
  *   6. 人名及條約／文件名稱杜撰檢查：未見於教材時只記錄品質警告，交由教師核對，
  *      不會丟棄題目（人名沒有固定寫法，偵測可能出錯，見 findUnverifiedNames）。
- *   7. 移除題目文字中「根據教材」等不應出現的提示語。
- *   8. 檔內重複題目會被丟棄。
+ *   7. 填充題答案的「歷史元素」檢查（見 historical-answer.ts）：答案是說明、形容詞或
+ *      教材欄位名稱（例如「展開時間」、「為生方法」）時丟棄整條題目；只是未能確認屬
+ *      歷史元素時記錄品質警告，交由教師核對。
+ *   8. 移除題目文字中「根據教材」等不應出現的提示語。
+ *   9. 檔內重複題目會被丟棄。
  *
  * 通過驗證的題目才會轉成內部 Question 格式，狀態一律為 draft（未經教師核對）。
  * 「教材依據成立」只代表文字對得上原文，**不代表史實正確**：史實正確性是人工作業，
@@ -30,6 +33,7 @@ import {
   type QuestionType,
 } from "../../lib/types";
 import { normalizeForMatch, stripMarkdownArtifacts, truncate } from "../materials/text-utils";
+import { checkHistoricalAnswer } from "./historical-answer";
 import type { MaterialUnit } from "./provider";
 
 /**
@@ -700,6 +704,18 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
     } else if (correctAnswer.length === 0) {
       discardedReasons.push(`第 ${index + 1} 題沒有提供標準答案`);
       return;
+    }
+
+    // 填充題的答案必須是具有歷史意義的元素（事件名稱、人物、年份、國家、地點、條約、
+    // 神祇、思想、政治制度等），見 historical-answer.ts。明顯不合格者丟棄整條題目；
+    // 只是未能確認屬歷史元素者標示品質警告，交由教師核對。
+    if (candidate.questionType === "fill") {
+      const answerCheck = checkHistoricalAnswer(correctAnswer, providedText);
+      if (answerCheck.definite) {
+        discardedReasons.push(`第 ${index + 1} 題：${answerCheck.reason}`);
+        return;
+      }
+      if (answerCheck.reason !== null) qualityWarnings.push(answerCheck.reason);
     }
 
     const duplicateKey = `${normalizeForMatch(question)}|${normalizeForMatch(correctAnswer)}`;

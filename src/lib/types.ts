@@ -683,6 +683,7 @@ export type TeacherQuestionView = z.infer<typeof teacherQuestionViewSchema>;
 export const studentExcerptHiddenReasonSchema = z.enum([
   "unconfirmed-material",
   "teacher-edition",
+  "exercise-content",
   "missing-source-blocks",
   "lookup-failed",
 ]);
@@ -691,6 +692,7 @@ export type StudentExcerptHiddenReason = z.infer<typeof studentExcerptHiddenReas
 export const STUDENT_EXCERPT_HIDDEN_REASON_LABELS: Record<StudentExcerptHiddenReason, string> = {
   "unconfirmed-material": "來源教材尚未確認可向學生發布",
   "teacher-edition": "來源段落屬教師版內容（答案或評分參考）",
+  "exercise-content": "來源段落是練習題目、評分參考或零散文字（非課文內容）",
   "missing-source-blocks": "引用的教材段落已不存在，需重新核對依據",
   "lookup-failed": "查證教材依據時出錯，已先當作不顯示",
 };

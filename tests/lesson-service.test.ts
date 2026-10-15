@@ -101,7 +101,8 @@ describe("教材版權閘門（預設不可發布）", () => {
     grantDistributionForTopic("topic-5");
     const lesson = lessonService.getLessonView("topic-5");
     expect(lesson.sections.length).toBeGreaterThan(0);
-    expect(lesson.notice).toBeNull();
+    // 教師版教材夾附練習題目及評分參考，因此閱讀頁會說明只顯示課文內容
+    expect(lesson.notice ?? "").toContain("只顯示課文內容");
     expect(lessonService.topicHasLesson("topic-5")).toBe(true);
   });
 
@@ -129,7 +130,8 @@ describe("學生閱讀教材", () => {
 
     expect(lesson.topic.id).toBe("topic-5");
     expect(lesson.sections.length).toBeGreaterThan(0);
-    expect(lesson.notice).toBeNull();
+    // 只顯示課文內容：教師版教材的練習題目及評分參考不會顯示（詳見「只顯示課文內容」一節）
+    expect(lesson.notice ?? "").toContain("只顯示課文內容");
 
     const blocks = lesson.sections.flatMap((section) => section.blocks);
     expect(blocks.length).toBeGreaterThan(0);
@@ -189,13 +191,165 @@ describe("學生閱讀教材", () => {
   });
 
   it("未匯入教材的課題會回傳說明訊息而不是空白畫面", () => {
-    // 課題1 沒有匯入書本內容時會回傳 notice；若測試環境已匯入則略過此斷言
+    // 課題1 沒有匯入書本內容時會回傳 notice；若測試環境已匯入則只檢查內容不含練習題目
     grantDistributionForTopic("topic-1");
     const lesson = lessonService.getLessonView("topic-1");
     if (lesson.sections.length === 0) {
       expect(lesson.notice).not.toBeNull();
     } else {
-      expect(lesson.notice).toBeNull();
+      const blocks = lesson.sections.flatMap((section) => section.blocks);
+      expect(blocks.every((block) => !/[（(]\s*\d+\s*分\s*[）)]/.test(block.text))).toBe(true);
+    }
+  });
+});
+
+describe("閱讀模式只顯示課文內容", () => {
+  it("不顯示教師版教材的練習題目及答案（分數標記、資料線索、個人所知）", () => {
+    grantDistributionForTopic("topic-5");
+    const lesson = lessonService.getLessonView("topic-5");
+    const blocks = lesson.sections.flatMap((section) => section.blocks);
+    const parts = blocks.flatMap((block) => [block.text, ...block.rows.flat()]);
+
+    expect(lesson.notice ?? "").toContain("只顯示課文內容");
+    for (const part of parts) {
+      expect(part, part).not.toMatch(/[（(]\s*\d+\s*分\s*[）)]/);
+      expect(part, part).not.toMatch(/資料線索|個人所知/);
+      expect(part, part).not.toMatch(/回答(?:以下|相關|下列)?(?:各)?問題|試參考資料|試就你所知/);
+      // 填充練習的作答空位不屬課文
+      expect(part, part).not.toMatch(/＿{2,}|_{4,}/);
+    }
+    // 課文段落仍然保留（不是把整份教材過濾掉）
+    expect(parts.some((part) => part.length > 40)).toBe(true);
+  });
+
+  it("不會把匯入用的圖片佔位標記顯示給學生", () => {
+    grantDistributionForTopic("topic-5");
+    const lesson = lessonService.getLessonView("topic-5");
+    const blocks = lesson.sections.flatMap((section) => section.blocks);
+    const parts = blocks.flatMap((block) => [block.text, ...block.rows.flat()]);
+
+    expect(parts.some((part) => part.includes("[[IMAGE_UNEXTRACTED]]"))).toBe(false);
+  });
+
+  it("只顯示課文：練習題目、評分參考、圖片標記及零散數字一律不出現在閱讀頁", () => {
+    // 建立一份合成教材，涵蓋課文與各種不應顯示的內容
+    const document = materialsRepo.createDocument({
+      fileName: "lesson-policy-TE.docx",
+      kind: "demo",
+      mimeType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      sizeBytes: 1024,
+      status: "ready",
+      topicId: "topic-7",
+    });
+    materialsRepo.insertBlocks([
+      {
+        documentId: document.id,
+        topicId: "topic-7",
+        sectionId: "topic-7-revolution",
+        order: 1,
+        type: "paragraph",
+        text: "美國獨立戰爭（1775-1783年）期間，十三州的代表召開大陸會議，商討對英政策。",
+        sourceLocation: "合成教材 · 第 1 段",
+      },
+      {
+        documentId: document.id,
+        topicId: "topic-7",
+        sectionId: "topic-7-revolution",
+        order: 2,
+        type: "paragraph",
+        text: "試參考資料A及B，並就你所知，解釋英國與北美殖民地關係惡化的原因。（7分）",
+        sourceLocation: "合成教材 · 第 2 段",
+      },
+      {
+        documentId: document.id,
+        topicId: "topic-7",
+        sectionId: "topic-7-revolution",
+        order: 3,
+        type: "list",
+        text: "資料線索：資料A指出英國加徵稅項。（1分）\n個人所知：殖民地居民反對「無代表不納稅」。（2分）",
+        sourceLocation: "合成教材 · 第 3 段",
+      },
+      {
+        documentId: document.id,
+        topicId: "topic-7",
+        sectionId: "topic-7-revolution",
+        order: 4,
+        type: "paragraph",
+        text: "[[IMAGE_UNEXTRACTED]]",
+        sourceLocation: "合成教材 · 第 4 段",
+      },
+      {
+        documentId: document.id,
+        topicId: "topic-7",
+        sectionId: "topic-7-revolution",
+        order: 5,
+        type: "paragraph",
+        text: "約公元前3,500年",
+        sourceLocation: "合成教材 · 第 5 段",
+      },
+    ]);
+    openDocumentForStudents(materialsRepo, document.id);
+
+    try {
+      const lesson = lessonService.getLessonView("topic-7", ["topic-7-revolution"]);
+      const blocks = lesson.sections.flatMap((section) => section.blocks);
+      const texts = blocks.map((block) => block.text);
+
+      // 課文保留
+      expect(texts.some((text) => text.includes("大陸會議"))).toBe(true);
+      // 練習題目、評分參考及答案不顯示
+      expect(texts.some((text) => text.includes("試參考資料"))).toBe(false);
+      expect(texts.some((text) => text.includes("資料線索"))).toBe(false);
+      expect(texts.some((text) => text.includes("個人所知"))).toBe(false);
+      // 圖片佔位標記及只有年份的碎片不顯示
+      expect(texts.some((text) => text.includes("IMAGE_UNEXTRACTED"))).toBe(false);
+      expect(texts.some((text) => text.includes("約公元前3,500年"))).toBe(false);
+    } finally {
+      materialsRepo.deleteDocument(document.id);
+    }
+  });
+
+  it("教材只有練習題目時不會聲稱可以閱讀", () => {
+    const document = materialsRepo.createDocument({
+      fileName: "exercise-only-TE.docx",
+      kind: "demo",
+      mimeType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      sizeBytes: 1024,
+      status: "ready",
+      topicId: "topic-8",
+    });
+    materialsRepo.insertBlocks([
+      {
+        documentId: document.id,
+        topicId: "topic-8",
+        sectionId: "topic-8-organisations",
+        order: 1,
+        type: "paragraph",
+        text: "根據以下資料，回答相關問題。（12分）",
+        sourceLocation: "合成教材 · 第 1 段",
+      },
+      {
+        documentId: document.id,
+        topicId: "topic-8",
+        sectionId: "topic-8-organisations",
+        order: 2,
+        type: "paragraph",
+        text: "東華三院的創辦人認為當時的華人社會有何需要？試從資料中援引線索加以解釋。（3分）",
+        sourceLocation: "合成教材 · 第 2 段",
+      },
+    ]);
+    openDocumentForStudents(materialsRepo, document.id);
+
+    try {
+      // 原本「有沒有教材可讀」只看版權及教師專用內容，會誤報為可閱讀，點進去只有練習題目
+      expect(lessonService.topicHasLesson("topic-8")).toBe(false);
+      const lesson = lessonService.getLessonView("topic-8", ["topic-8-organisations"]);
+      expect(lesson.sections).toEqual([]);
+      expect(lesson.notice ?? "").toContain("只有練習題目");
+    } finally {
+      materialsRepo.deleteDocument(document.id);
     }
   });
 });

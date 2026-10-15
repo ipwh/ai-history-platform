@@ -8,9 +8,14 @@
  *   1. 只提供**已發布**課題的教材；未發布的課題一律回 404，避免學生看到未完成內容。
  *   2. 只使用「可用於出題」的段落（`listGroundingBlocksForSections`），
  *      因此校內試題檔（含答案）不會出現在閱讀內容中。
- *   3. 內容**原樣取自已匯入的教材**，不作改寫、不經 AI 生成：教材是唯一的史實來源，
+ *   3. **只顯示課文內容**：課本檔案是**教師版**，除課文外還夾附「資料題」練習及其
+ *      評分參考（例如「（3分）」、「資料線索：」、「（個人所知）」）。這些內容不屬課文，
+ *      部分更是答案，因此一律不顯示（見下方 EXERCISE_TEXT_PATTERNS）。同樣不顯示的還有
+ *      時間軸／表格碎片（例如單獨一段「公元前3,500年」）、無法辨識的 OCR 雜散文字，
+ *      以及匯入時插入的圖片佔位標記 `[[IMAGE_UNEXTRACTED]]`。
+ *   4. 內容**原樣取自已匯入的教材**，不作改寫、不經 AI 生成：教材是唯一的史實來源，
  *      任何自動改寫都可能加入未經核實的歷史陳述。
- *   4. OCR 辨識出來的文字會標示（可能與原書有出入，提示學生對照課本）。
+ *   5. OCR 辨識出來的文字會標示（可能與原書有出入，提示學生對照課本）。
  */
 import {
   CURRICULUM_LEVEL_LABELS,
@@ -23,8 +28,13 @@ import {
 import { listGroundingBlocksForSections, listStudentDistributableDocumentIds } from "../repositories/materials";
 import { getTopic, listSections } from "../repositories/topics";
 import { isTeacherOnlyBlockText } from "../materials/teacher-content";
+import {
+  isExerciseOrAnswerText,
+  isStandaloneNumberText,
+  stripImageMarkers,
+} from "../materials/content-policy";
+import { isGarbledOcrText, stripPageReferences } from "../materials/text-utils";
 import { stripOcrAnnotation } from "./ocr-text";
-import { stripPageReferences } from "../materials/text-utils";
 
 export class LessonServiceError extends Error {
   readonly status: number;
@@ -48,7 +58,7 @@ function toLessonBlock(block: {
   sourceLocation: string;
   extractionMethod: string;
 }): LessonBlock | null {
-  const rawText = stripOcrAnnotation(stripPageReferences(block.text)).trim();
+  const rawText = stripImageMarkers(stripOcrAnnotation(stripPageReferences(block.text))).trim();
   const fromOcr = block.extractionMethod === "ocr";
 
   // 沒有 OCR 文字的圖片沒有任何可讀內容
@@ -56,7 +66,7 @@ function toLessonBlock(block: {
 
   const rows =
     block.type === "table" && block.table
-      ? block.table.map((row) => row.map((cell) => stripOcrAnnotation(cell.text).trim()))
+      ? block.table.map((row) => row.map((cell) => stripImageMarkers(stripOcrAnnotation(cell.text)).trim()))
       : [];
 
   // 表格即使沒有文字內容（例如只有圖片）亦保留，讓學生看到結構
@@ -97,6 +107,8 @@ export function getLessonView(topicId: string, sectionIds: string[] = []): Lesso
   let hasOcrText = false;
   let hiddenByLicence = 0;
   let hiddenTeacherContent = 0;
+  let hiddenExerciseContent = 0;
+  let hiddenFragmentContent = 0;
 
   for (const block of blocks) {
     if (block.sectionId === null) continue;
@@ -114,9 +126,25 @@ export function getLessonView(topicId: string, sectionIds: string[] = []): Lesso
       continue;
     }
 
+    // 只顯示課文內容：練習題目及其評分參考（「（3分）」、「資料線索：」）不是課文，
+    // 部分更是答案，因此不顯示；單獨一段的年份／數字碎片亦沒有可讀內容。
+    if (isExerciseOrAnswerText(blockText)) {
+      hiddenExerciseContent += 1;
+      continue;
+    }
+    // 無法辨識的 OCR 雜散文字（零散單字、字母與數字）沒有閱讀價值
+    if (block.extractionMethod === "ocr" && isGarbledOcrText(blockText)) {
+      hiddenFragmentContent += 1;
+      continue;
+    }
+
     const lessonBlock = toLessonBlock(block);
     if (lessonBlock === null) continue;
     if (lessonBlock.fromOcr) hasOcrText = true;
+    if (lessonBlock.type !== "table" && isStandaloneNumberText(lessonBlock.text)) {
+      hiddenFragmentContent += 1;
+      continue;
+    }
 
     const list = blocksBySection.get(block.sectionId) ?? [];
     list.push(lessonBlock);
@@ -146,9 +174,11 @@ export function getLessonView(topicId: string, sectionIds: string[] = []): Lesso
     sections.length === 0
       ? hiddenByLicence > 0
         ? "這個課題的教材尚未開放學生閱讀。平台不會在未確認版權的情況下發布教材內容，請聯絡歷史科教師或管理員。"
-        : "這個課題的教材尚未匯入，暫時未有可閱讀的內容。請先使用練習功能，或請教師上載教材。"
-      : hiddenTeacherContent > 0
-        ? "部分內容（答案或評分參考）不會顯示。如需完整內容，請聯絡歷史科教師。"
+        : hiddenExerciseContent > 0
+          ? "這個課題的教材只有練習題目及評分參考，未包含可閱讀的課文內容。請使用練習功能，或請教師補充課文。"
+          : "這個課題的教材尚未匯入，暫時未有可閱讀的內容。請先使用練習功能，或請教師上載教材。"
+      : hiddenTeacherContent > 0 || hiddenExerciseContent > 0 || hiddenFragmentContent > 0
+        ? "閱讀模式只顯示課文內容：教材內的練習題目、評分參考、答案及零散文字不會顯示。如需練習，請使用練習功能。"
         : null;
 
   return lessonViewSchema.parse({
@@ -166,12 +196,22 @@ export function getLessonView(topicId: string, sectionIds: string[] = []): Lesso
   });
 }
 
-/** 供課題清單顯示「有沒有教材可讀」（同樣只計已確認可發布、且非教師專用的內容） */
+/**
+ * 供課題清單顯示「有沒有教材可讀」。
+ * 與 getLessonView 使用同一套判斷：已確認可發布、非教師專用、且不是練習題目／評分參考／
+ * 零散文字（否則課題清單會顯示可閱讀，但點進去只有練習題目）。
+ */
 export function topicHasLesson(topicId: string): boolean {
   const distributable = listStudentDistributableDocumentIds();
   return listGroundingBlocksForSections(topicId, []).some((block) => {
     if (!distributable.has(block.documentId)) return false;
     const blockText = [block.text, ...(block.table ?? []).flat().map((cell) => cell.text)].join("\n");
-    return !isTeacherOnlyBlockText(blockText);
+    if (isTeacherOnlyBlockText(blockText)) return false;
+    if (isExerciseOrAnswerText(blockText)) return false;
+    if (block.extractionMethod === "ocr" && isGarbledOcrText(blockText)) return false;
+    const lessonBlock = toLessonBlock(block);
+    if (lessonBlock === null) return false;
+    if (lessonBlock.type !== "table" && isStandaloneNumberText(lessonBlock.text)) return false;
+    return true;
   });
 }

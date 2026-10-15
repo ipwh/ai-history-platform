@@ -582,6 +582,90 @@ describe("LLM 輸出驗證", () => {
  * 技能標示：只接受教育局《歷史科課程指引》的固定技能清單。
  * 模型自創名稱會令技能統計失真，因此一律略過並記錄警告，而不是照抄寫入資料庫。
  */
+describe("填充題答案的歷史元素要求", () => {
+  function fillQuestion(answer: string, question = "宗教改革期間，德意志神學家發表《九十五條論證》，批評教會濫用贖罪券。") {
+    return {
+      questionType: "fill",
+      difficulty: "basic",
+      question,
+      options: [],
+      correctAnswer: answer,
+      explanation: "1517年，馬丁路德發表《九十五條論證》。",
+      knowledgePoint: "宗教改革的展開",
+      sourceExcerpt: "德意志神學家馬丁路德發表《九十五條論證》",
+      sourceBlockIds: ["blk_1"],
+      gradingPoints: [],
+    };
+  }
+
+  it("丟棄答案是教材欄位名稱的填充題（「展開時間」、「為生方法」）", () => {
+    for (const answer of ["重要", "背景", "生活方式", "展開時間"]) {
+      const result = validateLlmQuestions(
+        { questions: [fillQuestion(answer)] },
+        { ...context(), questionTypes: ["fill"] },
+      );
+      expect(result.accepted, answer).toHaveLength(0);
+      expect(result.discardedReasons.join(" "), answer).toContain("歷史元素");
+    }
+  });
+
+  it("接受答案為人物、年份及文件名的填充題，且不會產生相關警告", () => {
+    for (const answer of ["馬丁路德", "1517年", "《九十五條論證》"]) {
+      const result = validateLlmQuestions(
+        { questions: [fillQuestion(answer)] },
+        { ...context(), questionTypes: ["fill"] },
+      );
+      expect(result.accepted, answer).toHaveLength(1);
+      expect(result.accepted[0].qualityWarnings.join(" "), answer).not.toContain("歷史元素標記");
+    }
+  });
+
+  it("未能確認屬歷史元素的答案只記錄品質警告，題目仍然保留", () => {
+    const result = validateLlmQuestions(
+      {
+        questions: [
+          {
+            ...fillQuestion("石刻"),
+            question: "1517年，德意志神學家馬丁路德發表《九十五條論證》，批評教會濫用贖罪券。當時的哪一種技術用於印刷？",
+            explanation: "當時以石刻技術印刷文件。",
+          },
+        ],
+      },
+      { ...context(), questionTypes: ["fill"] },
+    );
+
+    expect(result.discardedReasons).toEqual([]);
+    expect(result.accepted).toHaveLength(1);
+    expect(result.accepted[0].qualityWarnings.join(" ")).toContain("未見歷史元素標記");
+  });
+
+  it("選擇題及短答題不受填充題答案要求影響", () => {
+    const result = validateLlmQuestions(
+      {
+        questions: [
+          {
+            questionType: "short",
+            difficulty: "basic",
+            question: "試說明「社會契約」。",
+            options: [],
+            correctAnswerIndex: null,
+            correctAnswer: "君主權力來自人民授予，雙方訂立契約以界定權責。",
+            explanation: "社會契約指君主權力來自人民授予。",
+            knowledgePoint: "啟蒙思想",
+            sourceExcerpt: "社會契約：君主權力來自人民授予，雙方訂立契約以界定權責。",
+            sourceBlockIds: ["blk_2"],
+            gradingPoints: ["君主權力來自人民授予", "雙方訂立契約以界定權責"],
+          },
+        ],
+      },
+      { ...context(), questionTypes: ["short"] },
+    );
+
+    expect(result.accepted).toHaveLength(1);
+    expect(result.discardedReasons).toEqual([]);
+  });
+});
+
 describe("歷史技能標示", () => {
   function questionWith(skill: string | null) {
     return {

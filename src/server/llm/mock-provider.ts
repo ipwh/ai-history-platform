@@ -12,8 +12,14 @@
  *      不產生含糊或有多個正確答案的題目。
  */
 import type { Difficulty, LlmQuestion, QuestionType } from "../../lib/types";
-import { extractYears, splitSentences, truncate, TABLE_CELL_SEPARATOR } from "../materials/text-utils";
-import { isGarbledOcrText } from "../services/ocr-text";
+import {
+  extractYears,
+  isGarbledOcrText,
+  splitSentences,
+  truncate,
+  TABLE_CELL_SEPARATOR,
+} from "../materials/text-utils";
+import { checkHistoricalAnswer, isYearAnswer } from "./historical-answer";
 import type { LlmProvider, MaterialUnit, QuestionGenerationInput } from "./provider";
 
 interface UnitFact {
@@ -94,6 +100,16 @@ function buildOptions(correct: string, candidates: string[]): string[] {
 function blankOut(text: string, term: string): string | null {
   if (!text.includes(term)) return null;
   return text.replace(term, "＿＿＿");
+}
+
+/**
+ * 填充題的答案必須是歷史元素（事件名稱、人物、年份、國家、地點、條約、神祇、思想、
+ * 政治制度等），見 [historical-answer.ts](./historical-answer.ts)。
+ * 本地示範生成只會用合格的素材出題；不合格者一律略過（寧可少出一題），
+ * 不會以「為生方法」、「展開時間」這類教材欄位名稱頂替。
+ */
+function isAcceptableFillAnswer(answer: string, materialText: string): boolean {
+  return checkHistoricalAnswer(answer, materialText).ok;
 }
 
 /**
@@ -318,7 +334,15 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
 
   /** 填充題：寫出「＿＿＿」代表的詞語 */
   function buildFillFromDefinition(): LlmQuestion | null {
-    const fact = nextUnused((item) => item.definedTerm !== null);
+    // 定義句的「詞語」必須是歷史元素，而且不可只是年份：教材的時間軸句式
+    // （例如「約公元前3,200年：人類發明文字」）若當成定義句，會得出
+    // 「「約公元前3,200年」是指人類發明文字」這種問不通的題目。
+    const fact = nextUnused(
+      (item) =>
+        item.definedTerm !== null &&
+        !isYearAnswer(item.definedTerm) &&
+        isAcceptableFillAnswer(item.definedTerm, item.unit.text),
+    );
     if (!fact) return null;
     const term = fact.definedTerm as string;
     fact.used = true;
@@ -338,7 +362,9 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
   /** 填充題：把教材句子的年份或「引號詞語」挖空 */
   function buildFillFromBlank(style: "year" | "quoted"): LlmQuestion | null {
     if (style === "year") {
-      const fact = nextUnused((item) => item.years.length === 1);
+      const fact = nextUnused(
+        (item) => item.years.length === 1 && isAcceptableFillAnswer(item.years[0], item.unit.text),
+      );
       if (!fact) return null;
       const year = fact.years[0];
       const blanked = blankOut(fact.unit.text, year);
@@ -357,9 +383,15 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
       };
     }
 
-    const fact = nextUnused((item) => item.quotedTerms.length > 0);
+    const fact = nextUnused((item) =>
+      item.quotedTerms.some((term) => isAcceptableFillAnswer(term, item.unit.text)),
+    );
     if (!fact) return null;
-    const term = fact.quotedTerms[0];
+    // 一個段落可能有多個引號詞語，只可用合格的那一個（不合格的會令答案沒有意義）
+    const term = fact.quotedTerms.find((candidate) =>
+      isAcceptableFillAnswer(candidate, fact.unit.text),
+    );
+    if (term === undefined) return null;
     const blanked = blankOut(fact.unit.text, term);
     if (!blanked || blanked.replace(/\s/g, "").length < 12) return null;
     fact.used = true;

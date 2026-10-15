@@ -164,7 +164,41 @@ export function extractKeyTerms(text: string, limit = 8): string[] {
     .map(([term]) => term);
 }
 
-/** 抽出一段文字中的數字／年份，例如 1517年 */
+/**
+ * 抽出一段文字中的年份，例如 1517年、3,500年。
+ *
+ * 只接受 3 至 4 位數字的年份，並要求數字完整：教材寫成「約公元前3,500年」時，
+ * 不可只抽出被千位分隔符切斷的「500年」（否則填充題會挖出「約公元前3,＿＿＿」這種題目）。
+ */
 export function extractYears(text: string): string[] {
-  return [...new Set(text.match(/\d{3,4}\s*年/g) ?? [])].map((year) => year.replace(/\s+/g, ""));
+  const years = new Set<string>();
+  for (const match of text.matchAll(/\d[\d,，]*\s*年/g)) {
+    const digits = match[0].replace(/[^\d]/g, "");
+    if (digits.length < 3 || digits.length > 4) continue;
+    years.add(match[0].replace(/\s+/g, ""));
+  }
+  return [...years];
+}
+
+/**
+ * 判斷 OCR 文字是否屬於「無法辨識的雜訊」。
+ *
+ * OCR 對圖表、地圖等圖片的辨識結果可能只是零散的單字（例如「俄國／德國／況／奧匈」），
+ * 這些文字既不是完整句子，也不足以支持有依據的題目。
+ * 規則式（本地示範）生成會略過這類文字；學生閱讀頁亦不顯示（沒有閱讀價值）。
+ *
+ * 判斷方式：最長的連續中文字串少於 4 個字，且至少有 3 段中文字詞，
+ * 代表整段文字都是短詞拼湊而非句子。
+ */
+export function isGarbledOcrText(text: string): boolean {
+  const segments = text
+    .split(/[\s，。、；：！？（）〈〉《》「」『』0-9A-Za-z.,;:!?()[\]{}"'\-—/\\|+]+/)
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+  if (segments.length < 3) return false;
+  const longestCjkRun = segments.reduce(
+    (longest, segment) => Math.max(longest, segment.length),
+    0,
+  );
+  return longestCjkRun < 4;
 }

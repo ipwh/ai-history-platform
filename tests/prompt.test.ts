@@ -53,6 +53,22 @@ describe("出題提示詞的歷史科要求", () => {
     expect(SYSTEM_PROMPT).toContain("不可虛構不存在的人物、事件、年份或條約");
   });
 
+  it("要求填充題的答案必須是具有歷史意義的元素", () => {
+    expect(SYSTEM_PROMPT).toContain("填充題的標準答案必須是**具有歷史意義的元素**");
+    expect(SYSTEM_PROMPT).toContain("著名歷史事件名稱、人物、年份、國家、地點、條約、神祇、思想或政治制度");
+    expect(SYSTEM_PROMPT).toContain("不可用普通詞語、形容詞或教材的欄位名稱作答");
+    expect(buildUserPrompt(input)).toContain("填充題的 correctAnswer 為需要填寫的字詞");
+    expect(buildUserPrompt(input)).toContain("必須是具有歷史意義的元素");
+  });
+
+  it("要求題目只憑題目文字即可作答，且只有一個站得住的答案", () => {
+    expect(SYSTEM_PROMPT).toContain("題目必須只憑題目文字即可作答");
+    expect(SYSTEM_PROMPT).toContain("涉及兩項或以上的史事");
+    expect(SYSTEM_PROMPT).toContain("「兩次」、「兩者」、「均」、「都」等字眼的指涉必須清楚");
+    expect(SYSTEM_PROMPT).toContain("正確答案必須明顯優於其他選項");
+    expect(buildUserPrompt(input)).toContain("不可有另一個在教材範圍內同樣成立的選項");
+  });
+
   it("使用者提示帶入年級及課程主題，方便模型掌握課程脈絡", () => {
     const prompt = buildUserPrompt({
       ...input,

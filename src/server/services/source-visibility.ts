@@ -12,23 +12,19 @@
  *   2. 任何一段查不到、不屬可發布文件，或判定過程出錯，一律不顯示。
  *   3. 題目**沒有引用任何教材段落**時（示範題庫的作者標註、教師手動建立的題目），
  *      節錄是作者自行撰寫的文字，因此維持顯示。
+ *   4. 引用段落若屬**非課文內容**（教師版教材的練習題目、評分參考及答案、圖片佔位標記、
+ *      零散數字），節錄一律不顯示——同樣的判斷用於閱讀頁及出題素材
+ *      （見 materials/content-policy.ts）。
  *
  * 只影響節錄文字、來源位置及段落 ID；題目本身、答案、解釋及學習記錄不受影響。
  */
-import type { Question } from "@/lib/types";
+import type { Question, StudentExcerptHiddenReason } from "@/lib/types";
 import { getBlocksByIds, listStudentDistributableDocumentIds } from "../repositories/materials";
 import { isTeacherOnlyBlockText } from "../materials/teacher-content";
+import { isNonLessonContent } from "../materials/content-policy";
 
-/** 學生看不到節錄的原因（供教師端顯示，令「看不到」有明確理由而不是靜靜略去） */
-export type StudentExcerptHiddenReason =
-  /** 來源文件未確認版權／未開放給學生 */
-  | "unconfirmed-material"
-  /** 來源段落屬教師版內容（答案、評分參考） */
-  | "teacher-edition"
-  /** 題目引用的教材段落已不存在（教材被重新匯入或刪除） */
-  | "missing-source-blocks"
-  /** 查證過程出錯（一律當作不可顯示） */
-  | "lookup-failed";
+/** 學生看不到節錄的原因（型別定義在 lib/types.ts，令教師端顯示的說明與此判定一致） */
+export type { StudentExcerptHiddenReason };
 
 export function studentExcerptVisibility(question: Question): {
   visible: boolean;
@@ -51,6 +47,10 @@ export function studentExcerptVisibility(question: Question): {
       const text = [block.text, ...(block.table ?? []).flat().map((cell) => cell.text)].join("\n");
       if (isTeacherOnlyBlockText(text)) {
         reason = "teacher-edition";
+        break;
+      }
+      if (isNonLessonContent(text, { fromOcr: block.extractionMethod === "ocr" })) {
+        reason = "exercise-content";
         break;
       }
     }

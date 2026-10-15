@@ -3,6 +3,7 @@
  */
 import { getDb, nowIso, newId } from "../db/connection";
 import { isTeacherOnlyBlockText, looksLikeTeacherEdition } from "../materials/teacher-content";
+import { isNonLessonContent } from "../materials/content-policy";
 import {
   materialBlockSchema,
   type ExtractionMethod,
@@ -763,7 +764,8 @@ function tableCellTexts(tableJson: string | null): string[] {
  *
  * 與 [buildMaterialUnits](../services/material-units.ts) 的 `audience: "student"` 使用同一套條件：
  * 文件須符合 `isStudentVisible`（已開放、已確認版權，教師版另需內容覆核）、非標題、
- * 圖片須有 OCR 文字，且段落不含教師專用字樣。
+ * 圖片須有 OCR 文字、段落不含教師專用字樣，亦不可屬非課文內容（練習題目、評分參考、
+ * 圖片佔位標記、零散數字，見 [content-policy](../materials/content-policy.ts)）。
  *
  * 學生選了沒有任何可用段落的主題時，即時出題**必定**被版權閘門擋下（409）。因此學生端
  * 介面必須用這個數字判斷「可不可以選」，而**不是** `materialBlockCount`——後者包含校內
@@ -799,7 +801,11 @@ export function studentMaterialBlockCounts(topicId: string): Map<string, number>
 
     const cells = row.type === "table" ? tableCellTexts(row.table_json) : [];
     // 與 buildMaterialUnits 相同：整段（含表格）只要帶有教師專用字樣即整段略去
-    if (isTeacherOnlyBlockText([row.text, ...cells].join("\n"))) continue;
+    const blockText = [row.text, ...cells].join("\n");
+    if (isTeacherOnlyBlockText(blockText)) continue;
+    // 非課文內容（練習題目、評分參考及答案、圖片佔位標記、零散數字）不會用作出題依據，
+    // 因此亦不計入「學生可用教材」，否則介面會承諾做不到的出題（見 materials/content-policy.ts）
+    if (isNonLessonContent(blockText, { fromOcr: row.extraction_method === "ocr" })) continue;
 
     const parts = row.type === "table" ? cells : row.type === "list" ? row.text.split("\n") : [row.text];
     // 段落太短的內容不會成為出題單位（與 pushUnit 的長度門檻一致）

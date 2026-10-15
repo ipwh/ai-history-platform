@@ -50,6 +50,14 @@ describe("text-utils", () => {
     expect(extractYears("1769年瓦特改良蒸汽機，1865年鋪設輸油管")).toEqual(["1769年", "1865年"]);
   });
 
+  it("抽取年份時保留千位分隔符，不會只抽出被切斷的數字", () => {
+    // 教材寫成「約公元前3,500年」時，若只抽出「500年」，填充題會挖出「約公元前3,＿＿＿」
+    expect(extractYears("展開時間：約公元前3,500年")).toEqual(["3,500年"]);
+    expect(extractYears("公元1,000年")).toEqual(["1,000年"]);
+    // 年份以外的長數字（例如 12,345）不會被當成一年
+    expect(extractYears("共 12,345年 的紀錄")).toEqual([]);
+  });
+
   it("表格列會以固定的分隔符接成文字（供生成題目及核對教材依據）", () => {
     const row = joinTableRow(["能源", "  ", "人力、畜力"]);
     expect(row).toBe(`能源${TABLE_CELL_SEPARATOR}人力、畜力`);

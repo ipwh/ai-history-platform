@@ -475,7 +475,10 @@ export function PracticeSetupForm() {
       </section>
 
       <section className="card flex flex-col gap-2">
-        <h2 className="font-semibold">2. 選擇題型</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold">2. 選擇題型（可多選）</h2>
+          <span className="text-xs text-gray-600">已選 {questionTypes.length} 種題型</span>
+        </div>
         <div className="flex flex-wrap gap-2">
           {QUESTION_TYPES.map((type) => (
             <button
@@ -490,6 +493,8 @@ export function PracticeSetupForm() {
           ))}
         </div>
         <p className="text-xs text-gray-500">
+          AI 會按你選取的題型出題（至少要選一種）；題型可多選，想只練一種題型，請把其他已選的題型再按一下取消
+          （例如只想練填充題，請取消「選擇題」）。
           短答題不會計入正確率；提交後由 AI 按「得分要點」批改（以意思判斷，用字不同不會直接判錯），
           你仍可按要點自我檢查。
         </p>
