@@ -14,9 +14,12 @@
 #   _ROSTER_COLUMN_NAME  學生姓名取自名冊哪一欄（預設 CHNAME = 中文姓名）
 #   _ROSTER_CLASS_PREFIXES  只開放的班別前綴（預設 1;2;3 = 中一至中三；留空 = 不設限）
 #                           清單以分號分隔，避免與 gcloud 的逗號分隔衝突
+# 「誰是教職員」政策（擁有者決定）：
+#   allowlist（預設，最小權限）／school-domain（暫時的全校教職員政策，見上）
+#   _STAFF_DOMAINS 只在 school-domain 時生效；應用程式未設定或拼錯時一律 fail-closed 回 allowlist
 #   _ADMIN_EMAILS  管理員電郵（可進入 /admin；多個以分號分隔；留空 = 沒有人是管理員）
 #                  注意：管理員必須在此指定，否則部署後無法進入管理員端。
-#   _TEACHER_EMAILS 教師電郵（供非校內網域帳戶使用；多個以分號分隔）
+#   _TEACHER_EMAILS 教師電郵（allowlist 政策下的教師；多個以分號分隔）
 #   _AUTH_FLAG     存取控制旗標：--allow-unauthenticated（預設）或留空（搭配 IAP／身分權杖）
 #   _RUNTIME_SA    Cloud Run 執行身分（服務帳戶電郵；留空 = 專案預設的 Compute Engine 服務帳戶）
 #   _BACKUP_BUCKET 資料庫備份的 Cloud Storage bucket（留空 = 不備份，重新部署後資料會遺失）
@@ -53,11 +56,15 @@ substitutions:
   # 後台角色：管理員可進入 /admin（教材、OCR、課題發布、系統狀態）；教師可進入 /teacher
   # 註：清單內用分號，避免與 gcloud --set-env-vars 的逗號分隔衝突
   #
-  # 註：校內網域不再授予教職員權限；教師必須列在 _TEACHER_EMAILS，否則無法進入教師端。
-  #            該學生就會取得教師權限，可讀取全部學生的練習記錄
-  # 名冊內的帳戶一律是學生，不受此設定影響。
+  # 註：校內網域本身不再授予教職員權限；預設（_STAFF_ACCESS_POLICY=allowlist）教師必須
+  #     列在 _TEACHER_EMAILS，否則無法進入教師端。名冊內的帳戶一律是學生，不受此設定影響。
+  #     若把 _STAFF_ACCESS_POLICY 設為 school-domain，_STAFF_DOMAINS 所列校內網域中
+  #     「非學號形式」（^s\d+$ 除外的）帳戶全部會成為教師，可讀取全部學生的練習記錄
+  #     ——這是擁有者明確授權的暫時「全校教職員」政策，不是最小權限政策。
   _ADMIN_EMAILS: ""
   _TEACHER_EMAILS: ""
+  _STAFF_ACCESS_POLICY: "allowlist"
+  _STAFF_DOMAINS: "pochiu.edu.hk"
   _BACKUP_BUCKET: ""
   _BACKUP_PREFIX: "history"
   _BACKUP_INTERVAL_SECONDS: "300"
@@ -114,7 +121,7 @@ steps:
           --max-instances="${_MAX_INSTANCES}" \
           $$AUTH_FLAG \
           $${RUNTIME_SA:+--service-account=$$RUNTIME_SA} \
-          --set-env-vars="NODE_ENV=production,LLM_PROVIDER=deepseek,LLM_MODEL=deepseek-flash,LLM_THINKING=disabled,LLM_MAX_TOKENS=8192,APP_DATABASE_PATH=/tmp/data/app.db,APP_UPLOADS_DIR=/tmp/data/uploads,OCR_CACHE_PATH=/tmp/data/ocr-cache,OCR_LANG_PATH=/app/ocr-lang,APP_MATERIALS_DIR=/app/materials,AUTH_REQUIRE_SIGN_IN=true,AUTH_SCHOOL_DOMAINS=pochiu.edu.hk,AUTH_ADMIN_EMAILS=${_ADMIN_EMAILS},AUTH_TEACHER_EMAILS=${_TEACHER_EMAILS},STUDENT_ROSTER_ENABLED=true,STUDENT_ROSTER_ENFORCE=true,STUDENT_ROSTER_SOURCE=sheets-api,STUDENT_ROSTER_SHEET_ID=${_ROSTER_SHEET_ID},STUDENT_ROSTER_SHEET_NAME=${_ROSTER_SHEET_NAME},STUDENT_ROSTER_COLUMN_NAME=${_ROSTER_COLUMN_NAME},STUDENT_ROSTER_CLASS_PREFIXES=${_ROSTER_CLASS_PREFIXES},DEMO_AUTO_PUBLISH_QUESTIONS=false,BACKUP_BUCKET=$${BACKUP_BUCKET},BACKUP_PREFIX=$${BACKUP_PREFIX},BACKUP_INTERVAL_SECONDS=$${BACKUP_INTERVAL_SECONDS},BACKUP_MIN_SPACING_SECONDS=$${BACKUP_MIN_SPACING_SECONDS},BACKUP_RESTORE_ON_START=true,BACKUP_PREFER_CLOUD=true" \
+          --set-env-vars="NODE_ENV=production,LLM_PROVIDER=deepseek,LLM_MODEL=deepseek-flash,LLM_THINKING=disabled,LLM_MAX_TOKENS=8192,APP_DATABASE_PATH=/tmp/data/app.db,APP_UPLOADS_DIR=/tmp/data/uploads,OCR_CACHE_PATH=/tmp/data/ocr-cache,OCR_LANG_PATH=/app/ocr-lang,APP_MATERIALS_DIR=/app/materials,AUTH_REQUIRE_SIGN_IN=true,AUTH_SCHOOL_DOMAINS=pochiu.edu.hk,AUTH_ADMIN_EMAILS=${_ADMIN_EMAILS},AUTH_TEACHER_EMAILS=${_TEACHER_EMAILS},AUTH_STAFF_ACCESS_POLICY=${_STAFF_ACCESS_POLICY},AUTH_STAFF_DOMAINS=${_STAFF_DOMAINS},STUDENT_ROSTER_ENABLED=true,STUDENT_ROSTER_ENFORCE=true,STUDENT_ROSTER_SOURCE=sheets-api,STUDENT_ROSTER_SHEET_ID=${_ROSTER_SHEET_ID},STUDENT_ROSTER_SHEET_NAME=${_ROSTER_SHEET_NAME},STUDENT_ROSTER_COLUMN_NAME=${_ROSTER_COLUMN_NAME},STUDENT_ROSTER_CLASS_PREFIXES=${_ROSTER_CLASS_PREFIXES},DEMO_AUTO_PUBLISH_QUESTIONS=false,BACKUP_BUCKET=$${BACKUP_BUCKET},BACKUP_PREFIX=$${BACKUP_PREFIX},BACKUP_INTERVAL_SECONDS=$${BACKUP_INTERVAL_SECONDS},BACKUP_MIN_SPACING_SECONDS=$${BACKUP_MIN_SPACING_SECONDS},BACKUP_RESTORE_ON_START=true,BACKUP_PREFER_CLOUD=true" \
           --set-secrets="AUTH_SECRET=${_AUTH_SECRET}:latest,DEEPSEEK_API_KEY=${_LLM_SECRET}:latest,STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=${_ROSTER_SECRET}:latest,GOOGLE_CLIENT_ID=${_GOOGLE_CLIENT_ID_SECRET}:latest,GOOGLE_CLIENT_SECRET=${_GOOGLE_CLIENT_SECRET_SECRET}:latest"
 
 images:

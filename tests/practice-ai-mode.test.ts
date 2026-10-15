@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { openDocumentForStudents } from "./material-distribution";
 import { freshTestDatabasePath } from "./test-database";
 
 // 使用獨立暫存資料庫，並以本地示範生成代替真實 LLM（不會發出網絡請求）
@@ -11,6 +12,7 @@ type QuestionRepository = typeof import("@/server/repositories/questions");
 type MaterialService = typeof import("@/server/services/material-service");
 type TopicService = typeof import("@/server/services/topic-service");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
+type PracticeRepo = typeof import("@/server/repositories/practice");
 type Seed = typeof import("@/server/seed");
 type Types = typeof import("@/lib/types");
 
@@ -19,6 +21,7 @@ let questionsRepo: QuestionRepository;
 let materialService: MaterialService;
 let topicService: TopicService;
 let materialsRepo: MaterialsRepo;
+let practiceRepo: PracticeRepo;
 let seed: Seed;
 let types: Types;
 
@@ -32,7 +35,7 @@ const SECTIONS = ["topic-5-renaissance-features", "topic-5-industrial-developmen
  */
 function grantDistributionForTopic(topicId: string): void {
   for (const block of materialsRepo.listGroundingBlocksForSections(topicId, [])) {
-    materialsRepo.setDocumentStudentDistribution(block.documentId, true);
+    openDocumentForStudents(materialsRepo, block.documentId);
   }
 }
 
@@ -48,6 +51,7 @@ beforeAll(async () => {
   materialService = await import("@/server/services/material-service");
   topicService = await import("@/server/services/topic-service");
   materialsRepo = await import("@/server/repositories/materials");
+  practiceRepo = await import("@/server/repositories/practice");
   seed = await import("@/server/seed");
   types = await import("@/lib/types");
   seed.ensureBootstrap();
@@ -60,6 +64,40 @@ beforeAll(async () => {
 });
 
 describe("AI 即時出題模式", () => {
+  it("學生自行觸發即時出題、但教材未開放時，HTTP 409 並提供可行動的說明（且不建立練習）", async () => {
+    revokeDistribution();
+    try {
+      const before = practiceRepo.listSessionsByLearner(LEARNER, "topic-5").length;
+      const { POST } = await import("@/app/api/practice/route");
+      const response = await POST(
+        new Request("http://localhost:3000/api/practice", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            learnerId: LEARNER,
+            topicId: "topic-5",
+            sectionIds: [SECTIONS[0]],
+            questionTypes: ["mc"],
+            difficulty: "basic",
+            questionCount: 3,
+            mode: "standard",
+            questionSource: "ai",
+            sourceSessionId: null,
+          }),
+        }),
+      );
+
+      expect(response.status).toBe(409);
+      const payload = (await response.json()) as { error?: string };
+      // 學生看到的是「教材尚未開放」，而不是含糊的技術錯誤；前端據此提供替代做法
+      expect(payload.error ?? "").toContain("尚未開放學生使用");
+      // 失敗時不可留下半完成的練習記錄
+      expect(practiceRepo.listSessionsByLearner(LEARNER, "topic-5").length).toBe(before);
+    } finally {
+      grantDistributionForTopic("topic-5");
+    }
+  });
+
   it("學生端即時出題不可使用未確認可發布的教材（fail-closed）", async () => {
     revokeDistribution();
     try {

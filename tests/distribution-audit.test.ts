@@ -13,6 +13,7 @@
  *   6. 邊界情況：未知文件 ID、重複請求、先開放後撤銷。
  */
 import { beforeAll, describe, expect, it } from "vitest";
+import { openDocumentForStudents } from "./material-distribution";
 import { freshTestDatabasePath } from "./test-database";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("distribution");
@@ -286,7 +287,8 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
       .listDocuments()
       .find((document) => document.kind === "question-bank");
     if (!questionBank) return;
-    materialsRepo.setDocumentStudentDistribution(questionBank.id, true);
+    // 即使已完整確認版權及內容，校內試題仍因 kind 而被排除
+    openDocumentForStudents(materialsRepo, questionBank.id);
     expect(materialsRepo.listStudentDistributableDocumentIds().has(questionBank.id)).toBe(false);
   });
 });
@@ -375,7 +377,7 @@ describe("教師版／混合文件（不可只因 kind 不是試題檔就當作�
     const sectionId = lesson.sections[0]?.id ?? "topic-5-renaissance-features";
     const document = createTeacherEditionDocument(sectionId, "topic-5");
     try {
-      materialsRepo.setDocumentStudentDistribution(document.id, true);
+      openDocumentForStudents(materialsRepo, document.id);
       const visible = lessonService.getLessonView("topic-5", [sectionId]);
       const texts = visible.sections
         .flatMap((section) => section.blocks)
@@ -418,7 +420,8 @@ describe("教師版／混合文件（不可只因 kind 不是試題檔就當作�
     ]);
     try {
       expect(teacherContent.looksLikeTeacherEdition(document.fileName)).toBe(true);
-      materialsRepo.setDocumentStudentDistribution(document.id, true);
+      // 完整治理開放（版權 + 內容覆核）後，只有段落層級的教師專用過濾會令內容不顯示
+      openDocumentForStudents(materialsRepo, document.id);
       const lesson = lessonService.getLessonView("topic-1", ["topic-1-origins"]);
       expect(lesson.sections).toEqual([]);
       expect(lesson.withheldTeacherBlocks).toBe(1);
@@ -462,7 +465,7 @@ describe("發行權操作的邊界情況", () => {
 
   it("先開放再撤銷後，學生下一個請求立即看不到內容（沒有快取）", () => {
     const documentId = pilotDocumentId();
-    materialsRepo.setDocumentStudentDistribution(documentId, true);
+    openDocumentForStudents(materialsRepo, documentId);
     expect(lessonService.getLessonView("topic-5").sections.length).toBeGreaterThan(0);
 
     materialsRepo.setDocumentStudentDistribution(documentId, false);

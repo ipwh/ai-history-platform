@@ -140,7 +140,7 @@ export function mapBlocksToSections(blocks: ParsedBlock[], sections: Section[]):
     const localMatch =
       block.type === "image" ? null : matchSectionWithLength(block.text, localMatchers);
     // 全部子分節的比對結果若更貼切（命中關鍵詞更長），優先採用，
-    // 例如「不同地區的舊石器時代人類」應歸入該分節而不是「舊石器時代」。
+    // 例如「新石器時代的農業」應歸入「新石器時代」而不是較短的「石器時代」。
     const globalMatch =
       block.type === "image" ? null : matchSectionWithLength(block.text, allChildMatchers);
     const matchedChild =

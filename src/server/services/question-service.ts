@@ -53,6 +53,7 @@ import { expandSectionIds, getSection, getTopic, listSections } from "../reposit
 import { normalizeForMatch, truncate } from "../materials/text-utils";
 import { topicLearningFocusText } from "../seed/curriculum-focus";
 import { buildMaterialUnits } from "./material-units";
+import { studentExcerptVisibility } from "./source-visibility";
 
 export class QuestionServiceError extends Error {
   readonly status: number;
@@ -408,12 +409,19 @@ export function teacherQuestionViews(questions: Question[]): TeacherQuestionView
 
 /** 題目清單用的覆核狀態（不重複題目內容） */
 export function questionReviewStatuses(questions: Question[]): QuestionReviewStatus[] {
-  return teacherQuestionViews(questions).map((view) => ({
-    questionId: view.question.id,
-    reviewState: view.reviewState,
-    latestReview: view.latestReview,
-    approvedReview: view.approvedReview,
-  }));
+  return teacherQuestionViews(questions).map((view) => {
+    // 教師端要看到「學生其實看不到節錄」及原因，否則會誤以為已顯示教材依據。
+    // 判定與學生端完全共用（source-visibility.ts），不會出現兩套標準。
+    const visibility = studentExcerptVisibility(view.question);
+    return {
+      questionId: view.question.id,
+      reviewState: view.reviewState,
+      latestReview: view.latestReview,
+      approvedReview: view.approvedReview,
+      sourceExcerptHiddenFromStudents: !visibility.visible,
+      sourceExcerptHiddenReason: visibility.reason,
+    };
+  });
 }
 
 export interface ReviewActor {

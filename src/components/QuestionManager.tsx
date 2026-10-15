@@ -10,6 +10,7 @@ import {
   QUESTION_REPORT_STATUS_LABELS,
   QUESTION_REVIEW_STATE_LABELS,
   QUESTION_STATUS_LABELS,
+  STUDENT_EXCERPT_HIDDEN_REASON_LABELS,
   QUESTION_TYPES,
   QUESTION_TYPE_LABELS,
   type Difficulty,
@@ -620,6 +621,19 @@ function QuestionListCard({
             <span className="badge" title="目前題目版本；修改後版本會遞增，舊覆核即失效">
               第 {question.revision} 版
             </span>
+            {/* 學生是否看得到教材節錄：由版權／教材閘門決定，教師必須知道實際情況 */}
+            {review?.sourceExcerptHiddenFromStudents ? (
+              <span
+                className="badge badge-warning"
+                title={`學生看不到本題的教材節錄：${
+                  review.sourceExcerptHiddenReason
+                    ? STUDENT_EXCERPT_HIDDEN_REASON_LABELS[review.sourceExcerptHiddenReason]
+                    : "教材未確認"
+                }`}
+              >
+                學生看不到節錄
+              </span>
+            ) : null}
             {question.origin === "school-paper" ? (
               <span className="badge">來源：校內試卷</span>
             ) : (

@@ -216,6 +216,57 @@ describe("學生登入（Google 回呼）", () => {
     expect(user?.learnerId).toBe("teacher:teacher@example.com");
   });
 
+  it("暫時政策開啟時，校內非學號形式的職員帳戶不受名冊限制（Sprint 7.2）", async () => {
+    delete process.env.STUDENT_ROSTER_ENFORCE;
+    process.env.STUDENT_ROSTER_FILE = rosterFile;
+    process.env.AUTH_STAFF_ACCESS_POLICY = "school-domain";
+    process.env.AUTH_STAFF_DOMAINS = "pochiu.edu.hk";
+    stub.setEmail("staff.member@pochiu.edu.hk", "職員帳戶");
+
+    const response = await runCallback(callbackRequest(session));
+    const user = sessionUserFromResponse(response, session);
+    expect(user?.role).toBe("teacher");
+    expect(user?.learnerId).toBe("teacher:staff.member@pochiu.edu.hk");
+    expect(user?.rosterVerified).toBe(false);
+
+    delete process.env.AUTH_STAFF_ACCESS_POLICY;
+    delete process.env.AUTH_STAFF_DOMAINS;
+  });
+
+  it("暫時政策開啟時，學號形式帳戶仍受名冊限制（政策不能繞過名冊）（Sprint 7.2）", async () => {
+    delete process.env.STUDENT_ROSTER_ENFORCE;
+    process.env.STUDENT_ROSTER_FILE = rosterFile;
+    process.env.AUTH_STAFF_ACCESS_POLICY = "school-domain";
+    process.env.AUTH_STAFF_DOMAINS = "pochiu.edu.hk";
+    stub.setEmail("s2099999@pochiu.edu.hk", "未在名冊");
+
+    const blocked = await runCallback(callbackRequest(session));
+    expect(blocked.headers.get("location")).toContain("/login?error=not_in_roster");
+    expect(sessionUserFromResponse(blocked, session)).toBeNull();
+
+    // 名冊服務不可用時，學號形式帳戶同樣 fail-closed（不會變成教師）
+    roster.resetRosterCache();
+    process.env.STUDENT_ROSTER_FILE = path.join(os.tmpdir(), `hist-missing-staff-${process.pid}.csv`);
+    const unavailable = await runCallback(callbackRequest(session));
+    expect(unavailable.headers.get("location")).toContain("/login?error=roster_unavailable");
+    expect(sessionUserFromResponse(unavailable, session)).toBeNull();
+
+    delete process.env.AUTH_STAFF_ACCESS_POLICY;
+    delete process.env.AUTH_STAFF_DOMAINS;
+  });
+
+  it("政策關閉時，校內別名帳戶被視為學生並受名冊限制（Sprint 7.2）", async () => {
+    delete process.env.STUDENT_ROSTER_ENFORCE;
+    delete process.env.AUTH_STAFF_ACCESS_POLICY;
+    delete process.env.AUTH_STAFF_DOMAINS;
+    process.env.STUDENT_ROSTER_FILE = rosterFile;
+    stub.setEmail("chan.tai.ming@pochiu.edu.hk", "未在名冊的別名帳戶");
+
+    const response = await runCallback(callbackRequest(session));
+    expect(response.headers.get("location")).toContain("/login?error=not_in_roster");
+    expect(sessionUserFromResponse(response, session)).toBeNull();
+  });
+
   it("state 不符時不會建立工作階段", async () => {
     process.env.STUDENT_ROSTER_FILE = rosterFile;
     const response = await runCallback(callbackRequest(session, { state: "state-123" }));

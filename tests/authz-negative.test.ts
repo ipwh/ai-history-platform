@@ -19,7 +19,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { freshTestDatabasePath } from "./test-database";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("authz-negative");
@@ -341,6 +341,78 @@ describe("負向授權：每一個特權路由", () => {
       });
     });
   }
+});
+
+/**
+ * 暫時的全校教職員政策（Sprint 7.2）：`AUTH_STAFF_ACCESS_POLICY=school-domain` 時，
+ * `AUTH_STAFF_DOMAINS` 所列網域的非學號形式帳戶可通過教師端，但不可通過管理員端；
+ * 停用後同一個 cookie 立即被拒絕。
+ */
+describe("暫時的全校教職員政策（school-domain）在真實路由上的效果", () => {
+  const STAFF_EMAIL = "staff.member@pochiu.edu.hk";
+  const STAFF_USER = {
+    email: STAFF_EMAIL,
+    name: "校內職員",
+    role: "teacher" as const,
+    learnerId: `teacher:${STAFF_EMAIL}`,
+    pictureUrl: null,
+  };
+
+  async function callOverview(cookie?: string): Promise<Response> {
+    const { GET } = await import("@/app/api/teacher/overview/route");
+    return GET(
+      new Request("http://localhost:3000/api/teacher/overview", {
+        headers: cookie ? { cookie } : {},
+      }),
+    ) as Promise<Response>;
+  }
+
+  async function callAdminOverview(cookie?: string): Promise<Response> {
+    const { GET } = await import("@/app/api/admin/system/overview/route");
+    return GET(
+      new Request("http://localhost:3000/api/admin/system/overview", {
+        headers: cookie ? { cookie } : {},
+      }),
+    ) as Promise<Response>;
+  }
+
+  afterEach(() => {
+    delete process.env.AUTH_STAFF_ACCESS_POLICY;
+    delete process.env.AUTH_STAFF_DOMAINS;
+  });
+
+  it("政策開啟：校內職員可讀取教師端，但不可讀取管理員端", async () => {
+    process.env.AUTH_STAFF_ACCESS_POLICY = "school-domain";
+    process.env.AUTH_STAFF_DOMAINS = "pochiu.edu.hk";
+    const cookie = cookieHeader(STAFF_USER);
+    expect(isAuthorized(await callOverview(cookie))).toBe(true);
+    expect((await callAdminOverview(cookie)).status).toBe(403);
+  });
+
+  it("政策停用：同一個 cookie 立即被拒絕（不需等待工作階段到期）", async () => {
+    process.env.AUTH_STAFF_ACCESS_POLICY = "school-domain";
+    process.env.AUTH_STAFF_DOMAINS = "pochiu.edu.hk";
+    const cookie = cookieHeader(STAFF_USER);
+    expect(isAuthorized(await callOverview(cookie))).toBe(true);
+
+    delete process.env.AUTH_STAFF_ACCESS_POLICY;
+    expect((await callOverview(cookie)).status).toBe(403);
+  });
+
+  it("政策開啟但網域不在清單內：仍然被拒絕", async () => {
+    process.env.AUTH_STAFF_ACCESS_POLICY = "school-domain";
+    process.env.AUTH_STAFF_DOMAINS = "other-school.edu.hk";
+    expect((await callOverview(cookieHeader(STAFF_USER))).status).toBe(403);
+  });
+
+  it("政策開啟時，學生（學號形式）仍被拒絕，也不可透過偽造 cookie 升級", async () => {
+    process.env.AUTH_STAFF_ACCESS_POLICY = "school-domain";
+    process.env.AUTH_STAFF_DOMAINS = "pochiu.edu.hk";
+    expect((await callOverview(cookieHeader(STUDENT_USER))).status).toBe(403);
+    // 偽造：把學生帳號寫成教師角色
+    const forged = cookieHeader({ ...STUDENT_USER, role: "teacher" as const, learnerId: "teacher:x" });
+    expect((await callOverview(forged)).status).toBe(403);
+  });
 });
 
 /**

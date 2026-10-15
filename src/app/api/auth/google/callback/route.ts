@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { AuthError, fetchGoogleProfile, publicUrl, resolveRedirectUri } from "@/server/auth/google";
 import { safeNextPath } from "@/server/auth/redirect";
-import { buildSessionUserWithRoster, isExplicitStaff, resolveSignInRole } from "@/server/auth/role";
+import { buildSessionUserWithRoster, resolveSignInRole } from "@/server/auth/role";
 import {
   OAUTH_COOKIE,
   SESSION_COOKIE,
@@ -49,14 +49,14 @@ export async function GET(request: Request) {
       redirectUri: resolveRedirectUri(request),
     });
 
-    // 學生名冊核對：只有名冊內的學生可登入（教師不受名冊限制）。
-    // 名冊同時是角色判定的依據：名冊內的帳戶一律是學生，因此「校內網域但學號形式
-    // 不符」的別名帳戶不會落入「校內其他帳號 = 教師」而取得教師權限。
+    // 學生名冊核對：只有名冊內的學生可登入（教職員不是名冊成員，不受此限）。
+    // 學號形式（^s[0-9]+$）一律是學生，因此學生帳戶永遠不會略過名冊核對，
+    // 亦不會因名冊資料缺失或校內網域政策而落入教師角色。
     const baseRole = resolveSignInRole(profile.email, config.auth);
-    const explicitStaff = isExplicitStaff(profile.email, config.auth);
+    const staffAccount = baseRole !== "student";
     let student: RosterStudent | null = null;
 
-    if (config.roster.enabled && !explicitStaff) {
+    if (config.roster.enabled && !staffAccount) {
       const snapshot = await getRosterSnapshot();
       if (!snapshot.loaded) {
         // 名冊暫時無法讀取：學生一律拒絕（避免未授權帳戶進入），

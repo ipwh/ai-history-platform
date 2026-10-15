@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ApiRouteError, handleRoute, jsonOk, parseJsonBody } from "@/server/http";
 import { assignTopic, getDocumentBlocks, removeDocument } from "@/server/services/material-service";
 import {
+  documentIsStudentVisible,
   getDocument,
   getDocumentGovernance,
   listDistributionAudit,
@@ -34,6 +35,12 @@ export async function GET(request: Request, context: { params: Promise<{ documen
       // 供管理員核對：這份文件有多少段落被判定為教師專用內容而不會顯示給學生
       teacherOnlyBlockCount: teacherOnlyBlocks,
       looksLikeTeacherEdition: looksLikeTeacherEdition(document.fileName),
+      /**
+       * 這份文件**現時**是否真的會顯示給學生。`studentDistribution` 為 true 但缺少版權確認
+       * （教師版另需內容覆核）時，這裡會是 false——管理員介面會說明原因，避免誤以為已開放。
+       */
+      studentVisibleToStudents: documentIsStudentVisible(document),
+      governance: getDocumentGovernance(documentId),
     });
   });
 }

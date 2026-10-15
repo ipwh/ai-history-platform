@@ -142,7 +142,28 @@ export interface AuthConfig {  /** 是否已具備啟用登入所需的憑證 */
   inDomainRole: "student";
   /** 舊政策變數仍被設定（僅用於提示，已不影響角色判定） */
   legacyInDomainTeacherConfigured: boolean;
+  /**
+   * 教師權限來源（Sprint 7.2）：
+   *
+   *   - `allowlist`（預設）：只有 `AUTH_TEACHER_EMAILS` 內的帳戶是教師。
+   *   - `school-domain`：**擁有者授權的暫時政策**——`AUTH_STAFF_DOMAINS` 所列校內網域中，
+   *     已通過 Google 驗證、且**不是**學號形式（`^s[0-9]+$`）的帳戶可取得教師權限，
+   *     令全校教職員都能使用教師介面，毋須逐一列出。
+   *
+   * 這**不是**最小權限政策：教師介面可讀取全部學生的練習記錄，並可覆核及發布題目。
+   * 停用方式：把 `AUTH_STAFF_ACCESS_POLICY` 設回 `allowlist`（或移除該變數），並以
+   * `AUTH_TEACHER_EMAILS` 明確列出教師。
+   *
+   * 舊的 `AUTH_IN_DOMAIN_ROLE`／`AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER` 已棄用且**完全無效**，
+   * 只會產生 error 級設定警示，永不授予權限。
+   */
+  staffAccessPolicy: StaffAccessPolicy;
+  /** 暫時政策允許的教職員網域（完整標籤比對，例如 `pochiu.edu.hk`） */
+  staffDomains: string[];
 }
+
+/** 教師權限來源：明確名單，或擁有者授權的暫時「校內網域教職員」政策 */
+export type StaffAccessPolicy = "allowlist" | "school-domain";
 
 /**
  * 資料庫備份設定。
@@ -368,6 +389,19 @@ function readLegacyInDomainTeacherConfigured(): boolean {
 }
 
 /**
+ * 教師權限來源（Sprint 7.2）。
+ *
+ * 預設 `allowlist`（fail-closed）。只有明確設定 `AUTH_STAFF_ACCESS_POLICY=school-domain`
+ * 才會啟用擁有者授權的暫時政策；其他值（包括拼錯）一律當作 `allowlist`，
+ * 並由設定診斷提出警示，避免「以為已啟用」或意外擴權。
+ */
+function readStaffAccessPolicy(): StaffAccessPolicy {
+  const raw = (readEnv("AUTH_STAFF_ACCESS_POLICY") ?? "").trim().toLowerCase();
+  if (raw === "school-domain") return "school-domain";
+  return "allowlist";
+}
+
+/**
  * AI 用量上限。預設為保守的防濫用值（並非擁有者核准的預算）。
  * 未設定時使用這些值；設為 0 代表不設限（不建議，只供本機測試）。
  */
@@ -507,6 +541,8 @@ export function getServerConfig(): ServerConfig {
       adminEmails: readList("AUTH_ADMIN_EMAILS"),
       inDomainRole: "student",
       legacyInDomainTeacherConfigured,
+      staffAccessPolicy: readStaffAccessPolicy(),
+      staffDomains: readList("AUTH_STAFF_DOMAINS"),
     },
     ocr: {
       provider: ocrProvider === "google-vision" && ocrApiKey === null ? "tesseract" : ocrProvider,

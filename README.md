@@ -36,7 +36,8 @@ npm run dev          # 啟動開發伺服器
 | --- | --- | --- |
 | `LLM_PROVIDER=deepseek` + `DEEPSEEK_API_KEY` | 學生揀選課題及多個主題後由 AI 即時出題（已驗證教材依據） | 七、LLM 設定 |
 | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` + `AUTH_SECRET` | 讓學生以學校 Google Workspace 帳戶登入，學習記錄跟隨帳戶，並保護教師端及管理員端 | 八、角色與權限 |
-| `AUTH_TEACHER_EMAILS=你的電郵` | 非校內網域帳戶（例如個人 Gmail）亦可使用教師端，方便本機測試 | 八、角色與權限 |
+| `AUTH_TEACHER_EMAILS=你的電郵` | 指定教師帳戶（可使用教師端；校內帳戶亦必須列出），方便本機測試 | 八、角色與權限 |
+| `AUTH_STAFF_ACCESS_POLICY=school-domain` + `AUTH_STAFF_DOMAINS=pochiu.edu.hk` | **擁有者授權的暫時**全校教職員政策：校內網域中非學號形式的帳戶都是教師（**不是**最小權限，見第八節） | 八、角色與權限 |
 | `AUTH_ADMIN_EMAILS=你的電郵` | 指定管理員帳戶（可使用教材管理、OCR、課題發布及系統狀態），方便本機測試 | 八、角色與權限 |
 
 **頁面入口**：學生端在 `/`（課題選擇）；教師端在 `/teacher`（首頁）、`/teacher/questions`（題目與回報）、`/teacher/records`（學生練習記錄）；管理員端在 `/admin`（儀表板）、`/admin/materials`（教材）、`/admin/settings`（課題與系統狀態）。教師及管理員帳戶亦可使用全部學生端功能作測試（見「三、頁面及功能」的「教師／管理員測試學生端」）。
@@ -57,6 +58,8 @@ npm run dev          # 啟動開發伺服器
 | `npm run setup` | 重建／更新示範資料（可加 `--ocr` 同時執行 OCR、`--pilot` 只匯入課題5） |
 | `npm run import:materials` | 由命令列匯入 `materials/` 內的教材及校內試題（可加 `--books`、`--questions`、`--topic`、`--ocr`） |
 | `npm run generate:questions` | 為各課題生成題目（`--topic`、`--count`、`--draft-only`） |
+| `npm run publish:drafts` | **擁有者授權**的批次發布草稿題目（預設模擬；`--owner-email`、`--reason`、`--origins`、`--apply`，見第十節） |
+| `npm run snapshot:production` | 匯出正式環境用的乾淨資料庫快照（清除教材開放紀錄；只適用於全新正式環境，見第十節） |
 | `docker build -t hk-history-self-study .` | 建立 Cloud Run 用的容器映像檔（見第十節） |
 | `./scripts/deploy-cloud-run.ps1 -Project <專案ID>` | 部署到 Google Cloud Run（預設只顯示指令，加 `-Apply` 才執行） |
 
@@ -115,9 +118,11 @@ materials/
 | 課題11 20世紀以來的國際合作 | `課題11 20世紀以來的國際合作/課題11 20世紀以來的國際合作.docx` | 237 | 243 |
 | 課題12 20世紀香港的成長與蛻變 | `課題12 二十世紀香港的成長與蛻變/課題12 二十世紀香港的成長與蛻變.docx` | 484 | 361 |
 
-題數為實際匯入題庫的數目（`npm run import:materials`，2026 年 10 月實測）：共 **4,028 題**，其中 49 題為示範題庫（課題5，已發布），其餘為校內試題（**草稿，待教師審核**）。匯入方式見第五節。
+題數為實際匯入題庫的數目（`npm run import:materials`，2026 年 10 月實測）：共 **4,028 題**，其中 49 題為示範題庫（課題5）、5 題為 AI 生成的教材依據題目，其餘為**校內試題**。校內試題已由擁有者授權批次發布（見第十節「擁有者授權的批次發布」）；AI 生成的題目仍為**草稿**，待教師覆核後才發布。匯入方式見第五節。
 
-> **課題1 考核範圍**：本校只考核「古埃及文明（尼羅河流域）」，新月沃土文明、（黃河、長江流域）中華文明及印度河流域文明**不會**寫入資料庫、不會出現在學生端，亦不會成為題目內容（規則見 [src/server/materials/exclusions.ts](src/server/materials/exclusions.ts)，資料庫遷移 `0008` 會清除舊資料）。匯入時會略過相關段落、分節及題目。
+> **課題1 考核範圍**：本校只考核「古埃及文明（尼羅河流域）」，新月沃土文明、（黃河、長江流域）中華文明及印度河流域文明**不會**寫入資料庫、不會出現在學生端，亦不會成為題目內容（規則見 [src/server/materials/exclusions.ts](src/server/materials/exclusions.ts)，資料庫遷移 `0008` 會清除舊資料）。
+
+> **已移除的空分節「不同地區的舊石器時代人類」**：教材中這個標題只有標題本身、沒有任何內容段落，因此學生端一直無法選用（顯示「未有教材」）。擁有者決定把它由課程中刪除：課程種子已移除該分節，教材匯入亦會略過該標題及其子樹（`exclusions.ts`），資料庫遷移 `0018` 會清除舊資料庫的分節、段落及題目，因此不會有殘留的空分節或無法出題的項目。
 
 > **不設「教師參考：課程指引」課題**：兩份教育局課程指引 PDF 只是教師可自行翻閱的參考資料，對出題沒有貢獻——學生練習的教材檢索以課題為範圍，批次生成題庫亦排除 `level = 0`，故此課題已移除（資料庫遷移 `0009` 會清除舊資料庫的該課題、2 份文件及 3,463 段教材）。課程重視的歷史概念及技能是寫在程式碼內的常數（[src/lib/types.ts](src/lib/types.ts) 的 `HISTORY_CONCEPTS`／`HISTORY_SKILLS`，取自該指引第 1.3 節），並非讀取 PDF 而得。
 
@@ -209,6 +214,13 @@ materials/
 `/learn/[topicId]` 會**原文顯示**教材內容，等同在平台內向學生發布該內容。教材可能來自出版社課本或第三方材料，而**本專案沒有任何授權、發行權或使用條款的紀錄**，因此無法確認學校是否有權在平台展示這些內容。
 
 - **預設一律不顯示（fail-closed）**：`material_documents.student_distribution` 預設為 `0`（不可），只有管理員**逐份文件**明確確認後才會在閱讀頁出現（`PATCH /api/admin/materials/[documentId]`）。未確認的教材對學生完全不會出現，閱讀頁只會顯示「尚未開放」的說明。
+- **「已開放」需要四個條件全部成立（Sprint 7.1 起在讀取時一併核對）**：學生端唯一判斷來源是 `documentIsStudentVisible()`／`listStudentDistributableDocumentIds()`，條件為
+  1. 不是校內試題文件（`kind = 'question-bank'`）；
+  2. `student_distribution = 1`（管理員想開放）；
+  3. 有**版權／發行權確認**（`rights_confirmed_at`）；
+  4. 教師版文件另有**內容安全覆核**（`content_reviewed_at`）。
+
+  第 3、4 項過去只在寫入時（PATCH）檢查，因此**舊狀態**——在兩項確認機制（遷移 `0017`）之前已開放的文件、由舊備份還原的資料庫，或任何繞過 API 直接寫入的列——會一直對學生可見，而系統無法回答「這份文件為何可以給學生看」。現在讀取時一律核對，這類文件**立即停止顯示給學生**，直到管理員重新確認。管理員端會明確顯示「學生現時仍然看不到這份教材」及原因（不是靜默失效）。相關測試見 [tests/document-governance-legacy.test.ts](tests/document-governance-legacy.test.ts)。
 - **兩項分開的確認（Sprint 5）**：開放需要同時回答兩個不同的問題，並分開記錄「誰在何時確認」：
   | 確認 | 回答的問題 | 要求 |
   | --- | --- | --- |
@@ -221,7 +233,15 @@ materials/
 - **每次變更都留有稽核記錄**：`distribution_audit` 會記錄操作者（取自伺服器端的工作階段，前端提供的值不會被採用）、角色、開啟或關閉及時間。只更新課題（`topicId`）或重複設定相同值都不會產生記錄。
 - **校內試題永遠不會成為學生讀物**：`kind = 'question-bank'` 的文件（題目與答案）即使被標示為可發布，亦會被排除（`listStudentDistributableDocumentIds`）。
 - **學生即時 AI 出題同樣受此閘門限制（Sprint 5 修正）**：學生自行觸發的 AI 出題只可使用已確認可發布、且非教師專用的教材段落（見 [src/server/services/material-units.ts](src/server/services/material-units.ts) 的 `audience: "student"`）；沒有可用段落時會回 `409` 並說明教材尚未開放，**不會**改用未確認的內容。修正前這個途徑會繞過閘門，把教師版內容（包括答案段落）引出成題目及節錄。教師／管理員生成題目不受限（他們本來就可以看到教材內容）。
-- **學生端的教材節錄同樣受此閘門限制（Sprint 6 修正）**：學生作答後的「教材來源」只會顯示題目所引用**全部**段落都屬於已確認可向學生發布、且非教師專用的文件時的節錄。任何一段未確認（文件未確認、屬教師版且未逐段核對、段落帶有答案／評分參考字樣、段落已不存在）時，回饋會回傳 `sourceWithheld: true`，而 `sourceExcerpt`、`sourceLocation` 及 `sourceBlockIds` 都不會回傳（介面改為說明「尚未經教師確認可向學生發布」）。撤回發行權後，**即使是較早完成的練習**亦立即不再顯示節錄（每次讀取都重新判定）。題目若沒有引用任何教材段落（示範題庫的作者註記、教師手寫節錄），節錄並非擷取自教材，因此維持顯示。相關測試見 [tests/source-excerpt-policy.test.ts](tests/source-excerpt-policy.test.ts)。
+- **學生端的教材節錄同樣受此閘門限制（Sprint 6 修正）**：學生作答後的「教材來源」只會顯示題目所引用**全部**段落都屬於已確認可向學生發布、且非教師專用的文件時的節錄。任何一段未確認（文件未確認、屬教師版且未逐段核對、段落帶有答案／評分參考字樣、段落已不存在）時，回饋會回傳 `sourceWithheld: true`，而 `sourceExcerpt`、`sourceLocation` 及 `sourceBlockIds` 都不會回傳（介面改為說明「尚未經教師確認可向學生發布」）。撤回發行權後，**即使是較早完成的練習**亦立即不再顯示節錄（每次讀取都重新判定）。題目若沒有引用任何教材段落（示範題庫的作者註記、教師手寫節錄），節錄並非擷取自教材，因此維持顯示。相關測試見 [tests/source-excerpt-policy.test.ts](tests/source-excerpt-policy.test.ts)，**路由層**驗證（`POST .../answers`、`GET .../result`，包括其他欄位及錯誤路徑都不含原文）見 [tests/practice-result-excerpt.test.ts](tests/practice-result-excerpt.test.ts)，端對端則見 `scripts/e2e-flow.mjs` 的「撤回後不再回傳教材原文節錄」。
+- **教師端會顯示學生實際能看到甚麼（Sprint 7.2）**：題目清單會為每題標示「學生看不到節錄」及原因（教材未確認／教師版段落／引用的段落已不存在）。判定與學生端共用同一個模組（[src/server/services/source-visibility.ts](src/server/services/source-visibility.ts)），因此教師不會誤以為學生已看到節錄；同時學生作答前的題目物件**不含** `sourceExcerpt`、`sourceLocation` 及 `sourceBlockIds`（作答後才由回饋按同一規則決定是否提供）。
+- **教材 → 題目的依據鏈（學生路徑）**：以下每一步都失敗即停，不會「退而求其次」使用未確認內容。
+  1. 教材匯入（`materials/` 或管理員上載）→ 每個段落記錄所屬文件、課題及分節（`material_blocks`）。
+  2. 出題前由 [src/server/services/material-units.ts](src/server/services/material-units.ts) 依 `audience` 選取依據（`student` 只取已確認可向學生發布、且非教師專用的文件；`staff` 取全部）。
+  3. 模型必須逐字引用所提供段落的原文作為 `sourceExcerpt`，且 `sourceBlockIds` 必須是**已提供**的段落（[src/server/llm/validation.ts](src/server/llm/validation.ts)），否則該題不採用。
+  4. 生成的題目一律先存為**草稿**；正式環境不會自動發布（見第六節的發布關卡）。
+  5. 教師覆核通過後才 `published`（覆核綁定題目版本及內容指紋，之後修改即失效）。
+  6. 學生練習時：題目本身不含答案與節錄；即時出題再次套用第 2 步；作答後的節錄由 `studentExcerptVisibility` 逐段核對（任何一段不合格即整段略去）。
 - **教師版教材需要額外確認（Sprint 4 新增）**：匯入的課本檔案是**教師版**（檔名如 `HNC2B2E_T5_SN_TE.docx`，`_TE` = Teacher's Edition），除了學生用內容外可能夾附答案、評分參考及教師註記。因此：
   - 檔名標示為教師版／答案的文件（`_TE`、教師版、教師用、答案、評分參考、題解、marking、answer key 等），`PATCH .../studentDistribution: true` **必須同時帶 `confirmTeacherEdition: true`**，否則回 **409** 並說明原因。這是**決定性的檔名判斷**，不受內容書寫方式影響。
   - 管理員端需要**兩個勾選**（版權確認 + 教師版逐段核對確認）才可按「確認開放學生閱讀」，並顯示該文件被判定為教師專用內容的段落數。
@@ -462,6 +482,35 @@ npm run import:materials -- --ocr                 # 匯入後執行 OCR（辨識
 教師上載的原始檔案會另存於 `data/uploads/`（資料庫只記錄路徑），方便日後重新解析或匯出；`data/` 已被 `.gitignore` 忽略，不會被提交。
 
 > **同名教材會視為重新匯入**：再次匯入相同檔名的教材時，系統會先移除舊版本（連同其段落）再匯入新版本，避免重複教材。匯入後會自動用原文節錄為受影響的題目重新定位教材依據（標題、段落及表格列皆可比對）：找得到就更新對應段落並保持「已核對」，找不到則標示為「未通過教材依據核對」，提醒教師在 `/teacher/questions` 重新檢查。教材變更後亦應重新執行 OCR（介面的「匯入後執行 OCR」會自動處理）。
+
+### 教材與映像檔：可重現建置的三個選項（Sprint 7.1）
+
+**現況（已核實）**：`materials/*` 被 `.gitignore` 排除（只有 `materials/README.md` 納入版本控制，理由是第三方版權），但 `Dockerfile` 會 `COPY materials ./materials`，而 `.gcloudignore` 保留 `materials/`。由於部署指令碼用 `gcloud builds submit .`（上載**本機目錄**作為建置內容），因此**映像檔的教材內容取決於執行部署的那台電腦**：
+
+- 在有教材的電腦部署 → 映像檔含 96 個教材檔（實測）→ 管理員可以匯入。
+- 由**全新 clone** 部署 → 映像檔只有 `materials/README.md` → 建置**成功**、服務**正常啟動**，但沒有任何教材可匯入（學生會看到沒有教材的平台）。
+
+這是「可重現性」問題而非當機問題，因此需要明確的設計選擇。三個選項的比較：
+
+| 面向 | **A. 擁有者核准的私有教材包（現行做法的正式化）** | **B. 受控的私有教材儲存 + 授權匯入流程**（建議） | **C. 刻意不含教材的映像檔 + 明確匯入步驟** |
+| --- | --- | --- | --- |
+| 內容 | 教材檔放在受控的私有位置（例如私有 GCS bucket 或加密壓縮包），部署時下載到建置環境後才建置 | 映像檔不含教材；管理員以既有的上載／匯入流程（`POST /api/admin/materials`）從受控儲存匯入 | 映像檔明確不含教材；`materials/` 只保留說明檔 |
+| 可重現建置 | 部分：需要記錄「教材包版本／雜湊」，映像檔才可重現 | 高：程式碼與教材分離，映像檔可由 Git 完全重現 | 高：同上 |
+| 版權邊界 | 教材不進 Git，但仍進入 Artifact Registry 映像檔（等同在雲端保存副本） | 教材只存在於受控儲存及資料庫；映像檔不含版權內容 | 最清晰：雲端映像檔完全不含教材 |
+| 存取控制 | 依 bucket／建置環境權限 | 依 bucket／IAM；匯入需要管理員身分（已實作） | 依 bucket／IAM |
+| 相容性 | 與現行程式路徑完全相容（`APP_MATERIALS_DIR=/app/materials`） | 相容：匯入後教材存在資料庫（`material_documents`/`material_blocks`），閱讀／出題路徑不變 | 相容：同上（只是首次需手動匯入） |
+| 備份／還原 | 教材在映像檔內，還原後仍需重新匯入（現行說明） | 資料庫備份已含段落文字，還原後**通常不需**重新匯入；原始檔另備於受控儲存 | 同 B |
+| 偵測缺失 | 部署前指令碼檢查 + 管理員端 `materials-bundle-missing` 警告 | 管理員端可見「已匯入文件數／段落數」；未匯入時學生端顯示「尚未開放」 | 同 B，並在部署說明中列為必要步驟 |
+| 遷移及運作複雜度 | 低（現況 + 版本記錄） | 中（需要一個受控 bucket 及一次授權匯入；其後運作與現時相同） | 低，但每次重建執行個體都要重新匯入（Cloud Run 容器檔案系統不保留檔案） |
+
+**建議：B（受控私有儲存 + 授權匯入）**，短期以 A 的「教材包版本記錄」補強。理由：B 讓映像檔可由 Git 完全重現、把版權內容排除在映像檔之外，而且不需要改動任何 runtime 路徑或資料模型（匯入流程已經存在並有測試覆蓋）。C 的缺點是每次容器重建都要重新匯入，對學校運作不實際。
+
+**已加入的防護（不需擁有者額外核准即可運作）**：
+
+- 部署前：`scripts/deploy-cloud-run.ps1` 會計算 `materials/` 內的檔案數（**只回報數量，不顯示檔名**），為 0 時**拒絕部署**並說明原因；如確實要部署無教材映像檔（例如轉用選項 B 之後），加上 `-AllowMissingMaterials`。
+- 執行期：管理員端設定診斷會在有需要時顯示 `materials-bundle-missing`（warning）：「映像檔／部署目錄內沒有教材檔案：管理員無法匯入課本內容」。此檢查只讀取單層目錄、只回報是否存在，不顯示檔名或內容。
+
+**仍需要擁有者決定的部分**（見第十節「需要擁有者決定的事項」）：教材包的存放位置與存取權限、由誰負責上載及版本記錄、以及是否接受「教材副本存在於 Artifact Registry 映像檔」（現況）或改為選項 B。
 
 ### 試點教材（課題5）
 
@@ -767,7 +816,7 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
 
 ### 角色判定
 
-> **Sprint 6 起，角色**只**來自明確的允許名單**（`AUTH_ADMIN_EMAILS`／`AUTH_TEACHER_EMAILS`）。
+> **預設（建議）**：角色**只**來自明確的允許名單（`AUTH_ADMIN_EMAILS`／`AUTH_TEACHER_EMAILS`）。
 > 舊的「校內網域 = 教師」政策（`AUTH_IN_DOMAIN_ROLE`）**已完全移除**：它 fail-open，
 > 只要有任何學生的帳戶是別名（例如 `chan.tai.ming@pochiu.edu.hk`）而不在名冊內，該帳戶
 > 就會取得教師權限，可讀取**全部**學生的練習記錄。
@@ -777,7 +826,10 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
 > | （不設定，建議） | 只有 `AUTH_ADMIN_EMAILS`／`AUTH_TEACHER_EMAILS` 內的帳戶是教師；校內其他帳戶一律是學生 |
 > | 仍設定 `AUTH_IN_DOMAIN_ROLE`（任何值） | **不會生效**（該變數已不再讀取），並產生 **error** 級設定警示，提示改用 `AUTH_TEACHER_EMAILS` |
 > | 已設定 `AUTH_TEACHER_EMAILS` | 正常；教師為名單內的帳戶 |
-> | `AUTH_TEACHER_EMAILS` 為空且已啟用登入 | 校內**沒有**任何教師，產生 warning 級警示（教師會無法使用教師端） |
+> | `AUTH_TEACHER_EMAILS` 為空且政策為 `allowlist` | 校內**沒有**任何教師，產生 warning 級警示（教師會無法使用教師端） |
+> | `AUTH_STAFF_ACCESS_POLICY=school-domain` | **暫時的全校教職員政策**（擁有者明確授權）：`AUTH_STAFF_DOMAINS` 所列網域中「非學號形式」的帳戶全部是教師，見下節 |
+> | `AUTH_STAFF_ACCESS_POLICY` 拼錯或空白 | 一律當作 `allowlist`（fail-closed，不會意外開放全校） |
+> | `AUTH_STAFF_ACCESS_POLICY=school-domain` 但 `AUTH_STAFF_DOMAINS` 為空 | **沒有**任何教師（fail-closed）並產生 **error** 級設定警示 |
 >
 > 學生名冊始終只影響「可否登入」及顯示的班別學號，**不再影響角色**；角色重新判定只會降權、不會升權。
 > 相關測試見 [tests/role-policy.test.ts](tests/role-policy.test.ts) 及 [tests/auth.test.ts](tests/auth.test.ts)。
@@ -786,18 +838,37 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
 
 | # | 登入帳戶 | 角色 | 說明 |
 | --- | --- | --- | --- |
-| 1 | `AUTH_ADMIN_EMAILS` 內的帳戶 | 管理員 | 與 `AUTH_TEACHER_EMAILS` 可同時存在，但以管理員為準；**本機測試管理員端時把自己的電郵加入此處** |
-| 2 | `AUTH_TEACHER_EMAILS` 內的帳戶 | 教師 | 可使用教師端，亦可使用全部學生端功能作測試；**正式部署時所有教師都必須列在此處** |
-| 3 | 其他任何帳戶（校內、校外、別名、班別帳戶、不在名冊者） | 學生 | 永不取得教師或管理員權限 |
+| 1 | `AUTH_ADMIN_EMAILS` 內的帳戶 | 管理員 | 與其他名單可同時存在，但**以管理員為準**；**本機測試管理員端時把自己的電郵加入此處** |
+| 2 | **學號形式**帳戶（`^s[0-9]+@…`，例 `s2024146@pochiu.edu.hk`） | 學生 | **永遠是學生**，即使列在 `AUTH_TEACHER_EMAILS`（會產生 error 級警示）或符合下面的全校政策；仍然受名冊強制核對 |
+| 3 | `AUTH_TEACHER_EMAILS` 內的帳戶 | 教師 | 可使用教師端，亦可使用全部學生端功能作測試；**一般部署時所有教師都必須列在此處** |
+| 4 | 政策為 `school-domain` 且電郵網域在 `AUTH_STAFF_DOMAINS` 內（完整標籤比對） | 教師 | 僅限擁有者明確授權的暫時政策（見下節） |
+| 5 | 其他任何帳戶（校內、校外、別名、班別帳戶、不在名冊者） | 學生 | 永不取得教師或管理員權限 |
 
-> **為何不保留「校內網域 = 教師」？** 校內網域內的帳戶不保證都是教職員：學生可能使用別名、
+> **為何預設不採用「校內網域 = 教師」？** 校內網域內的帳戶不保證都是教職員：學生可能使用別名、
 > 學號加姓名或班別帳戶，而 `AUTH_SCHOOL_DOMAINS` 亦可能涵蓋多於一個網域（甚至整個 `edu.hk`）。
 > 只要有一個這類學生帳戶，該學生就會取得教師權限，可以讀取**全部**學生的練習記錄。
-> 因此角色只來自明確允許名單；`scripts/deploy-cloud-run.ps1` 在沒有提供 `-TeacherEmails`
-> 時會**拒絕部署**，避免教師被默默鎖在門外。
+> 因此預設角色只來自明確允許名單；`scripts/deploy-cloud-run.ps1` 在沒有提供 `-TeacherEmails`、
+> 又未明確選擇全校政策時會**拒絕部署**，避免教師被默默鎖在門外。
 
 - 網域比對要求**完整標籤**：`x@pochiu.edu.hk.evil.com` 會被判為學生（不會誤認為校內帳戶）。
 - 規則的單一事實來源：[src/server/auth/role.ts](src/server/auth/role.ts)。
+
+#### 暫時的全校教職員政策（`AUTH_STAFF_ACCESS_POLICY=school-domain`）
+
+> **狀態：擁有者明確授權的暫時措施**（2026-10-15；目的是讓校內職員在名單未定案前仍能使用教師端）。
+> 這是**全校授權，不是最小權限政策**：任何屬 `AUTH_STAFF_DOMAINS` 所列網域、且**非**學號形式的
+> 帳戶都會取得教師權限，可以讀取**全部**學生的練習記錄、覆核及發布題目。
+
+| 項目 | 內容 |
+| --- | --- |
+| 啟用 | `AUTH_STAFF_ACCESS_POLICY=school-domain` 及 `AUTH_STAFF_DOMAINS=pochiu.edu.hk`（多個以分號分隔）；部署時用 `-StaffAccessPolicy school-domain -StaffDomains pochiu.edu.hk` |
+| 停用 | 設回 `allowlist`（或移除該變數）；**現有工作階段即時降權**，毋須等待到期 |
+| 學生防線 | 學號形式（`^s[0-9]+@…`）一律是學生，**任何政策都不會把學生帳戶變成教師**；學生仍受名冊強制核對（名冊服務失敗時 fail-closed，不會變成教師） |
+| 網域來源 | 只採用 Google 已驗證電郵的**網域部分**；`AUTH_STAFF_DOMAINS` 由伺服器端設定，不接受前端輸入 |
+| 風險提示 | 設定後管理員端「系統狀態」會顯示 warning 級警示，說明這不是最小權限政策及如何停用；網域少於 3 個標籤（例如 `edu.hk`）會再產生一個 warning |
+| 仍無效的舊變數 | `AUTH_IN_DOMAIN_ROLE`、`AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER` **完全不會**授予權限（政策開啟時亦然），仍設定會產生 error 級警示 |
+| 建議 | 名單定案後改回 `allowlist`，把實際需要的教師放進 `AUTH_TEACHER_EMAILS` |
+
 
 ### 運作方式與安全設計
 
@@ -816,6 +887,7 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
   | 變更 | 生效時間 | 原因 |
   | --- | --- | --- |
   | 把帳號移出／加入 `AUTH_ADMIN_EMAILS`、`AUTH_TEACHER_EMAILS` | 重新部署後即時（0） | 每次讀取工作階段都以目前設定重新判定角色（只降不升，升權需重新登入） |
+  | 切換 `AUTH_STAFF_ACCESS_POLICY`（`school-domain` ⇄ `allowlist`）或修改 `AUTH_STAFF_DOMAINS` | 重新部署後即時（0） | 同上：政策停用後，校內職員的現有教師工作階段立即降為學生 |
   | 更換 `AUTH_SECRET`（輪換） | 即時，全部使用者被登出 | 舊 cookie 的簽章無法通過驗證 |
   | 從學生名冊移除學生 | **最長 `AUTH_SESSION_TTL_HOURS`（預設 30 天）** | 名冊成員只在登入時核對；如需縮短，請調低 `AUTH_SESSION_TTL_HOURS`（例如 8 小時） |
 - 若要把登入設為非強制（仍保留匿名使用），可設定 `AUTH_REQUIRE_SIGN_IN=false`。
@@ -987,6 +1059,37 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 3. 重新部署（`gcloud run services update ... --image <同一映像檔>`）。
 4. 重新開啟網站：課題、題庫及練習記錄應仍然存在。
 
+#### 把本機內容帶到正式環境（資料不是程式：部署**不會**上載資料）
+
+程式碼部署與資料是兩件事：`gcloud builds submit` 只會部署映像檔，容器啟動時才由備份 bucket 還原資料。因此要把本機整理的內容（新教材、批次發布的題目）帶到正式環境，必須**處理資料**，做法只有以下兩種：
+
+| 做法 | 步驟 | 適用情況 |
+| --- | --- | --- |
+| **A. 以正式環境快照為基礎離線修改（建議）** | 1. 下載現有快照：`gcloud storage cp gs://<專案ID>-history-backup/history/data/app.db data/exports/production-current.db`<br>2. 先建立回滾副本：`gcloud storage cp …/app.db …/app.db.pre-change-backup`<br>3. 修改副本（`APP_DATABASE_PATH=… npm run <腳本>`，例如 `npm run publish:drafts`）<br>4. 上載回去：`gcloud storage cp data/exports/production-next.db gs://<專案ID>-history-backup/history/data/app.db`<br>5. 部署新 revision（新執行個體啟動時會還原這份快照） | 正式環境已有真實內容（教材、題目、覆核紀錄、練習記錄）時**必須**用此法 |
+| **B. 由本機快照建立正式環境內容** | `npm run snapshot:production`（產生乾淨快照）→ 上載到 bucket → 部署 | **只適用於全新的正式環境**：上載本機快照會**覆蓋並刪去**正式環境既有的教材、題目、覆核紀錄及練習記錄 |
+
+> **警告**：做法 B 會以本機資料**取代**正式環境資料。本機通常是較小的開發資料集（本專案實例：本機 20 份文件／9,006 段落，正式環境 96 份文件／58,528 段落），誤用會令學生的練習記錄及教師的覆核紀錄消失。修改前務必先下載及檢查正式環境快照，並保留 `app.db.pre-*-backup` 回滾副本。
+
+- `npm run publish:drafts`：**擁有者授權**的批次發布（見下）。
+- `npm run snapshot:production`：由本機資料庫產生乾淨快照（`VACUUM INTO`），並**清除**當中的教材開放／版權確認欄位與 `distribution_audit`，確保正式環境的教材維持 fail-closed（確認一律由擁有者／管理員在管理端進行）。
+
+##### 擁有者授權的批次發布（`npm run publish:drafts`）
+
+平台的發布關卡要求每一題都有對應**目前版本**的人工覆核紀錄；批次發布腳本**刻意繞過**該關卡，只應在擁有者明確指示時使用（例如首次上線前，課本及校內試卷題目已由科組審閱，但未逐題在平台內留下覆核紀錄）：
+
+```powershell
+# 模擬模式（預設，不會改動資料）
+npm run publish:drafts -- --owner-email ipwh@pochiu.edu.hk --reason "科組已審閱，授權發布"
+
+# 只發布校內試卷草稿（建議：AI 生成的題目留待教師覆核）
+npm run publish:drafts -- --owner-email ipwh@pochiu.edu.hk --reason "…" --origins school-paper --apply
+```
+
+- **不會**建立任何覆核紀錄：題目在教師端會如實標示為「已發布（未經人工覆核）」（`QUESTION_REVIEW_STATE_LABELS` 的 `published-unreviewed`），之後任何人都看得出哪些題目未經逐題覆核。
+- `sourceVerified` 只代表「節錄與所引教材段落逐字相符」，**不代表**史實正確；腳本亦不作任何歷史準確性判斷。
+- 每次執行都會把決定寫入 `docs/teacher-review/owner-publication-overrides.json`（`decisions[]`：擁有者電郵、原因、時間、數量、來源分佈；200 題以內記錄全部題目 ID，更多時記錄排序後 ID 的 SHA-256 摘要及頭尾樣本）。
+- 正式環境（Cloud Run／`NODE_ENV=production`）會**拒絕執行**：正式環境的資料更新須以做法 A（離線修改正式環境快照）進行。
+
 
 
 專案已包含部署所需的全部檔案：
@@ -1024,10 +1127,15 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 
 > **後台角色一定要設定**：`-AdminEmails` 指定誰可以使用管理員端（`/admin`：教材、OCR、課題發布及系統狀態）；
 > 沒有設定就**沒有人能進入管理員端**。多個電郵以**分號**分隔（例如 `-AdminEmails a@pochiu.edu.hk;b@pochiu.edu.hk`）。
-> `-TeacherEmails` 只在教師使用非校內網域帳戶（例如個人 Gmail）時才需要；
-> 校內網域但非學號形式（例：`history.teacher@pochiu.edu.hk`）的帳戶本身已是教師。
-> 兩個參數都會帶入 Cloud Build 的 `_ADMIN_EMAILS`／`_TEACHER_EMAILS` substitution，再由 `cloudbuild.yaml`
-> 寫入 Cloud Run 的 `AUTH_ADMIN_EMAILS`／`AUTH_TEACHER_EMAILS` 環境變數，因此**每次部署都會保留**。
+> `-TeacherEmails` 列出教師帳戶；**未列出、又未選擇全校政策時，指令碼會拒絕部署**
+> （校內網域本身**不會**授予教師權限，見第八節）。
+> 擁有者已明確授權的暫時全校政策可用 `-StaffAccessPolicy school-domain -StaffDomains pochiu.edu.hk`
+> （全校教職員；**不是**最小權限，風險及停用方式見第八節）。
+> 三個參數都會帶入 Cloud Build 的 `_ADMIN_EMAILS`／`_TEACHER_EMAILS`／`_STAFF_ACCESS_POLICY`
+> substitution，再由 `cloudbuild.yaml` 寫入 Cloud Run 的 `AUTH_ADMIN_EMAILS`／`AUTH_TEACHER_EMAILS`／
+> `AUTH_STAFF_ACCESS_POLICY`／`AUTH_STAFF_DOMAINS` 環境變數，因此**每次部署都會保留**。
+> 指令碼亦會在 `-Apply` 時**移除**已棄用的 `AUTH_IN_DOMAIN_ROLE`／`AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER`
+> （`gcloud run deploy --set-env-vars` 不會自動移除未列出的變數）。
 >
 > 已部署但想臨時補上（下次部署會被 `cloudbuild.yaml` 的設定覆蓋）：
 >
@@ -1185,7 +1293,8 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 | `LLM_GRADING_ENABLED` | `true` | 是否以 AI 按語意批改填充題／短答題 |
 | `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` | 無 | 未設定＝不啟用登入（匿名示範模式） |
 | `AUTH_SECRET` | 自動產生 | 工作階段 cookie 簽署密鑰（部署時必須由 Secret Manager 注入） |
-| `AUTH_SCHOOL_DOMAINS`／`AUTH_TEACHER_EMAILS`／`AUTH_ADMIN_EMAILS`／`AUTH_REQUIRE_SIGN_IN` | `pochiu.edu.hk`／空／空／`true` | 角色判定（只認明確允許名單）及是否強制登入 |
+| `AUTH_SCHOOL_DOMAINS`／`AUTH_TEACHER_EMAILS`／`AUTH_ADMIN_EMAILS`／`AUTH_REQUIRE_SIGN_IN` | `pochiu.edu.hk`／空／空／`true` | 角色判定（預設只認明確允許名單）及是否強制登入 |
+| `AUTH_STAFF_ACCESS_POLICY`／`AUTH_STAFF_DOMAINS` | `allowlist`／空 | 角色政策。`school-domain`＝擁有者授權的**暫時**全校教職員政策（`AUTH_STAFF_DOMAINS` 所列網域的非學號形式帳戶皆為教師）；未設定或拼錯一律退回 `allowlist`（fail-closed） |
 | ~~`AUTH_IN_DOMAIN_ROLE`／`AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER`~~ | 已移除 | **不再讀取**；仍需移除這些變數，否則管理員端系統狀態頁會出現 error 級設定警示 |
 | `AUTH_SESSION_TTL_HOURS` | `720`（30 天） | 工作階段有效期；同時是「名冊移除後仍可繼續使用」的最長時間上限 |
 | `AI_LIMITS_ENABLED` | `true` | 是否強制 AI 用量上限（設 `false` 只記錄不拒絕，供診斷） |
@@ -1218,14 +1327,16 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 
 **1. 組態（部署前，只檢查「有沒有設定」而不列印值）**
 
-- [ ] `AUTH_TEACHER_EMAILS` 至少包含一位**現職教師**；`AUTH_ADMIN_EMAILS` 至少包含一位管理員。沒有教師名單時部署腳本會**拒絕部署**，管理員端亦會顯示 warning。
-- [ ] 確認**沒有**殘留已移除的變數：`AUTH_IN_DOMAIN_ROLE`、`AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER`（仍存在會產生 error 級設定警示）。
+- [ ] **角色政策已明確決定**：`AUTH_TEACHER_EMAILS` 至少包含一位**現職教師**，**或**已由擁有者書面授權 `AUTH_STAFF_ACCESS_POLICY=school-domain` 及 `AUTH_STAFF_DOMAINS`。兩者皆缺時部署腳本會**拒絕部署**（校內網域不再自動授予教師權限）；`AUTH_ADMIN_EMAILS` 至少包含一位管理員，否則沒有人能進入管理員端並會顯示 warning。
+- [ ] 若採用 `school-domain`：確認這是**擁有者**的決定（全校教職員可讀取全部學生的練習記錄）、`AUTH_STAFF_DOMAINS` 只列出學校網域（**不要**填 `edu.hk` 之類的上層網域），並記錄**停用日期**或名單定案後的收緊計劃。管理員端系統狀態頁會顯示 warning 級警示（見第八節）。
+- [ ] 確認**沒有**殘留已移除的變數：`AUTH_IN_DOMAIN_ROLE`、`AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER`（仍存在會產生 error 級設定警示）。**正式環境現時仍設有 `AUTH_IN_DOMAIN_ROLE=teacher`**（2026-10-15 唯讀查核）；`scripts/deploy-cloud-run.ps1 -Apply` 會在部署後自動以 `--remove-env-vars` 移除這兩個變數，若以 `gcloud builds submit` 手動部署則必須自行執行（`--set-env-vars` **不會**自動移除未列出的變數）。
 - [ ] `AUTH_SECRET` 由 Secret Manager 注入，長度 ≥ 32 字元（見 [src/server/auth/session.ts](src/server/auth/session.ts) 的 `MIN_AUTH_SECRET_LENGTH`）。輪換 `AUTH_SECRET` 會令**所有**現有工作階段即時失效。
-- [ ] `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` 已設定，且 OAuth 用戶端的「已授權重新導向 URI」包含正式服務網址。
-- [ ] `STUDENT_ROSTER_*` 已設定（`STUDENT_ROSTER_SHEET_ID` 不可為空），名冊 Sheet 已分享給服務帳戶。
-- [ ] `ADMIN_TOKEN` 若使用，長度 ≥ 32 字元；否則保持未設定。
-- [ ] `DEMO_AUTO_PUBLISH_QUESTIONS=false`（正式環境預設即為 `false`；即使誤設為 `true`，正式環境亦不會自動發布）。
-- [ ] `AUTH_REQUIRE_SIGN_IN=true`（不要以匿名模式開放教師端及管理員端）；並確認**沒有**設定 `HISTORY_ALLOW_UNSAFE_DEMO_MODE`。
+- [ ] `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` 已設定（正式環境兩者都由 Secret Manager 注入），且 OAuth 用戶端的「已授權重新導向 URI」包含正式服務網址。
+- [ ] `STUDENT_ROSTER_*` 已設定（`STUDENT_ROSTER_SHEET_ID` 不可為空，正式環境為 `sheets-api`），名冊 Sheet 已分享給服務帳戶。
+- [ ] `ADMIN_TOKEN` 若使用，長度 ≥ 32 字元；否則保持未設定（正式環境現時未設定）。
+- [ ] `DEMO_AUTO_PUBLISH_QUESTIONS=false`（正式環境已是 `false`；即使誤設為 `true`，正式環境亦不會自動發布）。
+- [ ] `AUTH_REQUIRE_SIGN_IN=true`（正式環境已是 `true`）；並確認**沒有**設定 `HISTORY_ALLOW_UNSAFE_DEMO_MODE`（正式環境未設定）。
+- [ ] `materials/` 內有教材檔案（部署指令碼會檢查；若刻意部署無教材映像檔需加 `-AllowMissingMaterials`）。
 
 **2. 資料庫與備份（部署前）**
 
@@ -1242,14 +1353,18 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 - [ ] 教材閘門：`/learn/<topicId>` 對未確認的文件顯示「尚未開放」；確認後才顯示內容。
 - [ ] 授權矩陣抽樣：未登入呼叫 `/api/teacher/overview` 應為 `401`；學生呼叫應為 `403`；學生以 `?learnerId=school:<他人電郵>` 讀取進度應為 `401`（見第七節及 [tests/role-policy.test.ts](tests/role-policy.test.ts)）。
 
-**4. 回滾（Rollback）**
+**4. 回滾（Rollback，Sprint 7.1 修訂：安全回滾與可用性回滾要分開）**
 
-| 情況 | 做法 | 限制 |
+| 情況 | 做法 | 限制／安全性 |
 | --- | --- | --- |
-| 程式缺陷、資料庫未變更 | 把 Cloud Run 流量切回上一個 revision：`gcloud run services update-traffic history-self-study --region=asia-east2 --to-revisions=<上一個 revision>=100` | 立即生效；不需要重新建置 |
-| Migration 已套用而需回滾程式 | **不可直接降版**：較新的 schema 對舊程式碼而言多出欄位／資料表（舊程式碼可容忍），但若 migration 曾改變既有欄位的語意則會出錯 | 本專案所有 migration 都只新增資料表／欄位或建立索引，沒有刪除或改變既有欄位語意，因此舊 revision 可在新 schema 上執行 |
-| 資料損毀 | 由備份 bucket 還原（見第五節「資料持久化」）；還原前先停止服務或把流量設為 0 | 還原會覆蓋容器內資料庫，之後需重新匯入 `materials/`（若曾上載自訂教材） |
-| 設定錯誤（例如教師名單設錯） | 修正環境變數後重新部署；角色每次讀取都會重新判定，因此修正後即時生效（升權需重新登入） | 名冊移除學生的生效時間最長為 `AUTH_SESSION_TTL_HOURS`（預設 30 天） |
+| **可用性回滾**（程式缺陷、資料庫未變更） | 把 Cloud Run 流量切回上一個 revision：`gcloud run services update-traffic history-self-study --region=asia-east2 --to-revisions=<上一個 revision>=100` | 立即生效、不需重新建置 |
+| **安全回滾**（本次發布的安全修正有嚴重缺陷） | **不可**只切換到舊 revision 就當作「已回復安全狀態」：`8caeeef` 之前的映像檔**沒有**教師白名單、節錄封鎖、發布關卡及讀取時治理核對；舊 revision 反而會**重新启用**「校內網域即教師」的 fail-open 政策（見第八節） | 建議 **forward fix**（修好後再部署新 revision），或切換到一個**已知良好且包含安全修正**的 revision；切回舊映像檔須同時以設定補償（例如暫時收緊名冊、停用教師端），並視為**降級狀態** |
+| **Database／schema 相容性** | 0015–0017 都是新增資料表／可為 NULL 的欄位，舊 revision 可在新 schema 上執行 | 舊程式碼會忽略新欄位；但舊 revision **不會**執行讀取時治理核對，因此舊狀態文件會再次對學生可見 |
+| **教材還原** | 教材檔案不隨資料庫備份（`materials/` 在映像檔內，上載檔案在容器內）。由備份還原資料庫後，需重新匯入 `materials/`（若曾上載自訂教材則需重新上載） | 教材匯入會重建段落及分節對應；已發布題目不受影響 |
+| **資料損毀** | 由備份 bucket 還原（見第五節）；還原前先把流量設為 0，必要時以 `--no-traffic` 部署新 revision 作隔離 | 還原會覆蓋容器內資料庫；容器上載檔案不會還原（設計如此） |
+| 設定錯誤（例如教師名單設錯） | 修正環境變數後重新部署；角色每次讀取都會重新判定 | 修正後即時生效（升權需重新登入）；名冊移除學生的生效時間最長為 `AUTH_SESSION_TTL_HOURS`（預設 30 天） |
+
+> **若本次發布在遷移 0015–0017 之後出現嚴重安全缺陷**：最安全的回應是**停用受影響功能並向前修復**（例如暫時把所有文件設為不可發布、把教師名單收緊至一人），而**不是**切換回舊 revision——因為舊 revision 的安全政策更弱。切換流量只應用於純可用性問題（例如新 release 無法啟動）。
 
 ---
 
@@ -1260,7 +1375,8 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 | # | 事項 | 現況 | 需要誰決定 |
 | --- | --- | --- | --- |
 | 1 | **教材發行權**：學校是否有權在平台向學生發布這些課本內容？ | 全部文件預設不可發布（fail-closed）；本機資料庫中 13–20 份文件全部是教師版（`HNC*_TE.docx`） | 科主任／校方（並與出版社確認） |
-| 2 | **教師名單**：哪些帳戶是教師？ | `AUTH_TEACHER_EMAILS` 現只有 `ipwh@pochiu.edu.hk`（管理員）；未有完整教師名單 | 科主任 |
+| 2 | **教師名單／角色政策**：哪些帳戶是教師？ | **已決定（2026-10-15，暫時）**：擁有者授權以 `AUTH_STAFF_ACCESS_POLICY=school-domain`（`AUTH_STAFF_DOMAINS=pochiu.edu.hk`）暫時讓全校校內職員使用教師端；學生帳戶（學號形式）仍是學生。**這是全校授權，不是最小權限**：任何校內非學號形式的帳戶都可讀取全部學生的練習記錄。正式環境的 `AUTH_TEACHER_EMAILS` 現時仍為**空**，並殘留已移除的 `AUTH_IN_DOMAIN_ROLE=teacher`（見第十節「上線前檢查清單」）。建議在名單定案後改回 `allowlist`，只列入歷史科教師（停用方式見第八節） | 已由擁有者決定；收緊時機由科主任確認 |
+| 2b | **校內試題未經逐題覆核即發布**：可否把校內試卷題目直接給學生練習？ | **已決定（2026-10-15）**：擁有者授權只發布校內試卷草稿（正式環境 3,927 題；見第十節「擁有者授權的批次發布」），並**不**建立覆核紀錄，因此教師端一律標示「已發布（未經人工覆核）」。AI 生成的題目仍留為草稿待覆核。授權紀錄見 [docs/teacher-review/owner-publication-overrides.json](docs/teacher-review/owner-publication-overrides.json) | 已由擁有者決定；歷史準確性仍建議由歷史科教師抽樣覆核 |
 | 3 | **AI 每月成本上限**：可接受的每月 AI 費用上限是多少？超過時如何處理（停用／只記錄）？ | 現時只有**次數**上限（每學習者每小時及全體上限），**沒有金額上限**，亦沒有 provider 價格表可用於換算費用 | 校方／IT |
 | 4 | **AI 用量上限值**：`AI_GENERATIONS_PER_LEARNER`／`AI_GRADINGS_PER_LEARNER` 及全體上限是否合適？ | 預設每人每小時 30 次出題、300 次批改；全體 600／3000 | 科主任／IT |
 | 5 | **超限通知對象**：達到上限或成本異常時通知誰？ | 現時只在管理員端顯示用量摘要，沒有主動通知 | 科主任／IT |
@@ -1268,6 +1384,10 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 | 7 | **私隱聲明**：是否已向家長／學生說明學習記錄（包括姓名、班別、作答記錄）的用途及保存期限？ | README 第九節列出應檢查的私隱事項，但未有正式聲明 | 校方 |
 | 8 | **歷史科教師覆核者**：由誰負責逐題核對史實並簽署覆核？ | 現時**沒有**具名覆核者，`docs/teacher-review/golden-questions.v1.json` 仍是 `pending-review`、**0 條**已覆核題目 | 科主任 |
 | 9 | **校內試題使用權**：校內試題檔（`kind = 'question-bank'`）可否用於學生練習？ | 匯入的題目一律為草稿，需教師覆核後才發布；相關文件永不列為學生讀物 | 科主任 |
+| 10 | **Token 計量**：是否改用 token 數（而非呼叫次數）作為用量上限的計量單位？ | 現時以呼叫次數計量；`llm_usage` 會記錄 provider 回報的 `inputTokens`／`outputTokens`（可能為空），但上限仍以次數判斷 | IT |
+| 11 | **警示收件人及事故負責人**：超過用量上限、備份失敗或維護清理失敗時通知誰？ | 現時只在管理員端顯示，沒有主動通知 | 科主任／IT |
+| 12 | **教材包存放與版本記錄**（選項 A/B/C，見第五節）：教材檔的受控存放位置、由誰上載及記錄版本、是否接受教材副本存在於 Artifact Registry 映像檔 | 現況＝選項 A（教材在映像檔內，僅本機目錄有檔案）；已加入部署前及執行期缺失警告 | 校方／IT |
+| 13 | **舊狀態文件的處理**：本機資料庫中課題5 的教師版文件（`HNC2A2E_T5_SN_TE.docx`）在 0017 之前已開放，因此**沒有**版權／內容確認紀錄 | 讀取時已 fail-closed（學生現時看不到該文件，直至重新確認）；管理員端會顯示原因。處置方式（重新確認 or 保持關閉）**由擁有者決定**，系統不會代為確認 | 科主任 |
 
 > **成本換算的限制（誠實說明）**：目前系統只記錄 AI 呼叫**次數**，`llm_usage` 沒有 provider 回報的實際費用欄位，專案內亦沒有模型價格表。因此**無法**由系統計算每位學生或整體的金額，亦不應在文件中填寫推測價格。若要金額上限，需要另行加入價格表及用量換算（屬新功能，需先評估）。
 
@@ -1278,9 +1398,9 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 ```bash
 npm run lint        # ESLint：0 error、0 warning
 npm run typecheck   # tsc --noEmit：通過
-npm test            # Vitest：620 項測試全部通過（40 個測試檔）
+npm test            # Vitest：659 項測試全部通過（42 個測試檔）
 npm run build       # Next.js 生產建置：成功
-node scripts/e2e-flow.mjs --start   # 端對端 125 項檢查全部通過（含閱讀教材、版權閘門、OCR、教師端、覆核關卡、題目回報、學生名冊、權限、學習記錄分離）
+node scripts/e2e-flow.mjs --start   # 端對端 131 項檢查全部通過（含閱讀教材、版權閘門、撤回後節錄停止顯示、OCR、教師端、覆核關卡、題目回報、學生名冊、權限、學習記錄分離）
 ```
 
 > **測試資料庫隔離（已修正的實際缺陷）**：各測試檔以 `hist-test-<名稱>-${process.pid}.db`
@@ -1300,7 +1420,7 @@ node scripts/e2e-flow.mjs --start   # 端對端 125 項檢查全部通過（含�
 
 | 測試檔 | 內容 |
 | --- | --- |
-| `tests/authz-negative.test.ts` | **逐個特權路由**（教師端及管理員端全部 API）× 四種身分（未登入 401／學生 403／教師／管理員）的負向授權測試；**路由清單契約**（新增 API handler 未聲明身分要求即測試失敗）、**每個教師／管理員頁面都呼叫頁面守衛**、**五個練習端點的跨學生擁有權檢查**、**學習進度／重溫的跨學生檢查（偽造 `learnerId` 無效）**、偽造 cookie 的角色降級、權限撤銷即時生效、別名帳戶不可取得教師權限、`ADMIN_TOKEN` 長度與比對、損毀 cookie 不會 500、開放式轉址（含反斜線寫法）、CSV 公式注入、Cloud Run 後台頁面不渲染 |
+| `tests/authz-negative.test.ts` | **逐個特權路由**（教師端及管理員端全部 API）× 四種身分（未登入 401／學生 403／教師／管理員）的負向授權測試；**路由清單契約**（新增 API handler 未聲明身分要求即測試失敗）、**每個教師／管理員頁面都呼叫頁面守衛**、**五個練習端點的跨學生擁有權檢查**、**學習進度／重溫的跨學生檢查（偽造 `learnerId` 無效）**、偽造 cookie 的角色降級、權限撤銷即時生效、別名帳戶不可取得教師權限、**全校教職員政策（`school-domain`）在真實路由上的通過／停用後 403／網域未列出時 403／學號形式仍 403**、`ADMIN_TOKEN` 長度與比對、損毀 cookie 不會 500、開放式轉址（含反斜線寫法）、CSV 公式注入、Cloud Run 後台頁面不渲染 |
 | `tests/anonymous-learner-id.test.ts` | **未登入不可冒用帳戶身分**：示範模式下匿名 UUID 仍可使用，但 `school:`／`teacher:`／`admin:` 的 `learnerId` 一律 `401`（猜中他人校內電郵亦無法讀取記錄）、未登入不可用帳戶 ID 建立練習或回報題目、已登入時工作階段身分優先（跨學生進度不可偽造） |
 | `tests/learning-loop.test.ts` | **學習循環的計數及排程契約**：只計算已發布題庫題目、同一題重複作答只算一次、最新結果為準、不確定不當作正確、其他學生及草稿題目不計入、技能標示無效時不判斷、證據門檻（2 條不同題目）、重溫間隔（答錯 1 天／曾錯後對 3 天／一直對 7 天）、去重、時間戳錯誤只計 `dataIssues`、未來時間不即時到期、建議不會虛擬弱點 |
 | `tests/distribution-audit.test.ts` | **教材發行權閘門及稽核記錄**：預設關閉（fail-closed）、學生及未登入者不可變更（403／401）、不在管理員名單的帳戶被拒、開放後學生才可閱讀、關閉即時生效、**每次變更都記錄操作者及時間（前端提供的操作者不被採用）**、只改課題不會污染稽核記錄、校內試題永遠不會成為學生讀物 |
@@ -1312,12 +1432,12 @@ node scripts/e2e-flow.mjs --start   # 端對端 125 項檢查全部通過（含�
 | `tests/grading.test.ts` | 選擇／填充題自動評分、可接受寫法、短答題不評分、正確率 |
 | `tests/llm-validation.test.ts` | schema 驗證、選項與答案一致性、**教材依據核對（節錄必須出自所引用的段落）**、**`correctAnswerIndex` 與 `correctAnswer` 矛盾時丟棄**、**等同選項去重**、**題目歸入正確分節**、提示語與 Markdown 符號移除、**丟棄要求學生參考教材／上文／標題的題目**、短答題留空 `correctAnswer` 時以得分要點補回、重複題目 |
 | `tests/mock-provider.test.ts` | 本地示範生成：教材節錄必為教材原文、答案在選項內、短答題有得分要點、寬表格列不會出題、不同難度採用不同出題規則 |
-| `tests/curriculum.test.ts` | 教育局課程架構：12 個課題、年級／課題編號、教材檔名對應、分節關鍵詞不重複 |
+| `tests/curriculum.test.ts` | 教育局課程架構：12 個課題、年級／課題編號、教材檔名對應、分節關鍵詞不重複；**已刪除的空分節不會再出現**（「不同地區的舊石器時代人類」不再寫入資料庫，教材匯入亦會略過該標題） |
 | `tests/ocr.test.ts` | OCR 文字正規化、可用性判斷、圖片格式支援、PNG 編碼、OCR 雜訊過濾、OCR 文字仍可出題 |
 | `tests/section-mapper.test.ts` | 兩層分節對應（先用頂層分節切段，再對應子分節） |
 | `tests/materials-parsers.test.ts` | 真實 DOCX 解析、PDF 解析（用倉庫內自製樣本 [tests/fixtures/sample-guideline.pdf](tests/fixtures/sample-guideline.pdf)，不依賴版權教材）、分節覆蓋率、示範題目教材依據核對、**重新匯入同名教材會取代舊版本並重新核對題目依據**、不支援格式錯誤訊息 |
 | `tests/practice-flow.test.ts` | 完整練習流程：組題 → 作答 → 答案回饋 → 成績 → 重做錯題 → 短答自我檢查 → 練習記錄留檔及 CSV 匯出 |
-| `tests/practice-ai-mode.test.ts` | AI 即時出題：題數分配、題目只存在於練習快照（不寫入題庫）、不在題庫的題目也可重做錯題、分節可用性（教材段落數、`isSectionPractisable`、主題數計算） |
+| `tests/practice-ai-mode.test.ts` | AI 即時出題：題數分配、題目只存在於練習快照（不寫入題庫）、不在題庫的題目也可重做錯題、分節可用性（教材段落數、`isSectionPractisable`、主題數計算）、**教材未開放時路由回 `409` 及可行動說明且不建立練習記錄** |
 | `tests/question-bank.test.ts` | 題庫難度分配：每個分節的目標題數平均分配到基礎／進階／挑戰，生成後題庫確實齊備三個難度 |
 | `tests/auth.test.ts` | 學校帳戶角色判定（含相似網域不得取得教師權限）、工作階段 cookie 簽署／改動／過期、OAuth state cookie、DeepSeek 及其他 provider 設定（模型、端點、思考模式、`max_tokens`） |
 | `tests/llm-provider.test.ts` | OpenAI 相容／DeepSeek 請求內容（`response_format`、`max_tokens`、思考模式時省略 `temperature`、prompt 含「JSON」）、空白回應自動重試、API 錯誤訊息 |
@@ -1325,18 +1445,20 @@ node scripts/e2e-flow.mjs --start   # 端對端 125 項檢查全部通過（含�
 | `tests/ai-limits.test.ts` | AI 用量上限（成本控制）：個人及整體上限回傳 `429`、並行請求不會超額（先保留後呼叫）、達到上限不影響作答、示範模式不消耗配額、停用時仍記錄用量、只用學習者 ID／類別／時間（無題目或答案內容）、**管理員用量摘要只有總數（不含任何學習者 ID）、保留期清理** |
 | `tests/question-review.test.ts` | **人工覆核與發布治理**：未覆核不可發布（409，含自動教材驗證亦不可通過）、覆核綁定版本、覆核後修改即失效並自動下架、再次覆核後可重新發布、覆核者身分取自工作階段（偽造無效）、退回／不可用必須有原因、重複決定不重複記錄（冪等）、學生及未登入者 403／401、發布狀態在組題及進度統計中一致、示範模式自動發布不會偽造覆核紀錄、覆核紀錄沒有可修改或刪除的路徑 |
 | `tests/ai-retention.test.ts` | **保留期維護**：只刪除界線之前的記錄（界線當刻及較新者保留）、啟動時強制執行且一小時內不重複、AI 請求會順帶嘗試、失敗不拋出但留下失敗紀錄、清理不會令使用者獲得額外配額、清理期間插入的記錄不會被刪除、管理員摘要及健康檢查可見且不含學習者 ID |
-| `tests/migration-safety.test.ts` | **Migration／schema 契約**：ID 唯一且順序固定、重複套用冪等、升級後資料保留、版權閘門預設仍為「不對學生發布」、新欄位／新資料表／重要唯一索引存在、測試不連接正式資料庫；**失敗處理**：部分套用的 migration 完整回滾且不記錄為已套用、修正後可重新套用、第二個連線（第二個執行個體）看到一致 schema、`busy_timeout` 已設定 |
-| `tests/role-policy.test.ts`（Sprint 6 改寫） | **角色政策（只認明確允許名單）**：`AUTH_IN_DOMAIN_ROLE`／`AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER` 不再授予權限並產生 error 級警示；別名／班別／名冊外帳戶一律學生；`AUTH_TEACHER_EMAILS` 空值為 warning；設定拼錯／空白／部分套用一律學生；工作階段只降不升；篡改 cookie 失效；教師／管理員／學生在真實 route handler（教師總覽、系統總覽、覆核、發布）的通過與拒絕 |
-| `tests/source-excerpt-policy.test.ts`（Sprint 6） | **教材節錄顯示政策**：來源文件未確認可向學生發布時不顯示節錄、來源位置及段落 ID；確認後顯示、撤回後即時停止顯示；教師專用段落（答案／評分參考）永不顯示；混合來源只要有一段不合格即整段略去；引用不存在的段落 fail-closed；試題檔來源永不當作學生可讀；作者自行撰寫的節錄維持顯示；略去節錄不影響評分、答案及教師端資料 |
+| `tests/migration-safety.test.ts` | **Migration／schema 契約**：ID 唯一且順序固定、重複套用冪等、升級後資料保留、版權閘門預設仍為「不對學生發布」、新欄位／新資料表／重要唯一索引存在、測試不連接正式資料庫；**失敗處理**：部分套用的 migration 完整回滾且不記錄為已套用、修正後可重新套用、第二個連線（第二個執行個體）看到一致 schema、`busy_timeout` 已設定；**0018 會移除只有標題沒有內容的分節**（分節、段落及題目都不留） |
+| `tests/role-policy.test.ts`（Sprint 6 改寫，Sprint 7.2 擴充） | **角色政策**：預設只認明確允許名單（`AUTH_IN_DOMAIN_ROLE`／`AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER` 不再授予權限並產生 error 級警示）；別名／班別／名冊外帳戶一律學生；`AUTH_TEACHER_EMAILS` 空值為 warning；設定拼錯／空白／部分套用一律學生；工作階段只降不升；篡改 cookie 失效；教師／管理員／學生在真實 route handler（教師總覽、系統總覽、覆核、發布）的通過與拒絕。**暫時的全校教職員政策**：校內非學號形式帳戶在 `school-domain` 時為教師、`allowlist` 或拼錯時為學生、政策停用後現有 cookie 立即 `403`；學號形式帳戶在任何政策下一律是學生（含名冊缺失時）；外部網域、相似網域（`pochiu.edu.hk.evil.com`）、`edu.hk` 一律學生；政策開啟但未列網域時沒有教師並回報 error；機制警示（風險、過寬網域）及停用方法可見；名單內的學號形式帳戶不會成為教師（管理員名單優先但同樣警示） |
+| `tests/source-excerpt-policy.test.ts`（Sprint 6；Sprint 7.2 擴充） | **教材節錄顯示政策**：來源文件未確認可向學生發布時不顯示節錄、來源位置及段落 ID；確認後顯示、撤回後即時停止顯示；教師專用段落（答案／評分參考）永不顯示；混合來源只要有一段不合格即整段略去；引用不存在的段落 fail-closed；試題檔來源永不當作學生可讀；作者自行撰寫的節錄維持顯示；略去節錄不影響評分、答案及教師端資料。**教師端提示**：覆核狀態會標示「學生看不到節錄」及原因（未確認教材／教師版／段落已不存在），並驗證與學生端實際結果一致；學生題目物件不含 `sourceExcerpt`、`sourceLocation`、`sourceBlockIds` |
+| `tests/practice-result-excerpt.test.ts`（Sprint 7.1） | **節錄外洩的路由層契約**：以學生工作階段呼叫 `POST /api/practice/[sessionId]/answers` 及 `GET /api/practice/[sessionId]/result`，驗證未確認來源文件的原文**不會**出現在回應任何欄位（整份 JSON 搜尋，包括錯誤路徑 403）；確認版權（教師版另需內容覆核）後才顯示；撤銷後立即停止顯示；略去節錄仍保留標準答案、解釋及知識點 |
+| `tests/document-governance-legacy.test.ts`（Sprint 7.1） | **舊狀態（0017 之前的已開放文件）**：只設定 `student_distribution` 而沒有確認紀錄時，不會列入學生可讀文件，管理員端詳情回應 `studentVisibleToStudents: false`；閱讀頁、即時出題依據、教材節錄三條學生路徑都不外洩；補回確認（教師版需版權＋內容覆核）後才可見；撤銷立即生效；校內試題即使有完整確認亦不可見 |
 | `tests/auto-publish-boundary.test.ts`（Sprint 6） | **自動發布邊界**：Cloud Run（`K_SERVICE`）及 `NODE_ENV=production` 一律拒絕自動發布未覆核題目；示範開關關閉時亦拒絕；批次生成在正式環境只建立草稿並回報停用原因；本機示範模式仍可發布但不偽造覆核紀錄 |
 | `tests/test-database-cleanup.test.ts`（Sprint 5／6 擴充） | **暫存測試資料庫清理的安全性**：只影響本套件檔名、不刪除無關檔案（`.txt`／`.db.bak`／其他專案 `.db`）、保留近期檔案（不干擾並行執行）、失敗不拋出、各測試檔只清自己的路徑；**邊界**：不安全名稱（`..`／路徑分隔符／空白）會被拒絕而非刪除意外檔案、名稱中的其他字元會被轉換、名稱像資料庫的目錄不會被刪除、符號連結不會刪除連結目標 |
 | `tests/distribution-audit.test.ts`（Sprint 4 擴充） | 追加：**教師版文件需額外確認（409）**、教師專用段落不顯示且回報略過數、只有教師專用內容的文件不算「有教材可讀」、重複設定相同值不產生重複稽核記錄、未知文件 ID 404、撤銷後下一個請求即時生效 |
 | `tests/access-control.test.ts` | 角色與權限：學生呼叫教師／管理員 API 得 `403`、教師呼叫管理員 API 得 `403`、管理員可存取兩者、未登入得 `401`（即使 body 未通過格式驗證亦先回 `401`）、學生／教師／管理員的學習者 ID 前綴不同、**前端 `learnerId` 不可覆寫工作階段身分**、教師不可讀取學生的練習記錄 |
 | `tests/teacher-student-flow.test.ts` | 教師以學生身分完成完整流程（出題 → 作答 → 回饋 → 成績 → 重做錯題）、教師與學生記錄分開、教師端記錄檢視清楚區分教師（測試）與學生 |
 | `tests/reports.test.ts` | 題目回報：寫入及待覆核標示、重複回報不重複記錄、不可回報他人練習的題目、教師可處理回報且不改動題目、學生不可呼叫教師回報 API、**AI 即時生成題目（只存在於練習快照）亦可回報並標示不在題庫** |
-| `tests/storage-and-config.test.ts` | 儲存抽象（本機寫入／讀取／刪除、拒絕跳出目錄的路徑、GCS 未實作的清楚錯誤）及設定驗證（缺少憑證、OCR 設定、未啟用登入、Cloud Run 偵測、版本讀取）；健康檢查不洩漏資料庫路徑或憑證 |
+| `tests/storage-and-config.test.ts` | 儲存抽象（本機寫入／讀取／刪除、拒絕跳出目錄的路徑、GCS 未實作的清楚錯誤）及設定驗證（缺少憑證、OCR 設定、未啟用登入、Cloud Run 偵測、版本讀取、**教材檔案缺失警告 `materials-bundle-missing`**）；健康檢查不洩漏資料庫路徑或憑證 |
 | `tests/roster.test.ts` | 學生名冊：CSV 解析（引號／BOM／CRLF）、中英文欄名自動偵測及覆寫、以學號推導電郵、來源 provider（本機檔案、CSV 網址、**Sheets API 服務帳戶 JWT 簽章驗證**）、快取與失效沿用舊快照、登入欄位對應、狀態不含學生個資 |
-| `tests/login-roster.test.ts` | 學生登入流程（以本機 stub 取代 Google 端點）：名冊內學生取得班別／學號／姓名、名冊外被拒絕並導向 `/login?error=not_in_roster`、名冊無法讀取時預設拒絕（`FAIL_OPEN=true` 才放行）、教師不受名冊限制、`state` 不符及電郵未驗證不會建立工作階段 |
+| `tests/login-roster.test.ts` | 學生登入流程（以本機 stub 取代 Google 端點）：名冊內學生取得班別／學號／姓名、名冊外被拒絕並導向 `/login?error=not_in_roster`、名冊無法讀取時預設拒絕（`FAIL_OPEN=true` 才放行）、教師不受名冊限制、`state` 不符及電郵未驗證不會建立工作階段；**全校教職員政策**：校內職員不受名冊限制但學號形式帳戶仍受名冊強制核對（名冊服務失敗時 fail-closed，不會變成教師）、政策關閉時校內別名帳戶仍是學生 |
 | `tests/question-warnings.test.ts` | 品質警告（未見於教材的人名／條約名）寫入資料庫、讀回及學生端不外洩 |
 | `tests/question-bank-import.test.ts` | 校內試題解析與匯入：兩種排版（`[[ … ]]` 與 `\|!\|題號\|!\|`）、七種題型、答案忠實取自答案區、平台未支援的題型會略過、匯入為草稿、重複匯入更新同一題、課題1 不考核範圍（新月沃土／黃河、長江流域／印度河）略過、古埃及文明題目可匯入、需圖片作答加上品質警告 |
 | `tests/db-backup.test.ts` | 免費資料持久化：未設定 `BACKUP_BUCKET` 時不啟用、`VACUUM INTO` 快照內容正確、上傳及下載（含 `gs://` 前綴）、啟動還原與 `BACKUP_PREFER_CLOUD`、還原失敗不阻止服務啟動、到期判斷（含「資料未變更不重複備份」與「變更後縮短間隔」）、狀態在多個模組實例（啟動掛勾與 API）之間一致 |
@@ -1430,6 +1552,9 @@ node scripts/e2e-flow.mjs --start   # 端對端 125 項檢查全部通過（含�
 **Q：題目在 `/teacher/questions` 顯示「未通過教材依據核對」？**
 表示該題原本引用的教材段落已經不存在（例如教材被重新匯入後原文節錄有變）。系統匯入時會先嘗試自動重新定位，仍找不到的題目會標示出來，請教師核對內容、更新來源或刪除該題。
 
+**Q：題目清單上的「學生看不到節錄」是甚麼？**
+這表示該題的教材節錄被版權／教師版閘門略去，學生看到題目時**沒有**教材節錄可核對。標籤的提示文字會說明原因（來源教材尚未確認可向學生發布、來源段落屬教師版內容、或引用的段落已不存在）。原因由學生端與教師端**共用同一判定**（[src/server/services/source-visibility.ts](src/server/services/source-visibility.ts)），因此教師看到的狀態就是學生實際的情況。要讓學生看到節錄，需在 `/admin/materials` 為該文件確認版權（教師版另需確認已逐段核對）；若原因是「引用的段落已不存在」，請重新核對該題的教材依據。
+
 **Q：把專案資料夾搬到其他位置後，OCR 回報「找不到這份教材的原始檔案」？**
 資料庫記錄的是**寫入當時的絕對路徑**（例如 `D:\…\data\uploads\doc_xxx.docx`）。專案搬動（或本機磁碟代號改變）後該路徑不再存在。儲存層會改用檔名在目前的 `APP_UPLOADS_DIR`（預設 `data/uploads`）內尋找同一個檔案，因此教材與 OCR 仍然可用；若檔案已被刪除，請重新上載該教材。儲存層只會在以檔名尋找時存取 `APP_UPLOADS_DIR` 內的檔案，`../` 之類離開儲存目錄的路徑一律拒絕。
 
@@ -1460,7 +1585,7 @@ STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=./secrets/roster-sa.json
 會（預設 fail-closed）：名冊完全無法讀取時，系統為免未授權帳戶進入而暫停學生登入，並在管理員端顯示錯誤。若希望 Google 故障時仍可登入，可設 `STUDENT_ROSTER_FAIL_OPEN=true`（安全性較低）。若已有成功快照，系統會沿用上一次的名冊，登入不受影響。
 
 **Q：學生登入後看到「需要教師帳戶」？**
-教師端（`/teacher`）及教師 API 只限教師及管理員帳號：校內網域但**非**學號形式（`s` + 7 位數字）的帳戶、`AUTH_TEACHER_EMAILS` 或 `AUTH_ADMIN_EMAILS` 內的帳戶。學生帳戶呼叫教師或管理員 API 會收到 `403`，這是預期行為。
+教師端（`/teacher`）及教師 API 只限教師及管理員帳號：`AUTH_ADMIN_EMAILS`、`AUTH_TEACHER_EMAILS` 內的帳戶，以及（**僅在**擁有者授權的 `AUTH_STAFF_ACCESS_POLICY=school-domain` 生效時）`AUTH_STAFF_DOMAINS` 所列網域中非學號形式的帳戶。學生帳戶（學號形式 `s` 加數字）在任何設定下都不會是教師，呼叫教師或管理員 API 會收到 `403`，這是預期行為。
 
 **Q：如何在教師端測試學生流程？**
 以教師（或管理員）帳戶登入後，按頂部導覽的「學生端測試」（即學生端首頁 `/`），或由教師端／管理員端首頁的「學生端測試」入口進入；學生端頂部會顯示「教師測試模式」／「管理員測試模式」，並可隨時返回後台首頁。教師的練習記錄使用 `teacher:<電郵>`、管理員使用 `admin:<電郵>` 身分，與所有學生分開。
@@ -1503,6 +1628,9 @@ STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=./secrets/roster-sa.json
 
 **Q：AI 出題比指定題數少？**
 題目必須通過教材依據驗證（節錄要逐字對應教材原文），若題目、參考答案、解釋或得分要點出現教材沒有交代的年份，亦會被視為疑似杜撰而不採用；若某個主題的教材內容不足以出題，系統會由其他主題補足，並在練習頁說明實際題數。可改選其他主題、減少題數，或再練習一次取得新題目。
+
+**Q：學生按「開始練習」時失敗，會看到甚麼？**
+練習設定頁會按失敗原因給出**可行動**的說明與按鈕，而不是一句技術錯誤：教材尚未開放時會說明原因並提供「改用題庫題目再試一次」及「改選其他主題」（教材未確認時**不會**改由未確認教材出題）；AI 用量達上限（`429`）時提示改用題庫或稍後再試；生成失敗（`502`）時建議減少題數或改選主題；錯題為零時提示先完成一次完整練習。相關測試見 [tests/practice-ai-mode.test.ts](tests/practice-ai-mode.test.ts)。
 
 **Q：AI 批改可靠嗎？**
 AI 只作練習回饋：填充題用字不同但意思相同會當作正確，短答題會列出已達到／未達到的得分要點。介面多處說明這不是正式 HKDSE 評分，短答題亦不計入正確率，學生可按要點自行覆核。如要完全停用 AI 批改，設 `LLM_GRADING_ENABLED=false`。

@@ -517,6 +517,19 @@ export const MIGRATIONS: Migration[] = [
       `ALTER TABLE material_documents ADD COLUMN content_reviewed_by TEXT`,
     ],
   },
+  {
+    id: "0018-remove-empty-paleolithic-regions-section",
+    statements: [
+      // 教材中「不同地區的舊石器時代人類」只有標題、沒有任何內容段落，因此學生端
+      // 一直顯示「未有教材」而無法選用；擁有者決定把這個分節由課程中刪除
+      // （課程種子的定義已同步移除，之後的教材匯入亦會略過該標題，見 exclusions.ts）。
+      //
+      // 這裡清除舊資料庫中可能仍存在的列，避免舊資料庫保留一個沒有內容的分節。
+      `DELETE FROM questions WHERE section_id = 'topic-1-origins-regions'`,
+      `DELETE FROM material_blocks WHERE section_id = 'topic-1-origins-regions'`,
+      `DELETE FROM sections WHERE id = 'topic-1-origins-regions'`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { api, getLearnerId } from "@/lib/api-client";
+import { api, ApiError, getLearnerId } from "@/lib/api-client";
 import {
   DIFFICULTIES,
   DIFFICULTY_LABELS,
@@ -23,6 +23,91 @@ import { ErrorNotice, Loading, Notice } from "@/components/ui";
 
 const QUESTION_COUNTS = [5, 10, 15];
 
+interface StartAttempt {
+  mode: "standard" | "wrong-only";
+  questionSource: PracticeQuestionSource;
+}
+
+/**
+ * 開始練習失敗時，給學生可行動的下一步。
+ *
+ * 原則：**不重複同一組設定**（否則只會再失敗一次）、不假造題目，並在教材未開放時
+ * 明確告知可改用的替代方式，而不是只顯示錯誤訊息。
+ */
+function describeStartFailure(
+  error: unknown,
+  attempt: StartAttempt | null,
+): { heading: string; lines: string[]; canSwitchToBank: boolean; canSwitchToStandard: boolean } | null {
+  if (!attempt) return null;
+  const message = error instanceof Error ? error.message : String(error);
+  const status = error instanceof ApiError ? error.status : 0;
+
+  // 錯題不足：建議先做一次完整練習
+  if (status === 409 && message.includes("錯題")) {
+    return {
+      heading: "目前沒有可以重做的錯題",
+      lines: [
+        "先完成一次完整練習，之後答錯或標記「需要重溫」的題目就會出現在這裡。",
+        "你也可以改選其他主題後再試。",
+      ],
+      canSwitchToBank: false,
+      canSwitchToStandard: true,
+    };
+  }
+
+  // 教材尚未開放給學生（版權或內容審核中）：不可改用未確認的教材頂替
+  if (status === 409 && message.includes("尚未開放學生使用")) {
+    return {
+      heading: "所選主題的教材仍未開放給學生使用",
+      lines: [
+        "教師仍在確認教材的版權及內容，因此系統不會用這些教材出題。",
+        "你可以：改用「使用題庫題目」（內建示範題目及教師已核可的題目）、改選其他主題，或請歷史科教師開放教材。",
+      ],
+      canSwitchToBank: attempt.questionSource === "ai",
+      canSwitchToStandard: false,
+    };
+  }
+
+  // 分節沒有可用題目
+  if (status === 409) {
+    return {
+      heading: "所選主題暫時沒有可用題目",
+      lines: [
+        "試試其他主題、其他題型或不同難度；若全部主題都是這樣，請向歷史科教師反映。",
+      ],
+      canSwitchToBank: attempt.questionSource === "ai",
+      canSwitchToStandard: false,
+    };
+  }
+
+  // AI 用量上限（防濫用配額）
+  if (status === 429) {
+    return {
+      heading: "短時間內的 AI 出題次數已達上限",
+      lines: [
+        "稍後可以再試，或先改用「使用題庫題目」練習（不會消耗 AI 額度）。",
+      ],
+      canSwitchToBank: attempt.questionSource === "ai",
+      canSwitchToStandard: false,
+    };
+  }
+
+  // AI 生成失敗或逾時
+  if (status === 502) {
+    return {
+      heading: "這次未能為所選主題準備題目",
+      lines: [
+        "可能與主題的教材內容、題數或 AI 服務忙碌有關。",
+        "可以減少題目數量、改選其他主題後再試一次，或改用「使用題庫題目」。",
+      ],
+      canSwitchToBank: attempt.questionSource === "ai",
+      canSwitchToStandard: false,
+    };
+  }
+
+  return null;
+}
+
 export function PracticeSetupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -40,6 +125,7 @@ export function PracticeSetupForm() {
   const [demoMode, setDemoMode] = useState<boolean | null>(null);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<unknown>(null);
+  const [failedAttempt, setFailedAttempt] = useState<StartAttempt | null>(null);
 
   const [reloadToken, setReloadToken] = useState(0);
   const initialSelectionApplied = useRef(false);
@@ -152,7 +238,10 @@ export function PracticeSetupForm() {
     );
   }
 
-  async function handleStart() {
+  async function startPractice(
+    source: PracticeQuestionSource,
+    attemptMode: "standard" | "wrong-only",
+  ): Promise<void> {
     if (!topic) return;
     if (selectedSections.length === 0) {
       setStartError(new Error("請至少選擇一個主題。"));
@@ -165,6 +254,7 @@ export function PracticeSetupForm() {
 
     setStarting(true);
     setStartError(null);
+    setFailedAttempt(null);
     try {
       const practice = await api.post<AssembledPractice>("/api/practice", {
         learnerId: getLearnerId(),
@@ -173,17 +263,24 @@ export function PracticeSetupForm() {
         questionTypes,
         difficulty,
         questionCount,
-        mode,
-        questionSource,
+        mode: attemptMode,
+        questionSource: source,
         sourceSessionId: null,
       });
       router.push(`/practice/${practice.session.id}`);
     } catch (caught) {
       setStartError(caught);
+      setFailedAttempt({ mode: attemptMode, questionSource: source });
     } finally {
       setStarting(false);
     }
   }
+
+  async function handleStart() {
+    await startPractice(questionSource, mode);
+  }
+
+  const guidance = describeStartFailure(startError, failedAttempt);
 
   if (error) return <ErrorNotice error={error} onRetry={() => setReloadToken((t) => t + 1)} />;
   if (!topic) return <Loading label="正在載入練習設定…" />;
@@ -393,7 +490,56 @@ export function PracticeSetupForm() {
         ) : null}
       </section>
 
-      {startError ? <ErrorNotice error={startError} /> : null}
+      {startError ? (
+        guidance ? (
+          <Notice tone="warning">
+            <p className="font-semibold">未能開始練習：{guidance.heading}</p>
+            <ul className="list-disc pl-5 mt-1 text-sm">
+              {guidance.lines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {guidance.canSwitchToBank ? (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={starting}
+                  onClick={() => {
+                    setQuestionSource("bank");
+                    void startPractice("bank", mode);
+                  }}
+                >
+                  改用題庫題目再試一次
+                </button>
+              ) : null}
+              {guidance.canSwitchToStandard ? (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={starting}
+                  onClick={() => {
+                    setMode("standard");
+                    void startPractice(questionSource, "standard");
+                  }}
+                >
+                  改用完整練習
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="btn"
+                disabled={starting || selectedSections.length === 0}
+                onClick={clearSelection}
+              >
+                改選其他主題
+              </button>
+            </div>
+          </Notice>
+        ) : (
+          <ErrorNotice error={startError} />
+        )
+      ) : null}
 
       <div className="flex flex-wrap gap-2 items-center">
         <button

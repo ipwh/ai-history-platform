@@ -76,6 +76,11 @@ interface DocumentDetailResponse {
   looksLikeTeacherEdition: boolean;
   /** 被判定為教師專用內容（答案、評分參考）而不會顯示給學生的段落數 */
   teacherOnlyBlockCount: number;
+  /**
+   * 這份文件**現時**是否真的會顯示給學生。`studentDistribution` 為 true 但缺少版權確認
+   * （教師版另需內容覆核）時為 false——管理員介面必須說明，否則會誤以為已開放給學生。
+   */
+  studentVisibleToStudents?: boolean;
   /** 兩項發布確認（版權／發行權、內容安全覆核）的記錄 */
   governance?: {
     rightsConfirmedAt: string | null;
@@ -109,6 +114,8 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
     looksLikeTeacherEdition: boolean;
     teacherOnlyBlockCount: number;
     governance: DocumentDetailResponse["governance"];
+    /** 伺服器判定的「現時是否真的會顯示給學生」 */
+    studentVisibleToStudents?: boolean;
   } | null>(null);
   const [diskMaterials, setDiskMaterials] = useState<DiskMaterial[]>([]);
   const [diskLoaded, setDiskLoaded] = useState(false);
@@ -291,6 +298,7 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
         looksLikeTeacherEdition: result.looksLikeTeacherEdition,
         teacherOnlyBlockCount: result.teacherOnlyBlockCount,
         governance: result.governance,
+        studentVisibleToStudents: result.studentVisibleToStudents,
       });
     } catch (caught) {
       setBlockError(caught);
@@ -315,6 +323,7 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
           looksLikeTeacherEdition: result.looksLikeTeacherEdition,
           teacherOnlyBlockCount: result.teacherOnlyBlockCount,
           governance: result.governance,
+          studentVisibleToStudents: result.studentVisibleToStudents,
         });
         setBlocksLoading(false);
       })
@@ -725,6 +734,7 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
               audit={documentDetail.distributionAudit}
               looksLikeTeacherEdition={documentDetail.looksLikeTeacherEdition}
               governance={documentDetail.governance ?? null}
+              studentVisibleToStudents={documentDetail.studentVisibleToStudents}
               teacherOnlyBlockCount={documentDetail.teacherOnlyBlockCount}
               onSet={(allowed, options) =>
                 void handleSetDistribution(documentDetail.document.id, allowed, options)
@@ -759,6 +769,7 @@ function DistributionPanel({
   looksLikeTeacherEdition,
   teacherOnlyBlockCount,
   governance,
+  studentVisibleToStudents,
   onSet,
 }: {
   document: MaterialDocument;
@@ -769,6 +780,8 @@ function DistributionPanel({
   teacherOnlyBlockCount: number;
   /** 兩項發布確認的記錄（版權／發行權、內容安全覆核） */
   governance: DocumentDetailResponse["governance"] | null;
+  /** 伺服器判定的「現時是否真的會顯示給學生」 */
+  studentVisibleToStudents: boolean | undefined;
   onSet: (allowed: boolean, options?: { confirmTeacherEdition?: boolean }) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
@@ -794,6 +807,15 @@ function DistributionPanel({
             <strong>{document.studentDistribution ? "已開放學生閱讀" : "未開放（預設）"}</strong>
             。未開放的教材對學生完全不顯示，學生只會在「閱讀教材」頁看到已開放的內容。
           </p>
+
+          {document.studentDistribution && studentVisibleToStudents === false ? (
+            <p className="text-xs" style={{ color: "#b45309" }}>
+              ⚠ <strong>學生現時仍然看不到這份教材</strong>：雖然已標示開放，但缺少必要的確認
+              （版權／發行權未確認，或教師版文件未完成內容安全覆核）。這種情況常見於在
+              「兩項確認」機制啟用前已開放、或由舊備份還原的文件。請按下方按鈕重新確認，
+              學生才會看到內容。
+            </p>
+          ) : null}
           <p className="text-xs text-gray-600">
             開放需要兩項確認（都會記錄確認者及時間）：<strong>版權／發行權</strong>
             （是否有權在平台向學生發布這份內容）與<strong>內容安全覆核</strong>

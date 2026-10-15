@@ -14,6 +14,7 @@
  *   6. 略去節錄不影響答案、解釋、學習記錄或教師端的完整資料。
  */
 import { beforeAll, describe, expect, it } from "vitest";
+import { openDocumentForStudents } from "./material-distribution";
 import { freshTestDatabasePath } from "./test-database";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("source-excerpt");
@@ -28,6 +29,9 @@ delete process.env.K_SERVICE;
 type MaterialsRepo = typeof import("@/server/repositories/materials");
 type PracticeRepo = typeof import("@/server/repositories/practice");
 type PracticeService = typeof import("@/server/services/practice-service");
+type QuestionRepository = typeof import("@/server/repositories/questions");
+type QuestionService = typeof import("@/server/services/question-service");
+type SessionModule = typeof import("@/server/auth/session");
 type SeedModule = typeof import("@/server/seed");
 type TeacherContent = typeof import("@/server/materials/teacher-content");
 type Types = typeof import("@/lib/types");
@@ -35,11 +39,30 @@ type Types = typeof import("@/lib/types");
 let materialsRepo: MaterialsRepo;
 let practiceRepo: PracticeRepo;
 let practice: PracticeService;
+let questionsRepo: QuestionRepository;
+let questionService: QuestionService;
+let session: SessionModule;
 let seed: SeedModule;
 let teacherContent: TeacherContent;
 let types: Types;
 
 const LEARNER = "school:s2024146@pochiu.edu.hk";
+
+/** 教師工作階段 cookie（用於驗證教師端路由；角色由目前設定重新判定） */
+function teacherCookie(): string {
+  return `hk-history-session=${encodeURIComponent(
+    session.encodeSession({
+      email: "teacher@example.com",
+      name: "測試教師",
+      role: "teacher",
+      learnerId: "teacher:teacher@example.com",
+      pictureUrl: null,
+      studentNumber: null,
+      className: null,
+      rosterVerified: false,
+    }),
+  )}`;
+}
 
 const NORMAL_TEXT = "文藝復興時期，歐洲人重視人文主義。";
 const TEACHER_ONLY_TEXT = "參考答案：人文主義（每個答案各佔 1 分）";
@@ -48,6 +71,9 @@ beforeAll(async () => {
   materialsRepo = await import("@/server/repositories/materials");
   practiceRepo = await import("@/server/repositories/practice");
   practice = await import("@/server/services/practice-service");
+  questionsRepo = await import("@/server/repositories/questions");
+  questionService = await import("@/server/services/question-service");
+  session = await import("@/server/auth/session");
   seed = await import("@/server/seed");
   teacherContent = await import("@/server/materials/teacher-content");
   types = await import("@/lib/types");
@@ -181,7 +207,7 @@ describe("教材節錄顯示政策（fail-closed）", () => {
     const hidden = await practice.submitAnswer(sessionId, LEARNER, question.id, "人文主義");
     expect(hidden.feedback.sourceWithheld).toBe(true);
 
-    materialsRepo.setDocumentStudentDistribution(document.id, true);
+    openDocumentForStudents(materialsRepo, document.id);
     const shown = await practice.submitAnswer(sessionId, LEARNER, question.id, "人文主義");
     expect(shown.recorded).toBe(false);
     expect(shown.feedback.sourceWithheld).toBe(false);
@@ -200,7 +226,7 @@ describe("教材節錄顯示政策（fail-closed）", () => {
     expect(teacherContent.isTeacherOnlyBlockText(NORMAL_TEXT)).toBe(false);
 
     const { document, blockId } = createSourceDocument("HNC2A2E_T5_SN_TE4.docx", TEACHER_ONLY_TEXT);
-    materialsRepo.setDocumentStudentDistribution(document.id, true);
+    openDocumentForStudents(materialsRepo, document.id);
 
     const question = makeQuestion({
       id: "excerpt-teacher-only",
@@ -229,7 +255,7 @@ describe("教材節錄顯示政策（fail-closed）", () => {
         sourceLocation: "測試段落 2",
       },
     ])[0]!;
-    materialsRepo.setDocumentStudentDistribution(document.id, true);
+    openDocumentForStudents(materialsRepo, document.id);
 
     const question = makeQuestion({
       id: "excerpt-mixed-blocks",
@@ -262,7 +288,7 @@ describe("教材節錄顯示政策（fail-closed）", () => {
       NORMAL_TEXT,
       "question-bank",
     );
-    materialsRepo.setDocumentStudentDistribution(document.id, true);
+    openDocumentForStudents(materialsRepo, document.id);
 
     const question = makeQuestion({
       id: "excerpt-question-bank-doc",
@@ -286,5 +312,90 @@ describe("教材節錄顯示政策（fail-closed）", () => {
     const result = await practice.submitAnswer(sessionId, LEARNER, question.id, "人文主義");
     expect(result.feedback.sourceWithheld).toBe(false);
     expect(result.feedback.sourceExcerpt).toBe("示範題庫的作者標註：文藝復興重視人文主義。");
+  });
+});
+
+/**
+ * 教師端必須看到「學生其實看不到節錄」及其原因（Sprint 7.2）。
+ * 判定與學生端共用同一個模組（source-visibility.ts），因此不會出現兩套標準：
+ * 若這裡顯示可見，學生端一定看得到。
+ */
+describe("教師端節錄可見性提示（與學生端同一判定）", () => {
+  it("未確認教材的題目：狀態帶有隱藏原因，且與學生端一致", async () => {
+    const { document, blockId } = createSourceDocument("HNC2A2E_T5_SN_TE6.docx", NORMAL_TEXT);
+    materialsRepo.setDocumentStudentDistribution(document.id, false);
+    const question = makeQuestion({
+      id: "review-hidden-unconfirmed",
+      sourceBlockIds: [blockId],
+      sourceExcerpt: NORMAL_TEXT,
+    });
+    questionsRepo.insertQuestion(question);
+
+    const [status] = questionService.questionReviewStatuses([question]);
+    expect(status?.sourceExcerptHiddenFromStudents).toBe(true);
+    expect(status?.sourceExcerptHiddenReason).toBe("unconfirmed-material");
+    // 學生端的實際結果必須相同
+    expect(practice.sourceExcerptIsStudentVisible(question)).toBe(false);
+
+    // 確認發行權後，教師端提示消失
+    openDocumentForStudents(materialsRepo, document.id);
+    const [afterOpen] = questionService.questionReviewStatuses([question]);
+    expect(afterOpen?.sourceExcerptHiddenFromStudents).toBe(false);
+    expect(afterOpen?.sourceExcerptHiddenReason).toBeNull();
+    expect(practice.sourceExcerptIsStudentVisible(question)).toBe(true);
+  });
+
+  it("引用已不存在的段落：原因為 missing-source-blocks（教師需重新核對依據）", () => {
+    const question = makeQuestion({
+      id: "review-hidden-missing",
+      sourceBlockIds: ["block-vanished"],
+      sourceExcerpt: NORMAL_TEXT,
+    });
+    const [status] = questionService.questionReviewStatuses([question]);
+    expect(status?.sourceExcerptHiddenFromStudents).toBe(true);
+    expect(status?.sourceExcerptHiddenReason).toBe("missing-source-blocks");
+  });
+
+  it("教師專用段落：原因為 teacher-edition", () => {
+    const { document, blockId } = createSourceDocument("HNC2A2E_T5_SN_TE7.docx", TEACHER_ONLY_TEXT);
+    openDocumentForStudents(materialsRepo, document.id);
+    const question = makeQuestion({
+      id: "review-hidden-teacher-edition",
+      sourceBlockIds: [blockId],
+      sourceExcerpt: TEACHER_ONLY_TEXT,
+    });
+    const [status] = questionService.questionReviewStatuses([question]);
+    expect(status?.sourceExcerptHiddenFromStudents).toBe(true);
+    expect(status?.sourceExcerptHiddenReason).toBe("teacher-edition");
+  });
+
+  it("教師端 API 會回傳提示，而學生端題目物件不包含任何節錄欄位", async () => {
+    const { document, blockId } = createSourceDocument("HNC2A2E_T5_SN_TE8.docx", NORMAL_TEXT);
+    materialsRepo.setDocumentStudentDistribution(document.id, false);
+    const question = makeQuestion({
+      id: "review-hidden-route",
+      sourceBlockIds: [blockId],
+      sourceExcerpt: NORMAL_TEXT,
+    });
+    questionsRepo.insertQuestion(question);
+
+    const { GET } = await import("@/app/api/teacher/questions/route");
+    const response = await GET(
+      new Request(
+        `http://localhost:3000/api/teacher/questions?topicId=topic-5&sectionId=topic-5-renaissance-features&status=published`,
+        { headers: { cookie: teacherCookie() } },
+      ),
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+      questions: Record<string, unknown>[];
+      reviews: { questionId: string; sourceExcerptHiddenFromStudents: boolean }[];
+    };
+    const review = payload.reviews.find((item) => item.questionId === question.id);
+    expect(review?.sourceExcerptHiddenFromStudents).toBe(true);
+    // 學生端：題目物件根本沒有節錄欄位（不只是隱藏）
+    const studentQuestion = types.studentQuestionSchema.parse(question);
+    expect("sourceExcerpt" in studentQuestion).toBe(false);
+    expect("sourceLocation" in studentQuestion).toBe(false);
   });
 });

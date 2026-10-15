@@ -387,6 +387,47 @@ async function main() {
     check("回饋包含教材來源位置", Boolean(firstFeedback?.sourceLocation));
     check("回饋包含教材原文節錄", Boolean(firstFeedback?.sourceExcerpt));
 
+    // 撤回教材發行權後，引用該教材的題目必須立即不再顯示原文節錄
+    // （節錄只在來源已確認可向學生發布時才回傳）。題目本身、答案及解釋不受影響。
+    const citesMaterial = (firstFeedback?.sourceBlockIds ?? []).length > 0;
+    if (distributableDocument && citesMaterial) {
+      const revoked = await call("PATCH", `/api/admin/materials/${distributableDocument.id}`, {
+        studentDistribution: false,
+      });
+      check("撤回教材發行權成功", revoked.status === 200, `HTTP ${revoked.status}`);
+
+      const afterRevoke = await call("GET", `/api/practice/${session.id}/result?learnerId=${LEARNER_ID}`);
+      const revokedFeedback = (afterRevoke.payload?.feedback ?? [])[0];
+      check(
+        "撤回後不再回傳教材原文節錄",
+        revokedFeedback?.sourceExcerpt === null || revokedFeedback?.sourceExcerpt === undefined,
+        `sourceExcerpt=${String(revokedFeedback?.sourceExcerpt ?? "").slice(0, 40)}`,
+      );
+      check("撤回後回饋標示已略去節錄", revokedFeedback?.sourceWithheld === true);
+      check(
+        "撤回後仍保留標準答案及解釋",
+        Boolean(revokedFeedback?.correctAnswer) && Boolean(revokedFeedback?.explanation),
+      );
+
+      // 還原為「已確認」狀態，令後續步驟及下一次執行由一致狀態開始
+      const restored = await call("PATCH", `/api/admin/materials/${distributableDocument.id}`, {
+        studentDistribution: true,
+        confirmRights: true,
+        confirmTeacherEdition: true,
+      });
+      check("重新確認版權後可以再次開放", restored.status === 200, `HTTP ${restored.status}`);
+      const afterRestore = await call("GET", `/api/practice/${session.id}/result?learnerId=${LEARNER_ID}`);
+      check(
+        "重新確認後節錄回復顯示",
+        Boolean((afterRestore.payload?.feedback ?? [])[0]?.sourceExcerpt),
+      );
+    } else {
+      check(
+        "（此練習的題目沒有引用教材段落，節錄屬作者標註而不受發行權影響）",
+        firstFeedback !== undefined,
+      );
+    }
+
     const repeat = await call("POST", `/api/practice/${session.id}/answers`, {
       learnerId: LEARNER_ID,
       questionId: questions[0].id,

@@ -22,9 +22,8 @@ import { ensureLearner, getLearnerProgress } from "../repositories/learners";
 import { ApiRouteError } from "../http";
 import { getServerConfig } from "../config";
 import { reserveAiOperation } from "./ai-limits";
-import { getBlocksByIds, listStudentDistributableDocumentIds } from "../repositories/materials";
+import { getBlocksByIds } from "../repositories/materials";
 import { normalizeForMatch } from "../materials/text-utils";
-import { isTeacherOnlyBlockText } from "../materials/teacher-content";
 import {
   createSession,
   getAttempt,
@@ -42,6 +41,7 @@ import { expandSectionIds, getTopic, sectionTitleMap } from "../repositories/top
 import { calculateAccuracy, gradeAnswer, type GradeOutcome } from "./grading";
 import { gradeWithAi } from "./ai-grading";
 import { generateQuestions } from "./question-service";
+import { studentExcerptIsVisible } from "./source-visibility";
 
 export class PracticeServiceError extends Error {
   readonly status: number;
@@ -129,30 +129,11 @@ function questionUsesOcr(question: Question): boolean {
 /**
  * 這條題目的教材節錄是否「可向學生顯示」。
  *
- * 政策（Sprint 6，fail-closed）：
- * - 題目**有引用教材段落**時，**只有當所有引用的段落都屬於已確認可向學生發布、
- *   且非教師專用的文件**才顯示節錄。任何一段查不到、或不屬可發布文件，一律不顯示，
- *   避免把未確認教材（可能是教師版答案或評分參考）原文給學生。
- * - 題目**沒有引用任何教材段落**時（示範題庫的作者標註、教師手動建立的題目），
- *   節錄是教師／課程作者自行撰寫的文字，而非擷取自教材，因此維持顯示。
- *
- * 題目本身、答案、解釋及學習記錄不受影響：只有節錄文字被略去。
+ * 實作已移至 `source-visibility.ts`（學生端回饋與教師端覆核清單共用同一個判定，
+ * 避免兩邊政策不一致）。保留此名稱以免既有呼叫端及測試失效。
  */
 export function sourceExcerptIsStudentVisible(question: Question): boolean {
-  if (question.sourceBlockIds.length === 0) return true;
-  try {
-    const distributable = listStudentDistributableDocumentIds();
-    const blocks = getBlocksByIds(question.sourceBlockIds);
-    if (blocks.length !== question.sourceBlockIds.length) return false;
-    return blocks.every((block) => {
-      if (!distributable.has(block.documentId)) return false;
-      const text = [block.text, ...(block.table ?? []).flat().map((cell) => cell.text)].join("\n");
-      return !isTeacherOnlyBlockText(text);
-    });
-  } catch {
-    // 查證失敗一律當作不可顯示
-    return false;
-  }
+  return studentExcerptIsVisible(question);
 }
 
 /**

@@ -20,8 +20,17 @@ import { sessionUserSchema, type SessionUser, type SignInRole } from "../../lib/
 import type { RosterStudent } from "../roster/columns";
 import type { AuthConfig } from "../config";
 
-/** 學號形式：s + 7 位數字（只用於身分檔案的判讀，不再影響角色） */
-const STUDENT_LOCAL_PART = /^s\d{7}$/;
+/**
+ * 學號形式：`s` 加**一或多個**數字（例如 `s2024146`、`s1234565`），大小寫不限。
+ *
+ * 這是校內學生帳戶的命名慣例，只按電郵本地部分（`@` 之前）比對：
+ *   - `s1234565@pochiu.edu.hk` → 學號形式（學生）
+ *   - `teacher.name@pochiu.edu.hk` → 非學號形式
+ *
+ * 學號形式**只**代表「這是學生帳戶」，不代表可以登入：名冊及強制登入規則仍然適用
+ * （見 src/app/api/auth/google/callback/route.ts）。
+ */
+const STUDENT_LOCAL_PART = /^s\d+$/i;
 
 /** 角色高低（只用於「降權即時生效、升權需重新登入」的比較） */
 const ROLE_RANK: Record<SignInRole, number> = { student: 0, teacher: 1, admin: 2 };
@@ -45,11 +54,6 @@ export function isSchoolDomain(email: string, schoolDomains: string[]): boolean 
   return schoolDomains.some((candidate) => candidate === domain);
 }
 
-export interface RoleResolutionOptions {
-  /** 該電郵是否已確認在學生名冊內（只作記錄用途；不影響角色判定） */
-  rosterStudent?: boolean;
-}
-
 /** 該電郵是否由設定明確列為教師或管理員（不受校內網域影響） */
 export function isExplicitStaff(email: string, config: AuthConfig): boolean {
   const normalized = normalizeEmail(email);
@@ -57,25 +61,62 @@ export function isExplicitStaff(email: string, config: AuthConfig): boolean {
 }
 
 /**
- * 判定登入角色。
+ * 該電郵是否為教職員身分（明確名單，或暫時校內網域政策生效時的校內教職員帳戶）。
  *
- * **只有明確列在名單內的帳戶才是教職員**；其他一律是學生（包括校內網域帳戶、
- * 別名帳戶、不在名冊內的帳戶）。學生名冊只決定「可否登入」及顯示的班別學號，
- * 與角色判定無關（因此亦不可能靠別名或名冊遺漏取得教師權限）。
+ * 用於登入流程判斷是否需要核對學生名冊：教職員不是名冊成員。學號形式一律回傳 false，
+ * 因此學生帳戶永遠不會因為這個函式而略過名冊核對。
+ */
+export function isStaffAccount(email: string, config: AuthConfig): boolean {
+  return resolveSignInRole(email, config) !== "student";
+}
+
+/**
+ * 判定登入角色（伺服器端唯一來源）。
+ *
+ * 次序（先符合者為準）：
+ *   1. `AUTH_ADMIN_EMAILS` → 管理員（明確授權，最優先）
+ *   2. **學號形式**（`^s[0-9]+$`，不分大小寫）→ 學生。學號形式一律是學生，
+ *      因此即使名冊核對失敗、或校內網域政策開啟，都不可能落入教師角色。
+ *   3. `AUTH_TEACHER_EMAILS` → 教師（明確授權）
+ *   4. `AUTH_STAFF_ACCESS_POLICY=school-domain` 且電郵網域在 `AUTH_STAFF_DOMAINS` 內
+ *      （完整標籤比對）→ 教師（擁有者授權的**暫時**全校教職員政策）
+ *   5. 其他一律學生
+ *
+ * 電郵來自伺服器端向 Google userinfo 取得的**已驗證**地址（`email_verified=true`，
+ * 見 src/server/auth/google.ts），不是前端提供的字串；網域比對要求完整標籤，
+ * 因此 `x@pochiu.edu.hk.evil.com` 不會被當作校內帳戶。
  */
 export function resolveSignInRole(email: string, config: AuthConfig): SignInRole {
   const normalized = normalizeEmail(email);
   if (config.adminEmails.includes(normalized)) return "admin";
+  // 學號形式一律學生：這是最重要的一條防線——學生帳戶不會因名冊資料缺失、
+  // 網域政策開啟或設定錯誤而取得教師權限。
+  if (isStudentPatternEmail(normalized)) return "student";
   if (config.teacherEmails.includes(normalized)) return "teacher";
+  if (config.staffAccessPolicy === "school-domain" && isApprovedStaffDomain(normalized, config)) {
+    return "teacher";
+  }
   return "student";
 }
 
-/** 該帳戶是否為學號形式（供教師端顯示／診斷用，不影響角色） */
-export function looksLikeStudentNumber(email: string): boolean {
+/** 這是否為校內核准的教職員網域（僅在暫時政策開啟時有意義） */
+export function isApprovedStaffDomain(email: string, config: AuthConfig): boolean {
+  const domain = emailDomain(email);
+  if (domain === null) return false;
+  return config.staffDomains.some((candidate) => candidate === domain);
+}
+
+/** 學號形式的學生帳戶（供角色判定及診斷使用；不代表可以登入） */
+export function isStudentPatternEmail(email: string): boolean {
   const normalized = normalizeEmail(email);
   const at = normalized.lastIndexOf("@");
   if (at <= 0) return false;
   return STUDENT_LOCAL_PART.test(normalized.slice(0, at));
+}
+
+/** @deprecated 使用 `isStudentPatternEmail`；保留舊名稱以避免破壞既有呼叫端 */
+export function looksLikeStudentNumber(email: string): boolean {
+  return isStudentPatternEmail(email);
 }
 
 /** 由電郵及角色推導穩定的學習者 ID，讓學習記錄跟隨學校帳戶。

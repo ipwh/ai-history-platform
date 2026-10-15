@@ -7,12 +7,14 @@ process.env.APP_DATABASE_PATH = testDbPath;
 process.env.LLM_PROVIDER = "mock";
 
 type Curriculum = typeof import("@/server/seed/curriculum");
+type Exclusions = typeof import("@/server/materials/exclusions");
 type MaterialFiles = typeof import("@/server/materials/material-files");
 type Seed = typeof import("@/server/seed");
 type Topics = typeof import("@/server/repositories/topics");
 type Questions = typeof import("@/server/repositories/questions");
 
 let curriculum: Curriculum;
+let materials: Exclusions;
 let materialFiles: MaterialFiles;
 let seed: Seed;
 let topics: Topics;
@@ -20,6 +22,7 @@ let questions: Questions;
 
 beforeAll(async () => {
   curriculum = await import("@/server/seed/curriculum");
+  materials = await import("@/server/materials/exclusions");
   materialFiles = await import("@/server/materials/material-files");
   seed = await import("@/server/seed");
   topics = await import("@/server/repositories/topics");
@@ -126,5 +129,16 @@ describe("課程結構寫入資料庫", () => {
     seed.seedCurriculum();
     expect(topics.listTopics()).toHaveLength(12);
     expect(questions.countQuestions({ topicId: "topic-1" })).toBe(0);
+  });
+
+  it("已由課程刪除的分節不會再出現（只有標題、沒有內容的「不同地區的舊石器時代人類」）", () => {
+    seed.seedCurriculum();
+    const sections = topics.listSections("topic-1");
+    expect(sections.some((section) => section.id === "topic-1-origins-regions")).toBe(false);
+    // 教材本身亦不會再匯入該標題（見 materials/exclusions.ts）
+    expect(
+      materials.isExcludedText("topic-1", "不同地區的舊石器時代人類"),
+    ).toBe(true);
+    expect(materials.isExcludedText("topic-1", "舊石器時代")).toBe(false);
   });
 });

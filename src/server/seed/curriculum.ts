@@ -60,12 +60,6 @@ const TOPIC_1: TopicSeed = {
           summary: "南方古猿、能人、直立人與智人。",
           matchKeywords: ["南方古猿", "智人", "直立人", "能人"],
         },
-        {
-          id: "topic-1-origins-regions",
-          title: "不同地區的舊石器時代人類",
-          summary: "各地早期人類的生活概況。",
-          matchKeywords: ["不同地區的舊石器時代人類"],
-        },
       ],
     },
     {

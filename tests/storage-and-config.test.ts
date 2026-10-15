@@ -182,6 +182,29 @@ describe("設定驗證", () => {
   it("應用程式版本來自 package.json", () => {
     expect(diagnostics.appVersion()).toMatch(/^\d+\.\d+\.\d+/);
   });
+
+  it("部署目錄沒有教材檔案時提出警告（映像檔可能建置成功但沒有內容）", () => {
+    const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), "hist-materials-empty-"));
+    const withBundle = fs.mkdtempSync(path.join(os.tmpdir(), "hist-materials-bundle-"));
+    try {
+      // 只有說明檔（等於 Git 內的情況）→ 提出警告
+      fs.writeFileSync(path.join(emptyDir, "README.md"), "materials");
+      setEnv("APP_MATERIALS_DIR", emptyDir);
+      const missing = diagnostics.describeConfigIssues();
+      expect(missing.some((issue) => issue.code === "materials-bundle-missing")).toBe(true);
+
+      // 有教材檔案（不顯示檔名）→ 不再警告
+      fs.mkdirSync(path.join(withBundle, "課題5 近代歐洲的興起"));
+      fs.writeFileSync(path.join(withBundle, "課題5 近代歐洲的興起", "教材.docx"), "x");
+      setEnv("APP_MATERIALS_DIR", withBundle);
+      const present = diagnostics.describeConfigIssues();
+      expect(present.some((issue) => issue.code === "materials-bundle-missing")).toBe(false);
+    } finally {
+      setEnv("APP_MATERIALS_DIR", undefined);
+      fs.rmSync(emptyDir, { recursive: true, force: true });
+      fs.rmSync(withBundle, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("健康檢查", () => {

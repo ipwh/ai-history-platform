@@ -102,7 +102,8 @@
 ### 6.1 覆核者資格
 
 - 必須是學校的歷史科教師（或經科主任授權的人員），具備該課題的教學經驗。
-- 教師帳戶須列在 `AUTH_TEACHER_EMAILS`（或按學校選定的角色政策取得教師權限）。
+- 教師帳戶須列在 `AUTH_TEACHER_EMAILS`（或按學校選定的角色政策取得教師權限，例如學校
+  暫時採用的 `AUTH_STAFF_ACCESS_POLICY=school-domain`；見 README 第八節）。
 - 覆核者姓名／代號會寫入 `question_reviews.reviewer_email` 及黃金題庫紀錄，因此**必須是
   可追溯至真人的身分**，不可共用帳戶。
 - 如沒有符合資格的覆核者，本關卡維持 pending；**不得**以代號或程式冒充覆核。

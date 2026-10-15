@@ -23,8 +23,14 @@ const EXCLUSIONS: Record<string, ExcludedContent> = {
       "topic-1-four-civilisations-mesopotamia",
       "topic-1-four-civilisations-indus",
       "topic-1-four-civilisations-yellow",
+      // 教材只有標題、沒有任何內容的「不同地區的舊石器時代人類」已由課程種子移除
+      // （見 migration 0018）；舊資料庫及舊教材匯入可能仍帶有此分節，因此一併排除。
+      "topic-1-origins-regions",
     ],
     keywords: [
+      // 已由課程種子移除的分節標題（教材只有標題、沒有任何內容，見 migration 0018）；
+      // 匯入時略過該標題及其子樹，避免教材的標題段落被歸入其他分節。
+      "不同地區的舊石器時代人類",
       // 三個不考核文明的通用名稱（含河流名稱，因為教材會以河名指稱該文明）
       "新月沃土",
       "黃河",

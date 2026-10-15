@@ -129,6 +129,56 @@ describe("升級與冪等", () => {
     expect(questionsRepo.countQuestions({})).toBe(before);
   });
 
+  it("migration 0018 會移除只有標題、沒有內容的分節（舊資料庫亦然）", () => {
+    const migrationId = "0018-remove-empty-paleolithic-regions-section";
+    const document = materialsRepo.createDocument({
+      fileName: "migration-0018-fixture.docx",
+      kind: "demo",
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      sizeBytes: 1,
+      status: "ready",
+      topicId: "topic-1",
+      sourceNote: null,
+    });
+
+    try {
+      // 模擬舊資料庫：先建立該分節及其標題段落，再移除 migration 記錄並重新套用。
+      const db = getDb();
+      const index = migrations.MIGRATIONS.findIndex((migration) => migration.id === migrationId);
+      expect(index).toBeGreaterThan(-1);
+      db.prepare("DELETE FROM schema_migrations WHERE id = ?").run(migrationId);
+      db.prepare(
+        `INSERT OR REPLACE INTO sections
+           (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+         VALUES ('topic-1-origins-regions', 'topic-1', 'topic-1-origins', '不同地區的舊石器時代人類', '', '[]', 99,
+                 '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+      ).run();
+      db.prepare(
+        `INSERT OR REPLACE INTO material_blocks
+           (id, document_id, topic_id, section_id, sort_order, type, level, text, table_json, source_location,
+            created_at, extraction_method, ocr_source)
+         VALUES ('blk-migration-0018', ?, 'topic-1', 'topic-1-origins-regions', 0, 'heading', 2,
+                 '不同地區的舊石器時代人類', NULL, '測試', '2026-01-01T00:00:00.000Z', 'none', NULL)`,
+      ).run(document.id);
+
+      migrations.runMigrations(getDb());
+
+      for (const [table, column] of [
+        ["sections", "id"],
+        ["material_blocks", "section_id"],
+        ["questions", "section_id"],
+      ] as const) {
+        const row = db
+          .prepare(`SELECT COUNT(*) AS c FROM ${table} WHERE ${column} = 'topic-1-origins-regions'`)
+          .get() as unknown as { c: number };
+        expect(row.c, `${table}.${column}`).toBe(0);
+      }
+      expect(appliedMigrations()).toContain(migrationId);
+    } finally {
+      materialsRepo.deleteDocument(document.id);
+    }
+  });
+
   it("新欄位及新資料表都存在（schema 與程式碼同步）", () => {
     expect(tableColumns("questions")).toContain("revision");
     expect(tableColumns("questions")).toContain("skill");

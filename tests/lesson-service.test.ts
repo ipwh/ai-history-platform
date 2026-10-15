@@ -9,6 +9,7 @@
  *   5. API 與其他學生端端點一致：要求登入時未登入會被拒絕。
  */
 import { beforeAll, describe, expect, it } from "vitest";
+import { openDocumentForStudents } from "./material-distribution";
 import { freshTestDatabasePath } from "./test-database";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("lesson");
@@ -48,10 +49,12 @@ const STUDENT = {
  * 測試用的版權閘門：只把測試需要的那份教材標示為「可在平台向學生發布」。
  * 這不是假造授權紀錄——只是把測試環境切換到「管理員已確認」的狀態，
  * 以驗證閘門開啟前後的行為差異（正式環境預設全部關閉）。
+ *
+ * 開放需要版權確認（教師版另需內容覆核）才有作用，因此使用 openDocumentForStudents。
  */
 function grantDistributionForTopic(topicId: string): void {
   for (const block of materialsRepo.listGroundingBlocksForSections(topicId, [])) {
-    materialsRepo.setDocumentStudentDistribution(block.documentId, true);
+    openDocumentForStudents(materialsRepo, block.documentId);
   }
 }
 
@@ -104,9 +107,9 @@ describe("教材版權閘門（預設不可發布）", () => {
 
   it("校內試題（題庫來源）永遠不會成為學生讀物，即使被標示為可發布", () => {
     revokeAllDistribution();
-    // 刻意把所有文件（包括校內試題）都標示為可發布
+    // 刻意把所有文件（包括校內試題）都標示為可發布，並補上版權及內容確認
     for (const document of materialsRepo.listDocuments()) {
-      materialsRepo.setDocumentStudentDistribution(document.id, true);
+      openDocumentForStudents(materialsRepo, document.id);
     }
     expect(materialsRepo.listStudentDistributableDocumentIds().size).toBeGreaterThan(0);
 

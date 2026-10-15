@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { getServerConfig, MIN_AUTH_SECRET_LENGTH } from "./config";
+import { isStudentPatternEmail } from "./auth/role";
 
 export { MIN_AUTH_SECRET_LENGTH };
 
@@ -72,6 +73,29 @@ export function describeDeployment(): DeploymentInfo {
   }
 
   return { platform, ephemeralStorage, notes };
+}
+
+/**
+ * 部署目錄內是否有教材檔案（只回報數量，不顯示檔名——教材內容受版權保護）。
+ *
+ * Git 不含教材（`.gitignore` 排除 `materials/*`），但 Docker 映像檔會 `COPY materials/`。
+ * 若在建置環境缺少教材，映像檔仍會成功建置並啟動，只是管理員無法匯入課本內容、
+ * 學生會看到沒有教材的平台——因此這裡提供一個可被管理員端看見的訊號。
+ *
+ * 教材檔案隨映像檔固定不變，故結果在單一程序內只計算一次（避免每次健康檢查掃描目錄）。
+ */
+function materialsBundlePresent(materialsDir: string): boolean {
+  try {
+    if (!fs.existsSync(materialsDir)) return false;
+    // 只作單層檢查（教材不隨執行期改變，深層掃描會令健康檢查變慢）：
+    // 除 `materials/README.md` 外有任何項目即視為映像檔已附教材。
+    return fs
+      .readdirSync(materialsDir, { withFileTypes: true })
+      .some((entry) => entry.name !== "README.md");
+  } catch {
+    // 無法讀取時不當作「缺少教材」，避免產生誤導的警告
+    return true;
+  }
 }
 
 export function describeConfigIssues(): ConfigIssue[] {
@@ -156,23 +180,91 @@ export function describeConfigIssues(): ConfigIssue[] {
           "偵測到 AUTH_IN_DOMAIN_ROLE 或 AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER：這個「校內網域即教師」" +
           "的政策**已被移除**，不再授予任何教職員權限（它會讓校內別名帳戶取得教師權限，" +
           "可讀取全部學生的練習記錄）。請改為把教師電郵列在 AUTH_TEACHER_EMAILS，" +
+          "或使用已授權的 AUTH_STAFF_ACCESS_POLICY=school-domain 暫時政策；" +
           "並從部署設定移除這兩個變數；在完成之前，未列入名單的教師會是學生。",
       });
+    }
+
+    // 教師權限來源（Sprint 7.2）
+    if (config.auth.staffAccessPolicy === "school-domain") {
+      issues.push({
+        level: "warning",
+        code: "auth-staff-policy-school-domain",
+        message:
+          "已啟用暫時的全校教職員教師權限政策（AUTH_STAFF_ACCESS_POLICY=school-domain）：" +
+          `在 ${config.auth.staffDomains.length} 個已列出的校內網域中，任何通過 Google 驗證、` +
+          "且不是學號形式（s 加數字）的帳戶都是教師。" +
+          "**這不是最小權限政策**：教師介面可讀取全部學生的練習記錄，並可覆核及發布題目。" +
+          "停用方法：把 AUTH_STAFF_ACCESS_POLICY 設回 allowlist（或移除該變數），" +
+          "並以 AUTH_TEACHER_EMAILS 明確列出教師。",
+      });
+      if (config.auth.staffDomains.length === 0) {
+        issues.push({
+          level: "error",
+          code: "auth-staff-policy-no-domains",
+          message:
+            "AUTH_STAFF_ACCESS_POLICY=school-domain 但沒有設定 AUTH_STAFF_DOMAINS：" +
+            "校內教職員不會取得教師權限（fail-closed），只有 AUTH_TEACHER_EMAILS 內的帳戶是教師。" +
+            "請以 AUTH_STAFF_DOMAINS 列出核准的教職員網域（完整標籤，例如 pochiu.edu.hk）。",
+        });
+      }
+      for (const domain of config.auth.staffDomains) {
+        // 少於三個標籤（例如 edu.hk）通常代表註冊層級的網域，會令極大量帳戶取得教師權限
+        if (domain.split(".").length < 3) {
+          issues.push({
+            level: "warning",
+            code: "auth-staff-domain-too-broad",
+            message: `AUTH_STAFF_DOMAINS 包含過於寬廣的網域（${domain}）：這會令該網域下大量帳戶取得教師權限。請確認這確實是學校自己的網域。`,
+          });
+        }
+      }
     } else if (config.auth.teacherEmails.length === 0) {
       issues.push({
         level: "warning",
         code: "auth-no-teachers-configured",
         message:
           "未設定 AUTH_TEACHER_EMAILS：目前沒有任何帳戶可進入教師端（管理員不受影響）。" +
-          "校內教師須明確列在 AUTH_TEACHER_EMAILS 才可使用教師端功能。",
+          "校內教師須明確列在 AUTH_TEACHER_EMAILS 才可使用教師端功能；" +
+          "如要暫時讓全校教職員使用教師介面，可設定 AUTH_STAFF_ACCESS_POLICY=school-domain " +
+          "及 AUTH_STAFF_DOMAINS（請先了解這會令教師介面對全校教職員開放）。",
       });
     }
+
+    // 名單內的學號形式帳戶：一律會被判定為學生（學號形式優先於教師名單；管理員名單除外）
+    const studentPatternTeachers = config.auth.teacherEmails.filter((email) =>
+      isStudentPatternEmail(email),
+    );
+    const studentPatternAdmins = config.auth.adminEmails.filter((email) =>
+      isStudentPatternEmail(email),
+    );
+    if (studentPatternTeachers.length > 0 || studentPatternAdmins.length > 0) {
+      const parts: string[] = [];
+      if (studentPatternTeachers.length > 0) {
+        parts.push(
+          `AUTH_TEACHER_EMAILS 內有 ${studentPatternTeachers.length} 個學號形式帳戶：這些項目**不會生效**` +
+            "（學號形式優先於教師名單，以保障學生帳戶不會被誤升為教師）",
+        );
+      }
+      if (studentPatternAdmins.length > 0) {
+        parts.push(
+          `AUTH_ADMIN_EMAILS 內有 ${studentPatternAdmins.length} 個學號形式帳戶：管理員名單優先，` +
+            "因此該帳戶**會**是管理員——請確認這確實是校方授權（學生帳戶不應是管理員）",
+        );
+      }
+      issues.push({
+        level: "error",
+        code: "auth-allowlist-student-pattern",
+        message: `${parts.join("；")}。請檢查名單是否誤填。`,
+      });
+    }
+
     if (config.roster.enabled) {
       issues.push({
         level: "info",
         code: "auth-roster-authoritative",
         message:
-          "學生名冊同時是角色判定的依據：名冊內的帳戶一律是學生，因此學號形式不符的別名帳戶不會取得教師權限。",
+          "學生名冊決定誰可以登入（學號形式帳戶不在名冊內會被拒絕）。學號形式（s 加數字）一律是學生，" +
+          "因此不會因名冊資料缺失或網域政策而取得教師權限。",
       });
     }
   }
@@ -254,6 +346,17 @@ export function describeConfigIssues(): ConfigIssue[] {
       code: "auto-publish-questions",
       message:
         "DEMO_AUTO_PUBLISH_QUESTIONS=true：以本地示範生成執行批次出題時，題目會自動發布為可作答題目，未經教師核對。正式環境應設為 false。",
+    });
+  }
+
+  // 教材檔案是否隨映像檔提供（Git 不含教材，見 .gitignore；缺少時平台會「成功」啟動但沒有內容）
+  if (!materialsBundlePresent(config.materialsDir)) {
+    issues.push({
+      level: "warning",
+      code: "materials-bundle-missing",
+      message:
+        "映像檔／部署目錄內沒有教材檔案：管理員無法匯入課本內容，學生會看到沒有教材的平台。" +
+        "教材不納入版本控制（版權考量），請在含有教材的電腦上建置映像檔，或改用受控的教材匯入流程。",
     });
   }
 

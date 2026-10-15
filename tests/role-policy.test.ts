@@ -1,18 +1,23 @@
 /**
- * 角色政策測試（Sprint 5–6，Priority A）。
+ * 角色政策測試（Sprint 5–7.2，Priority A）。
  *
  * ── 這個檔案要處理的實際風險 ──────────────────────────────────────────
- * 「校內網域內、學號形式（s + 7 位數字）不符的帳戶一律視為教師」是 fail-open 的：
+ * 「校內網域內、學號形式（s + 數字）不符的帳戶一律視為教師」是 fail-open 的：
  * 只要有任何學生的帳戶是別名（例如 `chan.tai.ming@pochiu.edu.hk`）又不在學生名冊內，
  * 該帳戶就會取得**教師**權限，可讀取全部學生的練習記錄。
  *
- * **Sprint 6 起這條途徑已被移除**：角色判定只有兩個來源——`AUTH_ADMIN_EMAILS` 及
- * `AUTH_TEACHER_EMAILS`。網域本身不再授予任何教職員權限。舊變數
- * （`AUTH_IN_DOMAIN_ROLE`、`AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER`）仍會被讀取，
- * 但只會產生 **error 級**設定警示，不再影響判定。
+ * **Sprint 6 起這條隱含途徑已被移除**：預設只有兩個角色來源——`AUTH_ADMIN_EMAILS`
+ * 及 `AUTH_TEACHER_EMAILS`；舊變數（`AUTH_IN_DOMAIN_ROLE`、
+ * `AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER`）仍會被讀取，但只會產生 **error 級**設定警示，
+ * 不再影響判定。
  *
- * 本檔驗證：政策移除後的完整判定矩陣、設定錯誤時的 fail-closed 行為、工作階段的
- * 降權／不可升權／不可篡改，以及在**真實 route handler** 上的授權結果。
+ * **Sprint 7.2 起**，擁有者明確授權的暫時政策 `AUTH_STAFF_ACCESS_POLICY=school-domain`
+ * 可讓 `AUTH_STAFF_DOMAINS` 所列校內網域中「非學號形式」的帳戶取得教師權限（全校教職員，
+ * 不是最小權限）。此政策一律排在學號形式之後，因此學生帳戶（`^s\d+$`）永遠是學生；
+ * 未設定或拼錯時一律退回 `allowlist`。
+ *
+ * 本檔驗證：預設政策、上述暫時政策的完整判定矩陣、設定錯誤時的 fail-closed 行為、
+ * 工作階段的降權／不可升權／不可篡改，以及在**真實 route handler** 上的授權結果。
  */
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
@@ -73,6 +78,8 @@ function issueCodes(): string[] {
 function resetPolicy(): void {
   delete process.env.AUTH_IN_DOMAIN_ROLE;
   delete process.env.AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER;
+  delete process.env.AUTH_STAFF_ACCESS_POLICY;
+  delete process.env.AUTH_STAFF_DOMAINS;
   process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";
   process.env.AUTH_TEACHER_EMAILS = "teacher@example.com";
   process.env.AUTH_ADMIN_EMAILS = "admin@example.com";
@@ -187,14 +194,151 @@ describe("舊的「校內網域 = 教師」政策已移除", () => {
     expect(issueCodes()).not.toContain("auth-broad-school-domain");
   });
 
-  it("學號形式的判讀只作顯示用途，不影響角色", () => {
+  it("學號形式的判讀：s 加一或多個數字，且不影響角色判定", () => {
     resetPolicy();
+    // 學號形式：s + 一或多個數字（大小寫不限）
     expect(role.looksLikeStudentNumber(STUDENT_NUMBER_EMAIL)).toBe(true);
+    expect(role.looksLikeStudentNumber("s1@pochiu.edu.hk")).toBe(true);
+    expect(role.looksLikeStudentNumber("S1234565@POCHIU.EDU.HK")).toBe(true);
+    // 非學號形式
     expect(role.looksLikeStudentNumber(ALIAS_EMAIL)).toBe(false);
+    expect(role.looksLikeStudentNumber(ALIAS_WITH_NUMBER_EMAIL)).toBe(false);
+    expect(role.looksLikeStudentNumber("s@pochiu.edu.hk")).toBe(false);
+    expect(role.looksLikeStudentNumber("s123x@pochiu.edu.hk")).toBe(false);
     expect(role.looksLikeStudentNumber("not-an-email")).toBe(false);
-    // 兩者都是學生（角色只由名單決定）
+    // 兩者都是學生（角色只由名單及政策決定）
     expect(roleOf(STUDENT_NUMBER_EMAIL)).toBe("student");
     expect(roleOf(ALIAS_EMAIL)).toBe("student");
+  });
+});
+
+/**
+ * 擁有者授權的暫時政策：`AUTH_STAFF_ACCESS_POLICY=school-domain` 時，
+ * `AUTH_STAFF_DOMAINS` 所列校內網域中「非學號形式」的帳戶可取得教師權限。
+ *
+ * 這是**全校教職員**政策，不是最小權限政策；以下測試覆蓋學號形式防線、
+ * 外部網域、完整標籤比對、設定缺失時的 fail-closed，以及如何停用。
+ */
+describe("暫時的全校教職員教師政策（school-domain）", () => {
+  /** 校內網域但非學號形式的職員帳戶 */
+  const STAFF_EMAIL = "staff.member@pochiu.edu.hk";
+
+  function enablePolicy(domains = "pochiu.edu.hk"): void {
+    resetPolicy();
+    process.env.AUTH_STAFF_ACCESS_POLICY = "school-domain";
+    process.env.AUTH_STAFF_DOMAINS = domains;
+  }
+
+  it("政策開啟時，校內非學號形式帳戶是教師", () => {
+    enablePolicy();
+    expect(roleOf(STAFF_EMAIL)).toBe("teacher");
+    expect(roleOf("history.panel@pochiu.edu.hk")).toBe("teacher");
+    expect(roleOf(STAFF_EMAIL.toUpperCase())).toBe("teacher");
+  });
+
+  it("政策關閉（或未設定）時，同一帳戶是學生", () => {
+    resetPolicy();
+    expect(roleOf(STAFF_EMAIL)).toBe("student");
+
+    // 明確設為 allowlist 亦同（停用方式）
+    process.env.AUTH_STAFF_ACCESS_POLICY = "allowlist";
+    process.env.AUTH_STAFF_DOMAINS = "pochiu.edu.hk";
+    expect(roleOf(STAFF_EMAIL)).toBe("student");
+  });
+
+  it("拼錯或空白一律當作 allowlist（fail-closed）", () => {
+    for (const value of ["SchoolDomain", "school_domain", "true", " ", "yes"]) {
+      resetPolicy();
+      process.env.AUTH_STAFF_ACCESS_POLICY = value;
+      process.env.AUTH_STAFF_DOMAINS = "pochiu.edu.hk";
+      expect(roleOf(STAFF_EMAIL), `AUTH_STAFF_ACCESS_POLICY=${value}`).toBe("student");
+    }
+  });
+
+  it("**學號形式帳戶在政策開啟時仍然是學生**（不會因名冊失敗而變成教師）", () => {
+    enablePolicy();
+    expect(roleOf(STUDENT_NUMBER_EMAIL)).toBe("student");
+    expect(roleOf("s1234565@pochiu.edu.hk")).toBe("student");
+    expect(roleOf("S2024146@pochiu.edu.hk")).toBe("student");
+    // 近似但不符學號形式者仍受網域政策影響（屬職員帳戶，不是學生帳戶）
+    expect(roleOf(ALIAS_WITH_NUMBER_EMAIL)).toBe("teacher");
+  });
+
+  it("外部網域帳戶不會取得教師權限（即使政策開啟）", () => {
+    enablePolicy();
+    expect(roleOf(OUTSIDE_DOMAIN_EMAIL)).toBe("student");
+    expect(roleOf("someone@pochiu.edu.hk.evil.com")).toBe("student");
+    expect(roleOf("someone@edu.hk")).toBe("student");
+  });
+
+  it("政策開啟但未列出網域時沒有教師（fail-closed）並產生 error 級警示", () => {
+    resetPolicy();
+    process.env.AUTH_STAFF_ACCESS_POLICY = "school-domain";
+    process.env.AUTH_TEACHER_EMAILS = "";
+    expect(roleOf(STAFF_EMAIL)).toBe("student");
+    expect(issueLevel("auth-staff-policy-no-domains")).toBe("error");
+  });
+
+  it("政策開啟時會有風險警示，且不再提示「沒有教師」", () => {
+    enablePolicy();
+    process.env.AUTH_TEACHER_EMAILS = "";
+    expect(issueLevel("auth-staff-policy-school-domain")).toBe("warning");
+    expect(issueCodes()).not.toContain("auth-no-teachers-configured");
+    // 訊息必須說明這不是最小權限，並提供停用方法
+    const issue = diagnostics
+      .describeConfigIssues()
+      .find((item) => item.code === "auth-staff-policy-school-domain");
+    expect(issue?.message ?? "").toContain("最小權限");
+    expect(issue?.message ?? "").toContain("allowlist");
+  });
+
+  it("過於寬廣的職員網域會產生警示（避免一整個註冊層級網域取得教師權限）", () => {
+    enablePolicy("pochiu.edu.hk,edu.hk");
+    expect(issueLevel("auth-staff-domain-too-broad")).toBe("warning");
+  });
+
+  it("名單內的學號形式帳戶不會成為教師；管理員名單則仍優先（並產生 error 級警示）", () => {
+    resetPolicy();
+    process.env.AUTH_TEACHER_EMAILS = `teacher@example.com,${STUDENT_NUMBER_EMAIL}`;
+    expect(roleOf(STUDENT_NUMBER_EMAIL)).toBe("student");
+    expect(issueLevel("auth-allowlist-student-pattern")).toBe("error");
+
+    // 管理員名單優先（明確授權），但仍會被強烈提示
+    process.env.AUTH_ADMIN_EMAILS = `admin@example.com,${STUDENT_NUMBER_EMAIL}`;
+    expect(roleOf(STUDENT_NUMBER_EMAIL)).toBe("admin");
+    expect(issueLevel("auth-allowlist-student-pattern")).toBe("error");
+  });
+
+  it("舊的已棄用變數不會授予權限，即使政策開啟亦不影響判定", () => {
+    enablePolicy();
+    // 舊變數設定為 teacher，但網域不在 AUTH_STAFF_DOMAINS 內 → 仍是學生
+    process.env.AUTH_IN_DOMAIN_ROLE = "teacher";
+    process.env.AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER = "true";
+    process.env.AUTH_STAFF_DOMAINS = "staff.example.edu.hk";
+    expect(roleOf(STAFF_EMAIL)).toBe("student");
+    expect(issueLevel("auth-legacy-in-domain-teacher-removed")).toBe("error");
+  });
+
+  it("工作階段：政策關閉後，現有的校內職員教師工作階段立即降為學生", () => {
+    enablePolicy();
+    const staffSession = {
+      email: STAFF_EMAIL,
+      name: "職員",
+      role: "teacher" as const,
+      learnerId: role.learnerIdForUser(STAFF_EMAIL, "teacher"),
+      pictureUrl: null,
+      studentNumber: null,
+      className: null,
+      rosterVerified: false,
+    };
+    // 政策生效期間維持教師
+    expect(role.revalidateSessionUser(staffSession, currentAuth()).role).toBe("teacher");
+
+    // 停用政策後即時降為學生（降權即時生效）
+    resetPolicy();
+    const downgraded = role.revalidateSessionUser(staffSession, currentAuth());
+    expect(downgraded.role).toBe("student");
+    expect(downgraded.learnerId.startsWith("school:")).toBe(true);
   });
 });
 
@@ -336,6 +480,30 @@ describe("員工端點：政策決定誰能通過（以真實 route handler 驗�
     const cookie = cookieFor(asUser("teacher", TEACHER_EMAIL));
     expect((await callTeacher(cookie)).status).toBe(200);
     expect((await callAdmin(cookie)).status).toBe(403);
+  });
+
+  it("暫時政策開啟時，校內非學號形式的職員工作階段可通過教師端；關閉後即時 403", async () => {
+    const staffEmail = "staff.member@pochiu.edu.hk";
+    // 政策生效期間，角色判定為教師 → 可以建立工作階段並通過教師端
+    process.env.AUTH_STAFF_ACCESS_POLICY = "school-domain";
+    process.env.AUTH_STAFF_DOMAINS = "pochiu.edu.hk";
+    expect(roleOf(staffEmail)).toBe("teacher");
+    const cookie = cookieFor(asUser("teacher", staffEmail));
+    expect((await callTeacher(cookie)).status).toBe(200);
+
+    // 停用政策後，同一個 cookie 立即失效（降權即時生效，不需重新登入）
+    resetPolicy();
+    expect((await callTeacher(cookie)).status).toBe(403);
+  });
+
+  it("暫時政策開啟時，學生（學號形式）仍不可通過教師端或管理員端", async () => {
+    process.env.AUTH_STAFF_ACCESS_POLICY = "school-domain";
+    process.env.AUTH_STAFF_DOMAINS = "pochiu.edu.hk";
+    for (const email of [STUDENT_NUMBER_EMAIL, "s1@pochiu.edu.hk"]) {
+      const cookie = cookieFor(asUser("student", email));
+      expect((await callTeacher(cookie)).status, `teacher route / ${email}`).toBe(403);
+      expect((await callAdmin(cookie)).status, `admin route / ${email}`).toBe(403);
+    }
   });
 
   it("管理員可以使用教師端及管理員端", async () => {

@@ -465,6 +465,13 @@ export const materialDocumentSchema = z.object({
    * 未確認的文件對學生完全不顯示（fail-closed）。
    */
   studentDistribution: z.boolean().default(false),
+  /**
+   * 版權／發行權確認時間（遷移 0017）。`studentDistribution` 為 true 但這個欄位為 null 時，
+   * 文件**不會**向學生顯示（見 `documentIsStudentVisible`）。
+   */
+  rightsConfirmedAt: z.string().nullable().default(null),
+  /** 內容安全覆核時間（教師版文件必須有這個確認才可向學生顯示） */
+  contentReviewedAt: z.string().nullable().default(null),
   createdAt: z.string(),
 });
 export type MaterialDocument = z.infer<typeof materialDocumentSchema>;
@@ -554,6 +561,10 @@ export const studentQuestionSchema = questionBaseSchema.omit({
   explanation: true,
   gradingPoints: true,
   sourceExcerpt: true,
+  // 來源位置及段落 ID 同樣是教材依據的一部分：未作答前不需要，作答後由回饋提供
+  // （且只在來源文件已確認可向學生發布時才提供，見 studentExcerptVisibility）
+  sourceLocation: true,
+  sourceBlockIds: true,
   // 品質警告屬教師查核資訊，學生端不會看到
   qualityWarnings: true,
 });
@@ -652,6 +663,22 @@ export const teacherQuestionViewSchema = z.object({
 });
 export type TeacherQuestionView = z.infer<typeof teacherQuestionViewSchema>;
 
+/** 學生看不到教材節錄的原因（教師端顯示用；與 source-visibility.ts 的判定一致） */
+export const studentExcerptHiddenReasonSchema = z.enum([
+  "unconfirmed-material",
+  "teacher-edition",
+  "missing-source-blocks",
+  "lookup-failed",
+]);
+export type StudentExcerptHiddenReason = z.infer<typeof studentExcerptHiddenReasonSchema>;
+
+export const STUDENT_EXCERPT_HIDDEN_REASON_LABELS: Record<StudentExcerptHiddenReason, string> = {
+  "unconfirmed-material": "來源教材尚未確認可向學生發布",
+  "teacher-edition": "來源段落屬教師版內容（答案或評分參考）",
+  "missing-source-blocks": "引用的教材段落已不存在，需重新核對依據",
+  "lookup-failed": "查證教材依據時出錯，已先當作不顯示",
+};
+
 /**
  * 題目清單用的覆核狀態（不重複題目內容，避免清單回應體積倍增）。
  *
@@ -663,6 +690,13 @@ export const questionReviewStatusSchema = z.object({
   reviewState: questionReviewStateSchema,
   latestReview: questionReviewSchema.nullable(),
   approvedReview: questionReviewSchema.nullable(),
+  /**
+   * 學生是否看得到本題的教材節錄。`false` 代表版權／教材閘門略去了節錄
+   * （原因見 `sourceExcerptHiddenReason`），教師可在這裡發現需要處理的題目，
+   * 而不是以為學生已經看到節錄。
+   */
+  sourceExcerptHiddenFromStudents: z.boolean().default(false),
+  sourceExcerptHiddenReason: studentExcerptHiddenReasonSchema.nullable().default(null),
 });
 export type QuestionReviewStatus = z.infer<typeof questionReviewStatusSchema>;
 

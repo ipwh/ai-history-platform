@@ -2,6 +2,7 @@
  * 教材文件及教材段落的資料存取。
  */
 import { getDb, nowIso, newId } from "../db/connection";
+import { looksLikeTeacherEdition } from "../materials/teacher-content";
 import {
   materialBlockSchema,
   type ExtractionMethod,
@@ -36,6 +37,8 @@ interface DocumentRow {
   ocr_updated_at: string | null;
   stored_path: string | null;
   student_distribution: number | null;
+  rights_confirmed_at?: string | null;
+  content_reviewed_at?: string | null;
 }
 
 interface BlockRow {
@@ -75,6 +78,8 @@ function mapDocument(row: DocumentRow): MaterialDocument {
     ocrUpdatedAt: row.ocr_updated_at,
     storedPath: row.stored_path,
     studentDistribution: row.student_distribution === 1,
+    rightsConfirmedAt: row.rights_confirmed_at ?? null,
+    contentReviewedAt: row.content_reviewed_at ?? null,
     createdAt: row.created_at,
   };
 }
@@ -651,11 +656,79 @@ export function listDistributionAudit(
  * 同時排除校內試題（`kind = 'question-bank'`）：那些文件是題目與答案，
  * 不適合同時作為出題依據及學生讀物。
  */
+/** 教材能否向學生顯示所需的欄位（學生端唯一的判定依據，見 documentIsStudentVisible） */
+interface StudentVisibilityFields {
+  kind: string;
+  fileName: string;
+  studentDistribution: boolean;
+  rightsConfirmedAt: string | null;
+  contentReviewedAt: string | null;
+}
+
+/**
+ * 一份文件是否符合「可向學生顯示」的**全部**條件。
+ *
+ * 四個條件缺一不可：
+ *   1. 不是校內試題文件（`kind = 'question-bank'`：題目與答案，永不列為學生讀物）；
+ *   2. 管理員已把 `student_distribution` 設為 1（想開放）；
+ *   3. 留有版權／發行權確認（`rights_confirmed_at`，遷移 0017）；
+ *   4. 教師版文件（檔名標示）另需內容安全覆核（`content_reviewed_at`）。
+ *
+ * 第 3、4 項在**讀取時**同樣檢查，因此 0017 之前已開啟、或繞過 API 直接寫入、
+ * 或由舊備份還原的文件不會因為一個布林值而對學生可見。
+ */
+function isStudentVisible(fields: StudentVisibilityFields): boolean {
+  if (fields.kind === "question-bank") return false;
+  if (!fields.studentDistribution) return false;
+  if (fields.rightsConfirmedAt === null) return false;
+  if (looksLikeTeacherEdition(fields.fileName) && fields.contentReviewedAt === null) return false;
+  return true;
+}
+
+/** 這份文件現時是否真的會顯示給學生（供管理員介面說明「已標示開放但學生仍看不到」） */
+export function documentIsStudentVisible(document: MaterialDocument): boolean {
+  return isStudentVisible({
+    kind: document.kind,
+    fileName: document.fileName,
+    studentDistribution: document.studentDistribution,
+    rightsConfirmedAt: document.rightsConfirmedAt,
+    contentReviewedAt: document.contentReviewedAt,
+  });
+}
+
+/**
+ * 可向學生顯示的文件 ID（學生端唯一的來源判斷）。
+ *
+ * 只設定 `student_distribution = 1` 而**沒有**留下版權確認（教師版文件另需內容覆核）
+ * 的文件不會列入；見 documentIsStudentVisible 的說明。
+ */
 export function listStudentDistributableDocumentIds(): Set<string> {
   const rows = getDb()
     .prepare(
-      "SELECT id FROM material_documents WHERE student_distribution = 1 AND kind <> 'question-bank'",
+      `SELECT id, kind, file_name, student_distribution, rights_confirmed_at, content_reviewed_at
+         FROM material_documents
+        WHERE student_distribution = 1`,
     )
-    .all() as unknown as { id: string }[];
-  return new Set(rows.map((row) => row.id));
+    .all() as unknown as {
+    id: string;
+    kind: string;
+    file_name: string;
+    student_distribution: number;
+    rights_confirmed_at: string | null;
+    content_reviewed_at: string | null;
+  }[];
+
+  return new Set(
+    rows
+      .filter((row) =>
+        isStudentVisible({
+          kind: row.kind,
+          fileName: row.file_name,
+          studentDistribution: row.student_distribution === 1,
+          rightsConfirmedAt: row.rights_confirmed_at,
+          contentReviewedAt: row.content_reviewed_at,
+        }),
+      )
+      .map((row) => row.id),
+  );
 }
