@@ -1,4 +1,4 @@
-import { observabilitySummarySchema, teacherOverviewSchema } from "@/lib/types";
+import { aiUsageSummarySchema, observabilitySummarySchema, teacherOverviewSchema } from "@/lib/types";
 import { requireAdmin } from "@/server/auth/guards";
 import { handleRoute, jsonOk } from "@/server/http";
 import {
@@ -7,6 +7,7 @@ import {
   listRecentLlmUsage,
   tokenTotals,
 } from "@/server/repositories/llm-logs";
+import { describeAiUsage } from "@/server/services/ai-limits";
 import { getPlatformOverview } from "@/server/services/admin-dashboard";
 
 export const runtime = "nodejs";
@@ -21,6 +22,7 @@ export async function GET(request: Request) {
 
     return jsonOk({
       overview: teacherOverviewSchema.parse(overview),
+      aiUsage: aiUsageSummarySchema.parse(describeAiUsage()),
       observability: observabilitySummarySchema.parse({
         days,
         llmRequests: overview.observability.llmRequests,

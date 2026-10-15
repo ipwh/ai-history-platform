@@ -75,3 +75,57 @@ describe("自動評分", () => {
     expect(calculateAccuracy(0, 0)).toBeNull();
   });
 });
+
+/**
+ * 無法可靠判斷的填充題答案（可能是錯別字或未列出的可接受寫法）不應被當成錯誤，
+ * 亦不可自動當成正確：分數不變，但標示為需要教師覆核。
+ */
+describe("填充題的近似答案標示為不確定", () => {
+  const fill = (correctAnswer: string, acceptedAnswers: string[] = []) =>
+    buildQuestion({
+      questionType: "fill",
+      options: [],
+      correctAnswer,
+      acceptedAnswers,
+      question: "＿＿＿是文藝復興的核心思想。",
+    });
+
+  it("少一個字的答案標示為不確定，但不會當成正確", () => {
+    const outcome = gradeAnswer(fill("九十五條論證"), "九十五論證");
+    expect(outcome.isCorrect).toBe(false);
+    expect(outcome.uncertain).toBe(true);
+  });
+
+  it("多一個字的答案同樣標示為不確定", () => {
+    const outcome = gradeAnswer(fill("馬丁路德"), "馬丁路德氏");
+    expect(outcome.isCorrect).toBe(false);
+    expect(outcome.uncertain).toBe(true);
+  });
+
+  it("錯別字（同位置一字之差）標示為不確定", () => {
+    const outcome = gradeAnswer(fill("文藝復興"), "文藝復與");
+    expect(outcome.isCorrect).toBe(false);
+    expect(outcome.uncertain).toBe(true);
+  });
+
+  it("真正錯誤的答案不會標示為不確定", () => {
+    const outcome = gradeAnswer(fill("馬丁路德"), "加爾文");
+    expect(outcome.isCorrect).toBe(false);
+    expect(outcome.uncertain).toBe(false);
+  });
+
+  it("長度差距大的答案不會標示為不確定（避免把補充說明當成同一答案）", () => {
+    const outcome = gradeAnswer(fill("馬丁路德"), "馬丁路德與加爾文同屬宗教改革人物");
+    expect(outcome.uncertain).toBe(false);
+  });
+
+  it("正確答案及可接受寫法不受影響", () => {
+    expect(gradeAnswer(fill("封建", ["封建社會"]), "封建").uncertain).toBeUndefined();
+    expect(gradeAnswer(fill("封建", ["封建社會"]), "封建社會").uncertain).toBeUndefined();
+  });
+
+  it("選擇題不會標示為不確定", () => {
+    const question = buildQuestion({});
+    expect(gradeAnswer(question, "選項乙").uncertain).toBeUndefined();
+  });
+});

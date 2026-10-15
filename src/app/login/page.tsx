@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { SchoolBrand, SITE_NAME } from "@/components/SchoolBrand";
 import { getSessionUser } from "@/server/auth/session";
+import { safeNextPath } from "@/server/auth/redirect";
 import { getServerConfig } from "@/server/config";
 
 export const metadata = { title: "登入 ｜ 歷史科自學網站" };
@@ -23,10 +24,6 @@ const ERROR_MESSAGES: Record<string, string> = {
   auth_failed: "登入失敗，請稍後再試。",
 };
 
-function safeNextPath(value: string | undefined): string {
-  if (value === undefined) return "/";
-  return value.startsWith("/") && !value.startsWith("//") ? value : "/";
-}
 
 export default async function LoginPage({
   searchParams,

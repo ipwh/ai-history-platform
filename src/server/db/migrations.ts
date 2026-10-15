@@ -9,7 +9,13 @@ interface Migration {
   statements: string[];
 }
 
-const MIGRATIONS: Migration[] = [
+/**
+ * 全部 migration（依序套用）。
+ *
+ * 匯出以供測試驗證「ID 唯一、順序固定、已套用清單與程式碼一致」，
+ * 以及升級／冪等契約（見 tests/migration-safety.test.ts）。
+ */
+export const MIGRATIONS: Migration[] = [
   {
     id: "0001-initial-schema",
     statements: [
@@ -374,6 +380,120 @@ const MIGRATIONS: Migration[] = [
       `DELETE FROM questions WHERE topic_id = 'reference-curriculum'`,
       `DELETE FROM sections WHERE topic_id = 'reference-curriculum'`,
       `DELETE FROM topics WHERE id = 'reference-curriculum'`,
+    ],
+  },
+  {
+    id: "0010-question-skill-tag",
+    statements: [
+      // 題目主要考核的歷史技能（取自教育局《歷史科課程指引》的固定清單）；
+      // 未標示（教師手動建立或模型未填）時為 NULL。
+      `ALTER TABLE questions ADD COLUMN skill TEXT`,
+    ],
+  },
+  {
+    id: "0011-material-student-distribution",
+    statements: [
+      // 學生可否在平台內閱讀這份教材的內容（預設 0 = 不可）。
+      //
+      // 原因：`/learn/[topicId]` 會原文顯示教材內容，等同在平台內向學生發布該內容。
+      // 教材可能是出版社課本或第三方材料，學校未必有權在平台轉載；本專案沒有任何
+      // 授權或發行權紀錄，因此**預設一律不可**（fail-closed），必須由管理員逐份文件
+      // 明確確認擁有發行權後才會顯示。詳見 README「教材版權與學生閱讀範圍」。
+      `ALTER TABLE material_documents ADD COLUMN student_distribution INTEGER NOT NULL DEFAULT 0`,
+    ],
+  },
+  {
+    id: "0012-ai-operation-budget",
+    statements: [
+      // AI 用量保留記錄：每次 AI 出題／批改都在**呼叫模型之前**同步寫入一筆。
+      // 因為寫入與計數都是同步進行的，並行請求不會同時通過上限檢查（單一程序 + 同步 SQLite）。
+      // 只記錄學習者 ID、類別及時間，不記錄題目內容或學生的答案。
+      `CREATE TABLE IF NOT EXISTS ai_operations (
+        id TEXT PRIMARY KEY,
+        learner_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_ai_operations_learner ON ai_operations(learner_id, kind, created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_ai_operations_kind ON ai_operations(kind, created_at)`,
+    ],
+  },
+  {
+    id: "0013-attempt-uncertain-flag",
+    statements: [
+      // 填充題「與標準答案只差一個字」的評分結果。
+      //
+      // 必須在批改當時寫入（而不是讀取時重新計算）：題目的答案或可接受寫法之後可能被
+      // 教師修改，重新計算等於以今天的答案重新詮釋歷史作答記錄。
+      // 0 = 明確判斷（正確或錯誤），1 = 不確定（已標示交由教師覆核）。
+      `ALTER TABLE attempts ADD COLUMN uncertain INTEGER NOT NULL DEFAULT 0`,
+    ],
+  },
+  {
+    id: "0014-distribution-audit",
+    statements: [
+      // 教材發行權的稽核記錄：每次管理員開啟或關閉「可在平台向學生發布」都會留下一筆，
+      // 記錄操作者及時間，以便日後回答「這份教材是何時、由誰決定向學生發布的」。
+      // 只記錄電郵及角色（已在系統內），不記錄教材內容。
+      `CREATE TABLE IF NOT EXISTS distribution_audit (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL,
+        allowed INTEGER NOT NULL,
+        actor_email TEXT NOT NULL,
+        actor_role TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_distribution_audit_document
+         ON distribution_audit(document_id, created_at DESC)`,
+    ],
+  },
+  {
+    id: "0015-question-review-audit",
+    statements: [
+      // 題目內容版本：人工覆核必須對應實際被覆核的那一版。
+      // 已有題目一律由 1 開始；每次內容更新 +1（見 repositories/questions.ts 的 updateQuestion）。
+      `ALTER TABLE questions ADD COLUMN revision INTEGER NOT NULL DEFAULT 1`,
+      // 人工覆核紀錄。只可新增，不可修改或刪除（API 沒有提供更新或刪除的路徑）。
+      //
+      //   decision：approved（覆核通過）／rejected（不可用）／returned（退回修改）
+      //   question_fingerprint：被覆核內容的雜湊，防止「版本號沒變但內容已改」的情況
+      //   reviewer_email／reviewer_role：一律取自伺服器端的工作階段
+      //
+      // 唯一索引令重試或重複提交不會產生重複事件（冪等），同時允許同一版本先後
+      // 出現不同決定（例如先退回、修改後再通過）。
+      `CREATE TABLE IF NOT EXISTS question_reviews (
+        id TEXT PRIMARY KEY,
+        question_id TEXT NOT NULL,
+        revision INTEGER NOT NULL,
+        decision TEXT NOT NULL,
+        reason TEXT,
+        reviewer_email TEXT NOT NULL,
+        reviewer_role TEXT NOT NULL,
+        question_fingerprint TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_question_reviews_unique
+         ON question_reviews(question_id, revision, decision, question_fingerprint)`,
+      `CREATE INDEX IF NOT EXISTS idx_question_reviews_question
+         ON question_reviews(question_id, created_at DESC)`,
+    ],
+  },
+  {
+    id: "0016-maintenance-runs",
+    statements: [
+      // 定期維護（例如 AI 用量記錄的保留期清理）的執行紀錄。
+      //
+      // 每一類維護只保留一列（最新一次），用於回答「清理實際上何時執行過、成功或失敗」；
+      // 沒有這種紀錄就無法證明保留期真的在運作，只能聲稱「有寫過清理程式碼」。
+      `CREATE TABLE IF NOT EXISTS maintenance_runs (
+        kind TEXT PRIMARY KEY,
+        last_started_at TEXT NOT NULL,
+        last_finished_at TEXT,
+        last_status TEXT NOT NULL,
+        last_detail TEXT,
+        runs INTEGER NOT NULL DEFAULT 0,
+        failures INTEGER NOT NULL DEFAULT 0
+      )`,
     ],
   },
 ];

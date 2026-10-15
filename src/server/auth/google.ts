@@ -68,9 +68,17 @@ export function resolvePublicOrigin(request: Request): string {
   return new URL(request.url).origin;
 }
 
-/** 產生指向本站的絕對網址（供 NextResponse.redirect 使用） */
+/**
+ * 產生指向本站的絕對網址（供 NextResponse.redirect 使用）。
+ *
+ * 這是「站內導向」的最後一道防線：即使呼叫端傳入的路徑通過了 safeNextPath，
+ * 解析後只要離開本站（例如 `\` 被解析成斜線而變成外部主機）就一律退回網站首頁。
+ */
 export function publicUrl(request: Request, path: string): URL {
-  return new URL(path, `${resolvePublicOrigin(request)}/`);
+  const origin = resolvePublicOrigin(request);
+  const resolved = new URL(path, `${origin}/`);
+  if (resolved.origin !== origin) return new URL("/", `${origin}/`);
+  return resolved;
 }
 
 /**

@@ -43,6 +43,7 @@ interface AttemptRow {
   answered_at: string;
   ai_grading_json: string | null;
   ai_verdict: string | null;
+  uncertain: number | null;
 }
 
 export interface Attempt {
@@ -57,6 +58,11 @@ export interface Attempt {
   answeredAt: string;
   /** AI 語意批改結果；未使用 AI 時為 null */
   aiGrading: AiGrading | null;
+  /**
+   * 填充題的答案與標準答案只差一個字（評分當時判定，不會隨題目之後的修改而改變）。
+   * 這類答案不可當成正確，亦不可當成「明確學不懂」，進度及重溫佇列會分開處理。
+   */
+  uncertain: boolean;
 }
 
 function parseJsonArray(value: string): string[] {
@@ -97,6 +103,7 @@ function mapAttempt(row: AttemptRow): Attempt {
     selfAssessment: (row.self_assessment as Attempt["selfAssessment"]) ?? null,
     answeredAt: row.answered_at,
     aiGrading: parseAiGrading(row.ai_grading_json),
+    uncertain: row.uncertain === 1,
   };
 }
 
@@ -217,6 +224,8 @@ export function saveAttempt(input: {
   isCorrect: boolean | null;
   selfAssessment?: "understood" | "needs-review" | null;
   aiGrading?: AiGrading | null;
+  /** 填充題的答案與標準答案只差一個字（見 Attempt.uncertain） */
+  uncertain?: boolean;
 }): Attempt {
   const db = getDb();
   const existing = db
@@ -229,7 +238,8 @@ export function saveAttempt(input: {
   if (existing) {
     db.prepare(
       `UPDATE attempts SET answer = ?, auto_graded = ?, is_correct = ?, self_assessment = ?, answered_at = ?,
-         ai_grading_json = COALESCE(?, ai_grading_json), ai_verdict = COALESCE(?, ai_verdict)
+         ai_grading_json = COALESCE(?, ai_grading_json), ai_verdict = COALESCE(?, ai_verdict),
+         uncertain = ?
        WHERE id = ?`,
     ).run(
       input.answer,
@@ -239,6 +249,7 @@ export function saveAttempt(input: {
       timestamp,
       aiGradingJson,
       aiVerdict,
+      input.uncertain === true ? 1 : (existing.uncertain ?? 0),
       existing.id,
     );
     const updated = db.prepare("SELECT * FROM attempts WHERE id = ?").get(existing.id) as unknown as
@@ -252,8 +263,8 @@ export function saveAttempt(input: {
   db.prepare(
     `INSERT INTO attempts
      (id, session_id, question_id, learner_id, answer, auto_graded, is_correct, self_assessment, answered_at,
-      ai_grading_json, ai_verdict)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ai_grading_json, ai_verdict, uncertain)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     input.sessionId,
@@ -266,6 +277,7 @@ export function saveAttempt(input: {
     timestamp,
     aiGradingJson,
     aiVerdict,
+    input.uncertain === true ? 1 : 0,
   );
   const created = db.prepare("SELECT * FROM attempts WHERE id = ?").get(id) as unknown as
     | AttemptRow
@@ -290,8 +302,7 @@ export function getAttempt(sessionId: string, questionId: string): Attempt | nul
 
 /** 取得某學習者答錯過的題目 ID（可用於「針對錯題再練習」） */
 export interface WrongAttemptRef {
-  sessionId: string;
-  questionId: string;
+  sessionId: string;  questionId: string;
   answeredAt: string;
 }
 
@@ -381,4 +392,82 @@ export function listRecordLearners(): { learnerId: string; lastAt: string; sessi
        ORDER BY lastAt DESC`,
     )
     .all() as unknown as { learnerId: string; lastAt: string; sessions: number }[];
+}
+
+/** 學習進度及重溫排程使用的作答記錄（已連結題庫題目） */
+export interface LearnerQuestionAttempt {
+  questionId: string;
+  topicId: string;
+  sectionId: string;
+  /** 題目標示的歷史技能（可能是 null 或不在 HISTORY_SKILLS 內的舊值） */
+  skill: string | null;
+  answeredAt: string;
+  isCorrect: boolean | null;
+  /** 填充題的近似答案（不確定），不可當成正確或明確錯誤 */
+  uncertain: boolean;
+}
+
+/**
+ * 取得某學習者已作答的**已發布題庫題目**記錄（用於進度及重溫排程）。
+ *
+ * 刻意使用 INNER JOIN questions 並限定 `status = 'published'`：
+ *   - 學生即時生成（只存在於練習快照、未寫入題庫）的題目不計入進度，
+ *     因為它們從未經教師核對，不應成為學習成果的證據；
+ *   - 草稿、已停用（retired）及已刪除的題目同樣不會出現；
+ *   - 題目之後被停用時，其歷史作答記錄亦不會再計入進度（不會洩漏內容）。
+ *
+ * 查詢以 `s.learner_id` 為準（由伺服器端的工作階段推導），不存在跨學生存取的途徑。
+ */
+export function listPublishedAttemptsForLearner(
+  learnerId: string,
+  topicId?: string,
+): LearnerQuestionAttempt[] {
+  const params: string[] = [learnerId];
+  let clause = "";
+  if (topicId) {
+    clause = " AND s.topic_id = ?";
+    params.push(topicId);
+  }
+
+  const rows = getDb()
+    .prepare(
+      `SELECT a.question_id AS questionId, q.topic_id AS topicId, q.section_id AS sectionId,
+              q.skill AS skill, a.answered_at AS answeredAt, a.is_correct AS isCorrect,
+              a.uncertain AS uncertain
+       FROM attempts a
+       JOIN practice_sessions s ON s.id = a.session_id
+       JOIN questions q ON q.id = a.question_id
+       WHERE s.learner_id = ? AND q.status = 'published'${clause}
+       ORDER BY a.answered_at ASC, a.id ASC`,
+    )
+    .all(...params) as unknown as {
+    questionId: string;
+    topicId: string;
+    sectionId: string;
+    skill: string | null;
+    answeredAt: string;
+    isCorrect: number | null;
+    uncertain: number | null;
+  }[];
+
+  return rows.map((row) => ({
+    questionId: row.questionId,
+    topicId: row.topicId,
+    sectionId: row.sectionId,
+    skill: row.skill,
+    answeredAt: row.answeredAt,
+    isCorrect: row.isCorrect === null ? null : row.isCorrect === 1,
+    uncertain: row.uncertain === 1,
+  }));
+}
+
+/** 某課題內已發布題目的數量及技能分佈（進度的分母） */
+export function listPublishedQuestionsForProgress(
+  topicId: string,
+): { id: string; sectionId: string; skill: string | null }[] {
+  return getDb()
+    .prepare(
+      "SELECT id, section_id AS sectionId, skill FROM questions WHERE topic_id = ? AND status = 'published'",
+    )
+    .all(topicId) as unknown as { id: string; sectionId: string; skill: string | null }[];
 }

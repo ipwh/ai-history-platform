@@ -1,11 +1,21 @@
 import { ApiRouteError, handleRoute, jsonOk, parseJsonBody } from "@/server/http";
 import { questionInputSchema, questionOriginSchema, questionStatusSchema } from "@/lib/types";
-import { createManualQuestion, listTopicQuestions } from "@/server/services/question-service";
+import {
+  createManualQuestion,
+  listTopicQuestions,
+  questionReviewStatuses,
+} from "@/server/services/question-service";
 import { requireTeacher } from "@/server/auth/guards";
 
 export const runtime = "nodejs";
 
-/** 題目清單（可按分節、狀態及來源篩選） */
+/**
+ * 題目清單（可按分節、狀態及來源篩選）。
+ *
+ * 除題目本身外，一併回傳每題的**人工覆核狀態**（誰在何時決定、是否已通過、
+ * 是否在覆核後被修改），令教師不必逐題猜測哪一題可以發布。
+ * 學生可見性仍然只由 `questions.status` 決定。
+ */
 export async function GET(request: Request) {
   return handleRoute(async () => {
     await requireTeacher(request);
@@ -21,7 +31,7 @@ export async function GET(request: Request) {
     const origins = originParam ? [questionOriginSchema.parse(originParam)] : undefined;
 
     const questions = listTopicQuestions({ topicId, sectionId, statuses, origins });
-    return jsonOk({ questions });
+    return jsonOk({ questions, reviews: questionReviewStatuses(questions) });
   });
 }
 

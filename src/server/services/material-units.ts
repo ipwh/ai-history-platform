@@ -25,6 +25,7 @@ function pushUnit(units: MaterialUnit[], block: MaterialBlock, text: string, not
   );
   units.push({
     blockId: block.id,
+    sectionId: block.sectionId,
     sourceLocation:
       labels.length > 0 ? `${block.sourceLocation}（${labels.join("、")}）` : block.sourceLocation,
     text: truncate(trimmed, MAX_UNIT_LENGTH),

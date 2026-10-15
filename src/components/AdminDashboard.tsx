@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
 import {
   LLM_REQUEST_TYPE_LABELS,
+  type AiUsageSummary,
   type ObservabilitySummary,
   type SystemStatus,
   type TeacherOverview,
@@ -14,6 +15,7 @@ import { ErrorNotice, Loading, Notice, StatBox } from "@/components/ui";
 
 interface OverviewResponse {
   overview: TeacherOverview;
+  aiUsage: AiUsageSummary;
   observability: ObservabilitySummary;
 }
 
@@ -61,7 +63,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail?: string | null }) {
   if (error) return <ErrorNotice error={error} />;
   if (!data || !status) return <Loading label="正在載入管理員儀表板…" />;
 
-  const { overview, observability } = data;
+  const { overview, observability, aiUsage } = data;
   const grading = observability.grading;
   const gradingSuccessRate =
     grading.attempts === 0 ? null : Math.round(((grading.attempts - grading.failures) / grading.attempts) * 100);
@@ -165,6 +167,63 @@ export function AdminDashboard({ adminEmail }: { adminEmail?: string | null }) {
             </ul>
           </details>
         ) : null}
+      </section>
+
+      <section className="card flex flex-col gap-3">
+        <h2 className="font-semibold">AI 用量上限及最近的總用量</h2>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <StatBox
+            label={`出題（最近 ${aiUsage.windowMinutes} 分鐘）`}
+            value={`${aiUsage.generations.globalUsed}／${
+              aiUsage.generations.globalLimit === 0 ? "不限" : aiUsage.generations.globalLimit
+            }`}
+          />
+          <StatBox
+            label={`批改（最近 ${aiUsage.windowMinutes} 分鐘）`}
+            value={`${aiUsage.gradings.globalUsed}／${
+              aiUsage.gradings.globalLimit === 0 ? "不限" : aiUsage.gradings.globalLimit
+            }`}
+          />
+          <StatBox
+            label="最近 24 小時（出題／批改）"
+            value={`${aiUsage.totals.last24Hours.generations}／${aiUsage.totals.last24Hours.gradings}`}
+          />
+          <StatBox
+            label="最近 7 天（出題／批改）"
+            value={`${aiUsage.totals.last7Days.generations}／${aiUsage.totals.last7Days.gradings}`}
+          />
+        </div>
+        <p className="text-sm text-gray-600">
+          上限現時{aiUsage.enabled ? "已啟用" : "未啟用（只記錄用量，不會拒絕請求）"}；
+          用量記錄只保留最近 {aiUsage.retentionDays} 天（現時 {aiUsage.storedRecords} 筆），
+          超過的會自動刪除。
+        </p>
+        <p className="text-xs text-gray-500">
+          這裡只顯示總數，刻意不提供個別學生的用量，以免成本監控變成監視工具。
+          預設上限是防濫用值，並非平台擁有者核准的預算。
+        </p>
+      </section>
+
+      <section className="card flex flex-col gap-3">
+        <h2 className="font-semibold">資料保留期維護</h2>
+        {aiUsage.retention.lastRunAt === null ? (
+          <Notice tone="warning">
+            尚未有保留期清理的執行紀錄。清理會在伺服器啟動時執行，其後最多每小時一次；
+            若這個提示持續出現，請檢查伺服器記錄。
+          </Notice>
+        ) : (
+          <p className="text-sm text-gray-700">
+            AI 用量記錄保留 {aiUsage.retention.days} 天。最近一次清理：
+            {formatDateTime(aiUsage.retention.lastRunAt)}（
+            {aiUsage.retention.lastStatus === "ok" ? "成功" : "失敗"}；累計執行{" "}
+            {aiUsage.retention.runs} 次、失敗 {aiUsage.retention.failures} 次）
+            {aiUsage.retention.lastDetail ? `｜${aiUsage.retention.lastDetail}` : ""}
+          </p>
+        )}
+        <p className="text-xs text-gray-500">
+          清理在伺服器啟動時強制執行一次，其後任何 AI 請求或健康檢查都會順帶嘗試（最多每小時一次）。
+          清理失敗不會影響使用者請求，但會記錄在這裡及伺服器記錄（Cloud Logging）中。
+        </p>
       </section>
 
       <section className="card flex flex-col gap-3">

@@ -8,6 +8,8 @@ import type { Difficulty, LlmQuestion, LlmUsage, QuestionType } from "../../lib/
 /** 傳給 LLM 的最小教材單位（只傳與當前分節相關的段落） */
 export interface MaterialUnit {
   blockId: string;
+  /** 段落所屬分節；用來把題目歸入正確的分節（未分節的段落為 null） */
+  sectionId?: string | null;
   sourceLocation: string;
   text: string;
   /** 文字來自圖片 OCR 辨識（供規則式生成判斷是否適合出題） */

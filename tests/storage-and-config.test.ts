@@ -69,6 +69,30 @@ describe("儲存抽象", () => {
   it("拒絕跳出儲存目錄的路徑，避免任意檔案存取", async () => {
     const provider = new localModule.LocalStorageProvider(path.join(tempRoot, "uploads"));
     await expect(provider.save("../evil.txt", Buffer.from("x"))).rejects.toThrowError(/檔案位置不正確/);
+    // 讀取同樣不會離開儲存目錄（既有行為：直接拒絕，而不是回傳 null）
+    await expect(provider.read("../../evil.txt")).rejects.toThrowError(/檔案位置不正確/);
+  });
+
+  it("資料庫記錄的絕對路徑已失效時，改用檔名在儲存目錄內尋找（專案被搬動後仍可讀取）", async () => {
+    const uploadsDir = path.join(tempRoot, "uploads");
+    const provider = new localModule.LocalStorageProvider(uploadsDir);
+    await provider.save("doc_moved.docx", Buffer.from("教材內容", "utf8"));
+
+    const stalePath = path.join(tempRoot, "old-drive", "uploads", "doc_moved.docx");
+    expect(path.isAbsolute(stalePath)).toBe(true);
+    expect(await provider.exists(stalePath)).toBe(true);
+    expect((await provider.read(stalePath))?.toString("utf8")).toBe("教材內容");
+  });
+
+  it("失效的絕對路徑不會令儲存層離開儲存目錄", async () => {
+    const uploadsDir = path.join(tempRoot, "uploads");
+    const outside = path.join(tempRoot, "outside-secret.txt");
+    fs.writeFileSync(outside, "機密");
+    const provider = new localModule.LocalStorageProvider(uploadsDir);
+
+    // 儲存目錄以外的檔案不會被讀取（只會以檔名在儲存目錄內尋找）
+    expect(await provider.read(outside)).toBeNull();
+    expect(await provider.exists(outside)).toBe(false);
   });
 
   it("未實作 Cloud Storage 時會回報清楚的錯誤並標示未完成", async () => {

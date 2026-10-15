@@ -35,6 +35,7 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<Record<string, QuestionFeedback>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [selfAssessing, setSelfAssessing] = useState(false);
   const [submitError, setSubmitError] = useState<unknown>(null);
   const [completing, setCompleting] = useState(false);
   const [aiGradingAvailable, setAiGradingAvailable] = useState(false);
@@ -89,6 +90,9 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
 
   async function handleSubmit() {
     if (!current) return;
+    // 兩次點擊可能在 React 重新渲染之前都觸發（按鈕的 disabled 尚未生效），
+    // 而伺服器端每次提交都會呼叫一次 AI 批改，因此必須在此擋掉重複提交。
+    if (submitting) return;
     const answer = (drafts[current.id] ?? "").trim();
     if (answer.length === 0) {
       setSubmitError(new Error("請先作答再提交。"));
@@ -112,6 +116,8 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
 
   async function handleSelfAssessment(value: "understood" | "needs-review") {
     if (!current) return;
+    if (selfAssessing) return;
+    setSelfAssessing(true);
     try {
       const result = await api.post<{ feedback: QuestionFeedback }>(
         `/api/practice/${sessionId}/self-assessment`,
@@ -120,6 +126,8 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
       setFeedback((prev) => ({ ...prev, [current.id]: result.feedback }));
     } catch (caught) {
       setSubmitError(caught);
+    } finally {
+      setSelfAssessing(false);
     }
   }
 
@@ -346,6 +354,12 @@ function FeedbackPanel({
               {feedback.aiGrading.note}
             </p>
           ) : null}
+          {feedback.aiLimitReached ? (
+            <p className="text-xs" style={{ color: "var(--warning)" }}>
+              這次未使用 AI 語意批改（已達到 AI 使用上限），只以字詞比對及參考答案判斷。
+              分數不會因為這個原因而改變，稍後再試即可再次使用 AI 批改。
+            </p>
+          ) : null}
         </div>
       ) : !feedback.autoGraded && aiGradingAvailable === false ? (
         <Notice>
@@ -372,6 +386,16 @@ function FeedbackPanel({
         <span className="font-semibold">知識點：</span>
         <span>{feedback.knowledgePoint}</span>
       </div>
+
+      {feedback.reviewFlag === "uncertain-answer" ? (
+        <div
+          className="text-xs rounded-xl px-3 py-2"
+          style={{ background: "var(--warning-soft)", border: "1px solid #f2ddb0" }}
+        >
+          你的答案與標準答案極為接近（可能是錯別字或另一個可接受的寫法），系統無法確定是否應該算對，
+          因此這次仍然以「未達到」記錄，並已標示交由教師覆核。請對照下方標準答案再確認一次。
+        </div>
+      ) : null}
 
       {feedback.gradingPoints.length > 0 ? (
         <div className="text-sm">

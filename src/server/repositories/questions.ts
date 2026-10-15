@@ -3,10 +3,13 @@
  */
 import { getDb, nowIso, toSqlBool, fromSqlBool } from "../db/connection";
 import {
+  questionReviewSchema,
   questionSchema,
   type Difficulty,
   type Question,
   type QuestionOrigin,
+  type QuestionReview,
+  type QuestionReviewDecision,
   type QuestionStatus,
   type QuestionType,
 } from "../../lib/types";
@@ -31,6 +34,8 @@ interface QuestionRow {
   status: string;
   source_verified: number;
   quality_warnings_json: string | null;
+  skill: string | null;
+  revision: number | null;
   created_at: string;
 }
 
@@ -65,6 +70,9 @@ function mapQuestion(row: QuestionRow): Question {
     status: row.status as QuestionStatus,
     sourceVerified: fromSqlBool(row.source_verified),
     qualityWarnings: parseJsonArray(row.quality_warnings_json),
+    skill: row.skill ?? null,
+    // 舊資料庫在 migration 0015 之前的列不會有 revision（回報 null）時視為第 1 版
+    revision: row.revision ?? 1,
     createdAt: row.created_at,
   });
 }
@@ -192,8 +200,8 @@ export function insertQuestion(question: Question): Question {
        (id, topic_id, section_id, question_type, difficulty, question, options_json, correct_answer,
         accepted_answers_json, explanation, knowledge_point, source_excerpt, source_location,
         source_block_ids_json, grading_points_json, origin, status, source_verified,
-        quality_warnings_json, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        quality_warnings_json, skill, revision, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       parsed.id,
@@ -215,6 +223,8 @@ export function insertQuestion(question: Question): Question {
       parsed.status,
       toSqlBool(parsed.sourceVerified),
       JSON.stringify(parsed.qualityWarnings),
+      parsed.skill,
+      parsed.revision,
       parsed.createdAt,
     );
   const created = getQuestion(parsed.id);
@@ -230,7 +240,8 @@ export function updateQuestion(questionId: string, question: Question): Question
         question = ?, options_json = ?, correct_answer = ?, accepted_answers_json = ?,
         explanation = ?, knowledge_point = ?, source_excerpt = ?, source_location = ?,
         source_block_ids_json = ?, grading_points_json = ?, origin = ?, status = ?,
-        source_verified = ?, quality_warnings_json = ? WHERE id = ?`,
+        source_verified = ?, quality_warnings_json = ?, skill = ?,
+        revision = revision + 1 WHERE id = ?`,
     )
     .run(
       parsed.topicId,
@@ -251,6 +262,7 @@ export function updateQuestion(questionId: string, question: Question): Question
       parsed.status,
       toSqlBool(parsed.sourceVerified),
       JSON.stringify(parsed.qualityWarnings),
+      parsed.skill,
       questionId,
     );
   const updated = getQuestion(questionId);
@@ -282,4 +294,150 @@ export function knowledgePointExists(topicId: string, knowledgePoint: string): b
 
 export function createdAtNow(): string {
   return nowIso();
+}
+
+/* ------------------------------------------------------------------ */
+/* 人工覆核紀錄                                                        */
+/* ------------------------------------------------------------------ */
+
+interface QuestionReviewRow {
+  id: string;
+  question_id: string;
+  revision: number;
+  decision: string;
+  reason: string | null;
+  reviewer_email: string;
+  reviewer_role: string;
+  question_fingerprint: string;
+  created_at: string;
+}
+
+function mapReview(row: QuestionReviewRow): QuestionReview {
+  return questionReviewSchema.parse({
+    id: row.id,
+    questionId: row.question_id,
+    revision: row.revision,
+    decision: row.decision,
+    reason: row.reason,
+    reviewerEmail: row.reviewer_email,
+    reviewerRole: row.reviewer_role,
+    questionFingerprint: row.question_fingerprint,
+    createdAt: row.created_at,
+  });
+}
+
+/**
+ * 新增一筆人工覆核紀錄。
+ *
+ * 使用 `INSERT ... ON CONFLICT DO NOTHING` 配合唯一索引，令重試或重複提交
+ * 同一決定時**不會**產生重複事件（冪等）；回傳值指出這次是否真的寫入了新紀錄，
+ * 讓呼叫端可以如實回應「已記錄」或「先前已記錄相同決定」，而不是假裝成功兩次。
+ */
+export function insertQuestionReview(input: {
+  id: string;
+  questionId: string;
+  revision: number;
+  decision: QuestionReviewDecision;
+  reason: string | null;
+  reviewerEmail: string;
+  reviewerRole: string;
+  questionFingerprint: string;
+  createdAt: string;
+}): { review: QuestionReview; created: boolean } {
+  const result = getDb()
+    .prepare(
+      `INSERT INTO question_reviews
+       (id, question_id, revision, decision, reason, reviewer_email, reviewer_role,
+        question_fingerprint, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (question_id, revision, decision, question_fingerprint) DO NOTHING`,
+    )
+    .run(
+      input.id,
+      input.questionId,
+      input.revision,
+      input.decision,
+      input.reason,
+      input.reviewerEmail,
+      input.reviewerRole,
+      input.questionFingerprint,
+      input.createdAt,
+    );
+
+  const existing = getDb()
+    .prepare(
+      `SELECT * FROM question_reviews
+       WHERE question_id = ? AND revision = ? AND decision = ? AND question_fingerprint = ?
+       LIMIT 1`,
+    )
+    .get(input.questionId, input.revision, input.decision, input.questionFingerprint) as unknown as
+    | QuestionReviewRow
+    | undefined;
+  if (!existing) throw new Error("覆核紀錄寫入失敗");
+
+  return { review: mapReview(existing), created: Number(result.changes ?? 0) > 0 };
+}
+
+/** 某題的覆核紀錄（最新在前） */
+export function listQuestionReviews(questionId: string, limit = 20): QuestionReview[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT * FROM question_reviews WHERE question_id = ?
+       ORDER BY created_at DESC, rowid DESC LIMIT ?`,
+    )
+    .all(questionId, limit) as unknown as QuestionReviewRow[];
+  return rows.map(mapReview);
+}
+
+/** 一次取得多題的最新覆核紀錄（避免為每題單獨查詢） */
+export function listLatestReviews(questionIds: string[]): Map<string, QuestionReview> {
+  const latest = new Map<string, QuestionReview>();
+  if (questionIds.length === 0) return latest;
+  const placeholders = questionIds.map(() => "?").join(", ");
+  const rows = getDb()
+    .prepare(
+      `SELECT * FROM question_reviews WHERE question_id IN (${placeholders})
+       ORDER BY created_at ASC, rowid ASC`,
+    )
+    .all(...questionIds) as unknown as QuestionReviewRow[];
+  for (const row of rows) {
+    // 依時間升序走訪，最後寫入的即為最新一筆
+    latest.set(row.question_id, mapReview(row));
+  }
+  return latest;
+}
+
+/** 針對「指定版本」且決定為 approved 的覆核紀錄 */
+export function findApprovedReview(
+  questionId: string,
+  revision: number,
+  questionFingerprint: string,
+): QuestionReview | null {
+  const row = getDb()
+    .prepare(
+      `SELECT * FROM question_reviews
+       WHERE question_id = ? AND revision = ? AND decision = 'approved' AND question_fingerprint = ?
+       LIMIT 1`,
+    )
+    .get(questionId, revision, questionFingerprint) as unknown as QuestionReviewRow | undefined;
+  return row ? mapReview(row) : null;
+}
+
+/** 任何已通過的覆核（用於判斷「曾經覆核，但內容已改」的情況） */
+export function findAnyApprovedReview(questionId: string): QuestionReview | null {
+  const row = getDb()
+    .prepare(
+      `SELECT * FROM question_reviews WHERE question_id = ? AND decision = 'approved'
+       ORDER BY revision DESC, created_at DESC LIMIT 1`,
+    )
+    .get(questionId) as unknown as QuestionReviewRow | undefined;
+  return row ? mapReview(row) : null;
+}
+
+/** 覆核紀錄總數（供教師端顯示覆核進度；不會回傳任何學生資料） */
+export function countQuestionReviews(): number {
+  const row = getDb()
+    .prepare("SELECT COUNT(*) AS total FROM question_reviews")
+    .get() as unknown as { total: number } | undefined;
+  return row?.total ?? 0;
 }

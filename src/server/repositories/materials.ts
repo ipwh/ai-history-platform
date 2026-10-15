@@ -35,6 +35,7 @@ interface DocumentRow {
   ocr_skipped_count: number | null;
   ocr_updated_at: string | null;
   stored_path: string | null;
+  student_distribution: number | null;
 }
 
 interface BlockRow {
@@ -73,6 +74,7 @@ function mapDocument(row: DocumentRow): MaterialDocument {
     ocrSkippedCount: row.ocr_skipped_count ?? 0,
     ocrUpdatedAt: row.ocr_updated_at,
     storedPath: row.stored_path,
+    studentDistribution: row.student_distribution === 1,
     createdAt: row.created_at,
   };
 }
@@ -489,4 +491,108 @@ export function setDocumentTopic(documentId: string, topicId: string | null): vo
     db.exec("ROLLBACK");
     throw error;
   }
+}
+
+/**
+ * 設定學生可否在平台內閱讀這份教材的內容。
+ *
+ * 預設為不可（見 migration 0011）：教材可能受版權限制，而本專案沒有授權紀錄，
+ * 因此必須由管理員明確確認後才開啟。關閉時立即生效（下次讀取即不再顯示）。
+ */
+export function setDocumentStudentDistribution(documentId: string, allowed: boolean): void {
+  getDb()
+    .prepare("UPDATE material_documents SET student_distribution = ? WHERE id = ?")
+    .run(allowed ? 1 : 0, documentId);
+}
+
+/** 教材發行權的稽核記錄（誰在何時開啟或關閉向學生發布） */
+export interface DistributionAuditEntry {
+  id: string;
+  documentId: string;
+  allowed: boolean;
+  actorEmail: string;
+  actorRole: string;
+  createdAt: string;
+}
+
+/**
+ * 記錄一次「向學生發布」權限的變更。
+ *
+ * 由 API 層在**變更之後**呼叫，並帶入操作者的電郵及角色（來自已簽署的工作階段，
+ * 不接受前端提供的值）；因此每筆記錄都可追溯到人，而不是只留下一個布林值。
+ * 操作者為管理員權杖或示範模式時，`actorEmail` 會是相應代號（見 PATCH 路由）。
+ */
+export function recordDistributionChange(input: {
+  documentId: string;
+  allowed: boolean;
+  actorEmail: string;
+  actorRole: string;
+}): void {
+  getDb()
+    .prepare(
+      `INSERT INTO distribution_audit (id, document_id, allowed, actor_email, actor_role, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      newId("dist"),
+      input.documentId,
+      input.allowed ? 1 : 0,
+      input.actorEmail,
+      input.actorRole,
+      new Date().toISOString(),
+    );
+}
+
+/** 某份教材（或全部教材）的發行權變更記錄，最新在前 */
+export function listDistributionAudit(
+  documentId?: string,
+  limit = 50,
+): DistributionAuditEntry[] {
+  const rows = (
+    documentId === undefined
+      ? getDb()
+          .prepare(
+            `SELECT id, document_id, allowed, actor_email, actor_role, created_at
+             FROM distribution_audit ORDER BY created_at DESC, rowid DESC LIMIT ?`,
+          )
+          .all(limit)
+      : getDb()
+          .prepare(
+            `SELECT id, document_id, allowed, actor_email, actor_role, created_at
+             FROM distribution_audit WHERE document_id = ?
+             ORDER BY created_at DESC, rowid DESC LIMIT ?`,
+          )
+          .all(documentId, limit)
+  ) as unknown as {
+    id: string;
+    document_id: string;
+    allowed: number;
+    actor_email: string;
+    actor_role: string;
+    created_at: string;
+  }[];
+
+  return rows.map((row) => ({
+    id: row.id,
+    documentId: row.document_id,
+    allowed: row.allowed === 1,
+    actorEmail: row.actor_email,
+    actorRole: row.actor_role,
+    createdAt: row.created_at,
+  }));
+}
+
+/**
+ * 可用於學生閱讀的教材文件 ID。
+ *
+ * 同時排除校內試題（`kind = 'question-bank'`）：那些文件是題目與答案，
+ * 不適合同時作為出題依據及學生讀物。
+ */
+export function listStudentDistributableDocumentIds(): Set<string> {
+  const rows = getDb()
+    .prepare(
+      "SELECT id FROM material_documents WHERE student_distribution = 1 AND kind <> 'question-bank'",
+    )
+    .all() as unknown as { id: string }[];
+  return new Set(rows.map((row) => row.id));
 }

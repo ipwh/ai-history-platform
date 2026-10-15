@@ -18,11 +18,26 @@ export class ApiRouteError extends Error {
 }
 
 export function jsonOk<T>(data: T, status = 200): NextResponse {
-  return NextResponse.json(data, { status });
+  return NextResponse.json(data, { status, headers: privateHeaders() });
 }
 
 export function jsonError(message: string, status = 400, details: string[] = []): NextResponse {
-  return NextResponse.json({ error: message, details }, { status });
+  return NextResponse.json({ error: message, details }, { status, headers: privateHeaders() });
+}
+
+/**
+ * API 回應一律不可被共用快取或瀏覽器快取。
+ *
+ * 這些回應會包含學生自己的練習內容、答案、成績或教師端資料；Next.js 只會為頁面加上
+ * `Cache-Control`，route handler 的 JSON 回應預設沒有這個標頭（實測只有 `Vary`），
+ * 因此共用快取或同一部裝置的下一位使用者有機會看到上一位使用者的資料。
+ * `Vary: Cookie` 則確保任何中介快取都以工作階段 cookie 區分回應。
+ */
+function privateHeaders(): Record<string, string> {
+  return {
+    "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+    Vary: "Cookie",
+  };
 }
 
 interface ErrorWithStatus {
@@ -63,11 +78,10 @@ export function toErrorResponse(error: unknown): NextResponse {
     );
   }
 
+  // 未預期的錯誤可能包含資料庫結構、檔案路徑等內部細節，因此只記錄在伺服器日誌，
+  // 回應一律使用固定訊息（呼叫端需要的可行動說明請用 ApiRouteError 明確提供）。
   console.error("[api] 未預期的錯誤", error);
-  return jsonError(
-    `伺服器發生未預期的錯誤：${error instanceof Error ? error.message : String(error)}`,
-    500,
-  );
+  return jsonError("伺服器發生未預期的錯誤，請稍後再試。", 500);
 }
 
 /** 包裝 route handler，統一捕捉錯誤 */

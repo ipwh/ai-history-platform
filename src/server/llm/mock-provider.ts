@@ -65,11 +65,16 @@ function buildFacts(units: MaterialUnit[]): UnitFact[] {
     .filter((fact) => fact.unit.text.trim().length >= 12);
 }
 
-function baseFields(fact: UnitFact, knowledgePoint: string) {
+/** 本地示範生成的題目只會考核這兩項技能（其餘技能需要展示史料，不在本平台範圍） */
+const SKILL_TERMINOLOGY = "正確地使用歷史辭彙";
+const SKILL_CHRONOLOGY = "準確排列歷史事件的次序";
+
+function baseFields(fact: UnitFact, knowledgePoint: string, skill: string = SKILL_TERMINOLOGY) {
   return {
     knowledgePoint,
     sourceExcerpt: truncate(fact.unit.text, 240),
     sourceBlockIds: [fact.unit.blockId],
+    skill,
   };
 }
 
@@ -273,7 +278,7 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
         correctAnswerIndex: 0,
         correctAnswer: year,
         explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
-        ...baseFields(fact, `${input.sectionTitle}：${truncate(blanked, 40)}`),
+        ...baseFields(fact, `${input.sectionTitle}：${truncate(blanked, 40)}`, SKILL_CHRONOLOGY),
         gradingPoints: [],
       };
     }
@@ -347,7 +352,7 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
         correctAnswerIndex: null,
         correctAnswer: year,
         explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
-        ...baseFields(fact, `${input.sectionTitle}：${truncate(blanked, 40)}`),
+        ...baseFields(fact, `${input.sectionTitle}：${truncate(blanked, 40)}`, SKILL_CHRONOLOGY),
         gradingPoints: [],
       };
     }

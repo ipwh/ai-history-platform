@@ -58,6 +58,26 @@ interface DiskMaterial {
   topicTitle: string | null;
 }
 
+/** 教材發行權的稽核記錄（誰在何時開啟或關閉向學生發布） */
+interface DistributionAuditEntry {
+  id: string;
+  documentId: string;
+  allowed: boolean;
+  actorEmail: string;
+  actorRole: string;
+  createdAt: string;
+}
+
+interface DocumentDetailResponse {
+  document: MaterialDocument;
+  blocks: MaterialBlock[];
+  distributionAudit: DistributionAuditEntry[];
+  /** 檔名標示為教師版／答案材料（決定性判斷）；開放前需要額外確認 */
+  looksLikeTeacherEdition: boolean;
+  /** 被判定為教師專用內容（答案、評分參考）而不會顯示給學生的段落數 */
+  teacherOnlyBlockCount: number;
+}
+
 /**
  * 教材管理（管理員端）。
  *
@@ -76,6 +96,12 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
   const [blocks, setBlocks] = useState<MaterialBlock[] | null>(null);
   const [blocksLoading, setBlocksLoading] = useState(Boolean(initialDocumentId));
   const [blockError, setBlockError] = useState<unknown>(null);
+  const [documentDetail, setDocumentDetail] = useState<{
+    document: MaterialDocument;
+    distributionAudit: DistributionAuditEntry[];
+    looksLikeTeacherEdition: boolean;
+    teacherOnlyBlockCount: number;
+  } | null>(null);
   const [diskMaterials, setDiskMaterials] = useState<DiskMaterial[]>([]);
   const [diskLoaded, setDiskLoaded] = useState(false);
   const [ocrStatus, setOcrStatus] = useState<Record<string, OcrStatusResponse>>({});
@@ -243,13 +269,20 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
   async function handleOpenDocument(documentId: string) {
     setOpenDocumentId(documentId);
     setBlocks(null);
+    setDocumentDetail(null);
     setBlockError(null);
     setBlocksLoading(true);
     try {
-      const result = await api.get<{ blocks: MaterialBlock[] }>(
+      const result = await api.get<DocumentDetailResponse>(
         `/api/admin/materials/${documentId}`,
       );
       setBlocks(result.blocks);
+      setDocumentDetail({
+        document: result.document,
+        distributionAudit: result.distributionAudit,
+        looksLikeTeacherEdition: result.looksLikeTeacherEdition,
+        teacherOnlyBlockCount: result.teacherOnlyBlockCount,
+      });
     } catch (caught) {
       setBlockError(caught);
     } finally {
@@ -264,9 +297,15 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
     if (!initialDocumentId || !data) return;
     openedInitialDocument.current = true;
     api
-      .get<{ blocks: MaterialBlock[] }>(`/api/admin/materials/${initialDocumentId}`)
+      .get<DocumentDetailResponse>(`/api/admin/materials/${initialDocumentId}`)
       .then((result) => {
         setBlocks(result.blocks);
+        setDocumentDetail({
+          document: result.document,
+          distributionAudit: result.distributionAudit,
+          looksLikeTeacherEdition: result.looksLikeTeacherEdition,
+          teacherOnlyBlockCount: result.teacherOnlyBlockCount,
+        });
         setBlocksLoading(false);
       })
       .catch((caught: unknown) => {
@@ -274,6 +313,42 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
         setBlocksLoading(false);
       });
   }, [data, initialDocumentId]);
+
+  /**
+   * 設定學生閱讀權限（版權閘門）。
+   *
+   * 只會在管理員於介面上明確確認（見 DistributionPanel 的兩步確認）後才會呼叫；
+   * 關閉時立即生效。回應中的稽核記錄會即時顯示，讓管理員看到「誰在何時」改動。
+   */
+  async function handleSetDistribution(
+    documentId: string,
+    allowed: boolean,
+    options: { confirmTeacherEdition?: boolean } = {},
+  ) {
+    setError(null);
+    try {
+      const result = await api.patch<{
+        document: MaterialDocument;
+        distributionAudit: DistributionAuditEntry[];
+      }>(`/api/admin/materials/${documentId}`, {
+        studentDistribution: allowed,
+        ...(options.confirmTeacherEdition ? { confirmTeacherEdition: true } : {}),
+      });
+      setDocumentDetail((current) =>
+        current === null
+          ? current
+          : { ...current, document: result.document, distributionAudit: result.distributionAudit },
+      );
+      setMessage(
+        allowed
+          ? "已開放學生閱讀這份教材。請確認你擁有在平台向學生發布該內容的權利。"
+          : "已停止向學生顯示這份教材（立即生效）。",
+      );
+      await refresh();
+    } catch (caught) {
+      setError(caught);
+    }
+  }
 
   async function handleRunOcr(documentId: string) {
     setError(null);
@@ -625,6 +700,17 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
               關閉
             </button>
           </div>
+          {documentDetail ? (
+            <DistributionPanel
+              document={documentDetail.document}
+              audit={documentDetail.distributionAudit}
+              looksLikeTeacherEdition={documentDetail.looksLikeTeacherEdition}
+              teacherOnlyBlockCount={documentDetail.teacherOnlyBlockCount}
+              onSet={(allowed, options) =>
+                void handleSetDistribution(documentDetail.document.id, allowed, options)
+              }
+            />
+          ) : null}
           {blocksLoading ? <Loading label="正在載入擷取內容…" /> : null}
           {blockError ? <ErrorNotice error={blockError} /> : null}
           {blocks ? (
@@ -636,6 +722,160 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
           ) : null}
         </section>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * 教材發行權（學生閱讀權限）管理。
+ *
+ * 版權閘門預設關閉：未經管理員確認的文件對學生完全不顯示。開放前需要兩步確認
+ * （先按「開放學生閱讀」，再勾選確認聲明），避免在清單上誤按即等同在平台向學生發布
+ * 受版權保護的內容。所有變更都會留下「誰在何時」的稽核記錄。
+ */
+function DistributionPanel({
+  document,
+  audit,
+  looksLikeTeacherEdition,
+  teacherOnlyBlockCount,
+  onSet,
+}: {
+  document: MaterialDocument;
+  audit: DistributionAuditEntry[];
+  /** 檔名標示為教師版／答案材料（由伺服器判斷） */
+  looksLikeTeacherEdition: boolean;
+  /** 被判定為教師專用內容而不會顯示給學生的段落數 */
+  teacherOnlyBlockCount: number;
+  onSet: (allowed: boolean, options?: { confirmTeacherEdition?: boolean }) => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [teacherEditionAcknowledged, setTeacherEditionAcknowledged] = useState(false);
+  const isQuestionBank = document.kind === "question-bank";
+
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-lg p-3 text-sm"
+      style={{ background: "var(--accent-soft)" }}
+    >
+      <h3 className="font-semibold">教材版權閘門：學生閱讀權限</h3>
+
+      {isQuestionBank ? (
+        <p className="text-gray-700">
+          這是<strong>校內試題</strong>文件，只作為出題依據；即使開放，系統亦不會把它顯示給學生閱讀。
+        </p>
+      ) : (
+        <>
+          <p className="text-gray-700">
+            現時狀態：{" "}
+            <strong>{document.studentDistribution ? "已開放學生閱讀" : "未開放（預設）"}</strong>
+            。未開放的教材對學生完全不顯示，學生只會在「閱讀教材」頁看到已開放的內容。
+          </p>
+          <p className="text-xs text-gray-600">
+            只有在確認擁有在平台向學生發布這份內容的權利後才應開放。系統沒有內建授權紀錄，
+            也不會代你判斷版權狀態。
+          </p>
+
+          {looksLikeTeacherEdition ? (
+            <p className="text-xs" style={{ color: "#b45309" }}>
+              ⚠ 檔名標示為<strong>教師版／答案材料</strong>（例如 `_TE`、教師版、答案）。
+              教師版可能夾附答案、評分參考及教師註記，即使系統已略過
+              {teacherOnlyBlockCount > 0 ? ` ${teacherOnlyBlockCount} ` : " "}
+              段可辨識的教師專用內容，你仍須自行核對其餘內容是否適合學生閱讀。
+            </p>
+          ) : teacherOnlyBlockCount > 0 ? (
+            <p className="text-xs" style={{ color: "#b45309" }}>
+              ⚠ 系統已略過 {teacherOnlyBlockCount} 段可辨識的教師專用內容（答案或評分參考）。
+              請核對其餘內容是否適合學生閱讀。
+            </p>
+          ) : null}
+
+          {document.studentDistribution ? (
+            <p>
+              <button type="button" className="btn btn-danger" onClick={() => onSet(false)}>
+                停止向學生顯示
+              </button>
+            </p>
+          ) : confirming ? (
+            <div className="flex flex-col gap-2 rounded border p-2" style={{ borderColor: "#c6d6ff" }}>
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={acknowledged}
+                  onChange={(event) => setAcknowledged(event.target.checked)}
+                />
+                <span>
+                  我已確認擁有在平台向學生發布「{document.fileName}」的權利，
+                  並明白開放後學生會看到原文內容。
+                </span>
+              </label>
+              {looksLikeTeacherEdition ? (
+                <label className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={teacherEditionAcknowledged}
+                    onChange={(event) => setTeacherEditionAcknowledged(event.target.checked)}
+                  />
+                  <span>
+                    這是<strong>教師版／答案材料</strong>：我已逐段核對，確認沒有教師專用內容
+                    （答案、評分參考、教師註記）會因此顯示給學生。
+                  </span>
+                </label>
+              ) : null}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={!acknowledged || (looksLikeTeacherEdition && !teacherEditionAcknowledged)}
+                  onClick={() => {
+                    setConfirming(false);
+                    setAcknowledged(false);
+                    setTeacherEditionAcknowledged(false);
+                    onSet(true, { confirmTeacherEdition: looksLikeTeacherEdition });
+                  }}
+                >
+                  確認開放學生閱讀
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setConfirming(false);
+                    setAcknowledged(false);
+                    setTeacherEditionAcknowledged(false);
+                  }}
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p>
+              <button type="button" className="btn" onClick={() => setConfirming(true)}>
+                開放學生閱讀
+              </button>
+            </p>
+          )}
+        </>
+      )}
+
+      <details>
+        <summary className="cursor-pointer text-xs text-gray-600">
+          發行權變更記錄（{audit.length} 筆）
+        </summary>
+        {audit.length === 0 ? (
+          <p className="text-xs text-gray-500 mt-1">這份教材未有變更記錄（預設為不對學生發布）。</p>
+        ) : (
+          <ul className="mt-1 flex flex-col gap-0.5 text-xs text-gray-700">
+            {audit.map((entry) => (
+              <li key={entry.id}>
+                {entry.createdAt.replace("T", " ").slice(0, 16)}・
+                {entry.allowed ? "開放學生閱讀" : "停止向學生顯示"}・{entry.actorEmail}
+              </li>
+            ))}
+          </ul>
+        )}
+      </details>
     </div>
   );
 }

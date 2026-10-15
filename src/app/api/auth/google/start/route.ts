@@ -9,14 +9,9 @@ import {
   oauthCookieOptions,
 } from "@/server/auth/session";
 import { getServerConfig } from "@/server/config";
+import { safeNextPath } from "@/server/auth/redirect";
 
 export const runtime = "nodejs";
-
-/** 只接受站內路徑，避免被利用作開放式轉址 */
-function safeNextPath(value: string | null): string {
-  if (value === null) return "/";
-  return value.startsWith("/") && !value.startsWith("//") ? value : "/";
-}
 
 /** 開始 Google 登入：設定 state／PKCE 暫存 cookie 後導向 Google 同意頁 */
 export async function GET(request: Request) {

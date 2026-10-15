@@ -67,11 +67,38 @@ export interface ServerConfig {
   };
   /** 示範模式是否自動發布本地示範生成的題目（正式環境應設為 false） */
   autoPublishMockQuestions: boolean;
+  /** AI 用量上限（避免個別帳戶或整體用量失控） */
+  aiLimits: AiLimitConfig;
   /** 資料庫備份（把 SQLite 檔案備份到 Cloud Storage，令容器重建後仍保留資料） */
   backup: BackupConfig;
   maxUploadBytes: number;
   /** 伺服器端寫入的最大教材段落數，避免超大文件拖垮服務 */
   maxBlocksPerDocument: number;
+}
+
+/**
+ * AI 用量上限設定。
+ *
+ * 每次 AI 出題及每次 AI 批改都會在**呼叫模型之前**同步寫入一筆用量記錄，
+ * 因此上限是以「已保留的用量」計算：同一時間的並行請求不會因為同時通過檢查而超額
+ * （單一程序 + 同步 SQLite 寫入，檢查與保留之間不會被其他請求插入）。
+ *
+ * 預設值為保守的防濫用上限，**並非**平台擁有者核准的預算；真正的成本上限
+ * 仍須由擁有者按實際用量及預算決定（見 README「AI 用量上限」）。
+ */
+export interface AiLimitConfig {
+  /** 是否啟用（設 false 只作記錄，不拒絕請求） */
+  enabled: boolean;
+  /** 統計用的時間窗（分鐘） */
+  windowMinutes: number;
+  /** 每位學習者在時間窗內最多可觸發的 AI 出題次數 */
+  generationsPerLearner: number;
+  /** 每位學習者在時間窗內最多可觸發的 AI 批改次數 */
+  gradingsPerLearner: number;
+  /** 所有使用者合計在時間窗內最多可觸發的 AI 出題次數 */
+  generationsGlobal: number;
+  /** 所有使用者合計在時間窗內最多可觸發的 AI 批改次數 */
+  gradingsGlobal: number;
 }
 
 /** 學生登入（學校 Google Workspace 帳戶）設定 */
@@ -85,12 +112,28 @@ export interface AuthConfig {  /** 是否已具備啟用登入所需的憑證 */
   secret: string | null;
   /** OAuth 重新導向 URI；未設定時依請求的來源網址自動產生 */
   redirectUri: string | null;
+  /**
+   * 工作階段有效期（小時）。
+   * 這是「名冊移除」後仍可繼續使用的最長時間：名冊成員只在登入時核對，
+   * 之後由 cookie 證明身分；角色及名單變更則會即時重新判定（見 revalidateSessionUser）。
+   * 預設 720 小時（30 天）；學校如要縮短撤銷窗口可調低（例如 8 小時）。
+   */
+  sessionTtlHours: number;
   /** 校內網域（完整標籤比對，例如 pochiu.edu.hk） */
   schoolDomains: string[];
   /** 一律視為教師的電郵（供教師使用非校內網域帳戶時使用） */
   teacherEmails: string[];
   /** 一律視為管理員的電郵（管理員擁有教師的全部功能，另可管理教材及系統設定） */
   adminEmails: string[];
+  /**
+   * 校內網域但學號形式（s + 7 位數字）不符，且不在 AUTH_TEACHER_EMAILS／
+   * AUTH_ADMIN_EMAILS 及學生名冊內的帳戶，要視為哪一種身分。
+   *
+   * 預設 "student"（fail-closed）：只要有任何學生的帳戶不是學號形式（例如別名），
+   * 舊行為就會把該學生當成教師，令其可讀取全部學生的練習記錄。
+   * 教師須列在 AUTH_TEACHER_EMAILS，或明確設定 AUTH_IN_DOMAIN_ROLE=teacher。
+   */
+  inDomainRole: "student" | "teacher";
 }
 
 /**
@@ -167,6 +210,9 @@ export interface RosterConfig {
     name: string | null;
   };
 }
+
+/** AUTH_SECRET（工作階段 cookie 的簽署密鑰）要求的最短長度 */
+export const MIN_AUTH_SECRET_LENGTH = 32;
 
 const DEFAULT_TIMEOUT_MS = 45_000;
 /** 學生帳號所屬的預設校內網域（保良局蔡繼有中學） */
@@ -301,6 +347,31 @@ function readOcrProviderName(): OcrProviderName {
   return hasVisionKey ? "google-vision" : "tesseract";
 }
 
+/**
+ * 校內網域內「非學號形式且未被明確列出」的帳戶要視為哪一種身分。
+ * 預設 student（fail-closed）；只有明確設定 AUTH_IN_DOMAIN_ROLE=teacher 才會沿用
+ * 舊行為（校內非學號形式的帳戶一律是教師）。
+ */
+function readInDomainRole(): "student" | "teacher" {
+  const raw = readEnv("AUTH_IN_DOMAIN_ROLE")?.toLowerCase();
+  return raw === "teacher" || raw === "staff" ? "teacher" : "student";
+}
+
+/**
+ * AI 用量上限。預設為保守的防濫用值（並非擁有者核准的預算）。
+ * 未設定時使用這些值；設為 0 代表不設限（不建議，只供本機測試）。
+ */
+function readAiLimits(): AiLimitConfig {
+  return {
+    enabled: readBoolean("AI_LIMITS_ENABLED", true),
+    windowMinutes: readPositiveInt("AI_LIMIT_WINDOW_MINUTES", 60),
+    generationsPerLearner: readNonNegativeInt("AI_GENERATIONS_PER_LEARNER", 30),
+    gradingsPerLearner: readNonNegativeInt("AI_GRADINGS_PER_LEARNER", 300),
+    generationsGlobal: readNonNegativeInt("AI_GENERATIONS_GLOBAL", 600),
+    gradingsGlobal: readNonNegativeInt("AI_GRADINGS_GLOBAL", 3000),
+  };
+}
+
 /** 讀取名冊來源：未指定時依已提供的設定自動判斷 */
 function readRosterSource(hasSheet: boolean, hasCsv: boolean, hasFile: boolean): RosterSource {
   const raw = readEnv("STUDENT_ROSTER_SOURCE")?.toLowerCase();
@@ -419,9 +490,11 @@ export function getServerConfig(): ServerConfig {
       googleClientSecret,
       secret: readEnv("AUTH_SECRET"),
       redirectUri: readEnv("AUTH_REDIRECT_URI"),
+      sessionTtlHours: readPositiveInt("AUTH_SESSION_TTL_HOURS", 720),
       schoolDomains: readList("AUTH_SCHOOL_DOMAINS", [DEFAULT_SCHOOL_DOMAIN]),
       teacherEmails: readList("AUTH_TEACHER_EMAILS"),
       adminEmails: readList("AUTH_ADMIN_EMAILS"),
+      inDomainRole: readInDomainRole(),
     },
     ocr: {
       provider: ocrProvider === "google-vision" && ocrApiKey === null ? "tesseract" : ocrProvider,
@@ -437,7 +510,13 @@ export function getServerConfig(): ServerConfig {
       maxImagesPerRun: readPositiveInt("OCR_MAX_IMAGES", DEFAULT_OCR_MAX_IMAGES),
       runTimeoutMs: readPositiveInt("OCR_RUN_TIMEOUT_MS", DEFAULT_OCR_RUN_TIMEOUT_MS),
     },
-    autoPublishMockQuestions: readBoolean("DEMO_AUTO_PUBLISH_QUESTIONS", true),
+    // 預設值：本機示範為 true（方便試用），正式環境為 false——正式環境的題目必須由
+    // 教師核對後才發布，不可因為執行批次生成腳本而自動發布未審核的題目。
+    autoPublishMockQuestions: readBoolean(
+      "DEMO_AUTO_PUBLISH_QUESTIONS",
+      process.env.NODE_ENV !== "production",
+    ),
+    aiLimits: readAiLimits(),
     backup: readBackupConfig(),
     maxUploadBytes: readPositiveInt("APP_MAX_UPLOAD_BYTES", DEFAULT_MAX_UPLOAD_BYTES),
     maxBlocksPerDocument: readPositiveInt("APP_MAX_BLOCKS", DEFAULT_MAX_BLOCKS),

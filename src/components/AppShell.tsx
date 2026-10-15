@@ -77,6 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: "/", label: isStaff || demoMode ? "學生端測試" : "課題首頁", exact: true },
+    { href: "/review", label: "重溫", exact: false },
     ...(authEnabled ? [{ href: "/account", label: "我的帳戶", exact: false }] : []),
     ...(showAdminNav ? ADMIN_NAV_ITEMS : []),
     ...(showTeacherNav ? TEACHER_NAV_ITEMS : []),

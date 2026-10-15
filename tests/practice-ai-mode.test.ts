@@ -131,6 +131,45 @@ describe("AI 即時出題模式", () => {
   });
 });
 
+/**
+ * 一次生成多個分節時，每條題目必須歸入「提供節錄的段落所屬分節」。
+ * 舊行為一律使用 sectionIds[0]，令其他分節的題目被錯誤分類（教師會在錯誤的主題下看到題目）。
+ */
+describe("多分節生成的分節歸屬", () => {
+  it("每條題目的分節都與其教材節錄所屬的段落一致", async () => {
+    const questionService = await import("@/server/services/question-service");
+    const { buildMaterialUnits } = await import("@/server/services/material-units");
+    const { normalizeForMatch } = await import("@/server/materials/text-utils");
+
+    // 建立 blockId → 分節 的對照表（單位的 sectionId 來自教材段落）。
+    // 必須使用與生成時相同的分節清單，否則會拿到不同的段落集合（單位數量有上限）。
+    const units = buildMaterialUnits("topic-5", SECTIONS);
+    const sectionOfUnit = new Map(units.map((unit) => [unit.blockId, unit.sectionId ?? null]));
+
+    const generated = await questionService.generateQuestions({
+      topicId: "topic-5",
+      sectionIds: SECTIONS,
+      questionTypes: ["mc"],
+      difficulty: "basic",
+      questionCount: 4,
+      persist: false,
+      allowBankDuplicates: true,
+    });
+
+    expect(generated.questions.length).toBeGreaterThan(0);
+
+    for (const question of generated.questions) {
+      expect(SECTIONS).toContain(question.sectionId);
+
+      // 真正提供節錄的段落，必須屬於該題被歸入的分節
+      const excerptKey = normalizeForMatch(question.sourceExcerpt);
+      const sourceUnit = units.find((unit) => normalizeForMatch(unit.text).includes(excerptKey));
+      expect(sourceUnit, `找不到「${question.sourceExcerpt.slice(0, 20)}…」的來源段落`).toBeDefined();
+      expect(question.sectionId).toBe(sectionOfUnit.get(sourceUnit!.blockId));
+    }
+  });
+});
+
 describe("分節可用性（介面顯示用，取代容易誤解的題目數量）", () => {
   it("匯入教材後，分節（含子分節）會回報教材段落數", () => {
     const overview = topicService.getTopicDetail("topic-5", null);

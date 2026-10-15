@@ -19,6 +19,9 @@ import {
 } from "../../lib/types";
 import { ensureBootstrap } from "../seed";
 import { ensureLearner, getLearnerProgress } from "../repositories/learners";
+import { ApiRouteError } from "../http";
+import { getServerConfig } from "../config";
+import { reserveAiOperation } from "./ai-limits";
 import { getBlocksByIds } from "../repositories/materials";
 import { normalizeForMatch } from "../materials/text-utils";
 import {
@@ -82,6 +85,8 @@ export function buildFeedback(
     aiGrading?: AiGrading | null;
   } | null,
   sourceFromOcr = false,
+  reviewFlag: "uncertain-answer" | null = null,
+  aiLimitReached = false,
 ): QuestionFeedback {
   return {
     questionId: question.id,
@@ -99,6 +104,8 @@ export function buildFeedback(
     sourceFromOcr,
     aiGrading: attempt?.aiGrading ?? null,
     selfAssessment: attempt?.selfAssessment ?? null,
+    reviewFlag,
+    aiLimitReached,
   };
 }
 
@@ -112,6 +119,18 @@ function questionUsesOcr(question: Question): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * 這個答案是否需要交給 AI 批改（與 gradeWithAiIfNeeded 的判斷一致）。
+ * 用來決定是否要保留 AI 用量額度：已答對的填充題不會呼叫模型，毋須消耗額度；
+ * 未接上真正的 provider（示範模式）時亦不會呼叫模型，同樣不應消耗額度。
+ */
+function needsAiGrading(question: Question, outcome: GradeOutcome): boolean {
+  if (!getServerConfig().llm.gradingEnabled) return false;
+  if (question.questionType === "mc") return false;
+  if (question.questionType === "fill" && outcome.isCorrect === true) return false;
+  return true;
 }
 
 /**
@@ -365,6 +384,8 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
     }
     notices.push("這次練習只包含你之前答錯或標記需要重溫的題目。");
   } else if (parsed.questionSource === "ai") {
+    // AI 用量上限：在呼叫模型之前先保留額度，超過上限即回 429（不會先花費再拒絕）
+    reserveAiOperation(parsed.learnerId, "generation");
     const generated = await generatePracticeQuestions({
       topicId: topic.id,
       sectionIds,
@@ -536,9 +557,21 @@ export async function submitAnswer(
 
   const existing = getAttempt(sessionId, questionId);
   if (existing) {
-    // 已提交過的題目不會再改變分數，避免看到答案後重覆作答影響成績
+    // 已提交過的題目不會再改變分數，避免看到答案後重覆作答影響成績。
+    // 重新整理頁面時亦要顯示相同的覆核標示，因此重新計算一次（純字串比對，成本極低）。
+    const storedOutcome = gradeAnswer(question, existing.answer);
+    const storedNearMiss =
+      storedOutcome.uncertain === true && existing.aiGrading?.verdict !== "correct"
+        ? "uncertain-answer"
+        : null;
     return {
-      feedback: buildFeedback(question, existing.answer, existing, questionUsesOcr(question)),
+      feedback: buildFeedback(
+        question,
+        existing.answer,
+        existing,
+        questionUsesOcr(question),
+        storedNearMiss,
+      ),
       recorded: false,
       answeredCount: listAttempts(sessionId).length,
       totalQuestions: questions.length,
@@ -554,10 +587,32 @@ export async function submitAnswer(
 
   // 填充題在逐字比對不合格，以及所有短答題，都會以 AI 按語意再判斷一次，
   // 避免因為用字、詞序或補充說明等與答案無關的差異而被判錯。
-  const aiGrading = await gradeWithAiIfNeeded(question, session.topicId, trimmed, outcome, sessionId);
+  //
+  // AI 用量上限：只有在真的會呼叫模型時才保留用量（已比對成功的填充題不會，
+  // 否則會白白消耗額度）。達到上限時仍然記錄作答（沿用字詞比對結果），
+  // 並在回饋中說明 AI 批改暫時不可用，學生不會因此無法提交答案。
+  let aiLimitReached = false;
+  let aiGrading: AiGrading | null = null;
+  if (needsAiGrading(question, outcome)) {
+    try {
+      reserveAiOperation(learnerId, "grading");
+      aiGrading = await gradeWithAiIfNeeded(question, session.topicId, trimmed, outcome, sessionId);
+    } catch (error) {
+      if (error instanceof ApiRouteError && error.status === 429) {
+        aiLimitReached = true;
+      } else {
+        throw error;
+      }
+    }
+  }
 
   const isCorrect =
     outcome.isCorrect === null ? null : outcome.isCorrect || aiGrading?.verdict === "correct";
+
+  // 逐字比對不合格但答案極為接近（可能是錯別字），且 AI 亦未判定為正確時，
+  // 標示為需要教師覆核，讓學生知道這個判斷未必準確。
+  const nearMiss =
+    outcome.uncertain === true && aiGrading?.verdict !== "correct" ? "uncertain-answer" : null;
 
   const attempt = saveAttempt({
     sessionId,
@@ -567,13 +622,16 @@ export async function submitAnswer(
     autoGraded: outcome.autoGraded,
     isCorrect,
     aiGrading,
+    // 把「近似答案」的判定寫入記錄：進度及重溫排程需要區分不確定與明確錯誤，
+    // 而且之後題目答案若被修改，不應重新詮釋這筆歷史作答。
+    uncertain: nearMiss !== null,
   });
 
   const answeredCount = listAttempts(sessionId).length;
   if (answeredCount >= questions.length) markSessionCompleted(sessionId);
 
   return {
-    feedback: buildFeedback(question, trimmed, attempt, questionUsesOcr(question)),
+    feedback: buildFeedback(question, trimmed, attempt, questionUsesOcr(question), nearMiss, aiLimitReached),
     recorded: true,
     answeredCount,
     totalQuestions: questions.length,

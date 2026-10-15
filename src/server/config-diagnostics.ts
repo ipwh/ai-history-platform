@@ -7,7 +7,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { getServerConfig } from "./config";
+import { getServerConfig, MIN_AUTH_SECRET_LENGTH } from "./config";
+
+export { MIN_AUTH_SECRET_LENGTH };
 
 export interface ConfigIssue {
   /** error = 功能會受影響；warning = 可以運作但需注意；info = 提示 */
@@ -15,6 +17,9 @@ export interface ConfigIssue {
   code: string;
   message: string;
 }
+
+/** ADMIN_TOKEN 可用的最短長度，與 src/server/auth/guards.ts 的檢查一致 */
+export const MIN_ADMIN_TOKEN_LENGTH = 32;
 
 export interface DeploymentInfo {
   /** local = 本機開發；cloud-run = 執行於 Cloud Run（偵測 K_SERVICE）；other = 其他環境 */
@@ -127,11 +132,42 @@ export function describeConfigIssues(): ConfigIssue[] {
           "未設定 AUTH_SECRET：工作階段密鑰會在 data/ 目錄自動產生，多個執行個體或容器重建後會令已登入的使用者被登出，正式部署前請改由 Secret Manager 注入。",
       });
     }
+    if (config.auth.secret !== null && config.auth.secret.length < MIN_AUTH_SECRET_LENGTH) {
+      issues.push({
+        // 正式環境會直接拒絕使用過短的密鑰（所有帶 cookie 的請求都會失敗）
+        level: process.env.NODE_ENV === "production" ? "error" : "warning",
+        code: "auth-secret-short",
+        message: `AUTH_SECRET 只有 ${config.auth.secret.length} 個字元：這是工作階段 cookie 的簽署密鑰，長度不足會增加被推導出來的風險，建議改用 32 個字元以上的隨機值。`,
+      });
+    }
     if (!config.auth.requireSignIn) {
       issues.push({
         level: "warning",
         code: "auth-optional",
         message: "已設定 AUTH_REQUIRE_SIGN_IN=false：未登入者仍可使用學生功能（示範用）。",
+      });
+    }
+    if (config.auth.inDomainRole === "teacher") {
+      issues.push({
+        level: "warning",
+        code: "auth-in-domain-teacher",
+        message:
+          "已設定 AUTH_IN_DOMAIN_ROLE=teacher：校內網域內、學號形式不符且未列在名單或名冊內的帳戶一律視為教師。若有任何學生的帳戶不是 s 加 7 位數字（例如別名），該學生將可讀取全部學生的練習記錄；建議改為預設值並把教師列在 AUTH_TEACHER_EMAILS。",
+      });
+    } else if (config.auth.teacherEmails.length === 0) {
+      issues.push({
+        level: "warning",
+        code: "auth-in-domain-student",
+        message:
+          "校內網域內、學號形式不符的帳戶會視為學生（AUTH_IN_DOMAIN_ROLE 預設值）。校內教師須列在 AUTH_TEACHER_EMAILS 才可使用教師端；如要沿用舊行為（校內非學號形式一律是教師），請明確設定 AUTH_IN_DOMAIN_ROLE=teacher。",
+      });
+    }
+    if (config.roster.enabled) {
+      issues.push({
+        level: "info",
+        code: "auth-roster-authoritative",
+        message:
+          "學生名冊同時是角色判定的依據：名冊內的帳戶一律是學生，因此學號形式不符的別名帳戶不會取得教師權限。",
       });
     }
   }
@@ -206,13 +242,33 @@ export function describeConfigIssues(): ConfigIssue[] {
     });
   }
 
-  // 管理權杖
-  if ((process.env.ADMIN_TOKEN ?? "").trim().length > 0) {
+  // 示範題目的自動發布（正式環境必須由教師核對後才發布）
+  if (config.autoPublishMockQuestions && process.env.NODE_ENV === "production") {
     issues.push({
-      level: "info",
-      code: "admin-token",
-      message: "已設定 ADMIN_TOKEN：自動化腳本可使用 x-admin-token 標頭呼叫後台 API。",
+      level: "warning",
+      code: "auto-publish-questions",
+      message:
+        "DEMO_AUTO_PUBLISH_QUESTIONS=true：以本地示範生成執行批次出題時，題目會自動發布為可作答題目，未經教師核對。正式環境應設為 false。",
     });
+  }
+
+  // 管理權杖
+  const adminToken = (process.env.ADMIN_TOKEN ?? "").trim();
+  if (adminToken.length > 0) {
+    if (adminToken.length < MIN_ADMIN_TOKEN_LENGTH) {
+      issues.push({
+        level: "error",
+        code: "admin-token-weak",
+        message: `ADMIN_TOKEN 只有 ${adminToken.length} 個字元（最少 ${MIN_ADMIN_TOKEN_LENGTH} 個）：這個權杖可繞過所有角色檢查，後台 API 不會接受過短的值。請以隨機方式重新產生。`,
+      });
+    } else {
+      issues.push({
+        level: "info",
+        code: "admin-token",
+        message:
+          "已設定 ADMIN_TOKEN：自動化腳本可使用 x-admin-token 標頭呼叫後台 API（教師端及管理員端）。這個權杖等同管理員，請只存放在伺服器的環境變數或 Secret Manager。",
+      });
+    }
   }
 
   return issues;

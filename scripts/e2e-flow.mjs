@@ -104,6 +104,12 @@ async function main() {
         typeof health.payload?.staffApiOpen === "boolean",
     );
     check(
+      "健康檢查回報定期維護狀態（資料保留期）",
+      Array.isArray(health.payload?.maintenance) &&
+        health.payload.maintenance.some((entry) => entry.kind === "ai-operation-retention"),
+      JSON.stringify(health.payload?.maintenance)?.slice(0, 160),
+    );
+    check(
       "健康檢查回報學生名冊狀態（不含學生資料）",
       typeof health.payload?.roster?.enabled === "boolean" &&
         typeof health.payload?.roster?.source === "string" &&
@@ -133,7 +139,21 @@ async function main() {
     if (auth.payload?.enabled) {
       const anonymous = await call("GET", `/api/topics?learnerId=${LEARNER_ID}`);
       check("啟用登入後，未登入不可讀取學生資料", anonymous.status === 401, `HTTP ${anonymous.status}`);
-      console.log("    已啟用學校帳戶登入（本流程的匿名步驟需要 AUTH_REQUIRE_SIGN_IN=false）");
+      // 這個流程以匿名示範模式走完學生端及後台的功能（見 README「本機開發與測試」）。
+      // 若伺服器已啟用學校帳戶登入，匿名步驟及後台 API 都會被拒絕而產生大量
+      // 看似「功能失效」的失敗，因此這裡直接停下並說明正確的執行方式，
+      // 避免把環境設定問題誤當成產品問題。
+      if (!process.env.E2E_ALLOW_AUTH_ENABLED) {
+        console.error(
+          "\n端對端測試需要匿名示範模式（未設定 Google 憑證）：\n" +
+            "  PowerShell：$env:GOOGLE_CLIENT_ID=' '; $env:GOOGLE_CLIENT_SECRET=' '; node scripts/e2e-flow.mjs --start\n" +
+            "  或設定 AUTH_REQUIRE_SIGN_IN=false 並提供教師工作階段 cookie。\n" +
+            "如仍要在已啟用登入的伺服器上執行（預期後台及匿名步驟失敗），請設定 E2E_ALLOW_AUTH_ENABLED=1。",
+        );
+        server?.kill();
+        process.exit(2);
+      }
+      console.log("    已啟用學校帳戶登入：後台及匿名步驟預期會失敗（E2E_ALLOW_AUTH_ENABLED=1）");
     } else {
       check("未設定 Google 憑證時維持匿名模式", auth.payload?.user === null);
       console.log("    未設定 Google 憑證：維持匿名示範模式");
@@ -206,6 +226,101 @@ async function main() {
     console.log(
       `    課題：${topic?.title}；分節：${childSection?.title ?? section?.title}（${section?.publishedQuestionCount ?? 0} 題）`,
     );
+
+    console.log("\n[2b] 閱讀教材（先學習、後練習；版權閘門預設關閉）");
+    // 先把所有教材還原為「未確認」（fail-closed 基準），令這一段可以重複執行：
+    // 本流程後面會開放某份教材，若上一次執行未完成（例如中途失敗），
+    // 殘留的狀態會令這裡看似「閘門失效」。這是測試隔離問題，不是產品問題。
+    const materialsBefore = await call("GET", "/api/admin/materials");
+    const alreadyGranted = (materialsBefore.payload?.documents ?? []).filter(
+      (document) => document.studentDistribution === true,
+    );
+    for (const document of alreadyGranted) {
+      await call("PATCH", `/api/admin/materials/${document.id}`, { studentDistribution: false });
+    }
+    if (alreadyGranted.length > 0) {
+      console.log(`    重設 ${alreadyGranted.length} 份教材的學生閱讀權限後再測試閘門`);
+    }
+
+    const lockedLesson = await call("GET", `/api/topics/${topic.id}/lesson?learnerId=${LEARNER_ID}`);
+    check("GET /api/topics/[topicId]/lesson 回應正常", lockedLesson.status === 200, `HTTP ${lockedLesson.status}`);
+    check(
+      "未確認版權前不顯示教材內容（fail-closed）",
+      (lockedLesson.payload?.sections ?? []).length === 0,
+      `分節數：${(lockedLesson.payload?.sections ?? []).length}`,
+    );
+    check(
+      "未確認版權時說明原因是版權確認",
+      typeof lockedLesson.payload?.notice === "string" && lockedLesson.payload.notice.includes("版權"),
+      String(lockedLesson.payload?.notice ?? ""),
+    );
+
+    // 由管理員明確確認某份教材可在平台發布，然後驗證內容才會出現
+    const lessonMaterials = await call("GET", "/api/admin/materials");
+    const distributableDocument = (lessonMaterials.payload?.documents ?? []).find(
+      (document) =>
+        document.topicId === topic.id && document.kind !== "question-bank" && document.blockCount > 0,
+    );
+    if (distributableDocument) {
+      const granted = await call("PATCH", `/api/admin/materials/${distributableDocument.id}`, {
+        studentDistribution: true,
+      });
+      // 檔名標示為教師版（例如 `_TE`）的文件必須額外明確確認才可開放給學生
+      if (granted.status === 409) {
+        check("教師版教材需要額外確認才可開放（409）", true);
+        const confirmed = await call("PATCH", `/api/admin/materials/${distributableDocument.id}`, {
+          studentDistribution: true,
+          confirmTeacherEdition: true,
+        });
+        check(
+          "明確確認後可以開放學生閱讀",
+          confirmed.status === 200 &&
+            confirmed.payload?.document?.studentDistribution === true,
+          JSON.stringify(confirmed.payload)?.slice(0, 200),
+        );
+      } else {
+        check("管理員可以確認教材的學生閱讀權限", granted.status === 200, `HTTP ${granted.status}`);
+      }
+
+      const lesson = await call("GET", `/api/topics/${topic.id}/lesson?learnerId=${LEARNER_ID}`);
+      const lessonSections = lesson.payload?.sections ?? [];
+      check("確認版權後才顯示閱讀內容", lessonSections.length > 0, `分節數：${lessonSections.length}`);
+      const lessonBlocks = lessonSections.flatMap((item) => item.blocks ?? []);
+      check("閱讀內容包含教材段落", lessonBlocks.length > 0, `段落數：${lessonBlocks.length}`);
+      check("每個段落都有來源位置", lessonBlocks.every((block) => (block.sourceLocation ?? "").length > 0));
+      check(
+        "不會顯示 OCR 說明行",
+        lessonBlocks.every((block) => !(block.text ?? "").includes("以上文字由 OCR")),
+      );
+      check(
+        "沒有 OCR 文字的圖片不會顯示",
+        lessonBlocks.every(
+          (block) =>
+            !(block.type === "image" && (block.text ?? "").trim().length === 0 && (block.rows ?? []).length === 0),
+        ),
+      );
+
+      const lessonHtml = await fetch(`${BASE_URL}/learn/${topic.id}`).then((response) => response.text());
+      check("閱讀教材頁面可以開啟", lessonHtml.includes(topic.title));
+      check("閱讀教材頁面提供開始練習的入口", lessonHtml.includes("開始練習這個課題"));
+      // 教師專用內容（答案、評分參考）永不顯示給學生；數量會回報供管理員核對
+      check(
+        "回報被略過的教師專用段落數",
+        typeof lesson.payload?.withheldTeacherBlocks === "number",
+        `withheldTeacherBlocks=${lesson.payload?.withheldTeacherBlocks}`,
+      );
+      check(
+        "閱讀內容不含答案或評分參考標記",
+        !lessonBlocks.some((block) =>
+          /參考答案|建議答案|評分參考|得分要點|每個答案各佔/.test(block.text ?? ""),
+        ),
+      );
+    } else {
+      check("找到可測試版權閘門的教材文件", false, "找不到已對應課題且含段落的教材文件");
+    }
+
+    const missingLesson = await call("GET", `/api/topics/topic-does-not-exist/lesson?learnerId=${LEARNER_ID}`);
+    check("不存在的課題不會回傳閱讀內容", missingLesson.status === 404, `HTTP ${missingLesson.status}`);
 
     console.log("\n[3] 建立練習（選擇題 + 填充題）");
     const created = await call("POST", "/api/practice", {
@@ -507,11 +622,53 @@ async function main() {
     console.log("\n[11] 管理介面：修改分節及題目狀態");
     const generatedQuestion = generated?.payload?.questions?.[0];
     if (generatedQuestion) {
-      const published = await call("PATCH", `/api/teacher/questions/${generatedQuestion.id}`, {
+      // 發布關卡：沒有對應目前版本的人工覆核紀錄不可發布
+      const blocked = await call("PATCH", `/api/teacher/questions/${generatedQuestion.id}`, {
         action: "status",
         status: "published",
       });
-      check("可以發布題目", published.payload?.question?.status === "published");
+      check(
+        "未經人工覆核的題目不可發布（409）",
+        blocked.status === 409,
+        `HTTP ${blocked.status}`,
+      );
+
+      const reviewed = await call(
+        "POST",
+        `/api/teacher/questions/${generatedQuestion.id}/review`,
+        { decision: "approved" },
+      );
+      check(
+        "教師可以記錄人工覆核（通過）",
+        reviewed.status === 200 && reviewed.payload?.view?.reviewState === "approved",
+        JSON.stringify(reviewed.payload)?.slice(0, 200),
+      );
+      check(
+        "覆核紀錄包含覆核者及版本",
+        reviewed.payload?.view?.approvedReview?.revision >= 1 &&
+          typeof reviewed.payload?.view?.approvedReview?.reviewerEmail === "string",
+      );
+
+      // 覆核後即可發布（狀態與覆核狀態一致）
+      const republished = await call("PATCH", `/api/teacher/questions/${generatedQuestion.id}`, {
+        action: "status",
+        status: "published",
+      });
+      check(
+        "已覆核的題目可以發布",
+        republished.status === 200 &&
+          republished.payload?.view?.question?.status === "published",
+        JSON.stringify(republished.payload)?.slice(0, 200),
+      );
+
+      // 重複提交相同覆核決定不會產生重複紀錄（冪等）
+      const again = await call(
+        "POST",
+        `/api/teacher/questions/${generatedQuestion.id}/review`,
+        { decision: "approved" },
+      );
+      check("重複覆核不會重複記錄", again.payload?.created === false);
+
       const removed = await call("DELETE", `/api/teacher/questions/${generatedQuestion.id}`);
       check("可以刪除題目", removed.status === 200);
     }
@@ -648,10 +805,25 @@ async function main() {
     check("教師端標示該題不在題庫", instantEntry?.inQuestionBank === false);
     check("回報附有即時生成題目的內容", Boolean(instantEntry?.question));
 
-    console.log("\n[11e] 教師以學生身分測試（學習記錄分開）");
-    const TEACHER_LEARNER = `teacher:e2e-teacher-${Date.now()}@example.com`;
+    console.log("\n[11e] 學習記錄按學習者分開（未登入不可冒用帳戶身分）");
+    // 未登入時不可使用由帳戶推導的學習者 ID（school:／teacher:／admin:）：
+    // 否則只要猜中他人的校內電郵，就可以讀取他人的學習記錄。
+    const forgedIds = [
+      `school:e2e-${Date.now()}@pochiu.edu.hk`,
+      `teacher:e2e-teacher-${Date.now()}@example.com`,
+      `admin:e2e-admin-${Date.now()}@example.com`,
+    ];
+    for (const forged of forgedIds) {
+      const forgedRead = await call("GET", `/api/topics?learnerId=${encodeURIComponent(forged)}`);
+      check(
+        `未登入不可冒用帳戶學習者 ID（${forged.split(":")[0]}:…）`,
+        forgedRead.status === 401,
+        `HTTP ${forgedRead.status}`,
+      );
+    }
+    const secondLearner = `e2e-second-${Date.now()}`;
     const teacherPractice = await call("POST", "/api/practice", {
-      learnerId: TEACHER_LEARNER,
+      learnerId: secondLearner,
       topicId: topic.id,
       sectionIds: [childSection.id],
       questionTypes: ["mc"],
@@ -660,17 +832,17 @@ async function main() {
       mode: "standard",
       sourceSessionId: null,
     });
-    check("教師可以使用學生端建立練習", teacherPractice.status === 201);
+    check("另一位學習者可以建立練習", teacherPractice.status === 201);
     check(
-      "教師的練習記錄屬於教師身分",
-      teacherPractice.payload?.session?.learnerId === TEACHER_LEARNER,
+      "練習記錄屬於建立練習的學習者",
+      teacherPractice.payload?.session?.learnerId === secondLearner,
     );
     const stolenRead = await call(
       "GET",
       `/api/practice/${teacherPractice.payload?.session?.id}?learnerId=${LEARNER_ID}`,
     );
     check(
-      "其他學習者不可讀取教師的練習記錄",
+      "其他學習者不可讀取他人的練習記錄",
       stolenRead.status === 403,
       `HTTP ${stolenRead.status}`,
     );

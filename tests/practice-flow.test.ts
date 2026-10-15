@@ -13,12 +13,14 @@ type QuestionRepository = typeof import("@/server/repositories/questions");
 type Seed = typeof import("@/server/seed");
 type LearnerRepository = typeof import("@/server/repositories/learners");
 type RecordsService = typeof import("@/server/services/practice-records");
+type PracticeRepository = typeof import("@/server/repositories/practice");
 
 let practice: PracticeService;
 let questionsRepo: QuestionRepository;
 let seed: Seed;
 let learners: LearnerRepository;
 let recordsService: RecordsService;
+let practiceRepo: PracticeRepository;
 
 const LEARNER = "test-learner-1";
 const SECTION = "topic-5-renaissance-features";
@@ -29,7 +31,39 @@ beforeAll(async () => {
   seed = await import("@/server/seed");
   learners = await import("@/server/repositories/learners");
   recordsService = await import("@/server/services/practice-records");
+  practiceRepo = await import("@/server/repositories/practice");
   seed.ensureBootstrap();
+});
+
+describe("同時提交（雙擊／重複請求）", () => {
+  it("同一題同時提交兩次只會有一筆作答記錄，分數不會重複計算", async () => {
+    const assembled = await practice.createPractice({
+      learnerId: LEARNER,
+      topicId: "topic-5",
+      sectionIds: [SECTION],
+      questionTypes: ["mc"],
+      difficulty: "basic",
+      questionCount: 1,
+      mode: "standard",
+      sourceSessionId: null,
+    });
+    const question = assembled.questions[0];
+
+    await Promise.all([
+      practice.submitAnswer(assembled.session.id, LEARNER, question.id, "第一個答案"),
+      practice.submitAnswer(assembled.session.id, LEARNER, question.id, "第二個答案"),
+    ]);
+
+    const attempts = practiceRepo
+      .listAttempts(assembled.session.id)
+      .filter((attempt) => attempt.questionId === question.id);
+    expect(attempts).toHaveLength(1);
+
+    // 已作答題數不會超過題目總數（重複計算會令成績失真）
+    const result = practice.getPracticeResult(assembled.session.id, LEARNER);
+    expect(result.answeredCount).toBeLessThanOrEqual(result.totalQuestions);
+    expect(result.gradedCount).toBeLessThanOrEqual(result.totalQuestions);
+  });
 });
 
 describe("學生練習流程（整合測試）", () => {

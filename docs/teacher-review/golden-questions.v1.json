@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "description": "歷史科題目黃金題庫（人工覆核紀錄）。紀錄格式及流程見同目錄 README.md。",
+  "reviewStatus": "pending-review",
+  "reviewerRequired": true,
+  "coverage": {
+    "chronology": 0,
+    "cause-consequence": 0,
+    "significance": 0,
+    "comparison": 0,
+    
+    "people": 0,
+    "treaty": 0,
+    "plausible-distractors": 0
+  },
+  "targetPerCategory": 2,
+  "notes": [
+    "本檔案目前刻意沒有任何已覆核題目：平台現時沒有可用的歷史科教師覆核者。",
+    "系統只會證明 sourceExcerpt 逐字出自所引用的教材段落（sourceVerified），不會、也不可以判斷史實正確。",
+    "reviewStatus = approved 的紀錄必須填寫 reviewer 及 reviewedAt；tests/golden-questions.test.ts 會拒絕任何缺少覆核者資料的 approved 紀錄。",
+    "需要向學生展示史料才能考核的類別（史料解讀、來源可靠性、衝突史料比較）屬 DEFERRED — OUT OF SCOPE FOR THIS PHASE，因此不在 coverage 之內，亦不可聲稱已涵蓋。"
+  ],
+  "questions": []
+}

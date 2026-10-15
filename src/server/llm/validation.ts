@@ -3,27 +3,93 @@
  *
  * 模型輸出永不被直接信任：
  *   1. 逐題通過 zod schema 檢查。
- *   2. 檢查題型是否符合要求、選擇題答案是否在選項內。
- *   3. 檢查教材依據：sourceBlockIds 必須是我們提供的段落，
- *      而且 sourceExcerpt 必須真的出現在該段落文字中。
- *   4. 杜撰檢查：題目、答案、解釋及得分要點出現的年份必須見於教材段落，
+ *   2. 檢查題型是否符合要求、選擇題答案是否在選項內；correctAnswerIndex 與
+ *      correctAnswer 互相矛盾（指向不同選項）時丟棄整條題目，不會靜默改寫答案。
+ *   3. 檢查教材依據：sourceBlockIds 必須是我們提供的段落，而且 sourceExcerpt 必須
+ *      真的出現在「所引用段落」的文字中；在其他段落找到相同文字不算依據。
+ *   4. 題目歸入提供節錄的段落所屬分節，令同時生成多個分節時題目分類正確。
+ *   5. 杜撰檢查：題目、答案、解釋及得分要點出現的年份必須見於教材段落，
  *      否則整條題目被丟棄。
- *   5. 人名及條約／文件名稱杜撰檢查：未見於教材時只記錄品質警告，交由教師核對，
+ *   6. 人名及條約／文件名稱杜撰檢查：未見於教材時只記錄品質警告，交由教師核對，
  *      不會丟棄題目（人名沒有固定寫法，偵測可能出錯，見 findUnverifiedNames）。
- *   6. 移除題目文字中「根據教材」等不應出現的提示語。
- *   7. 檔內重複題目會被丟棄。
- * 通過驗證的題目才會轉成內部 Question 格式。
+ *   7. 移除題目文字中「根據教材」等不應出現的提示語。
+ *   8. 檔內重複題目會被丟棄。
+ *
+ * 通過驗證的題目才會轉成內部 Question 格式，狀態一律為 draft（未經教師核對）。
+ * 「教材依據成立」只代表文字對得上原文，**不代表史實正確**：史實正確性是人工作業，
+ * 系統只會提出 qualityWarnings 提示教師核對，不會代替教師判斷。
  */
 import {
+  HISTORY_SKILLS,
   llmQuestionSchema,
   questionSchema,
   type Difficulty,
+  type HistorySkill,
   type Question,
   type QuestionOrigin,
   type QuestionType,
 } from "../../lib/types";
-import { normalizeForMatch, stripMarkdownArtifacts } from "../materials/text-utils";
+import { normalizeForMatch, stripMarkdownArtifacts, truncate } from "../materials/text-utils";
 import type { MaterialUnit } from "./provider";
+
+/**
+ * 把模型回報的技能名稱對應到固定清單。
+ * 模型可能改寫或自創名稱（例如「時序理解」），這種情況一律視為未標示（null）
+ * 並記錄警告，而不是把自創名稱寫入資料庫令技能統計失真。
+ */
+function resolveSkill(raw: string | null): { skill: HistorySkill | null; warning: string | null } {
+  if (raw === null) return { skill: null, warning: null };
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return { skill: null, warning: null };
+  const matched = HISTORY_SKILLS.find((skill) => skill === trimmed);
+  if (matched) return { skill: matched, warning: null };
+  return {
+    skill: null,
+    warning: `模型的技能標示「${truncate(trimmed, 20)}」不在課程技能清單內，已略過該標示（請教師自行標示）。`,
+  };
+}
+
+/**
+ * 找出會令「只有一個正確答案」不成立的選項組合：
+ *   1. 某個錯誤選項包含標準答案的文字（例如答案「馬丁路德」，選項「馬丁路德和加爾文」）
+ *      —— 該選項在語意上也算正確，學生選它不應被判錯。
+ *   2. 兩個選項互相包含（例如「文藝復興」與「文藝復興時期」），同樣無法分辨。
+ * 這類情況以警告交教師核對，不自動丟棄：判定的寬鬆程度會有誤差，
+ * 而且題目只有經教師發布才會給學生作答。
+ */
+function findAmbiguousOptions(options: string[], correctAnswer: string): string[] {
+  const warnings: string[] = [];
+  const key = (value: string) => normalizeForMatch(value);
+  const answerKey = key(correctAnswer);
+
+  if (answerKey.length >= 2) {
+    for (const option of options) {
+      const optionKey = key(option);
+      if (optionKey === answerKey) continue;
+      if (optionKey.includes(answerKey)) {
+        warnings.push(
+          `選項「${truncate(option, 24)}」包含標準答案的文字，學生選它未必算錯，請確認答案是否唯一。`,
+        );
+      }
+    }
+  }
+
+  const keys = options.map((option) => ({ option, key: key(option) }));
+  for (let i = 0; i < keys.length; i += 1) {
+    for (let j = i + 1; j < keys.length; j += 1) {
+      const a = keys[i];
+      const b = keys[j];
+      if (a.key.length < 2 || b.key.length < 2) continue;
+      if (a.key === b.key) continue;
+      if (a.key.includes(b.key) || b.key.includes(a.key)) {
+        warnings.push(
+          `選項「${truncate(a.option, 16)}」與「${truncate(b.option, 16)}」互相包含，意思可能重疊，請確認只有一個正確答案。`,
+        );
+      }
+    }
+  }
+  return warnings;
+}
 
 export interface ValidationResult {
   accepted: Question[];
@@ -32,13 +98,36 @@ export interface ValidationResult {
 
 export interface ValidationContext {
   topicId: string;
+  /** 題目歸屬的分節；多分節生成時作為無法判定時的後備值（見 resolveQuestionSectionId） */
   sectionId: string;
+  /** 本次要求的所有分節；提供時會用來核對每條題目的歸屬分節 */
+  sectionIds?: string[];
   questionTypes: QuestionType[];
   difficulty: Difficulty;
   origin: QuestionOrigin;
   units: MaterialUnit[];
   now: string;
   idFor: (index: number) => string;
+}
+
+/**
+ * 這條題目應該歸入哪個分節。
+ *
+ * 一次生成可以同時涵蓋多個分節，但每條題目只依據其中一段教材，因此以「提供節錄的
+ * 段落所屬分節」為準（見 MaterialUnit.sectionId）。該分節必須在本次要求的分節之內：
+ * 分節沒有直接對應段落而回退使用整個課題教材時，沿用呼叫端指定的分節，避免題目被歸入
+ * 教師沒有要求的分節。
+ */
+function resolveQuestionSectionId(
+  context: ValidationContext,
+  groundedUnit: MaterialUnit,
+): string {
+  const sectionId = groundedUnit.sectionId ?? null;
+  if (sectionId === null) return context.sectionId;
+  if (context.sectionIds !== undefined && !context.sectionIds.includes(sectionId)) {
+    return context.sectionId;
+  }
+  return sectionId;
 }
 
 /**
@@ -481,14 +570,19 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
       discardedReasons.push(`第 ${index + 1} 題的教材節錄太短，無法確認依據`);
       return;
     }
-    const referenced = candidate.sourceBlockIds.map((blockId) => unitMap.get(blockId) as MaterialUnit);
-    const grounded = referenced.some(
-      (unit) =>
-        normalizeForMatch(unit.text).includes(excerptKey) ||
-        context.units.some((other) => normalizeForMatch(other.text).includes(excerptKey)),
-    );
-    if (!grounded) {
-      discardedReasons.push(`第 ${index + 1} 題的答案沒有教材依據（節錄未能對應教材原文）`);
+    // 同一個教材段落可能拆成多個單位（清單逐項、表格逐列都會共用同一個 blockId），
+    // 因此「引用的段落」是擁有這些 blockId 的所有單位，而不是每個 blockId 只取一個。
+    const referencedBlockIds = new Set(candidate.sourceBlockIds);
+    const referenced = context.units.filter((unit) => referencedBlockIds.has(unit.blockId));
+    // 節錄必須出自這條題目指明的段落。在其他段落找到相同文字不算依據，否則模型只要
+    // 抄錄一段與本題無關的教材，就能通過教材依據檢查（而它引用的段落可能根本沒有這段話）。
+    const groundedUnit = referenced.find((unit) => normalizeForMatch(unit.text).includes(excerptKey));
+    if (!groundedUnit) {
+      discardedReasons.push(
+        `第 ${index + 1} 題的答案沒有教材依據（節錄未能對應指定段落 ${candidate.sourceBlockIds.join(
+          "、",
+        )} 的原文）`,
+      );
       return;
     }
 
@@ -499,26 +593,67 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
     const gradingPoints = candidate.gradingPoints
       .map((point) => stripMarkdownArtifacts(point))
       .filter((point) => point.length > 0);
+    // 只提示教師核對、不會丟棄題目的品質警告
+    const qualityWarnings: string[] = [];
 
     if (candidate.questionType === "mc") {
       if (options.length < 2) {
         discardedReasons.push(`第 ${index + 1} 題是選擇題但選項不足`);
         return;
       }
-      if (
+      const indexedAnswer =
         candidate.correctAnswerIndex !== null &&
         candidate.correctAnswerIndex >= 0 &&
         candidate.correctAnswerIndex < options.length
+          ? options[candidate.correctAnswerIndex]
+          : null;
+
+      if (indexedAnswer === null) {
+        if (!options.includes(correctAnswer)) {
+          discardedReasons.push(`第 ${index + 1} 題的標準答案不在選項之內`);
+          return;
+        }
+      } else if (
+        correctAnswer.length > 0 &&
+        normalizeForMatch(indexedAnswer) !== normalizeForMatch(correctAnswer)
       ) {
-        correctAnswer = options[candidate.correctAnswerIndex];
-      } else if (!options.includes(correctAnswer)) {
-        discardedReasons.push(`第 ${index + 1} 題的標準答案不在選項之內`);
+        // correctAnswerIndex 與 correctAnswer 互相矛盾時，不可逕自採用其中一個：
+        // 兩者都可能才是模型的原意，靜默覆寫等於由系統改寫標準答案。
+        // 這類題目一律丟棄，由教師重新生成或手動建立。
+        discardedReasons.push(
+          `第 ${index + 1} 題的 correctAnswerIndex 與 correctAnswer 不一致（索引 ${
+            candidate.correctAnswerIndex as number
+          } 指向「${indexedAnswer}」，但 correctAnswer 為「${correctAnswer}」）`,
+        );
         return;
+      } else {
+        correctAnswer = indexedAnswer;
       }
-      options = [...new Set(options)];
+
+      // 選項以正規化後的文字去重：除了完全相同的選項，連「1517年」與「1517 年」
+      // 這類只差標點或空白的選項也視為重複，避免同一題出現兩個等同的選項。
+      const uniqueOptions: string[] = [];
+      const seenOptions = new Set<string>();
+      let droppedOptions = 0;
+      for (const option of options) {
+        const key = normalizeForMatch(option);
+        if (seenOptions.has(key)) {
+          droppedOptions += 1;
+          continue;
+        }
+        seenOptions.add(key);
+        uniqueOptions.push(option);
+      }
+      options = uniqueOptions;
       if (options.length < 2) {
         discardedReasons.push(`第 ${index + 1} 題的選項重複，無法作答`);
         return;
+      }
+      if (droppedOptions > 0) {
+        // 選項本身仍然可用（正確答案以文字記載，不受去重影響），只提示教師核對
+        qualityWarnings.push(
+          `選擇題有 ${droppedOptions} 個重複或等同的選項，系統已自動去除；請確認餘下選項仍然合理。`,
+        );
       }
       if (options.some((option) => MATERIAL_REFERENCE.test(option))) {
         discardedReasons.push(
@@ -526,6 +661,8 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
         );
         return;
       }
+      // 只有一個正確答案的檢查（以警告交教師核對，不自動丟棄）
+      qualityWarnings.push(...findAmbiguousOptions(options, correctAnswer));
     } else {
       options = [];
     }
@@ -544,7 +681,11 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
 
     // 人名及條約／文件名稱同樣不可杜撰，但人名沒有固定寫法，偵測可能出錯，
     // 因此只記錄警告交由教師核對，不會丟棄題目（見 findUnverifiedNames）。
-    const qualityWarnings = buildNameWarnings(findUnverifiedNames(answerText, providedText));
+    qualityWarnings.push(...buildNameWarnings(findUnverifiedNames(answerText, providedText)));
+
+    // 技能標示：只接受課程技能清單內的寫法，自創名稱一律略過並記錄警告
+    const resolvedSkill = resolveSkill(candidate.skill);
+    if (resolvedSkill.warning !== null) qualityWarnings.push(resolvedSkill.warning);
 
     if (candidate.questionType === "short") {
       if (gradingPoints.length === 0) {
@@ -568,11 +709,10 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
     }
     seen.add(duplicateKey);
 
-    const sourceUnit = referenced[0];
     const built = questionSchema.safeParse({
       id: context.idFor(accepted.length),
       topicId: context.topicId,
-      sectionId: context.sectionId,
+      sectionId: resolveQuestionSectionId(context, groundedUnit),
       questionType: candidate.questionType,
       difficulty: context.difficulty,
       question,
@@ -582,13 +722,14 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
       explanation: explanationText,
       knowledgePoint: stripMarkdownArtifacts(candidate.knowledgePoint.trim()),
       sourceExcerpt: candidate.sourceExcerpt.trim(),
-      sourceLocation: sourceUnit?.sourceLocation ?? "教材段落",
+      sourceLocation: groundedUnit.sourceLocation,
       sourceBlockIds: candidate.sourceBlockIds,
       gradingPoints,
       origin: context.origin,
       status: "draft",
       sourceVerified: true,
       qualityWarnings,
+      skill: resolvedSkill.skill,
       createdAt: context.now,
     });
 

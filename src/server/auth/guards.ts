@@ -19,18 +19,39 @@
  *      則使用 next/headers 的 cookies()。
  *   4. 錯誤一律使用 ApiRouteError：未登入 → 401、角色不符 → 403、缺少學習者 ID → 400。
  */
+import { createHash, timingSafeEqual } from "node:crypto";
+
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
 import type { SessionUser } from "../../lib/types";
 import { isStaffRole } from "../../lib/types";
 import { getServerConfig } from "../config";
+// ADMIN_TOKEN 可以繞過所有角色檢查（等同管理員），因此不接受過短的值：
+// 已設定但過短的權杖一律視為無效，令設定失誤即時浮現而不是靜靜降低安全性。
+import { MIN_ADMIN_TOKEN_LENGTH } from "../config-diagnostics";
 import { ApiRouteError } from "../http";
 import { ensureLearner } from "../repositories/learners";
 import { SESSION_COOKIE, decodeSession } from "./session";
 
-/** 匿名學習 ID（UUID）的允許格式；教師身分會使用 teacher:<email>、管理員為 admin:<email> */
+/**
+ * 未登入時（匿名示範模式）可接受的學習者 ID 格式。
+ *
+ * 前端只會傳送自己產生的隨機 UUID（見 lib/api-client 的 getLearnerId），因此這裡
+ * 一律拒絕由帳戶推導的 ID（school:／teacher:／admin:，見 auth/role.ts 的 learnerIdForUser）。
+ * 否則任何未登入的人只要猜中某位學生的校內電郵，就可以用 `?learnerId=school:<電郵>`
+ * 讀取該學生的練習記錄、進度及重溫佇列；同理亦可冒用教師或管理員的記錄。
+ * 帳戶的學習記錄只能透過已簽署的工作階段取得。
+ */
 const ANONYMOUS_LEARNER_ID = /^[A-Za-z0-9._:@-]{1,128}$/;
+
+/** 由帳戶推導的學習者 ID 前綴；未登入時不可使用（見 ANONYMOUS_LEARNER_ID 的說明） */
+const ACCOUNT_LEARNER_PREFIXES = ["school:", "teacher:", "admin:"] as const;
+
+/** 這個學習者 ID 是否由帳戶推導（即理論上會由工作階段產生） */
+export function isAccountLearnerId(learnerId: string): boolean {
+  return ACCOUNT_LEARNER_PREFIXES.some((prefix) => learnerId.startsWith(prefix));
+}
 
 /** 這次請求的身分與學習者 ID */
 export interface RequestActor {
@@ -62,15 +83,53 @@ export function isAdminUser(user: SessionUser | null): boolean {
   return user?.role === "admin";
 }
 
-/** 由 Cookie 標頭字串取出指定 cookie 的值 */
+/** 由 Cookie 標頭字串取出指定 cookie 的值（格式錯誤時視為沒有 cookie） */
 function readCookieHeader(header: string, name: string): string | null {
   for (const part of header.split(";")) {
     const separator = part.indexOf("=");
     if (separator <= 0) continue;
     if (part.slice(0, separator).trim() !== name) continue;
-    return decodeURIComponent(part.slice(separator + 1).trim());
+    try {
+      return decodeURIComponent(part.slice(separator + 1).trim());
+    } catch {
+      // 惡意或損毀的百分比編碼（例如 "%"）不應令請求變成 500
+      return null;
+    }
   }
   return null;
+}
+
+interface AdminTokenState {
+  /** 可用的權杖；未設定或過短時為 null */
+  value: string | null;
+  /** 已設定但長度不足（設定錯誤） */
+  weak: boolean;
+}
+
+function readAdminTokenState(): AdminTokenState {
+  const raw = process.env.ADMIN_TOKEN?.trim() ?? "";
+  if (raw.length === 0) return { value: null, weak: false };
+  if (raw.length < MIN_ADMIN_TOKEN_LENGTH) return { value: null, weak: true };
+  return { value: raw, weak: false };
+}
+
+/** 固定時間比較權杖（先雜湊，避免長度不同時提早回傳而洩漏長度資訊） */
+function tokenMatches(provided: string, expected: string): boolean {
+  const left = createHash("sha256").update(provided).digest();
+  const right = createHash("sha256").update(expected).digest();
+  return timingSafeEqual(left, right);
+}
+
+/**
+ * 未啟用學校帳戶登入時，是否允許使用後台功能（本機開發／示範）。
+ * Cloud Run 等公開部署環境預設拒絕，必須明確設定 HISTORY_ALLOW_UNSAFE_DEMO_MODE=true。
+ */
+function isUnsafeDemoModeAllowed(): boolean {
+  const onCloudRun = (process.env.K_SERVICE ?? "").trim().length > 0;
+  if (!onCloudRun) return true;
+  return ["1", "true", "yes", "on"].includes(
+    (process.env.HISTORY_ALLOW_UNSAFE_DEMO_MODE ?? "").trim().toLowerCase(),
+  );
 }
 
 /** 由 Request 標頭解析工作階段（測試及 route handler 皆適用，毋須 Next 請求內容） */
@@ -124,7 +183,8 @@ export async function requireSignedIn(request?: Request): Promise<SessionUser | 
 /**
  * 後台 API 守衛（共用實作）。
  *
- * - 提供正確的 x-admin-token 時放行（供自動化腳本使用）。
+ * - 提供正確的 x-admin-token 時放行（供自動化腳本使用）。這個權杖等同管理員，
+ *   會繞過角色檢查，因此只接受長度足夠的值，並以固定時間比較。
  * - 未啟用登入時：未設定 ADMIN_TOKEN 則維持開放（僅限本機示範），設定了則要求標頭。
  * - 已啟用登入時：需要教師或管理員帳戶（adminOnly = true 時只限管理員）；
  *   學生呼叫會收到 403，未登入會收到 401。
@@ -133,25 +193,27 @@ async function requireStaff(
   request: Request,
   options: { adminOnly: boolean },
 ): Promise<SessionUser | null> {
-  const adminToken = process.env.ADMIN_TOKEN?.trim() ?? "";
+  const admin = readAdminTokenState();
   const provided = request.headers.get("x-admin-token")?.trim() ?? "";
-  if (adminToken.length > 0 && provided.length > 0 && provided === adminToken) {
+  if (admin.value !== null && provided.length > 0 && tokenMatches(provided, admin.value)) {
     return sessionFromRequest(request);
   }
 
   if (!isAuthEnabled()) {
     // Cloud Run 等公開部署環境不允許「未啟用登入」的後台（否則任何人都能改教材及題目）
-    const onCloudRun = (process.env.K_SERVICE ?? "").trim().length > 0;
-    const allowUnsafe = ["1", "true", "yes", "on"].includes(
-      (process.env.HISTORY_ALLOW_UNSAFE_DEMO_MODE ?? "").trim().toLowerCase(),
-    );
-    if (onCloudRun && !allowUnsafe) {
+    if (!isUnsafeDemoModeAllowed()) {
       throw new ApiRouteError(
         "後台 API 在 Cloud Run 上必須先啟用學校帳戶登入（設定 GOOGLE_CLIENT_ID、GOOGLE_CLIENT_SECRET 及 AUTH_SECRET）。如要臨時示範，請設定 HISTORY_ALLOW_UNSAFE_DEMO_MODE=true。",
         403,
       );
     }
-    if (adminToken.length === 0) return null;
+    if (admin.weak) {
+      throw new ApiRouteError(
+        `ADMIN_TOKEN 長度不足（最少 ${MIN_ADMIN_TOKEN_LENGTH} 個字元），後台 API 不會接受這個權杖`,
+        401,
+      );
+    }
+    if (admin.value === null) return null;
     throw new ApiRouteError("後台 API 需要有效的 x-admin-token 標頭", 401);
   }
 
@@ -250,6 +312,10 @@ export async function resolveOptionalLearnerId(
   if (!ANONYMOUS_LEARNER_ID.test(anonymous)) {
     throw new ApiRouteError("學習者 ID 格式不正確", 400);
   }
+  // 未登入時不可冒用帳戶的學習者 ID（即使是同一位使用者，也必須先完成登入）
+  if (isAccountLearnerId(anonymous)) {
+    throw new ApiRouteError("未登入時不可使用學校帳戶的學習記錄，請先登入", 401);
+  }
   return anonymous;
 }
 
@@ -269,7 +335,14 @@ async function guardStaffPage(
   currentPath: string,
   options: { adminOnly: boolean },
 ): Promise<SessionUser | null> {
-  if (!isAuthEnabled()) return getRequestUser();
+  if (!isAuthEnabled()) {
+    // 與 requireStaff 採用同一套判斷：公開部署環境不可渲染未受保護的後台頁面，
+    // 否則任何人只要開啟 /admin 或 /teacher 就會看到後台介面。
+    if (!isUnsafeDemoModeAllowed()) {
+      redirect(`/login?error=not_configured&next=${encodeURIComponent(currentPath)}`);
+    }
+    return getRequestUser();
+  }
 
   const user = await getRequestUser();
   if (!user) redirect(loginPath(currentPath));

@@ -8,6 +8,7 @@ import {
   DIFFICULTY_LABELS,
   QUESTION_ORIGIN_LABELS,
   QUESTION_REPORT_STATUS_LABELS,
+  QUESTION_REVIEW_STATE_LABELS,
   QUESTION_STATUS_LABELS,
   QUESTION_TYPES,
   QUESTION_TYPE_LABELS,
@@ -16,6 +17,9 @@ import {
   type Question,
   type QuestionReportDetail,
   type QuestionReportStatus,
+  type QuestionReviewDecision,
+  type QuestionReviewState,
+  type QuestionReviewStatus,
   type QuestionStatus,
   type QuestionType,
   type TopicOverview,
@@ -40,6 +44,8 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [originFilter, setOriginFilter] = useState<string>("");
   const [questions, setQuestions] = useState<Question[] | null>(null);
+  /** 每題的人工覆核狀態（與題目分開存放，令題目物件的形狀保持不變） */
+  const [reviewStatus, setReviewStatus] = useState<Map<string, QuestionReviewStatus>>(new Map());
   const [error, setError] = useState<unknown>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -148,10 +154,13 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
     if (originFilter) query.set("origin", originFilter);
 
     api
-      .get<{ questions: Question[] }>(`/api/teacher/questions?${query.toString()}`)
+      .get<{ questions: Question[]; reviews: QuestionReviewStatus[] }>(
+        `/api/teacher/questions?${query.toString()}`,
+      )
       .then((data) => {
         if (cancelled) return;
         setQuestions(data.questions);
+        setReviewStatus(new Map(data.reviews.map((entry) => [entry.questionId, entry])));
         setError(null);
       })
       .catch((caught: unknown) => {
@@ -169,10 +178,11 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
     if (sectionId) query.set("sectionId", sectionId);
     if (statusFilter) query.set("status", statusFilter);
     if (originFilter) query.set("origin", originFilter);
-    const data = await api.get<{ questions: Question[] }>(
+    const data = await api.get<{ questions: Question[]; reviews: QuestionReviewStatus[] }>(
       `/api/teacher/questions?${query.toString()}`,
     );
     setQuestions(data.questions);
+    setReviewStatus(new Map(data.reviews.map((entry) => [entry.questionId, entry])));
   }, [topicId, sectionId, statusFilter, originFilter]);
 
   const topic = useMemo(() => topics.find((item) => item.id === topicId) ?? null, [topics, topicId]);
@@ -229,6 +239,48 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
     try {
       await api.patch(`/api/teacher/questions/${questionId}`, { action: "status", status });
       setMessage(`已更新題目狀態為「${QUESTION_STATUS_LABELS[status]}」。`);
+      await refreshQuestions();
+    } catch (caught) {
+      setError(caught);
+    }
+  }
+
+  /**
+   * 記錄人工覆核決定。
+   *
+   * 「覆核通過」即發布（會檢查目前版本是否有覆核紀錄）；「退回修改」及
+   * 「不可用」必須填寫原因，因此會先要求教師輸入。
+   */
+  async function handleReview(questionId: string, decision: QuestionReviewDecision) {
+    setError(null);
+    let reason: string | null = null;
+    if (decision !== "approved") {
+      const input = window.prompt(
+        decision === "returned"
+          ? "退回修改的原因（例如：選項具誤導性、解釋不足）"
+          : "標示不可用的原因（例如：教材未提及此史實）",
+        "",
+      );
+      if (input === null) return;
+      const trimmed = input.trim();
+      if (trimmed.length === 0) {
+        setError(new Error("退回或標示不可用時必須填寫原因。"));
+        return;
+      }
+      reason = trimmed;
+    }
+    try {
+      const result = await api.post<{ created: boolean }>(
+        `/api/teacher/questions/${questionId}/review`,
+        reason === null ? { decision } : { decision, reason },
+      );
+      setMessage(
+        decision === "approved"
+          ? result.created
+            ? "已記錄覆核通過並發布（此版本已由你確認）。"
+            : "此版本先前已記錄相同的覆核決定，沒有重複新增紀錄。"
+          : "已記錄覆核決定，題目不會顯示給學生，必須修改後重新覆核。",
+      );
       await refreshQuestions();
     } catch (caught) {
       setError(caught);
@@ -403,8 +455,10 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
             ) : null}
             <QuestionListCard
               questions={generateResult.questions}
+              reviewStatus={reviewStatus}
               openReportCounts={openReportCounts}
               onStatus={handleStatus}
+              onReview={handleReview}
               onDelete={handleDelete}
               onEdit={(question) => setEditorState({ mode: "edit", question })}
             />
@@ -488,8 +542,10 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
         ) : (
           <QuestionListCard
             questions={questions}
+            reviewStatus={reviewStatus}
             openReportCounts={openReportCounts}
             onStatus={handleStatus}
+            onReview={handleReview}
             onDelete={handleDelete}
             onEdit={(question) => setEditorState({ mode: "edit", question })}
           />
@@ -501,21 +557,29 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
 
 function QuestionListCard({
   questions,
+  reviewStatus,
   openReportCounts,
   onStatus,
+  onReview,
   onDelete,
   onEdit,
 }: {
   questions: Question[];
+  /** 每題的人工覆核狀態（由 /api/teacher/questions 的 reviews 欄位提供） */
+  reviewStatus: Map<string, QuestionReviewStatus>;
   /** 每題的未處理回報數（顯示「待覆核」） */
   openReportCounts?: Map<string, number>;
   onStatus: (questionId: string, status: QuestionStatus) => Promise<void>;
+  onReview: (questionId: string, decision: QuestionReviewDecision) => Promise<void>;
   onDelete: (questionId: string) => Promise<void>;
   onEdit: (question: Question) => void;
 }) {
   return (
     <ul className="flex flex-col gap-3">
-      {questions.map((question) => (
+      {questions.map((question) => {
+        const review = reviewStatus.get(question.id);
+        const reviewState: QuestionReviewState = review?.reviewState ?? "pending-review";
+        return (
         <li
           key={question.id}
           className="rounded-xl border p-3 text-sm flex flex-col gap-2"
@@ -535,6 +599,26 @@ function QuestionListCard({
               }`}
             >
               {QUESTION_STATUS_LABELS[question.status]}
+            </span>
+            {/* 人工覆核狀態：與「教材依據自動核對」分開顯示，不可混為一談 */}
+            <span
+              className={`badge ${
+                reviewState === "approved"
+                  ? "badge-success"
+                  : reviewState === "published-unreviewed" || reviewState === "stale-approval"
+                    ? "badge-danger"
+                    : "badge-warning"
+              }`}
+              title={
+                review?.approvedReview
+                  ? `由 ${review.approvedReview.reviewerEmail} 於 ${review.approvedReview.createdAt.slice(0, 10)} 覆核第 ${review.approvedReview.revision} 版`
+                  : "尚未有教師覆核紀錄"
+              }
+            >
+              {QUESTION_REVIEW_STATE_LABELS[reviewState]}
+            </span>
+            <span className="badge" title="目前題目版本；修改後版本會遞增，舊覆核即失效">
+              第 {question.revision} 版
             </span>
             {question.origin === "school-paper" ? (
               <span className="badge">來源：校內試卷</span>
@@ -621,23 +705,45 @@ function QuestionListCard({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {question.status !== "published" ? (
-              <button
-                type="button"
-                className="btn"
-                onClick={() => void onStatus(question.id, "published")}
-              >
-                發布
-              </button>
-            ) : (
+            {/*
+              發布關卡：未經人工覆核（或覆核後已修改）的題目不可發布，
+              因此這裡提供「覆核通過」而不是單純的「發布」按鈕。
+            */}
+            {reviewState === "approved" ? (
               <button
                 type="button"
                 className="btn"
                 onClick={() => void onStatus(question.id, "draft")}
               >
-                轉為草稿
+                轉為草稿（保留覆核紀錄）
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => void onReview(question.id, "approved")}
+              >
+                覆核通過並發布
               </button>
             )}
+            {reviewState !== "approved" && reviewState !== "approved-unpublished" ? (
+              <>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => void onReview(question.id, "returned")}
+                >
+                  退回修改
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => void onReview(question.id, "rejected")}
+                >
+                  標示不可用
+                </button>
+              </>
+            ) : null}
             {question.status !== "disabled" ? (
               <button
                 type="button"
@@ -659,7 +765,8 @@ function QuestionListCard({
             </button>
           </div>
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 }

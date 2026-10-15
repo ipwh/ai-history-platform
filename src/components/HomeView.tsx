@@ -3,17 +3,32 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import type { AuthStatus, TopicOverview } from "@/lib/types";
-import { CURRICULUM_LEVEL_LABELS, CURRICULUM_THEMES, LEARNER_STORAGE_KEY, countPracticeThemes } from "@/lib/types";
+import type {
+  AuthStatus,
+  LearningProgressPayload,
+  TopicOverview,
+  TopicProgressSummary,
+} from "@/lib/types";
+import {
+  CURRICULUM_LEVEL_LABELS,
+  CURRICULUM_THEMES,
+  LEARNING_STATE_LABELS,
+  LEARNER_STORAGE_KEY,
+  countPracticeThemes,
+} from "@/lib/types";
 import { api, getLearnerId } from "@/lib/api-client";
 import { ErrorNotice, Loading, Notice } from "@/components/ui";
 
 /**
  * 首頁：只顯示三個年級、每個年級四個課題（共 12 個按鈕）。
  * 點選課題後直接進入練習設定頁揀選分節及主題，不再經中間的課題頁。
+ *
+ * 另顯示由 `/api/progress` 計算的「下一步建議」及課題學習狀態：建議一律附上
+ * 可追溯的理由，沒有足夠作答記錄時只會提示先開始練習，不會虛擬弱點。
  */
 export function HomeView() {
   const [topics, setTopics] = useState<TopicOverview[] | null>(null);
+  const [progress, setProgress] = useState<LearningProgressPayload | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [learnerId, setLearnerId] = useState("");
   const [auth, setAuth] = useState<AuthStatus | null>(null);
@@ -32,6 +47,15 @@ export function HomeView() {
       })
       .catch((caught: unknown) => {
         if (!cancelled) setError(caught);
+      });
+    // 學習進度及建議：失敗時不會影響課題列表（首頁仍可正常使用）
+    api
+      .get<LearningProgressPayload>(`/api/progress?learnerId=${id}`)
+      .then((data) => {
+        if (!cancelled) setProgress(data);
+      })
+      .catch(() => {
+        if (!cancelled) setProgress(null);
       });
     api
       .get<AuthStatus>("/api/auth/session")
@@ -52,6 +76,11 @@ export function HomeView() {
   if (error) return <ErrorNotice error={error} onRetry={reload} />;
   if (!topics) return <Loading label="正在載入課題…" />;
 
+  const progressByTopic = new Map<string, TopicProgressSummary>(
+    (progress?.topics ?? []).map((item) => [item.topicId, item]),
+  );
+  const started = (progress?.topics ?? []).filter((item) => item.attemptedQuestions > 0);
+
   const levels = [1, 2, 3] as const;
   const grouped = levels.map((level) => ({
     level,
@@ -64,6 +93,65 @@ export function HomeView() {
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-xl font-bold">選擇課題</h1>
+
+      {progress && progress.review.dueCount > 0 ? (
+        <Notice>
+          你有 <strong>{progress.review.dueCount}</strong> 條題目已到重溫時間。
+          <Link href="/review" className="underline ml-1">
+            前往重溫 ›
+          </Link>
+        </Notice>
+      ) : null}
+
+      {progress && progress.recommendations.length > 0 ? (
+        <section className="card flex flex-col gap-2">
+          <h2 className="font-bold">下一步建議</h2>
+          <p className="text-xs text-gray-500">
+            以下建議依你的作答記錄產生，每項都說明原因；記錄不足時不會推測你的強弱項。
+          </p>
+          <ul className="flex flex-col gap-2">
+            {progress.recommendations.map((item) => (
+              <li key={`${item.kind}-${item.href}`} className="flex flex-col gap-0.5">
+                <Link href={item.href} className="font-medium" style={{ color: "var(--accent)" }}>
+                  {item.title} ›
+                </Link>
+                <span className="text-sm text-gray-700">{item.reason}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {started.length > 0 ? (
+        <section className="card flex flex-col gap-2">
+          <h2 className="font-bold">我的學習進度</h2>
+          <p className="text-xs text-gray-500">
+            只計算題庫內已發布的題目，同一題重複作答不會重複計算；「已多次答對」代表同一課題至少 2
+            條不同題目答對，並非課程意義上的精熟。
+          </p>
+          <ul className="flex flex-col gap-1 text-sm">
+            {started.map((item) => (
+              <li key={item.topicId} className="flex flex-wrap items-center gap-2">
+                <Link href={`/practice/new?topic=${item.topicId}`} className="font-medium">
+                  {item.title}
+                </Link>
+                <span
+                  className={`badge ${
+                    item.state === "needs-review" ? "badge-warning" : "badge-success"
+                  }`}
+                >
+                  {LEARNING_STATE_LABELS[item.state]}
+                </span>
+                <span className="text-gray-600">
+                  已作答 {item.attemptedQuestions}／{item.eligibleQuestions} 條（答對{" "}
+                  {item.correctQuestions} 條
+                  {item.uncertainQuestions > 0 ? `，未能確定 ${item.uncertainQuestions} 條` : ""}）
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {topics.length === 0 ? (
         <Notice tone="warning">
@@ -90,23 +178,42 @@ export function HomeView() {
           ) : null}
 
           <div className="grid gap-3 sm:grid-cols-2">
-            {group.topics.map((topic) => (
-              <Link key={topic.id} href={`/practice/new?topic=${topic.id}`} className="topic-card">
-                <span className="flex-1 min-w-0">
-                  <span className="font-bold block leading-snug">{topic.title}</span>
-                  <span className="text-xs text-gray-600 block mt-0.5">
-                    共 {countPracticeThemes(topic)} 個主題
-                    {topic.progress.completedSessions > 0
-                      ? ` ・ 已完成 ${topic.progress.completedSessions} 次練習`
-                      : ""}
-                    {topic.materialReady ? "" : " ・ 尚未匯入教材"}
-                  </span>
-                </span>
-                <span className="text-gray-400" aria-hidden="true">
-                  ›
-                </span>
-              </Link>
-            ))}
+            {group.topics.map((topic) => {
+              const topicProgress = progressByTopic.get(topic.id);
+              return (
+                <div key={topic.id} className="flex flex-col gap-1">
+                  <Link href={`/practice/new?topic=${topic.id}`} className="topic-card">
+                    <span className="flex-1 min-w-0">
+                      <span className="font-bold block leading-snug">{topic.title}</span>
+                      <span className="text-xs text-gray-600 block mt-0.5">
+                        共 {countPracticeThemes(topic)} 個主題
+                        {topic.progress.completedSessions > 0
+                          ? ` ・ 已完成 ${topic.progress.completedSessions} 次練習`
+                          : ""}
+                        {topic.materialReady ? "" : " ・ 尚未匯入教材"}
+                      </span>
+                      {topicProgress && topicProgress.attemptedQuestions > 0 ? (
+                        <span className="text-xs text-gray-600 block mt-0.5">
+                          已作答 {topicProgress.attemptedQuestions} 條 ・{" "}
+                          {LEARNING_STATE_LABELS[topicProgress.state]}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="text-gray-400" aria-hidden="true">
+                      ›
+                    </span>
+                  </Link>
+                  {/* 先閱讀、後練習：讓學生毋須教師在場亦可先了解內容 */}
+                  <Link
+                    href={`/learn/${topic.id}`}
+                    className="text-xs self-start px-1"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    閱讀這個課題的教材 ›
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         </section>
       ))}

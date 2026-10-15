@@ -17,8 +17,11 @@
 
    後台角色：
      - 管理員（可進入 /admin）必須以 -AdminEmails 指定，否則部署後沒有人能管理教材及系統設定。
-     - 教師（可進入 /teacher）可用 -TeacherEmails 指定非校內網域帳戶；
-       校內網域但非學號形式的帳戶本身已是教師，毋須填寫。
+     - 教師（可進入 /teacher）必須以 -TeacherEmails 指定（含校內網域帳戶）。
+       校內網域但學號形式（s + 7 位數字）不符的帳戶，預設會視為**學生**；
+       如要沿用舊行為（該類帳戶一律是教師），須明確傳 -InDomainRole teacher，
+       但若有任何學生的帳戶是別名，該學生將可讀取全部學生的練習記錄。
+       名冊內的帳戶一律是學生，不受此設定影響。
 
     機密值不會寫入任何檔案或顯示在輸出中：
        - AUTH_SECRET 未提供時即時隨機產生（已有版本時保留，避免登出所有使用者）
@@ -35,7 +38,8 @@
     # 實際部署（機密值會自動取自本機 .env.local）
     ./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply `
         -RosterSheetId 1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM `
-        -AdminEmails ipwh@pochiu.edu.hk
+        -AdminEmails ipwh@pochiu.edu.hk `
+        -TeacherEmails 'teacher1@pochiu.edu.hk;teacher2@pochiu.edu.hk'
 
 .EXAMPLE
     # 或明確由環境變數提供
@@ -63,9 +67,15 @@ param(
     # 管理員電郵（可進入管理員端 /admin；多個以分號分隔；留空 = 沒有人是管理員）
     # 注意：管理員必須在此指定，否則部署後無法進入 /admin 管理教材及系統設定。
     [string]$AdminEmails = "",
-    # 教師電郵（供非校內網域帳戶使用，可進入教師端 /teacher；多個以分號分隔）
-    # 校內網域但非學號形式的帳戶本身已是教師，毋須填寫。
+    # 教師電郵（可進入教師端 /teacher；多個以分號分隔）
+    # 預設（-InDomainRole student）下，所有教師都必須在此列出（含校內網域帳戶）。
     [string]$TeacherEmails = "",
+    # 校內網域但學號形式（s + 7 位數字）不符、且不在名單或名冊內的帳戶要視為：
+    #   student（預設，安全）：該帳戶不會取得教師權限；教師必須在 -TeacherEmails 內
+    #   teacher：沿用舊行為（校內非學號形式一律是教師）。若任何學生的帳戶是別名，
+    #            該學生即可讀取全部學生的練習記錄。
+    [ValidateSet("student", "teacher")]
+    [string]$InDomainRole = "student",
     # 名冊讀取用的服務帳戶名稱（會被建立；學校需把 Sheet 分享給它的電郵）
     [string]$RosterServiceAccount = "history-roster-reader",
     # Cloud Run 執行身分服務帳戶名稱（會被建立，只獲授讀取所需 Secret 的權限）
@@ -97,6 +107,19 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# 角色預設值為 student（fail-closed）：校內網域但學號形式不符的帳戶不再自動成為教師。
+# 若沒有同時列出教師，部署後所有教師都會失去教師端權限（而且不會有任何錯誤訊息），
+# 因此這裡在部署前先擋下來，要求明確決定，而不是默默把教師鎖在門外。
+if ($InDomainRole -ne "teacher" -and $TeacherEmails.Trim().Length -eq 0) {
+    throw @"
+尚未指定教師，而校內網域的非學號形式帳戶已改為視為學生（AUTH_IN_DOMAIN_ROLE=student）。
+請二選一：
+  1. 列出教師電郵（建議）：-TeacherEmails 'teacher1@pochiu.edu.hk;teacher2@pochiu.edu.hk'
+  2. 沿用舊行為：-InDomainRole teacher（校內非學號形式一律是教師；
+     若任何學生的帳戶是別名，該學生將可讀取全部學生的練習記錄）
+"@
+}
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $authSecretName = "history-auth-secret"
@@ -253,8 +276,13 @@ $googleSecret = if ($GoogleClientSecret) { $GoogleClientSecret } elseif ($env:GO
 Ensure-Secret -Name $authSecretName -Existing $existingSecrets
 # 只在尚未有版本時產生新的工作階段密鑰；否則每次部署都會令所有已登入使用者被登出。
 if ($Apply -and (Get-SecretVersions -Name $authSecretName).Count -eq 0) {
-    $authSecret = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 48 | ForEach-Object { [char]$_ })
-    Add-SecretVersion -Name $authSecretName -Value $authSecret -Label "工作階段簽署密鑰，隨機產生"
+    # 必須使用密碼學安全的隨機來源：Get-Random 以小型種子產生偽隨機序列，
+    # 用它產生的密鑰等同可被推導，任何人拿到自己的一個 cookie 就能偽造管理員工作階段。
+    $authSecretBytes = New-Object byte[] 48
+    $authSecretRng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $authSecretRng.GetBytes($authSecretBytes) } finally { $authSecretRng.Dispose() }
+    $authSecret = ($authSecretBytes | ForEach-Object { $_.ToString("x2") }) -join ""
+    Add-SecretVersion -Name $authSecretName -Value $authSecret -Label "工作階段簽署密鑰，以密碼學安全隨機來源產生"
 } else {
     Write-Host "  保留現有 $authSecretName（避免現有登入狀態失效）" -ForegroundColor DarkGray
 }
@@ -360,7 +388,7 @@ if (-not $RosterSheetId -and $Apply) {
 }
 # --allow-unauthenticated 是切換式旗標（不能寫 =true）；不允許公開存取時留空，改由 IAP／身分權杖保護
 $authFlag = if ($AllowUnauthenticated) { "--allow-unauthenticated" } else { "" }
-$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $AdminEmails, $TeacherEmails)
+$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13},_IN_DOMAIN_ROLE={14}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $AdminEmails, $TeacherEmails, $InDomainRole)
 Invoke-Gcloud builds submit --project $Project --config cloudbuild.yaml --substitutions $substitutions --timeout=1800s . | Out-Null
 
 # Cloud Build 執行身分未必有 run.services.setIamPolicy，令 --allow-unauthenticated 靜靜失效（服務會回 403）

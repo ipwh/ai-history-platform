@@ -17,6 +17,9 @@ process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-reports-${proc
 process.env.LLM_PROVIDER = "mock";
 process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";
+// 教師身分一律由設定推導（非校內網域的教師帳戶必須列在 AUTH_TEACHER_EMAILS）；
+// 工作階段 cookie 只證明「已登入」，不再自行決定角色。
+process.env.AUTH_TEACHER_EMAILS = "teacher@example.com";
 process.env.GOOGLE_CLIENT_ID = "test-client-id.apps.googleusercontent.com";
 process.env.GOOGLE_CLIENT_SECRET = "test-client-secret";
 delete process.env.ADMIN_TOKEN;

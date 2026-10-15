@@ -119,10 +119,19 @@ export function recordFilterFromParams(
   };
 }
 
-/** CSV 欄位轉義：含逗號、引號或換行時以雙引號包住 */
+/**
+ * 會被試算表當成公式起首的字元。
+ * Excel／Google Sheets 會把 =、+、-、@ 以及前置的 TAB／CR 視為公式或特殊輸入，
+ * 學生只要把這類文字填在答案欄，教師開啟匯出檔時就會執行該公式
+ * （CSV 公式注入，可用來外洩同檔案其他列的資料或觸發外部連線）。
+ */
+const FORMULA_LEADING = /^[=+\-@\t\r]/;
+
+/** CSV 欄位轉義：公式起首的字元加前置單引號，含逗號、引號或換行時以雙引號包住 */
 function csvCell(value: string | number | null): string {
   if (value === null) return "";
-  const text = String(value);
+  let text = String(value);
+  if (FORMULA_LEADING.test(text)) text = `'${text}`;
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 

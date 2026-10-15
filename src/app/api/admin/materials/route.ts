@@ -31,6 +31,17 @@ export async function POST(request: Request) {
       throw new ApiRouteError("請以 multipart/form-data 上載檔案", 415);
     }
 
+    // 先看 Content-Length 才讀取內容：request.formData() 會把整個請求載入記憶體，
+    // 若等到讀完才檢查大小，超大上載已經佔用記憶體（可能令容器被中止）。
+    // multipart 另有欄位標頭開銷（通常不足 1 KB），因此容許 64 KB 的額外空間。
+    const declaredLength = Number.parseInt(request.headers.get("content-length") ?? "", 10);
+    if (Number.isFinite(declaredLength) && declaredLength > config.maxUploadBytes + 64 * 1024) {
+      throw new ApiRouteError(
+        `檔案過大（上限 ${Math.floor(config.maxUploadBytes / (1024 * 1024))} MB），請改用較小的檔案。`,
+        413,
+      );
+    }
+
     const formData = await request.formData();
     const source = String(formData.get("source") ?? "upload");
 

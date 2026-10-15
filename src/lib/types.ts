@@ -158,6 +158,117 @@ export const HISTORY_SKILLS = [
 ] as const;
 export type HistorySkill = (typeof HISTORY_SKILLS)[number];
 
+/** 歷史技能的 zod schema（題目標籤及進度統計使用；未標示時為 null） */
+export const historySkillSchema = z.enum(HISTORY_SKILLS);
+
+/**
+ * 課題及技能層面的學習狀態。
+ *
+ * 定義於共用型別（而非伺服器服務），令前端與伺服器使用同一套標示，
+ * 不會出現兩邊文字不一致的情況。判定這些狀態的**計數規則**見
+ * src/server/services/learning-loop.ts 的檔案說明。
+ */
+export const learningStateSchema = z.enum([
+  "not-started",
+  "in-progress",
+  "needs-review",
+  "repeatedly-demonstrated",
+]);
+export type LearningState = z.infer<typeof learningStateSchema>;
+
+export const LEARNING_STATE_LABELS: Record<LearningState, string> = {
+  "not-started": "尚未開始",
+  "in-progress": "進行中",
+  "needs-review": "需要重溫",
+  "repeatedly-demonstrated": "已多次答對",
+};
+
+/** 重溫佇列中每一題的到期原因（供學生理解為何現在要重溫） */
+export const reviewReasonSchema = z.enum(["incorrect", "uncertain", "due-after-mistake", "due"]);
+export type ReviewReason = z.infer<typeof reviewReasonSchema>;
+
+export const REVIEW_REASON_LABELS: Record<ReviewReason, string> = {
+  incorrect: "之前答錯",
+  uncertain: "之前答案未能確定",
+  "due-after-mistake": "曾答錯，現已到鞏固時間",
+  due: "已到鞏固時間",
+};
+
+/** 下一步建議的類別（每一項都必須能追溯至真實的作答記錄） */
+export const recommendationKindSchema = z.enum([
+  "review-due",
+  "redo-wrong",
+  "practise-skill",
+  "read-lesson",
+  "try-topic",
+  "neutral",
+]);
+export type RecommendationKind = z.infer<typeof recommendationKindSchema>;
+
+/** 課題層面的學習進度（學生自己的記錄） */
+export interface TopicProgressSummary {
+  topicId: string;
+  title: string;
+  /** 課題內已發布、可作答的題目數 */
+  eligibleQuestions: number;
+  /** 學生已作答的**不同**題目數 */
+  attemptedQuestions: number;
+  correctQuestions: number;
+  incorrectQuestions: number;
+  /** 最新作答為「不確定」（近似答案）的不同題目數 */
+  uncertainQuestions: number;
+  state: LearningState;
+}
+
+/** 技能層面的學習進度（只計算 HISTORY_SKILLS 內的有效標示） */
+export interface SkillProgressSummary {
+  skill: HistorySkill;
+  topicTitle: string;
+  eligibleQuestions: number;
+  attemptedQuestions: number;
+  correctQuestions: number;
+  incorrectQuestions: number;
+  state: LearningState;
+  /** 證據是否足夠；不足時不可顯示為弱項 */
+  sufficientEvidence: boolean;
+}
+
+/** 重溫佇列中的一題（只顯示課題、分節及原因，不含題目內容或答案） */
+export interface ReviewQueueItemSummary {
+  questionId: string;
+  topicId: string;
+  topicTitle: string;
+  sectionId: string;
+  sectionTitle: string;
+  reason: ReviewReason;
+  daysSince: number;
+  daysOverdue: number;
+  lastAnsweredAt: string;
+}
+
+export interface LearningRecommendation {
+  kind: RecommendationKind;
+  title: string;
+  /** 依據：必須來自真實的作答記錄 */
+  reason: string;
+  href: string;
+}
+
+/** GET /api/progress 的回傳內容 */
+export interface LearningProgressPayload {
+  topics: TopicProgressSummary[];
+  /** 只在指定 `topicId` 時提供（技能進度屬單一課題的統計） */
+  skills: SkillProgressSummary[];
+  review: {
+    dueItems: ReviewQueueItemSummary[];
+    /** 到期題目總數（`dueItems` 可能已被截短） */
+    dueCount: number;
+    /** 因時間戳缺失或格式錯誤而無法排程的作答數 */
+    dataIssues: number;
+  };
+  recommendations: LearningRecommendation[];
+}
+
 /**
  * 歷史科課程重視的歷史概念。
  * 課程以「時序為軸」，並要求學生掌握因果關係、比較異同、轉變與延續，
@@ -346,6 +457,14 @@ export const materialDocumentSchema = z.object({
   ocrUpdatedAt: z.string().nullable().default(null),
   /** 原始檔案在本機的存放位置（供 OCR 重新讀取內嵌圖片；API 不會回傳給前端） */
   storedPath: z.string().nullable().default(null),
+  /**
+   * 學生可否在平台內閱讀這份教材的內容（預設 false = 不可）。
+   *
+   * `/learn/[topicId]` 會原文顯示教材，等同在平台內發布該內容；教材可能受版權限制，
+   * 而本專案沒有任何授權紀錄，因此必須由管理員逐份文件明確確認後才會顯示。
+   * 未確認的文件對學生完全不顯示（fail-closed）。
+   */
+  studentDistribution: z.boolean().default(false),
   createdAt: z.string(),
 });
 export type MaterialDocument = z.infer<typeof materialDocumentSchema>;
@@ -386,6 +505,21 @@ export const questionBaseSchema = z.object({
    * 這類項目只提示教師核對，題目**不會**被丟棄；空陣列代表沒有警告。
    */
   qualityWarnings: z.array(z.string()).default([]),
+  /**
+   * 這條題目主要考核的歷史技能（取自教育局《歷史科課程指引》的 HISTORY_SKILLS）。
+   * 用於技能層面的進度統計；教師手動建立或未標示時為 null。
+   *
+   * 注意：現有題型（選擇題、填充題、短答題）只能考核部分技能；
+   * 需要展示史料並要求學生推論的技能**不在此平台範圍**，因此未標示為已涵蓋。
+   */
+  skill: historySkillSchema.nullable().default(null),
+  /**
+   * 題目內容的版本編號。每當題目內容被修改就會 +1（由伺服器管理，不由前端提供）。
+   *
+   * 用途：人工覆核必須對應**實際被覆核的那一版**。覆核紀錄記下當時的版本，
+   * 題目之後被修改時版本會遞增，舊的覆核就不再適用（見 questionReviewSchema）。
+   */
+  revision: z.number().int().positive().default(1),
   createdAt: z.string(),
 });
 
@@ -427,9 +561,110 @@ export type StudentQuestion = z.infer<typeof studentQuestionSchema>;
 
 /** 教師建立／修改題目時提交的內容 */
 export const questionInputSchema = questionBaseSchema
-  .omit({ id: true, createdAt: true, sourceVerified: true })
+  .omit({ id: true, createdAt: true, sourceVerified: true, revision: true })
   .extend({ status: questionStatusSchema.default("draft") });
 export type QuestionInput = z.infer<typeof questionInputSchema>;
+
+/* ------------------------------------------------------------------ */
+/* 教師人工覆核（題目發布關卡）                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 人工覆核的決定。
+ *
+ *   - `approved`：教師確認這一版題目的史實、用語、選項、答案及解釋均無問題。
+ *   - `rejected`：這一題不可用（例如史實有誤、答案不成立）。
+ *   - `returned`：退回修改（例如選項具誤導性、解釋不足）。
+ *
+ * `rejected` 及 `returned` 都必須填寫原因，讓其他人知道要處理甚麼。
+ */
+export const questionReviewDecisionSchema = z.enum(["approved", "rejected", "returned"]);
+export type QuestionReviewDecision = z.infer<typeof questionReviewDecisionSchema>;
+
+export const QUESTION_REVIEW_DECISION_LABELS: Record<QuestionReviewDecision, string> = {
+  approved: "已覆核通過",
+  rejected: "不可用（退回）",
+  returned: "退回修改",
+};
+
+/**
+ * 一筆人工覆核紀錄（只可新增，不可修改或刪除）。
+ *
+ * 紀錄綁定「題目 + 版本 + 被覆核內容的指紋」：
+ *   - `revision` 令覆核可追溯到實際被覆核的那一版；
+ *   - `questionFingerprint` 是題目內容的雜湊，即使版本編號因任何原因沒有遞增，
+ *     內容改變亦不會被當成同一版；
+ *   - 資料庫對 (question_id, revision, decision, fingerprint) 設有唯一索引，
+ *     因此重試或重複提交**不會**產生重複的覆核事件。
+ */
+export const questionReviewSchema = z.object({
+  id: z.string().min(1),
+  questionId: z.string().min(1),
+  revision: z.number().int().positive(),
+  decision: questionReviewDecisionSchema,
+  /** 退回或不可用的原因；`approved` 時可為 null */
+  reason: z.string().nullable(),
+  /** 覆核者身分（來自伺服器端的工作階段，不接受前端提供的值） */
+  reviewerEmail: z.string().min(1),
+  reviewerRole: z.string().min(1),
+  questionFingerprint: z.string().min(1),
+  createdAt: z.string(),
+});
+export type QuestionReview = z.infer<typeof questionReviewSchema>;
+
+/**
+ * 題目的覆核狀態（由 `status`、`revision` 及覆核紀錄**推導**，不是新的狀態欄位）。
+ *
+ * 刻意不新增「已覆核」欄位：學生可見性仍然只由 `questions.status` 決定，
+ * 覆核紀錄只回答「這一版由誰在何時確認過」。
+ */
+export const questionReviewStateSchema = z.enum([
+  "pending-review",
+  "approved",
+  "approved-unpublished",
+  "rejected",
+  "returned",
+  "stale-approval",
+  "published-unreviewed",
+  "retired",
+]);
+export type QuestionReviewState = z.infer<typeof questionReviewStateSchema>;
+
+export const QUESTION_REVIEW_STATE_LABELS: Record<QuestionReviewState, string> = {
+  "pending-review": "待教師覆核",
+  approved: "已覆核通過（已發布）",
+  "approved-unpublished": "已覆核通過（未發布）",
+  rejected: "不可用（未發布）",
+  returned: "退回修改（未發布）",
+  "stale-approval": "覆核後已修改，需重新覆核",
+  "published-unreviewed": "已發布（未經人工覆核）",
+  retired: "已停用",
+};
+
+/** 教師端看到的題目：題目內容 + 覆核狀態及最新紀錄 */
+export const teacherQuestionViewSchema = z.object({
+  question: questionSchema,
+  reviewState: questionReviewStateSchema,
+  /** 最新一筆覆核紀錄（沒有任何紀錄時為 null） */
+  latestReview: questionReviewSchema.nullable(),
+  /** 對應目前版本、且決定為 approved 的覆核紀錄（沒有則為 null） */
+  approvedReview: questionReviewSchema.nullable(),
+});
+export type TeacherQuestionView = z.infer<typeof teacherQuestionViewSchema>;
+
+/**
+ * 題目清單用的覆核狀態（不重複題目內容，避免清單回應體積倍增）。
+ *
+ * 學生端的題目可見性仍然只由 `questions.status` 決定；這裡只讓教師知道
+ * 每一題的覆核狀態，以及是誰在何時決定的。
+ */
+export const questionReviewStatusSchema = z.object({
+  questionId: z.string().min(1),
+  reviewState: questionReviewStateSchema,
+  latestReview: questionReviewSchema.nullable(),
+  approvedReview: questionReviewSchema.nullable(),
+});
+export type QuestionReviewStatus = z.infer<typeof questionReviewStatusSchema>;
 
 /* ------------------------------------------------------------------ */
 /* AI 語意批改                                                         */
@@ -521,6 +756,18 @@ export const questionFeedbackSchema = z.object({
   aiGrading: aiGradingSchema.nullable().default(null),
   /** 學生自我檢查結果（短答題） */
   selfAssessment: z.enum(["understood", "needs-review"]).nullable().default(null),
+  /**
+   * 需要教師覆核的評分情況（評分本身仍然照常記錄，不會因此改變分數）：
+   *   uncertain-answer = 學生的答案與標準答案極為接近但並非逐字相同（可能是錯別字或
+   *                      未列出的可接受寫法），系統無法確定應否視為正確。
+   * 讓學生知道「這個判斷未必準確」，亦讓教師在記錄中看到需要覆核的個案。
+   */
+  reviewFlag: z.enum(["uncertain-answer"]).nullable().default(null),
+  /**
+   * AI 批改因用量上限而未能執行（題目仍然照常作答及記錄，只是在這次沒有 AI 語意判斷）。
+   * 與「AI 暫時無法使用」分開顯示，讓學生知道原因是可以再試的用量限制。
+   */
+  aiLimitReached: z.boolean().default(false),
 });
 export type QuestionFeedback = z.infer<typeof questionFeedbackSchema>;
 
@@ -618,6 +865,63 @@ export interface PracticeRecordTopicOption {
   topicNumber: number | null;
 }
 
+/* ------------------------------------------------------------------ */
+/* 學生閱讀教材（學習模式）                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 學生閱讀用的教材段落。
+ * 只包含已發布課題的教材內容（不含校內試題及答案），純粹供閱讀；
+ * 學生在練習題中仍然看不到教材（題目不可要求參考教材）。
+ */
+export const lessonBlockSchema = z.object({
+  id: z.string().min(1),
+  type: materialBlockTypeSchema,
+  /** 標題層級（1-6）；非標題為 null */
+  level: z.number().int().nullable(),
+  text: z.string(),
+  /** 表格資料（列為單位），非表格為空陣列 */
+  rows: z.array(z.array(z.string())).default([]),
+  sourceLocation: z.string(),
+  /** 文字來自 OCR 辨識（可能與原書有出入，介面必須提示學生對照課本） */
+  fromOcr: z.boolean().default(false),
+});
+export type LessonBlock = z.infer<typeof lessonBlockSchema>;
+
+export const lessonSectionSchema = z.object({
+  id: z.string().min(1),
+  title: z.string(),
+  /** 上層分節 ID（頂層為 null） */
+  parentId: z.string().nullable().default(null),
+  /** 縮排層級（0 = 頂層） */
+  depth: z.number().int().min(0).default(0),
+  blocks: z.array(lessonBlockSchema),
+});
+export type LessonSection = z.infer<typeof lessonSectionSchema>;
+
+export const lessonViewSchema = z.object({
+  topic: z.object({
+    id: z.string().min(1),
+    title: z.string(),
+    level: z.number().int(),
+    levelLabel: z.string(),
+    themeTitle: z.string(),
+  }),
+  sections: z.array(lessonSectionSchema),
+  /** 教材是否包含 OCR 辨識文字（介面顯示提示） */
+  hasOcrText: z.boolean().default(false),
+  /** 需要告知學生的訊息（例如教材尚未匯入） */
+  notice: z.string().nullable().default(null),
+  /**
+   * 因屬教師專用內容（答案、評分參考）而未顯示的段落數。
+   *
+   * 讓管理員核對「這份教師版教材是否有內容被略過」；學生介面只會說有部分內容未開放，
+   * 不會看到這些段落本身。這是啟發式過濾，不是內容審查證明。
+   */
+  withheldTeacherBlocks: z.number().int().min(0).default(0),
+});
+export type LessonView = z.infer<typeof lessonViewSchema>;
+
 /** 曾作答的學習者摘要（不含姓名等個人資料） */
 export interface PracticeRecordLearner {
   learnerId: string;
@@ -677,6 +981,11 @@ export const llmQuestionSchema = z.object({
   sourceExcerpt: z.string().min(2),
   sourceBlockIds: z.array(z.string().min(1)).min(1),
   gradingPoints: z.array(z.string()).default([]),
+  /**
+   * 主要考核的歷史技能（必須取自固定的 HISTORY_SKILLS 清單）。
+   * 數值不在清單內時為 null，避免模型自創技能名稱而令統計失真。
+   */
+  skill: z.string().nullable().default(null),
 });
 export type LlmQuestion = z.infer<typeof llmQuestionSchema>;
 
@@ -831,6 +1140,25 @@ export const healthSchema = z.object({
   staffApiOpen: z.boolean().default(false),
   /** 學生名冊狀態（不含任何學生個人資料） */
   roster: rosterStatusSchema,
+  /**
+   * 定期維護（資料保留期清理）的執行狀態。
+   *
+   * 只有類別、時間及次數，不含任何學習者資料；用途是證明保留期真的有在執行，
+   * 而不只是「程式碼寫過清理」。
+   */
+  maintenance: z
+    .array(
+      z.object({
+        kind: z.string(),
+        lastStartedAt: z.string(),
+        lastFinishedAt: z.string().nullable(),
+        lastStatus: z.enum(["running", "ok", "failed"]),
+        lastDetail: z.string().nullable(),
+        runs: z.number().int(),
+        failures: z.number().int(),
+      }),
+    )
+    .default([]),
   /** 資料持久化：Cloud Storage 備份狀態（不含 bucket 憑證） */
   persistence: z
     .object({
@@ -1080,3 +1408,32 @@ export const observabilitySummarySchema = z.object({
   errorTypes: z.array(z.object({ errorType: z.string(), count: z.number().int() })),
 });
 export type ObservabilitySummary = z.infer<typeof observabilitySummarySchema>;
+
+/**
+ * AI 用量摘要（管理員端）。
+ *
+ * 只有總數：不提供個別學習者的用量，令成本監控不會變成監視學生的工具。
+ */
+export const aiUsageSummarySchema = z.object({
+  enabled: z.boolean(),
+  windowMinutes: z.number().int(),
+  /** 用量記錄保留期（天），超過的記錄會自動刪除 */
+  retentionDays: z.number().int(),
+  generations: z.object({ globalUsed: z.number().int(), globalLimit: z.number().int() }),
+  gradings: z.object({ globalUsed: z.number().int(), globalLimit: z.number().int() }),
+  totals: z.object({
+    last24Hours: z.object({ generations: z.number().int(), gradings: z.number().int() }),
+    last7Days: z.object({ generations: z.number().int(), gradings: z.number().int() }),
+  }),
+  storedRecords: z.number().int(),
+  /** 保留期清理的實際執行情況（供管理員核對保留期是否真的在運作） */
+  retention: z.object({
+    days: z.number().int(),
+    lastRunAt: z.string().nullable(),
+    lastStatus: z.enum(["running", "ok", "failed"]).nullable(),
+    lastDetail: z.string().nullable(),
+    runs: z.number().int(),
+    failures: z.number().int(),
+  }),
+});
+export type AiUsageSummary = z.infer<typeof aiUsageSummarySchema>;

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { normalizeForMatch } from "@/server/materials/text-utils";
 import { findUnverifiedNames, validateLlmQuestions } from "@/server/llm/validation";
+import type { ValidationContext } from "@/server/llm/validation";
 import type { MaterialUnit } from "@/server/llm/provider";
 
 const UNITS: MaterialUnit[] = [
@@ -574,5 +575,348 @@ describe("LLM 輸出驗證", () => {
 
     expect(names.documents).toEqual(["凡爾賽條約"]);
     expect(names.persons).toEqual([]);
+  });
+});
+
+/**
+ * 技能標示：只接受教育局《歷史科課程指引》的固定技能清單。
+ * 模型自創名稱會令技能統計失真，因此一律略過並記錄警告，而不是照抄寫入資料庫。
+ */
+describe("歷史技能標示", () => {
+  function questionWith(skill: string | null) {
+    return {
+      questions: [
+        {
+          questionType: "fill",
+          difficulty: "basic",
+          question: "＿＿＿發表《九十五條論證》。",
+          options: [],
+          correctAnswer: "馬丁路德",
+          explanation: "馬丁路德在1517年發表《九十五條論證》。",
+          knowledgePoint: "宗教改革",
+          sourceExcerpt: "德意志神學家馬丁路德發表《九十五條論證》",
+          sourceBlockIds: ["blk_1"],
+          gradingPoints: [],
+          skill,
+        },
+      ],
+    };
+  }
+
+  it("清單內的技能會寫入題目", () => {
+    const result = validateLlmQuestions(
+      questionWith("準確排列歷史事件的次序"),
+      { ...context(), questionTypes: ["fill"] },
+    );
+
+    expect(result.accepted).toHaveLength(1);
+    expect(result.accepted[0].skill).toBe("準確排列歷史事件的次序");
+  });
+
+  it("自創的技能名稱會被略過並記錄警告（不會寫入資料庫）", () => {
+    const result = validateLlmQuestions(
+      questionWith("時序理解與分析"),
+      { ...context(), questionTypes: ["fill"] },
+    );
+
+    expect(result.accepted).toHaveLength(1);
+    expect(result.accepted[0].skill).toBeNull();
+    expect(result.accepted[0].qualityWarnings.join()).toContain("不在課程技能清單內");
+  });
+
+  it("未提供技能時為 null，不會被當成已標示", () => {
+    const result = validateLlmQuestions(questionWith(null), {
+      ...context(),
+      questionTypes: ["fill"],
+    });
+
+    expect(result.accepted[0].skill).toBeNull();
+  });
+});
+
+/**
+ * 「只有一個正確答案」的檢查：選項互相包含或包含標準答案時，
+ * 學生選該選項未必算錯。這類題目以品質警告交教師核對（不自動丟棄）。
+ */
+describe("選擇題的答案唯一性警告", () => {
+  function mc(options: string[], correctAnswer: string) {
+    return {
+      questions: [
+        {
+          questionType: "mc",
+          difficulty: "basic",
+          question: "誰在1517年發表《九十五條論證》？",
+          options,
+          correctAnswerIndex: 0,
+          correctAnswer,
+          explanation: "馬丁路德在1517年發表《九十五條論證》。",
+          knowledgePoint: "宗教改革",
+          sourceExcerpt: "德意志神學家馬丁路德發表《九十五條論證》",
+          sourceBlockIds: ["blk_1"],
+          gradingPoints: [],
+        },
+      ],
+    };
+  }
+
+  it("錯誤選項包含標準答案時提出警告，但保留題目供教師核對", () => {
+    const result = validateLlmQuestions(mc(["馬丁路德", "馬丁路德與加爾文", "亨利八世"], "馬丁路德"), {
+      ...context(),
+      questionTypes: ["mc"],
+    });
+
+    expect(result.accepted).toHaveLength(1);
+    expect(result.accepted[0].qualityWarnings.join()).toContain("包含標準答案");
+  });
+
+  it("兩個選項互相包含時提出警告", () => {
+    const result = validateLlmQuestions(
+      mc(["文藝復興", "文藝復興時期", "宗教改革"], "文藝復興"),
+      { ...context(), questionTypes: ["mc"] },
+    );
+
+    expect(result.accepted).toHaveLength(1);
+    expect(result.accepted[0].qualityWarnings.join()).toContain("互相包含");
+  });
+
+  it("選項互不相關時沒有警告（正常題目不受影響）", () => {
+    const result = validateLlmQuestions(
+      mc(["馬丁路德", "加爾文", "亨利八世", "但丁"], "馬丁路德"),
+      { ...context(), questionTypes: ["mc"] },
+    );
+
+    expect(result.accepted).toHaveLength(1);
+    expect(result.accepted[0].qualityWarnings).toEqual([]);
+  });
+});
+
+/**
+ * 教材依據必須成立於「這條題目引用的段落」。
+ *
+ * 背景：同一個教材段落（清單、表格）會拆成多個單位並共用同一個 blockId，
+ * 因此引用的段落是「擁有該 blockId 的所有單位」；但節錄出現在其他段落不能算數。
+ */
+describe("教材依據的範圍", () => {
+  const MULTI_UNIT: MaterialUnit[] = [
+    // 同一段落拆成兩項（共用 blockId，模擬清單）
+    {
+      blockId: "blk_list",
+      sectionId: "topic-5-industrial",
+      sourceLocation: "教材 DOCX · 第 3 段（清單）第 1 項",
+      text: "十八世紀中葉：工業革命率先在英國的紡織業展開。",
+    },
+    {
+      blockId: "blk_list",
+      sectionId: "topic-5-industrial",
+      sourceLocation: "教材 DOCX · 第 3 段（清單）第 2 項",
+      text: "十九世紀中葉：英國已成為全球領先的工業與經濟強國。",
+    },
+    // 另一個段落，用於測試「節錄出自其他段落」
+    {
+      blockId: "blk_other",
+      sectionId: "topic-5-renaissance",
+      sourceLocation: "教材 DOCX · 第 7 段",
+      text: "文藝復興重視人文主義，強調人的價值與尊嚴。",
+    },
+  ];
+
+  function groundContext(): ValidationContext {
+    return {
+      topicId: "topic-5",
+      sectionId: "topic-5-industrial",
+      sectionIds: ["topic-5-industrial", "topic-5-renaissance"],
+      questionTypes: ["mc", "fill", "short"],
+      difficulty: "basic",
+      origin: "material-ai",
+      units: MULTI_UNIT,
+      now: "2026-01-01T00:00:00.000Z",
+      idFor: (index) => `g-${index}`,
+    };
+  }
+
+  it("節錄出自同一段落的另一項時仍然接受（清單共用 blockId）", () => {
+    const result = validateLlmQuestions(
+      {
+        questions: [
+          {
+            questionType: "fill",
+            difficulty: "basic",
+            question: "＿＿＿，英國已成為全球領先的工業與經濟強國。",
+            options: [],
+            correctAnswer: "十九世紀中葉",
+            explanation: "教材指出十九世紀中葉英國成為工業強國。",
+            knowledgePoint: "工業革命的發展",
+            sourceExcerpt: "十九世紀中葉：英國已成為全球領先的工業與經濟強國。",
+            sourceBlockIds: ["blk_list"],
+            gradingPoints: [],
+          },
+        ],
+      },
+      groundContext(),
+    );
+
+    expect(result.discardedReasons).toEqual([]);
+    expect(result.accepted).toHaveLength(1);
+  });
+
+  it("節錄只出現在其他段落時丟棄（不得以別處的教材通過依據檢查）", () => {
+    const result = validateLlmQuestions(
+      {
+        questions: [
+          {
+            questionType: "fill",
+            difficulty: "basic",
+            question: "＿＿＿重視人文主義。",
+            options: [],
+            correctAnswer: "文藝復興",
+            explanation: "解釋",
+            knowledgePoint: "文藝復興",
+            // 這段文字來自 blk_other，並不在引用的 blk_list 之內
+            sourceExcerpt: "文藝復興重視人文主義，強調人的價值與尊嚴。",
+            sourceBlockIds: ["blk_list"],
+            gradingPoints: [],
+          },
+        ],
+      },
+      groundContext(),
+    );
+
+    expect(result.accepted).toHaveLength(0);
+    expect(result.discardedReasons[0]).toContain("教材依據");
+  });
+
+  it("題目歸入提供節錄的段落所屬分節", () => {
+    const result = validateLlmQuestions(
+      {
+        questions: [
+          {
+            questionType: "fill",
+            difficulty: "basic",
+            question: "＿＿＿重視人文主義。",
+            options: [],
+            correctAnswer: "文藝復興",
+            explanation: "解釋",
+            knowledgePoint: "文藝復興",
+            sourceExcerpt: "文藝復興重視人文主義，強調人的價值與尊嚴。",
+            sourceBlockIds: ["blk_other"],
+            gradingPoints: [],
+          },
+        ],
+      },
+      groundContext(),
+    );
+
+    expect(result.accepted).toHaveLength(1);
+    // context.sectionId 為 topic-5-industrial，但這題的依據來自文藝復興分節
+    expect(result.accepted[0].sectionId).toBe("topic-5-renaissance");
+  });
+
+  it("提供節錄的段落不屬於本次要求的分節時，沿用呼叫端指定的分節", () => {
+    const result = validateLlmQuestions(
+      {
+        questions: [
+          {
+            questionType: "fill",
+            difficulty: "basic",
+            question: "＿＿＿重視人文主義。",
+            options: [],
+            correctAnswer: "文藝復興",
+            explanation: "解釋",
+            knowledgePoint: "文藝復興",
+            sourceExcerpt: "文藝復興重視人文主義，強調人的價值與尊嚴。",
+            sourceBlockIds: ["blk_other"],
+            gradingPoints: [],
+          },
+        ],
+      },
+      { ...groundContext(), sectionId: "topic-5-industrial", sectionIds: ["topic-5-industrial"] },
+    );
+
+    expect(result.accepted).toHaveLength(1);
+    expect(result.accepted[0].sectionId).toBe("topic-5-industrial");
+  });
+});
+
+/** correctAnswerIndex 與 correctAnswer 互相矛盾時不可靜默改寫答案 */
+describe("選擇題答案一致性", () => {
+  it("索引指向的選項與 correctAnswer 不同時丟棄整條題目", () => {
+    const result = validateLlmQuestions(
+      {
+        questions: [
+          {
+            questionType: "mc",
+            difficulty: "basic",
+            question: "誰在1517年發表《九十五條論證》？",
+            options: ["馬丁路德", "加爾文", "亨利八世", "但丁"],
+            correctAnswerIndex: 2,
+            correctAnswer: "馬丁路德",
+            explanation: "馬丁路德在1517年發表《九十五條論證》。",
+            knowledgePoint: "宗教改革",
+            sourceExcerpt: "德意志神學家馬丁路德發表《九十五條論證》",
+            sourceBlockIds: ["blk_1"],
+            gradingPoints: [],
+          },
+        ],
+      },
+      { ...context(), questionTypes: ["mc"] },
+    );
+
+    expect(result.accepted).toHaveLength(0);
+    expect(result.discardedReasons[0]).toContain("不一致");
+  });
+
+  it("只差標點或空白視為同一個選項（等同答案），並記錄品質警告", () => {
+    const result = validateLlmQuestions(
+      {
+        questions: [
+          {
+            questionType: "mc",
+            difficulty: "basic",
+            question: "馬丁路德在1517年發表甚麼？",
+            options: ["《九十五條論證》", "《九十五 條論證》", "《社會契約論》", "《人權宣言》"],
+            correctAnswerIndex: 0,
+            correctAnswer: "《九十五條論證》",
+            explanation: "馬丁路德在1517年發表《九十五條論證》。",
+            knowledgePoint: "宗教改革",
+            sourceExcerpt: "德意志神學家馬丁路德發表《九十五條論證》",
+            sourceBlockIds: ["blk_1"],
+            gradingPoints: [],
+          },
+        ],
+      },
+      { ...context(), questionTypes: ["mc"] },
+    );
+
+    expect(result.accepted).toHaveLength(1);
+    expect(result.accepted[0].options).toHaveLength(3);
+    // 等同選項被移除後，正確答案仍然是原本的選項文字
+    expect(result.accepted[0].correctAnswer).toBe("《九十五條論證》");
+    expect(result.accepted[0].qualityWarnings.join()).toContain("重複");
+  });
+
+  it("選項全部等同於正確答案時丟棄（無法作答）", () => {
+    const result = validateLlmQuestions(
+      {
+        questions: [
+          {
+            questionType: "mc",
+            difficulty: "basic",
+            question: "馬丁路德在1517年發表甚麼？",
+            options: ["《九十五條論證》", "《九十五 條論證》"],
+            correctAnswerIndex: 0,
+            correctAnswer: "《九十五條論證》",
+            explanation: "馬丁路德在1517年發表《九十五條論證》。",
+            knowledgePoint: "宗教改革",
+            sourceExcerpt: "德意志神學家馬丁路德發表《九十五條論證》",
+            sourceBlockIds: ["blk_1"],
+            gradingPoints: [],
+          },
+        ],
+      },
+      { ...context(), questionTypes: ["mc"] },
+    );
+
+    expect(result.accepted).toHaveLength(0);
+    expect(result.discardedReasons[0]).toContain("選項重複");
   });
 });

@@ -17,13 +17,29 @@ export class LocalStorageProvider implements StorageProvider {
 
   constructor(private readonly baseDir: string) {}
 
+  /**
+   * 把 locator 轉成實際檔案路徑，一律限制在儲存目錄內。
+   *
+   * 資料庫儲存的是「寫入當時」的絕對路徑，因此專案被搬到其他位置（本機換硬碟、
+   * 換資料夾）或容器的工作目錄改變後，該路徑就不再存在。這種情況下改用檔名
+   * （`path.basename`，不含任何目錄分隔符）在儲存目錄內尋找同一個檔案，
+   * 令教材仍然可以讀取，同時不會離開儲存目錄。
+   */
   private resolve(locator: string): string {
-    if (path.isAbsolute(locator)) return locator;
-    const resolved = path.resolve(this.baseDir, locator);
-    // 避免使用 ../ 跳出儲存目錄
-    if (!resolved.startsWith(path.resolve(this.baseDir))) {
-      throw new StorageError("檔案位置不正確，已拒絕存取");
+    const root = path.resolve(this.baseDir);
+    const insideRoot = (target: string): boolean =>
+      target === root || target.startsWith(root + path.sep);
+
+    if (path.isAbsolute(locator)) {
+      const absolute = path.resolve(locator);
+      if (insideRoot(absolute)) return absolute;
+      // 儲存目錄以外的絕對路徑：以檔名在儲存目錄內尋找，不採用原本的路徑
+      return path.join(root, path.basename(locator));
     }
+
+    const resolved = path.resolve(root, locator);
+    // 避免使用 ../ 跳出儲存目錄
+    if (!insideRoot(resolved)) throw new StorageError("檔案位置不正確，已拒絕存取");
     return resolved;
   }
 
