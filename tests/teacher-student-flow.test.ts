@@ -4,12 +4,10 @@
  * 驗證教師可以完整走一次「選課題 → 選主題 → 出題 → 作答 → 看答案 → 成績 → 重做錯題」，
  * 而且教師與學生的學習記錄分開、教師不可讀取學生的記錄。
  */
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-teacher-flow-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("teacher-flow");
 process.env.LLM_PROVIDER = "mock";
 
 type PracticeService = typeof import("@/server/services/practice-service");
@@ -65,7 +63,8 @@ describe("教師測試學生端", () => {
     expect(wrong.recorded).toBe(true);
     expect(wrong.feedback.correctAnswer.length).toBeGreaterThan(0);
     expect(wrong.feedback.explanation.length).toBeGreaterThan(0);
-    expect(wrong.feedback.sourceExcerpt.length).toBeGreaterThan(0);
+    expect((wrong.feedback.sourceExcerpt ?? "").length).toBeGreaterThan(0);
+    expect(wrong.feedback.sourceWithheld).toBe(false);
     expect(wrong.feedback.knowledgePoint.length).toBeGreaterThan(0);
 
     // 已提交的題目不會因重覆提交而改變分數

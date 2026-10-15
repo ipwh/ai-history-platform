@@ -22,8 +22,9 @@ import { ensureLearner, getLearnerProgress } from "../repositories/learners";
 import { ApiRouteError } from "../http";
 import { getServerConfig } from "../config";
 import { reserveAiOperation } from "./ai-limits";
-import { getBlocksByIds } from "../repositories/materials";
+import { getBlocksByIds, listStudentDistributableDocumentIds } from "../repositories/materials";
 import { normalizeForMatch } from "../materials/text-utils";
+import { isTeacherOnlyBlockText } from "../materials/teacher-content";
 import {
   createSession,
   getAttempt,
@@ -88,6 +89,9 @@ export function buildFeedback(
   reviewFlag: "uncertain-answer" | null = null,
   aiLimitReached = false,
 ): QuestionFeedback {
+  // 教材節錄只在來源文件已確認可向學生發布時才顯示（見 sourceExcerptIsStudentVisible）
+  const excerptVisible = sourceExcerptIsStudentVisible(question);
+
   return {
     questionId: question.id,
     answer,
@@ -98,9 +102,10 @@ export function buildFeedback(
     explanation: question.explanation,
     knowledgePoint: question.knowledgePoint,
     gradingPoints: question.gradingPoints,
-    sourceExcerpt: question.sourceExcerpt,
-    sourceLocation: question.sourceLocation,
-    sourceBlockIds: question.sourceBlockIds,
+    sourceExcerpt: excerptVisible ? question.sourceExcerpt : null,
+    sourceLocation: excerptVisible ? question.sourceLocation : null,
+    sourceBlockIds: excerptVisible ? question.sourceBlockIds : [],
+    sourceWithheld: !excerptVisible,
     sourceFromOcr,
     aiGrading: attempt?.aiGrading ?? null,
     selfAssessment: attempt?.selfAssessment ?? null,
@@ -117,6 +122,35 @@ function questionUsesOcr(question: Question): boolean {
       (block) => block.extractionMethod === "ocr",
     );
   } catch {
+    return false;
+  }
+}
+
+/**
+ * 這條題目的教材節錄是否「可向學生顯示」。
+ *
+ * 政策（Sprint 6，fail-closed）：
+ * - 題目**有引用教材段落**時，**只有當所有引用的段落都屬於已確認可向學生發布、
+ *   且非教師專用的文件**才顯示節錄。任何一段查不到、或不屬可發布文件，一律不顯示，
+ *   避免把未確認教材（可能是教師版答案或評分參考）原文給學生。
+ * - 題目**沒有引用任何教材段落**時（示範題庫的作者標註、教師手動建立的題目），
+ *   節錄是教師／課程作者自行撰寫的文字，而非擷取自教材，因此維持顯示。
+ *
+ * 題目本身、答案、解釋及學習記錄不受影響：只有節錄文字被略去。
+ */
+export function sourceExcerptIsStudentVisible(question: Question): boolean {
+  if (question.sourceBlockIds.length === 0) return true;
+  try {
+    const distributable = listStudentDistributableDocumentIds();
+    const blocks = getBlocksByIds(question.sourceBlockIds);
+    if (blocks.length !== question.sourceBlockIds.length) return false;
+    return blocks.every((block) => {
+      if (!distributable.has(block.documentId)) return false;
+      const text = [block.text, ...(block.table ?? []).flat().map((cell) => cell.text)].join("\n");
+      return !isTeacherOnlyBlockText(text);
+    });
+  } catch {
+    // 查證失敗一律當作不可顯示
     return false;
   }
 }
@@ -230,6 +264,8 @@ async function generateForSections(options: {
           persist: false,
           allowBankDuplicates: true,
           requestType: "question-instant",
+          // 學生自行觸發：教材來源只可取用已確認可向學生發布的內容（fail-closed）
+          audience: "student",
         });
         return { sectionId, generated, error: null };
       } catch (error) {
@@ -311,6 +347,11 @@ async function generatePracticeQuestions(options: {
     // 詳細原因（例如教材不足以出題）只記錄在伺服器日誌，學生端只顯示可行動的建議
     const reason = firstError instanceof Error ? firstError.message : "";
     if (reason.length > 0) console.warn("[practice] 即時生成題目失敗原因", reason);
+    // 版權閘門造成的失敗值得如實告知學生原因（不是「題目不足」，而是教材尚未開放），
+    // 否則學生只會不斷重試同一分節而不知道要聯絡教師。
+    if (reason.includes("尚未開放學生使用")) {
+      throw new PracticeServiceError(reason, 409);
+    }
     throw new PracticeServiceError(
       "未能為所選主題生成題目。請試試其他主題、減少題目數量，或改用「使用題庫題目」。",
       502,
@@ -432,6 +473,8 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
           difficulty: parsed.difficulty,
           questionCount: missing,
           requestType: "question-instant",
+          // 學生自行觸發：教材來源只可取用已確認可向學生發布的內容（fail-closed）
+          audience: "student",
         });
         if (generated.questions.length > 0) {
           selected = [...selected, ...generated.questions];

@@ -10,12 +10,10 @@
  *   6. 停用上限時不會拒絕請求，但仍然記錄用量。
  *   7. 用量記錄不含題目內容或學生的答案。
  */
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-const testDbPath = path.join(os.tmpdir(), `hist-test-ai-limits-${process.pid}.db`);
+const testDbPath = freshTestDatabasePath("ai-limits");
 process.env.APP_DATABASE_PATH = testDbPath;
 // DeepSeek 設定代表「已接上真正的 provider」（fetch 會被 stub，不會發出請求）
 process.env.LLM_PROVIDER = "deepseek";

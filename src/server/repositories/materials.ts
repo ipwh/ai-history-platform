@@ -505,6 +505,69 @@ export function setDocumentStudentDistribution(documentId: string, allowed: bool
     .run(allowed ? 1 : 0, documentId);
 }
 
+/**
+ * 記錄教材發布所需的兩項確認（Sprint 5）。
+ *
+ * `rights`（版權／發行權）與 `contentSafety`（內容安全覆核）是**不同**的問題，
+ * 必須分開記錄：有發行權不等於內容安全（教師版文件兩者兼有），內容安全亦不等於
+ * 有發行權。兩者都保存「誰在何時確認」，令「這份文件為何可以給學生看」可以逐項
+ * 回答，而不是只看一個布林值。
+ *
+ * 傳入 null 代表「不更新該項」（例如只作內容覆核）；傳入 undefined 則保留原值。
+ */
+export function recordDocumentGovernance(input: {
+  documentId: string;
+  rights?: { confirmedBy: string; at: string } | null;
+  contentSafety?: { reviewedBy: string; at: string } | null;
+}): void {
+  const db = getDb();
+  if (input.rights !== undefined) {
+    db.prepare(
+      "UPDATE material_documents SET rights_confirmed_at = ?, rights_confirmed_by = ? WHERE id = ?",
+    ).run(input.rights?.at ?? null, input.rights?.confirmedBy ?? null, input.documentId);
+  }
+  if (input.contentSafety !== undefined) {
+    db.prepare(
+      "UPDATE material_documents SET content_reviewed_at = ?, content_reviewed_by = ? WHERE id = ?",
+    ).run(
+      input.contentSafety?.at ?? null,
+      input.contentSafety?.reviewedBy ?? null,
+      input.documentId,
+    );
+  }
+}
+
+/** 某份教材的發布治理狀態（兩項確認是否已完成、由誰及何時） */
+export interface DocumentGovernance {
+  rightsConfirmedAt: string | null;
+  rightsConfirmedBy: string | null;
+  contentReviewedAt: string | null;
+  contentReviewedBy: string | null;
+}
+
+export function getDocumentGovernance(documentId: string): DocumentGovernance {
+  const row = getDb()
+    .prepare(
+      `SELECT rights_confirmed_at, rights_confirmed_by, content_reviewed_at, content_reviewed_by
+       FROM material_documents WHERE id = ?`,
+    )
+    .get(documentId) as unknown as
+    | {
+        rights_confirmed_at: string | null;
+        rights_confirmed_by: string | null;
+        content_reviewed_at: string | null;
+        content_reviewed_by: string | null;
+      }
+    | undefined;
+
+  return {
+    rightsConfirmedAt: row?.rights_confirmed_at ?? null,
+    rightsConfirmedBy: row?.rights_confirmed_by ?? null,
+    contentReviewedAt: row?.content_reviewed_at ?? null,
+    contentReviewedBy: row?.content_reviewed_by ?? null,
+  };
+}
+
 /** 教材發行權的稽核記錄（誰在何時開啟或關閉向學生發布） */
 export interface DistributionAuditEntry {
   id: string;

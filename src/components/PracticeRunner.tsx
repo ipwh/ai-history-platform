@@ -449,15 +449,25 @@ function FeedbackPanel({
 
       <div className="source-box">
         <div className="text-xs text-gray-600 mb-1">
-          教材來源：{feedback.sourceLocation}
-          {feedback.sourceBlockIds.length > 0 ? "" : "（示範題庫，未與已上載教材核對）"}
+          教材來源：
+          {feedback.sourceWithheld
+            ? "未確認可向學生發布"
+            : feedback.sourceLocation}
+          {feedback.sourceBlockIds.length > 0 || feedback.sourceWithheld
+            ? ""
+            : "（示範題庫，未與已上載教材核對）"}
         </div>
         {feedback.sourceFromOcr ? (
           <div className="text-xs mb-1" style={{ color: "var(--warning)" }}>
             此題依據的教材文字由圖片 OCR 辨識取得，可能有錯字，教師會定期核對。
           </div>
         ) : null}
-        <div className="text-sm whitespace-pre-wrap">{feedback.sourceExcerpt}</div>
+        {feedback.sourceWithheld ? (
+          <div className="text-xs mb-1" style={{ color: "var(--warning)" }}>
+            此題引用的教材文件尚未經教師確認可向學生發布，因此不顯示原文節錄；答案與解釋不受影響。
+          </div>
+        ) : null}
+        <div className="text-sm whitespace-pre-wrap">{feedback.sourceExcerpt ?? ""}</div>
       </div>
 
       <QuestionReportForm questionId={feedback.questionId} sessionId={sessionId} />

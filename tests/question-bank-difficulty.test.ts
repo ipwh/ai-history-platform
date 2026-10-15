@@ -1,6 +1,3 @@
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
 
 // 使用獨立暫存資料庫，並以本地示範生成代替真實 LLM（不會發出網絡請求）
@@ -16,8 +13,9 @@ import { beforeAll, describe, expect, it } from "vitest";
 //   2. `tests/global-setup.ts` 於整套測試開始前清除所有遺留的暫存資料庫（其他檔案同理）。
 // 依 Sprint 3／4 的要求，**沒有**加入 retry 掩蓋問題。
 import fs from "node:fs";
+import { freshTestDatabasePath } from "./test-database";
 
-const testDbPath = path.join(os.tmpdir(), `hist-test-bank-${process.pid}.db`);
+const testDbPath = freshTestDatabasePath("bank");
 for (const suffix of ["", "-wal", "-shm"]) {
   fs.rmSync(`${testDbPath}${suffix}`, { force: true });
 }

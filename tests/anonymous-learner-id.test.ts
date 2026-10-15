@@ -8,12 +8,10 @@
  *      否則只要猜中他人的校內電郵，就可以讀取他人的練習記錄、進度及重溫佇列。
  *   3. 已登入時，工作階段身分優先，偽造的 learnerId 不會生效（跨學生隔離）。
  */
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-anon-learner-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("anon-learner");
 process.env.LLM_PROVIDER = "mock";
 process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";

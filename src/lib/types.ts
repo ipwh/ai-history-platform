@@ -747,9 +747,16 @@ export const questionFeedbackSchema = z.object({
   explanation: z.string(),
   knowledgePoint: z.string(),
   gradingPoints: z.array(z.string()),
-  sourceExcerpt: z.string(),
-  sourceLocation: z.string(),
+  /**
+   * 教材原文節錄。若題目引用的教材文件尚未確認可向學生發布，這裡會是 null
+   * （同時 `sourceWithheld` 為 true，見 `sourceExcerptIsStudentVisible`）。
+   * 這可避免把未確認或教師版教材的原文（可能是答案或評分參考）顯示給學生。
+   */
+  sourceExcerpt: z.string().nullable(),
+  sourceLocation: z.string().nullable(),
   sourceBlockIds: z.array(z.string()),
+  /** 是否因來源未確認可向學生發布而略去節錄（介面會說明原因） */
+  sourceWithheld: z.boolean().default(false),
   /** 教材依據是否包含 OCR 辨識文字（需教師核對） */
   sourceFromOcr: z.boolean().default(false),
   /** AI 語意批改結果（填充題／短答題；未使用 AI 時為 null） */

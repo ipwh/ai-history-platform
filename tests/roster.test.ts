@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 學生名冊測試（Google Sheet／CSV → 學生登入核對）。
  *
  * 驗證：
@@ -17,8 +17,9 @@ import path from "node:path";
 import fs from "node:fs";
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-roster-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("roster");
 process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";
 process.env.AUTH_TEACHER_EMAILS = "teacher@example.com";

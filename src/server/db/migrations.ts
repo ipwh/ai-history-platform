@@ -496,6 +496,27 @@ export const MIGRATIONS: Migration[] = [
       )`,
     ],
   },
+  {
+    id: "0017-document-governance",
+    statements: [
+      // 教材發布的兩項**分開**確認（Sprint 5）：
+      //
+      //   rights_*  ：版權／發行權確認——學校是否有權在平台向學生發布這份內容。
+      //   content_* ：內容安全覆核——已逐段核對，沒有答案、評分參考、教師註記等
+      //               不適合學生閱讀的內容（教師版文件必須有此確認）。
+      //
+      // 兩者是不同的問題，必須分開記錄：有發行權不等於內容安全（教師版就有發行權
+      // 但仍含答案）；內容安全也不等於有發行權。分開記錄後，「這份文件為何可以給
+      // 學生看」可以逐項回答，而不是只看一個布林值。
+      //
+      // 每次「開放」都需要重新確認（PATCH 要求帶 confirmRights；教師版另需
+      // confirmTeacherEdition），因此這裡只保存最近一次確認的結果及時間。
+      `ALTER TABLE material_documents ADD COLUMN rights_confirmed_at TEXT`,
+      `ALTER TABLE material_documents ADD COLUMN rights_confirmed_by TEXT`,
+      `ALTER TABLE material_documents ADD COLUMN content_reviewed_at TEXT`,
+      `ALTER TABLE material_documents ADD COLUMN content_reviewed_by TEXT`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

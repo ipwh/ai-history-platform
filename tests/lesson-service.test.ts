@@ -8,12 +8,10 @@
  *   4. 指定分節時只回傳該分節（含其子分節）的內容。
  *   5. API 與其他學生端端點一致：要求登入時未登入會被拒絕。
  */
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-lesson-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("lesson");
 process.env.LLM_PROVIDER = "mock";
 process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";

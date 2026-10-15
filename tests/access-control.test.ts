@@ -9,12 +9,10 @@
  *   5. 前端傳入的 learnerId 不可覆寫工作階段的 learnerId。
  *   6. 學生、教師及管理員使用不同的學習者身分，記錄不會混用。
  */
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-access-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("access");
 process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";
 process.env.AUTH_TEACHER_EMAILS = "teacher@example.com";

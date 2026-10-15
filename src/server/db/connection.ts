@@ -24,6 +24,9 @@ function openDatabase(databasePath: string): DatabaseSync {
   const db = new DatabaseSync(databasePath);
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA foreign_keys = ON;");
+  // 兩個程序（例如備份腳本與伺服器，或同一磁碟上的兩個執行個體）同時啟動時，
+  // migration 需要短暫的寫入鎖；沒有 busy_timeout 會立即以 SQLITE_BUSY 失敗。
+  db.exec("PRAGMA busy_timeout = 5000;");
   runMigrations(db);
   return db;
 }

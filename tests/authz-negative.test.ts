@@ -17,12 +17,12 @@
  *   - Cloud Run 上未啟用登入時，後台頁面不會渲染。
  */
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-authz-negative-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("authz-negative");
 process.env.LLM_PROVIDER = "mock";
 process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";

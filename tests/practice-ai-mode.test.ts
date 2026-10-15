@@ -1,10 +1,8 @@
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
 // 使用獨立暫存資料庫，並以本地示範生成代替真實 LLM（不會發出網絡請求）
-const testDbPath = path.join(os.tmpdir(), `hist-test-ai-practice-${process.pid}.db`);
+const testDbPath = freshTestDatabasePath("ai-practice");
 process.env.APP_DATABASE_PATH = testDbPath;
 process.env.LLM_PROVIDER = "mock";
 
@@ -12,6 +10,7 @@ type PracticeService = typeof import("@/server/services/practice-service");
 type QuestionRepository = typeof import("@/server/repositories/questions");
 type MaterialService = typeof import("@/server/services/material-service");
 type TopicService = typeof import("@/server/services/topic-service");
+type MaterialsRepo = typeof import("@/server/repositories/materials");
 type Seed = typeof import("@/server/seed");
 type Types = typeof import("@/lib/types");
 
@@ -19,17 +18,36 @@ let practice: PracticeService;
 let questionsRepo: QuestionRepository;
 let materialService: MaterialService;
 let topicService: TopicService;
+let materialsRepo: MaterialsRepo;
 let seed: Seed;
 let types: Types;
 
 const LEARNER = "ai-mode-learner";
 const SECTIONS = ["topic-5-renaissance-features", "topic-5-industrial-development"];
 
+/**
+ * 學生自行觸發的即時出題只可使用「已確認可向學生發布」的教材（Sprint 5 收緊）。
+ * 測試若需要學生端即時生成，必須先把教材切換到已確認狀態——這正是管理員在正式
+ * 環境要做的事（見 README「教材版權與學生閱讀範圍」）。
+ */
+function grantDistributionForTopic(topicId: string): void {
+  for (const block of materialsRepo.listGroundingBlocksForSections(topicId, [])) {
+    materialsRepo.setDocumentStudentDistribution(block.documentId, true);
+  }
+}
+
+function revokeDistribution(): void {
+  for (const document of materialsRepo.listDocuments()) {
+    materialsRepo.setDocumentStudentDistribution(document.id, false);
+  }
+}
+
 beforeAll(async () => {
   practice = await import("@/server/services/practice-service");
   questionsRepo = await import("@/server/repositories/questions");
   materialService = await import("@/server/services/material-service");
   topicService = await import("@/server/services/topic-service");
+  materialsRepo = await import("@/server/repositories/materials");
   seed = await import("@/server/seed");
   types = await import("@/lib/types");
   seed.ensureBootstrap();
@@ -38,9 +56,32 @@ beforeAll(async () => {
     runOcr: false,
   });
   if (!imported) throw new Error("找不到課題5的教材檔案，無法測試 AI 出題模式");
+  grantDistributionForTopic("topic-5");
 });
 
 describe("AI 即時出題模式", () => {
+  it("學生端即時出題不可使用未確認可發布的教材（fail-closed）", async () => {
+    revokeDistribution();
+    try {
+      // 未確認版權時，學生自行觸發的即時生成必須拒絕，而**不是**改用教師版內容
+      await expect(
+        practice.createPractice({
+          learnerId: LEARNER,
+          topicId: "topic-5",
+          sectionIds: [SECTIONS[0]],
+          questionTypes: ["mc"],
+          difficulty: "basic",
+          questionCount: 1,
+          mode: "standard",
+          questionSource: "ai",
+          sourceSessionId: null,
+        }),
+      ).rejects.toThrowError(/尚未開放學生使用|教材/);
+    } finally {
+      grantDistributionForTopic("topic-5");
+    }
+  });
+
   it("按所選分節分配題數", () => {
     expect([...practice.distributeQuestionCount(6, ["a", "b", "c"]).entries()]).toEqual([
       ["a", 2],

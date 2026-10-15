@@ -4,12 +4,10 @@
  * 全部使用真實的持久化資料（SQLite 暫存資料庫 + 題庫 + 作答記錄），
  * 並以注入的固定時間驗證排程邊界。
  */
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-loop-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("loop");
 process.env.LLM_PROVIDER = "mock";
 process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";

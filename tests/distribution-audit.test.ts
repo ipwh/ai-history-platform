@@ -12,12 +12,10 @@
  *      （答案、評分參考）不會顯示給學生，亦不會被當成「有教材可讀」。
  *   6. 邊界情況：未知文件 ID、重複請求、先開放後撤銷。
  */
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-distribution-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("distribution");
 process.env.LLM_PROVIDER = "mock";
 process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";
@@ -93,6 +91,7 @@ function pilotDocumentId(): string {
   return document.id;
 }
 
+
 beforeAll(async () => {
   session = await import("@/server/auth/session");
   seed = await import("@/server/seed");
@@ -114,18 +113,91 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
     expect(materialsRepo.listStudentDistributableDocumentIds().size).toBe(0);
   });
 
+  it("開放發行權需要版權確認（confirmRights），只帶 studentDistribution 會被拒（409）", async () => {
+    // 用教師版文件驗證：即使確認了版權，仍需要內容安全覆核（見下一個測試）
+    const sectionId =
+      lessonService.getLessonView("topic-5").sections[0]?.id ?? "topic-5-renaissance-features";
+    const documentId = createTeacherEditionDocument(sectionId, "topic-5").id;
+    const before = materialsRepo.listDistributionAudit(documentId).length;
+    const response = await patchDocument(documentId, { studentDistribution: true }, cookieFor(ADMIN));
+    expect(response.status).toBe(409);
+    const body = (await response.json()) as { error?: string };
+    expect(body.error ?? "").toContain("版權");
+
+    // 未確認前不會開放，也不會留下稽核記錄
+    expect(materialsRepo.getDocument(documentId)?.studentDistribution).toBe(false);
+    expect(materialsRepo.listDistributionAudit(documentId).length).toBe(before);
+    expect(materialsRepo.getDocumentGovernance(documentId).rightsConfirmedAt).toBeNull();
+  });
+
+  it("版權確認與內容安全覆核分開記錄（誰在何時確認）", async () => {
+    const sectionId =
+      lessonService.getLessonView("topic-5").sections[0]?.id ?? "topic-5-renaissance-features";
+    const documentId = createTeacherEditionDocument(sectionId, "topic-5").id;
+    const response = await patchDocument(
+      documentId,
+      { studentDistribution: true, confirmRights: true, confirmTeacherEdition: true },
+      cookieFor(ADMIN),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      governance: {
+        rightsConfirmedAt: string | null;
+        rightsConfirmedBy: string | null;
+        contentReviewedAt: string | null;
+        contentReviewedBy: string | null;
+      };
+    };
+    expect(body.governance.rightsConfirmedBy).toBe(ADMIN.email);
+    expect(body.governance.contentReviewedBy).toBe(ADMIN.email);
+    expect(Number.isNaN(Date.parse(body.governance.rightsConfirmedAt ?? ""))).toBe(false);
+    expect(Number.isNaN(Date.parse(body.governance.contentReviewedAt ?? ""))).toBe(false);
+
+    // 撤銷後仍然保留確認紀錄（歷史事實），但學生不再看到內容
+    const revoked = await patchDocument(
+      documentId,
+      { studentDistribution: false },
+      cookieFor(ADMIN),
+    );
+    expect(revoked.status).toBe(200);
+    expect(materialsRepo.getDocumentGovernance(documentId).rightsConfirmedBy).toBe(ADMIN.email);
+    expect(materialsRepo.getDocument(documentId)?.studentDistribution).toBe(false);
+  });
+
+  it("沒有內容覆核確認時不會單獨寫入版權確認紀錄（兩項都通過才開放）", async () => {
+    const sectionId =
+      lessonService.getLessonView("topic-5").sections[0]?.id ?? "topic-5-renaissance-features";
+    const documentId = createTeacherEditionDocument(sectionId, "topic-5").id;
+    // 教師版文件：只帶版權確認會被內容覆核關卡擋下
+    const blocked = await patchDocument(
+      documentId,
+      { studentDistribution: true, confirmRights: true },
+      cookieFor(ADMIN),
+    );
+    expect(blocked.status).toBe(409);
+    const body = (await blocked.json()) as { error?: string };
+    expect(body.error ?? "").toContain("教師版");
+    expect(materialsRepo.getDocument(documentId)?.studentDistribution).toBe(false);
+    // 被擋下時兩項確認都不會寫入（不會留下「已確認版權」的半途狀態）
+    const governance = materialsRepo.getDocumentGovernance(documentId);
+    expect(governance.rightsConfirmedAt).toBeNull();
+    expect(governance.contentReviewedAt).toBeNull();
+  });
+
   it("學生不可變更發行權（403），亦不會留下稽核記錄", async () => {
     const documentId = pilotDocumentId();
-    const response = await patchDocument(documentId, { studentDistribution: true }, cookieFor(STUDENT));
+    const auditBefore = materialsRepo.listDistributionAudit(documentId).length;
+    const response = await patchDocument(documentId, { studentDistribution: true, confirmRights: true, confirmTeacherEdition: true }, cookieFor(STUDENT));
     expect(response.status).toBe(403);
-    expect(materialsRepo.listDistributionAudit(documentId)).toEqual([]);
+    expect(materialsRepo.listDistributionAudit(documentId).length).toBe(auditBefore);
   });
 
   it("未登入不可變更發行權（401）", async () => {
     const documentId = pilotDocumentId();
-    const response = await patchDocument(documentId, { studentDistribution: true });
+    const auditBefore = materialsRepo.listDistributionAudit(documentId).length;
+    const response = await patchDocument(documentId, { studentDistribution: true, confirmRights: true, confirmTeacherEdition: true });
     expect(response.status).toBe(401);
-    expect(materialsRepo.listDistributionAudit(documentId)).toEqual([]);
+    expect(materialsRepo.listDistributionAudit(documentId).length).toBe(auditBefore);
   });
 
   it("不在管理員名單的帳戶不可變更發行權（角色重新判定後 403）", async () => {
@@ -135,18 +207,23 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
       email: "removed-admin@example.com",
       learnerId: "admin:removed-admin@example.com",
     };
+    const auditBefore = materialsRepo.listDistributionAudit(documentId).length;
     const response = await patchDocument(
       documentId,
-      { studentDistribution: true },
+      { studentDistribution: true, confirmRights: true },
       cookieFor(revoked),
     );
     expect(response.status).toBe(403);
-    expect(materialsRepo.listDistributionAudit(documentId)).toEqual([]);
+    expect(materialsRepo.listDistributionAudit(documentId).length).toBe(auditBefore);
   });
 
   it("管理員開放後，學生可讀取內容，並留下操作者及時間的記錄", async () => {
     const documentId = pilotDocumentId();
-    const response = await patchDocument(documentId, { studentDistribution: true }, cookieFor(ADMIN));
+    const response = await patchDocument(
+      documentId,
+      { studentDistribution: true, confirmRights: true, confirmTeacherEdition: true },
+      cookieFor(ADMIN),
+    );
     expect(response.status).toBe(200);
 
     const body = (await response.json()) as {
@@ -188,7 +265,7 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
     const documentId = pilotDocumentId();
     const response = await patchDocument(
       documentId,
-      { studentDistribution: true, actorEmail: "attacker@example.com", actor: "attacker" },
+      { studentDistribution: true, confirmRights: true, confirmTeacherEdition: true, actorEmail: "attacker@example.com", actor: "attacker" },
       cookieFor(ADMIN),
     );
     expect(response.status).toBe(200);
@@ -214,44 +291,51 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
   });
 });
 
-describe("教師版／混合文件（不可只因 kind 不是試題檔就當作學生內容）", () => {
-  /** 建立一份「教師版」文件：包含學生段落及教師專用的答案段落 */
-  function createTeacherEditionDocument(sectionId: string, topicId: string) {
-    const document = materialsRepo.createDocument({
-      fileName: "E2E2A2E_T5_SN_TE.docx",
-      kind: "demo",
-      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      sizeBytes: 1024,
-      status: "ready",
+/**
+ * 建立一份「教師版」文件（檔名帶 `_TE`）：包含學生段落及教師專用的答案段落。
+ *
+ * 匯入的課本檔案本身全部是教師版，但測試資料庫只會匯入試點教材（檔名不含 `_TE`），
+ * 因此需要這個輔助函式來驗證教師版相關的關卡。
+ */
+/** 建立一份「教師版」文件：包含學生段落及教師專用的答案段落 */
+function createTeacherEditionDocument(sectionId: string, topicId: string) {
+  const document = materialsRepo.createDocument({
+    fileName: "E2E2A2E_T5_SN_TE.docx",
+    kind: "demo",
+    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    sizeBytes: 1024,
+    status: "ready",
+    topicId,
+    sourceNote: null,
+  });
+  materialsRepo.insertBlocks([
+    {
+      documentId: document.id,
       topicId,
-      sourceNote: null,
-    });
-    materialsRepo.insertBlocks([
-      {
-        documentId: document.id,
-        topicId,
-        sectionId,
-        order: 0,
-        type: "paragraph",
-        level: null,
-        text: "文藝復興時期，歐洲人重視人文主義。",
-        table: null,
-        sourceLocation: "測試段落 1",
-      },
-      {
-        documentId: document.id,
-        topicId,
-        sectionId,
-        order: 1,
-        type: "paragraph",
-        level: null,
-        text: "參考答案：人文主義（每個答案各佔 1 分）",
-        table: null,
-        sourceLocation: "測試段落 2",
-      },
-    ]);
-    return document;
-  }
+      sectionId,
+      order: 0,
+      type: "paragraph",
+      level: null,
+      text: "文藝復興時期，歐洲人重視人文主義。",
+      table: null,
+      sourceLocation: "測試段落 1",
+    },
+    {
+      documentId: document.id,
+      topicId,
+      sectionId,
+      order: 1,
+      type: "paragraph",
+      level: null,
+      text: "參考答案：人文主義（每個答案各佔 1 分）",
+      table: null,
+      sourceLocation: "測試段落 2",
+    },
+  ]);
+  return document;
+}
+
+describe("教師版／混合文件（不可只因 kind 不是試題檔就當作學生內容）", () => {
 
   it("檔名標示為教師版時，開放學生閱讀需要額外明確確認（409）", async () => {
     const lesson = lessonService.getLessonView("topic-5");
@@ -262,7 +346,7 @@ describe("教師版／混合文件（不可只因 kind 不是試題檔就當作�
 
       const blocked = await patchDocument(
         document.id,
-        { studentDistribution: true },
+        { studentDistribution: true, confirmRights: true },
         cookieFor(ADMIN),
       );
       expect(blocked.status).toBe(409);
@@ -274,7 +358,7 @@ describe("教師版／混合文件（不可只因 kind 不是試題檔就當作�
 
       const confirmed = await patchDocument(
         document.id,
-        { studentDistribution: true, confirmTeacherEdition: true },
+        { studentDistribution: true, confirmRights: true, confirmTeacherEdition: true },
         cookieFor(ADMIN),
       );
       expect(confirmed.status).toBe(200);
@@ -354,7 +438,7 @@ describe("發行權操作的邊界情況", () => {
 
     const response = await patchDocument(
       documentId,
-      { studentDistribution: true, confirmTeacherEdition: true },
+      { studentDistribution: true, confirmRights: true, confirmTeacherEdition: true },
       cookieFor(ADMIN),
     );
     expect(response.status).toBe(200);
@@ -369,7 +453,7 @@ describe("發行權操作的邊界情況", () => {
   it("未知的文件 ID 回 404，不會留下稽核記錄", async () => {
     const response = await patchDocument(
       "missing-document",
-      { studentDistribution: true },
+      { studentDistribution: true, confirmRights: true },
       cookieFor(ADMIN),
     );
     expect(response.status).toBe(404);

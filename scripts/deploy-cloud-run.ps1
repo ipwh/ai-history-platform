@@ -15,13 +15,11 @@
      5. 以 Cloud Build 建置映像檔並部署到 Cloud Run
      6. 輸出服務網址及需要登記的 OAuth 重新導向網址
 
-   後台角色：
+   後台角色（角色只來自明確名單，網域本身不再授予教師權限）：
      - 管理員（可進入 /admin）必須以 -AdminEmails 指定，否則部署後沒有人能管理教材及系統設定。
      - 教師（可進入 /teacher）必須以 -TeacherEmails 指定（含校內網域帳戶）。
-       校內網域但學號形式（s + 7 位數字）不符的帳戶，預設會視為**學生**；
-       如要沿用舊行為（該類帳戶一律是教師），須明確傳 -InDomainRole teacher，
-       但若有任何學生的帳戶是別名，該學生將可讀取全部學生的練習記錄。
-       名冊內的帳戶一律是學生，不受此設定影響。
+       未列入名單的帳戶（包括校內網域帳戶）一律是學生；為免默默把教師鎖在門外，
+       未提供 -TeacherEmails 時指令碼會**拒絕部署**。
 
     機密值不會寫入任何檔案或顯示在輸出中：
        - AUTH_SECRET 未提供時即時隨機產生（已有版本時保留，避免登出所有使用者）
@@ -68,14 +66,8 @@ param(
     # 注意：管理員必須在此指定，否則部署後無法進入 /admin 管理教材及系統設定。
     [string]$AdminEmails = "",
     # 教師電郵（可進入教師端 /teacher；多個以分號分隔）
-    # 預設（-InDomainRole student）下，所有教師都必須在此列出（含校內網域帳戶）。
+    # 所有教師都必須在此列出（含校內網域帳戶）；網域本身不再授予教師權限。
     [string]$TeacherEmails = "",
-    # 校內網域但學號形式（s + 7 位數字）不符、且不在名單或名冊內的帳戶要視為：
-    #   student（預設，安全）：該帳戶不會取得教師權限；教師必須在 -TeacherEmails 內
-    #   teacher：沿用舊行為（校內非學號形式一律是教師）。若任何學生的帳戶是別名，
-    #            該學生即可讀取全部學生的練習記錄。
-    [ValidateSet("student", "teacher")]
-    [string]$InDomainRole = "student",
     # 名冊讀取用的服務帳戶名稱（會被建立；學校需把 Sheet 分享給它的電郵）
     [string]$RosterServiceAccount = "history-roster-reader",
     # Cloud Run 執行身分服務帳戶名稱（會被建立，只獲授讀取所需 Secret 的權限）
@@ -111,13 +103,15 @@ $ErrorActionPreference = "Stop"
 # 角色預設值為 student（fail-closed）：校內網域但學號形式不符的帳戶不再自動成為教師。
 # 若沒有同時列出教師，部署後所有教師都會失去教師端權限（而且不會有任何錯誤訊息），
 # 因此這裡在部署前先擋下來，要求明確決定，而不是默默把教師鎖在門外。
-if ($InDomainRole -ne "teacher" -and $TeacherEmails.Trim().Length -eq 0) {
+# 舊的「校內網域 = 教師」政策已移除：未列入名單的帳戶（包括校內網域）一律是學生，
+# 因此部署時必須明確列出教師，否則沒有人能進入教師端（管理員不受影響）。
+if ($TeacherEmails.Trim().Length -eq 0) {
     throw @"
-尚未指定教師，而校內網域的非學號形式帳戶已改為視為學生（AUTH_IN_DOMAIN_ROLE=student）。
-請二選一：
-  1. 列出教師電郵（建議）：-TeacherEmails 'teacher1@pochiu.edu.hk;teacher2@pochiu.edu.hk'
-  2. 沿用舊行為：-InDomainRole teacher（校內非學號形式一律是教師；
-     若任何學生的帳戶是別名，該學生將可讀取全部學生的練習記錄）
+尚未指定教師電郵（-TeacherEmails）。校內網域的帳戶不再自動取得教師權限，
+若不在這裡列出，部署後沒有人能進入教師端（管理員不受影響）。
+
+請以 -TeacherEmails 列出歷史科教師，多個以分號分隔：
+  -TeacherEmails 'teacher1@pochiu.edu.hk;teacher2@pochiu.edu.hk'
 "@
 }
 
@@ -240,10 +234,10 @@ if (-not $Apply) {
     Write-Host "目前為模擬模式：只會顯示指令。要真正部署請加上 -Apply。" -ForegroundColor Yellow
 }
 
-Write-Step "1/7 啟用所需 API（run、artifactregistry、secretmanager、sheets、cloudbuild、storage）"
+Write-Step "1/8 啟用所需 API（run、artifactregistry、secretmanager、sheets、cloudbuild、storage）"
 Invoke-Gcloud services enable run.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com sheets.googleapis.com cloudbuild.googleapis.com storage.googleapis.com --project $Project | Out-Null
 
-Write-Step "2/7 建立 Artifact Registry 倉庫（已存在時略過）"
+Write-Step "2/8 建立 Artifact Registry 倉庫（已存在時略過）"
 $repos = Invoke-Gcloud artifacts repositories list --project $Project --location $Region --format "value(name)"
 if ($Apply -and $repos -notmatch "$Repository$") {
     Invoke-Gcloud artifacts repositories create $Repository --project $Project --location $Region --repository-format docker --description "HK history self-study images" | Out-Null
@@ -251,7 +245,7 @@ if ($Apply -and $repos -notmatch "$Repository$") {
     Write-Host "  已存在或為模擬模式：$Repository" -ForegroundColor DarkGray
 }
 
-Write-Step "3/7 建立資料備份用的 Cloud Storage bucket（免費方案：資料庫快照備份）"
+Write-Step "3/8 建立資料備份用的 Cloud Storage bucket（免費方案：資料庫快照備份）"
 $backupBucketName = if ($BackupBucket) { $BackupBucket } else { "$Project-history-backup" }
 if ($Apply) {
     $buckets = Invoke-Gcloud storage buckets list --project $Project --format "value(name)"
@@ -265,7 +259,7 @@ if ($Apply) {
     Write-Host "  （模擬）建立 gs://$backupBucketName（$BackupLocation，標準儲存）" -ForegroundColor DarkGray
 }
 
-Write-Step "4/7 建立／更新 Secret Manager 機密"
+Write-Step "4/8 建立／更新 Secret Manager 機密"
 $existingSecrets = Invoke-Gcloud secrets list --project $Project --format "value(name)"
 # 未明確提供時，依序取環境變數、再取本機 .env.local；都沒有就不能覆寫線上已設定的值
 $localEnv = Read-LocalEnvFile -FileName ".env.local"
@@ -315,7 +309,7 @@ if ($googleId -and $googleSecret) {
     Write-Warning "未提供 Google OAuth 憑證：已放入佔位值（可設 GOOGLE_CLIENT_ID／GOOGLE_CLIENT_SECRET 或在 .env.local 填寫）。未啟用登入時，Cloud Run 上的後台 API 會被拒絕。"
 }
 
-Write-Step "4/6 建立名冊讀取服務帳戶及金鑰"
+Write-Step "5/8 建立名冊讀取服務帳戶及金鑰"
 $serviceAccountEmail = "$RosterServiceAccount@${Project}.iam.gserviceaccount.com"
 $existingAccounts = Invoke-Gcloud iam service-accounts list --project $Project --format "value(email)"
 if ($Apply -and $existingAccounts -notmatch [regex]::Escape($serviceAccountEmail)) {
@@ -363,7 +357,7 @@ if ($keyPath) {
     Write-Warning "未建立名冊服務帳戶金鑰：Cloud Run 部署會因缺少 Secret $rosterSecretName 而失敗，請以 -RosterServiceAccountFile 指定金鑰檔。"
 }
 
-Write-Step "5/7 建立 Cloud Run 執行身分並授權讀取 Secret 及備份 bucket"
+Write-Step "6/8 建立 Cloud Run 執行身分並授權讀取 Secret 及備份 bucket"
 $runtimeServiceAccountEmail = "$RuntimeServiceAccount@${Project}.iam.gserviceaccount.com"
 if ($Apply -and $existingAccounts -notmatch [regex]::Escape($runtimeServiceAccountEmail)) {
     Invoke-Gcloud iam service-accounts create $RuntimeServiceAccount --project $Project --display-name "History self-study Cloud Run runtime" --quiet | Out-Null
@@ -375,7 +369,7 @@ foreach ($secretName in @($authSecretName, $llmSecretName, $rosterSecretName, $g
 # 只授權讀寫這個備份 bucket（不使用專案層級權限）
 Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$backupBucketName" --project $Project --member "serviceAccount:$runtimeServiceAccountEmail" --role roles/storage.objectAdmin --quiet | Out-Null
 
-Write-Step "6/7 以 Cloud Build 建置映像檔並部署到 Cloud Run（約需 5 至 10 分鐘）"
+Write-Step "7/8 以 Cloud Build 建置映像檔並部署到 Cloud Run（約需 5 至 10 分鐘）"
 # 未指定名冊 Sheet 時沿用線上服務現有設定，避免以空值覆寫（學生將無法登入）
 if (-not $RosterSheetId -and $Apply) {
     $currentSheetId = Invoke-Gcloud run services describe $Service --project $Project --region $Region --format "value(spec.template.spec.containers[0].env.filter(name:STUDENT_ROSTER_SHEET_ID).extract(value).flatten())"
@@ -388,7 +382,7 @@ if (-not $RosterSheetId -and $Apply) {
 }
 # --allow-unauthenticated 是切換式旗標（不能寫 =true）；不允許公開存取時留空，改由 IAP／身分權杖保護
 $authFlag = if ($AllowUnauthenticated) { "--allow-unauthenticated" } else { "" }
-$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13},_IN_DOMAIN_ROLE={14}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $AdminEmails, $TeacherEmails, $InDomainRole)
+$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $AdminEmails, $TeacherEmails)
 Invoke-Gcloud builds submit --project $Project --config cloudbuild.yaml --substitutions $substitutions --timeout=1800s . | Out-Null
 
 # Cloud Build 執行身分未必有 run.services.setIamPolicy，令 --allow-unauthenticated 靜靜失效（服務會回 403）
@@ -402,7 +396,7 @@ if ($Apply -and $AllowUnauthenticated) {
     }
 }
 
-Write-Step "7/7 部署結果"
+Write-Step "8/8 部署結果"
 $url = Invoke-Gcloud run services describe $Service --project $Project --region $Region --format "value(status.url)"
 if ($Apply) {
     Write-Host ""

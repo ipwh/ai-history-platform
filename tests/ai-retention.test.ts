@@ -13,12 +13,10 @@
  *   5. **並行安全**：清理期間插入的新記錄（晚於界線）不會被刪除。
  *   6. 管理員端只看到總數及維護狀態，不含任何學習者資料。
  */
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-retention-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("retention");
 process.env.LLM_PROVIDER = "mock";
 process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 delete process.env.GOOGLE_CLIENT_ID;

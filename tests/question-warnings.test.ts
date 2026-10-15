@@ -3,12 +3,10 @@
  * 警告只供教師核對（例如題目出現教材未提及的人名／條約名），
  * 必須能寫入題庫、讀回，而且不可出現在學生端題目。
  */
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-const testDbPath = path.join(os.tmpdir(), `hist-test-warnings-${process.pid}.db`);
+const testDbPath = freshTestDatabasePath("warnings");
 process.env.APP_DATABASE_PATH = testDbPath;
 
 type QuestionRepository = typeof import("@/server/repositories/questions");

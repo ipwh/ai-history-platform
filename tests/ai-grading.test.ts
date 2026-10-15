@@ -1,10 +1,8 @@
-import os from "node:os";
-import path from "node:path";
-
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
 // 使用獨立暫存資料庫，並以 DeepSeek 設定模擬「已接上 AI」的情況（fetch 會被 stub，不會真的發送請求）
-const testDbPath = path.join(os.tmpdir(), `hist-test-ai-grading-${process.pid}.db`);
+const testDbPath = freshTestDatabasePath("ai-grading");
 process.env.APP_DATABASE_PATH = testDbPath;
 process.env.LLM_PROVIDER = "deepseek";
 process.env.DEEPSEEK_API_KEY = "sk-test";

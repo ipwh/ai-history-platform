@@ -9,12 +9,10 @@
  *   5. 不考核範圍（課題1 新月沃土／黃河、長江流域／印度河）的題目不會匯入，古埃及文明的題目可以匯入。
  *   6. 重複匯入不會產生重複題目。
  */
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-qbank-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("qbank");
 process.env.LLM_PROVIDER = "mock";
 delete process.env.ADMIN_TOKEN;
 

@@ -8,12 +8,10 @@
  *   4. 學生不可回報其他學生練習中的題目，亦不可處理回報（學生呼叫教師 API 會 403）。
  *   5. AI 即時生成的題目只存在於練習快照，也必須可以回報（教師端仍看到題目內容）。
  */
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-reports-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("reports");
 process.env.LLM_PROVIDER = "mock";
 process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";

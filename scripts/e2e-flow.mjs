@@ -237,8 +237,7 @@ async function main() {
     );
     for (const document of alreadyGranted) {
       await call("PATCH", `/api/admin/materials/${document.id}`, { studentDistribution: false });
-    }
-    if (alreadyGranted.length > 0) {
+    }    if (alreadyGranted.length > 0) {
       console.log(`    重設 ${alreadyGranted.length} 份教材的學生閱讀權限後再測試閘門`);
     }
 
@@ -262,24 +261,44 @@ async function main() {
         document.topicId === topic.id && document.kind !== "question-bank" && document.blockCount > 0,
     );
     if (distributableDocument) {
-      const granted = await call("PATCH", `/api/admin/materials/${distributableDocument.id}`, {
-        studentDistribution: true,
-      });
-      // 檔名標示為教師版（例如 `_TE`）的文件必須額外明確確認才可開放給學生
-      if (granted.status === 409) {
-        check("教師版教材需要額外確認才可開放（409）", true);
-        const confirmed = await call("PATCH", `/api/admin/materials/${distributableDocument.id}`, {
-          studentDistribution: true,
-          confirmTeacherEdition: true,
-        });
+      // 開放前必須有版權／發行權確認
+      const withoutRights = await call(
+        "PATCH",
+        `/api/admin/materials/${distributableDocument.id}`,
+        { studentDistribution: true },
+      );
+      check(
+        "開放學生閱讀需要版權確認（409）",
+        withoutRights.status === 409,
+        `HTTP ${withoutRights.status}`,
+      );
+
+      const withRights = await call(
+        "PATCH",
+        `/api/admin/materials/${distributableDocument.id}`,
+        { studentDistribution: true, confirmRights: true },
+      );
+      // 檔名標示為教師版（例如 `_TE`）的文件必須額外做好內容安全覆核才可開放
+      if (withRights.status === 409) {
+        check("教師版教材需要額外內容覆核確認（409）", true);
+        const confirmed = await call(
+          "PATCH",
+          `/api/admin/materials/${distributableDocument.id}`,
+          { studentDistribution: true, confirmRights: true, confirmTeacherEdition: true },
+        );
         check(
           "明確確認後可以開放學生閱讀",
-          confirmed.status === 200 &&
-            confirmed.payload?.document?.studentDistribution === true,
+          confirmed.status === 200 && confirmed.payload?.document?.studentDistribution === true,
           JSON.stringify(confirmed.payload)?.slice(0, 200),
         );
+        check(
+          "兩項確認都記錄了確認者及時間",
+          typeof confirmed.payload?.governance?.rightsConfirmedBy === "string" &&
+            typeof confirmed.payload?.governance?.contentReviewedBy === "string" &&
+            Number.isFinite(Date.parse(confirmed.payload?.governance?.rightsConfirmedAt ?? "")),
+        );
       } else {
-        check("管理員可以確認教材的學生閱讀權限", granted.status === 200, `HTTP ${granted.status}`);
+        check("管理員可以確認教材的學生閱讀權限", withRights.status === 200, `HTTP ${withRights.status}`);
       }
 
       const lesson = await call("GET", `/api/topics/${topic.id}/lesson?learnerId=${LEARNER_ID}`);

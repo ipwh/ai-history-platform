@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -18,8 +17,10 @@ import { listQuestions } from "@/server/repositories/questions";
 import { listSections } from "@/server/repositories/topics";
 import { seedDemoQuestionBank, seedTopicStructureOnly } from "@/server/seed";
 
+import { freshTestDatabasePath } from "./test-database";
+
 // 使用獨立暫存資料庫，不會影響本機示範資料
-const testDbPath = path.join(os.tmpdir(), `hist-test-materials-${process.pid}.db`);
+const testDbPath = freshTestDatabasePath("materials");
 process.env.APP_DATABASE_PATH = testDbPath;
 
 const { materialsDir } = getServerConfig();

@@ -6,8 +6,13 @@
  * 圖片段落若有 OCR 辨識文字，也會納入生成素材（並標示來源為 OCR）。
  */
 import type { MaterialBlock, TableCell } from "../../lib/types";
-import { listGroundingBlocksForSections, listGroundingBlocksByTopic } from "../repositories/materials";
+import {
+  listGroundingBlocksForSections,
+  listGroundingBlocksByTopic,
+  listStudentDistributableDocumentIds,
+} from "../repositories/materials";
 import { stripPageReferences, truncate, joinTableRow } from "../materials/text-utils";
+import { isTeacherOnlyBlockText } from "../materials/teacher-content";
 import { stripOcrAnnotation } from "./ocr-text";
 import type { MaterialUnit } from "../llm/provider";
 
@@ -33,13 +38,35 @@ function pushUnit(units: MaterialUnit[], block: MaterialBlock, text: string, not
   });
 }
 
-export function buildMaterialUnits(topicId: string, sectionIds: string[]): MaterialUnit[] {
+export function buildMaterialUnits(
+  topicId: string,
+  sectionIds: string[],
+  options: { audience?: "student" | "staff" } = {},
+): MaterialUnit[] {
+  // 學生端（學生自行觸發的即時生成）只可使用已確認可向學生發布、且非教師專用的教材：
+  // 否則「教材版權閘門」只擋住閱讀頁，學生仍可透過 AI 出題把未經確認的教師版內容
+  // （甚至答案、評分參考）引出並取得節錄。教師／管理員生成時不受此限，
+  // 因為他們本來就可以在管理介面看到教材內容。
+  const audience = options.audience ?? "staff";
+  const distributable =
+    audience === "student" ? listStudentDistributableDocumentIds() : null;
+
   let blocks = listGroundingBlocksForSections(topicId, sectionIds);
 
   // 分節沒有直接對應的段落時（例如新增分節或教材未細分），
   // 回退使用整個課題的教材，確保仍可生成有依據的題目。
   if (blocks.length === 0) {
     blocks = listGroundingBlocksByTopic(topicId);
+  }
+
+  if (distributable !== null) {
+    blocks = blocks.filter((block) => {
+      if (!distributable.has(block.documentId)) return false;
+      const blockText = [block.text, ...(block.table ?? []).flat().map((cell) => cell.text)].join(
+        "\n",
+      );
+      return !isTeacherOnlyBlockText(blockText);
+    });
   }
 
   const units: MaterialUnit[] = [];

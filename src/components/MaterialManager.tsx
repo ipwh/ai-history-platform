@@ -76,6 +76,13 @@ interface DocumentDetailResponse {
   looksLikeTeacherEdition: boolean;
   /** 被判定為教師專用內容（答案、評分參考）而不會顯示給學生的段落數 */
   teacherOnlyBlockCount: number;
+  /** 兩項發布確認（版權／發行權、內容安全覆核）的記錄 */
+  governance?: {
+    rightsConfirmedAt: string | null;
+    rightsConfirmedBy: string | null;
+    contentReviewedAt: string | null;
+    contentReviewedBy: string | null;
+  };
 }
 
 /**
@@ -101,6 +108,7 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
     distributionAudit: DistributionAuditEntry[];
     looksLikeTeacherEdition: boolean;
     teacherOnlyBlockCount: number;
+    governance: DocumentDetailResponse["governance"];
   } | null>(null);
   const [diskMaterials, setDiskMaterials] = useState<DiskMaterial[]>([]);
   const [diskLoaded, setDiskLoaded] = useState(false);
@@ -282,6 +290,7 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
         distributionAudit: result.distributionAudit,
         looksLikeTeacherEdition: result.looksLikeTeacherEdition,
         teacherOnlyBlockCount: result.teacherOnlyBlockCount,
+        governance: result.governance,
       });
     } catch (caught) {
       setBlockError(caught);
@@ -305,6 +314,7 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
           distributionAudit: result.distributionAudit,
           looksLikeTeacherEdition: result.looksLikeTeacherEdition,
           teacherOnlyBlockCount: result.teacherOnlyBlockCount,
+          governance: result.governance,
         });
         setBlocksLoading(false);
       })
@@ -330,14 +340,23 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
       const result = await api.patch<{
         document: MaterialDocument;
         distributionAudit: DistributionAuditEntry[];
+        governance: DocumentDetailResponse["governance"];
       }>(`/api/admin/materials/${documentId}`, {
         studentDistribution: allowed,
-        ...(options.confirmTeacherEdition ? { confirmTeacherEdition: true } : {}),
+        // 開放時必須帶上版權／發行權確認；教師版另需內容安全覆核確認
+        ...(allowed
+          ? { confirmRights: true, ...(options.confirmTeacherEdition ? { confirmTeacherEdition: true } : {}) }
+          : {}),
       });
       setDocumentDetail((current) =>
         current === null
           ? current
-          : { ...current, document: result.document, distributionAudit: result.distributionAudit },
+          : {
+              ...current,
+              document: result.document,
+              distributionAudit: result.distributionAudit,
+              governance: result.governance,
+            },
       );
       setMessage(
         allowed
@@ -705,6 +724,7 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
               document={documentDetail.document}
               audit={documentDetail.distributionAudit}
               looksLikeTeacherEdition={documentDetail.looksLikeTeacherEdition}
+              governance={documentDetail.governance ?? null}
               teacherOnlyBlockCount={documentDetail.teacherOnlyBlockCount}
               onSet={(allowed, options) =>
                 void handleSetDistribution(documentDetail.document.id, allowed, options)
@@ -738,6 +758,7 @@ function DistributionPanel({
   audit,
   looksLikeTeacherEdition,
   teacherOnlyBlockCount,
+  governance,
   onSet,
 }: {
   document: MaterialDocument;
@@ -746,6 +767,8 @@ function DistributionPanel({
   looksLikeTeacherEdition: boolean;
   /** 被判定為教師專用內容而不會顯示給學生的段落數 */
   teacherOnlyBlockCount: number;
+  /** 兩項發布確認的記錄（版權／發行權、內容安全覆核） */
+  governance: DocumentDetailResponse["governance"] | null;
   onSet: (allowed: boolean, options?: { confirmTeacherEdition?: boolean }) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
@@ -772,9 +795,24 @@ function DistributionPanel({
             。未開放的教材對學生完全不顯示，學生只會在「閱讀教材」頁看到已開放的內容。
           </p>
           <p className="text-xs text-gray-600">
-            只有在確認擁有在平台向學生發布這份內容的權利後才應開放。系統沒有內建授權紀錄，
-            也不會代你判斷版權狀態。
+            開放需要兩項確認（都會記錄確認者及時間）：<strong>版權／發行權</strong>
+            （是否有權在平台向學生發布這份內容）與<strong>內容安全覆核</strong>
+            （教師版文件另需逐段核對，確認沒有答案或評分參考）。撤銷立即生效，不需要任何確認。
+            系統不會代你判斷版權狀態，亦沒有內建授權紀錄。
           </p>
+
+          {governance && (governance.rightsConfirmedAt || governance.contentReviewedAt) ? (
+            <p className="text-xs text-gray-600">
+              上次確認：
+              {governance.rightsConfirmedAt
+                ? `版權／發行權由 ${governance.rightsConfirmedBy} 於 ${governance.rightsConfirmedAt.slice(0, 10)} 確認`
+                : "版權／發行權未確認"}
+              ；
+              {governance.contentReviewedAt
+                ? `內容安全覆核由 ${governance.contentReviewedBy} 於 ${governance.contentReviewedAt.slice(0, 10)} 完成`
+                : "內容安全覆核未完成"}
+            </p>
+          ) : null}
 
           {looksLikeTeacherEdition ? (
             <p className="text-xs" style={{ color: "#b45309" }}>

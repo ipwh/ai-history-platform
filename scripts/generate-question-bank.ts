@@ -42,13 +42,15 @@ async function main() {
   });
 
   const byDifficulty = `基礎 ${report.createdByDifficulty.basic} 題、進階 ${report.createdByDifficulty.advanced} 題、挑戰 ${report.createdByDifficulty.challenge} 題`;
+  if (report.autoPublishSuppressedReason) {
+    console.log(`\n！${report.autoPublishSuppressedReason}`);
+  }
   console.log(
     report.autoPublish
       ? `\n✓ 共新增 ${report.created} 題（${byDifficulty}），其中 ${report.published} 題已自動發布（示範模式）。\n` +
           "  正式環境請設定 DEMO_AUTO_PUBLISH_QUESTIONS=false，讓教師核對後才發布。"
       : `\n✓ 共新增 ${report.created} 題（${byDifficulty}）（草稿狀態，教師需在「題目管理」發布）。`,
-  );
-  console.log(
+  );  console.log(
     "  題庫難度分佈（所有課題）：" +
       (["basic", "advanced", "challenge"] as const)
         .map(

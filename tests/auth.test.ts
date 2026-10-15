@@ -1,10 +1,8 @@
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
 // 使用獨立暫存資料庫及測試憑證，避免影響本機設定
-process.env.APP_DATABASE_PATH = path.join(os.tmpdir(), `hist-test-auth-${process.pid}.db`);
+process.env.APP_DATABASE_PATH = freshTestDatabasePath("auth");
 process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";
 process.env.AUTH_TEACHER_EMAILS = "admin@example.com";
@@ -34,44 +32,64 @@ describe("學校帳戶角色判定", () => {
     const { auth } = configModule.getServerConfig();
     expect(role.resolveSignInRole("s2024146@pochiu.edu.hk", auth)).toBe("student");
     expect(role.resolveSignInRole("S2024146@POCHIU.EDU.HK", auth)).toBe("student");
-    // 未設定 AUTH_IN_DOMAIN_ROLE 時，校內非學號形式的帳戶不會自動取得教師權限，
-    // 否則任何學生的別名帳戶都會變成教師（可讀取全部學生的練習記錄）
+    // 校內非學號形式的帳戶不會自動取得教師權限，否則任何學生的別名帳戶都會變成教師
+    // （可讀取全部學生的練習記錄）
     expect(role.resolveSignInRole("history.teacher@pochiu.edu.hk", auth)).toBe("student");
     expect(role.resolveSignInRole("s123456@pochiu.edu.hk", auth)).toBe("student");
   });
 
-  it("明確設定 AUTH_IN_DOMAIN_ROLE=teacher 時才回復舊行為（校內非學號形式 = 教師）", () => {
+  it("設定 AUTH_IN_DOMAIN_ROLE=teacher 不再授予教師權限（政策已移除，fail-closed）", () => {
     const original = process.env.AUTH_IN_DOMAIN_ROLE;
+    const originalAck = process.env.AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER;
     process.env.AUTH_IN_DOMAIN_ROLE = "teacher";
+    delete process.env.AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER;
     try {
       const { auth } = configModule.getServerConfig();
-      expect(role.resolveSignInRole("history.teacher@pochiu.edu.hk", auth)).toBe("teacher");
+      // 舊設定會被偵測到（產生 error 級警示）但不再影響角色判定
+      expect(auth.legacyInDomainTeacherConfigured).toBe(true);
+      expect(auth.inDomainRole).toBe("student");
+      expect(role.resolveSignInRole("history.teacher@pochiu.edu.hk", auth)).toBe("student");
       expect(role.resolveSignInRole("s2024146@pochiu.edu.hk", auth)).toBe("student");
-      // 即使採用寬鬆的預設值，名冊內的帳戶仍然是學生
-      expect(
-        role.resolveSignInRole("history.teacher@pochiu.edu.hk", auth, { rosterStudent: true }),
-      ).toBe("student");
     } finally {
       if (original === undefined) delete process.env.AUTH_IN_DOMAIN_ROLE;
       else process.env.AUTH_IN_DOMAIN_ROLE = original;
+      if (originalAck === undefined) delete process.env.AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER;
+      else process.env.AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER = originalAck;
     }
   });
 
-  it("名冊內的帳戶一律是學生，即使學號形式不符", () => {
+  it("即使同時設定舊政策的兩個變數，仍然不會授予教師權限", () => {
     const original = process.env.AUTH_IN_DOMAIN_ROLE;
+    const originalAck = process.env.AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER;
     process.env.AUTH_IN_DOMAIN_ROLE = "teacher";
+    process.env.AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER = "true";
     try {
       const { auth } = configModule.getServerConfig();
-      for (const email of ["s2024146@pochiu.edu.hk", "2024146@pochiu.edu.hk", "s2024146.chan@pochiu.edu.hk"]) {
-        expect(role.resolveSignInRole(email, auth, { rosterStudent: true })).toBe("student");
-      }
-      // 名單內的教師不會被名冊降級（名冊只收錄學生）
-      expect(role.resolveSignInRole("admin@example.com", auth, { rosterStudent: true })).toBe(
+      expect(auth.inDomainRole).toBe("student");
+      expect(role.resolveSignInRole("history.teacher@pochiu.edu.hk", auth)).toBe("student");
+      expect(role.resolveSignInRole("s2024146@pochiu.edu.hk", auth)).toBe("student");
+      // 只有明確列入名單才是教師
+      expect(role.resolveSignInRole(auth.teacherEmails[0] ?? "teacher@example.com", auth)).toBe(
         "teacher",
       );
     } finally {
       if (original === undefined) delete process.env.AUTH_IN_DOMAIN_ROLE;
       else process.env.AUTH_IN_DOMAIN_ROLE = original;
+      if (originalAck === undefined) delete process.env.AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER;
+      else process.env.AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER = originalAck;
+    }
+  });
+
+  it("所有非名單帳戶一律是學生（不論網域或學號形式）", () => {
+    const { auth } = configModule.getServerConfig();
+    for (const email of [
+      "s2024146@pochiu.edu.hk",
+      "2024146@pochiu.edu.hk",
+      "s2024146.chan@pochiu.edu.hk",
+      "chan.tai.ming@pochiu.edu.hk",
+      "someone@gmail.com",
+    ]) {
+      expect(role.resolveSignInRole(email, auth), email).toBe("student");
     }
   });
 
@@ -110,8 +128,9 @@ describe("學校帳戶角色判定", () => {
   });
 
   it("由 Google 帳戶建立的 session 會使用對應角色的學習者 ID", () => {
-    const original = process.env.AUTH_IN_DOMAIN_ROLE;
-    process.env.AUTH_IN_DOMAIN_ROLE = "teacher";
+    // 教師身分只由名單決定，因此測試需要把該帳戶列入 AUTH_TEACHER_EMAILS
+    const originalTeacher = process.env.AUTH_TEACHER_EMAILS;
+    process.env.AUTH_TEACHER_EMAILS = "teacher@example.com,history.teacher@pochiu.edu.hk";
     try {
       const { auth } = configModule.getServerConfig();
       const student = role.buildSessionUser(
@@ -134,8 +153,8 @@ describe("學校帳戶角色判定", () => {
       expect(admin.role).toBe("admin");
       expect(admin.learnerId).toBe("admin:superadmin@example.com");
     } finally {
-      if (original === undefined) delete process.env.AUTH_IN_DOMAIN_ROLE;
-      else process.env.AUTH_IN_DOMAIN_ROLE = original;
+      if (originalTeacher === undefined) delete process.env.AUTH_TEACHER_EMAILS;
+      else process.env.AUTH_TEACHER_EMAILS = originalTeacher;
     }
   });
 });

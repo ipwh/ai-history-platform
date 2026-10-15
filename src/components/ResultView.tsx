@@ -260,14 +260,20 @@ export function ResultView({ sessionId }: { sessionId: string }) {
               ) : null}
               <div className="source-box">
                 <div className="text-xs text-gray-600 mb-1">
-                  教材來源：{feedback.sourceLocation}
+                  教材來源：
+                  {feedback.sourceWithheld ? "未確認可向學生發布" : feedback.sourceLocation}
                 </div>
                 {feedback.sourceFromOcr ? (
                   <div className="text-xs mb-1" style={{ color: "var(--warning)" }}>
                     此題依據的教材文字由圖片 OCR 辨識取得，可能有錯字。
                   </div>
                 ) : null}
-                <div className="whitespace-pre-wrap">{feedback.sourceExcerpt}</div>
+                {feedback.sourceWithheld ? (
+                  <div className="text-xs mb-1" style={{ color: "var(--warning)" }}>
+                    此題引用的教材文件尚未經教師確認可向學生發布，因此不顯示原文節錄。
+                  </div>
+                ) : null}
+                <div className="whitespace-pre-wrap">{feedback.sourceExcerpt ?? ""}</div>
               </div>
             </article>
           );

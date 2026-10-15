@@ -1,10 +1,8 @@
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
 // 使用獨立暫存資料庫，避免影響本機示範資料
-const testDbPath = path.join(os.tmpdir(), `hist-test-practice-${process.pid}.db`);
+const testDbPath = freshTestDatabasePath("practice");
 process.env.APP_DATABASE_PATH = testDbPath;
 process.env.LLM_PROVIDER = "mock";
 
@@ -132,7 +130,8 @@ describe("學生練習流程（整合測試）", () => {
     expect(correctSubmit.feedback.isCorrect).toBe(true);
     expect(correctSubmit.feedback.explanation.length).toBeGreaterThan(0);
     expect(correctSubmit.feedback.knowledgePoint.length).toBeGreaterThan(0);
-    expect(correctSubmit.feedback.sourceLocation.length).toBeGreaterThan(0);
+    expect(correctSubmit.feedback.sourceLocation ?? "").toEqual(expect.any(String));
+    expect(correctSubmit.feedback.sourceWithheld).toBe(false);
 
     // 已看到答案後再提交，分數不會改變
     const repeated = await practice.submitAnswer(

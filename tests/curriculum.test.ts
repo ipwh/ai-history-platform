@@ -1,10 +1,8 @@
-import os from "node:os";
-import path from "node:path";
-
 import { beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
 // 使用獨立暫存資料庫，避免影響本機示範資料
-const testDbPath = path.join(os.tmpdir(), `hist-test-curriculum-${process.pid}.db`);
+const testDbPath = freshTestDatabasePath("curriculum");
 process.env.APP_DATABASE_PATH = testDbPath;
 process.env.LLM_PROVIDER = "mock";
 

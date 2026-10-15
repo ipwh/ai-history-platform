@@ -4,18 +4,15 @@
  * 判定次序：
  *   AUTH_ADMIN_EMAILS 內的帳戶                                    → 管理員
  *   AUTH_TEACHER_EMAILS 內的帳戶                                  → 教師
- *   非校內網域（例如 gmail.com）                                  → 學生
- *   學生名冊內的帳戶                                              → 學生
- *   校內網域 + 學號形式（s 加 7 位數字，例如 s2024146@pochiu.edu.hk）→ 學生
- *   校內網域的其他帳號                                             → 依 AUTH_IN_DOMAIN_ROLE
- *                                                                    （預設學生，fail-closed）
+ *   其他所有帳戶（包括校內網域）                                   → 學生
  *
- * 「校內網域的其他帳號」曾經一律視為教師，但這是一個 fail-open 的預設值：只要有任何
- * 一個學生的帳戶不是 s 加 7 位數字（別名、學號加上姓名等），該學生就會取得教師權限，
- * 可以讀取全部學生的練習記錄。因此：
- *   1. 學生名冊（若已設定）是學生身分的權威來源，名冊內的帳戶一律是學生；
- *   2. 預設（AUTH_IN_DOMAIN_ROLE 未設定）改為學生，教師必須列在 AUTH_TEACHER_EMAILS，
- *      或明確設定 AUTH_IN_DOMAIN_ROLE=teacher 承擔此風險。
+ * 「校內網域的其他帳號」曾經可以依 `AUTH_IN_DOMAIN_ROLE=teacher` 取得教師權限。那是一個
+ * fail-open 的設計：只要有任何學生的帳戶不是「s 加 7 位數字」（別名、學號加姓名等），
+ * 又不在學生名冊內，該學生就會取得教師權限，可讀取**全部**學生的練習記錄。
+ *
+ * **Sprint 6 起，網域本身不再授予任何教職員權限**：教師必須明確列在
+ * `AUTH_TEACHER_EMAILS`（或列在 `AUTH_ADMIN_EMAILS`）。舊的兩個變數仍會被讀取，
+ * 但只會產生 error 級設定警示，不再影響判定（見 config-diagnostics.ts）。
  *
  * 網域比對要求完整標籤，因此 `x@pochiu.edu.hk.evil.com` 會被判為學生。
  */
@@ -23,7 +20,7 @@ import { sessionUserSchema, type SessionUser, type SignInRole } from "../../lib/
 import type { RosterStudent } from "../roster/columns";
 import type { AuthConfig } from "../config";
 
-/** 學號形式：s + 7 位數字 */
+/** 學號形式：s + 7 位數字（只用於身分檔案的判讀，不再影響角色） */
 const STUDENT_LOCAL_PART = /^s\d{7}$/;
 
 /** 角色高低（只用於「降權即時生效、升權需重新登入」的比較） */
@@ -49,34 +46,36 @@ export function isSchoolDomain(email: string, schoolDomains: string[]): boolean 
 }
 
 export interface RoleResolutionOptions {
-  /** 該電郵是否已確認在學生名冊內（名冊是學生身分的權威來源） */
+  /** 該電郵是否已確認在學生名冊內（只作記錄用途；不影響角色判定） */
   rosterStudent?: boolean;
 }
 
-/** 該電郵是否由設定明確列為教師或管理員（不受校內網域預設值影響） */
+/** 該電郵是否由設定明確列為教師或管理員（不受校內網域影響） */
 export function isExplicitStaff(email: string, config: AuthConfig): boolean {
   const normalized = normalizeEmail(email);
   return config.adminEmails.includes(normalized) || config.teacherEmails.includes(normalized);
 }
 
-export function resolveSignInRole(
-  email: string,
-  config: AuthConfig,
-  options: RoleResolutionOptions = {},
-): SignInRole {
+/**
+ * 判定登入角色。
+ *
+ * **只有明確列在名單內的帳戶才是教職員**；其他一律是學生（包括校內網域帳戶、
+ * 別名帳戶、不在名冊內的帳戶）。學生名冊只決定「可否登入」及顯示的班別學號，
+ * 與角色判定無關（因此亦不可能靠別名或名冊遺漏取得教師權限）。
+ */
+export function resolveSignInRole(email: string, config: AuthConfig): SignInRole {
   const normalized = normalizeEmail(email);
   if (config.adminEmails.includes(normalized)) return "admin";
   if (config.teacherEmails.includes(normalized)) return "teacher";
-  if (!isSchoolDomain(normalized, config.schoolDomains)) return "student";
+  return "student";
+}
 
-  // 名冊內的帳戶一律是學生：即使學號形式不符，也不可取得教師權限
-  if (options.rosterStudent === true) return "student";
-
+/** 該帳戶是否為學號形式（供教師端顯示／診斷用，不影響角色） */
+export function looksLikeStudentNumber(email: string): boolean {
+  const normalized = normalizeEmail(email);
   const at = normalized.lastIndexOf("@");
-  const localPart = normalized.slice(0, at);
-  if (STUDENT_LOCAL_PART.test(localPart)) return "student";
-
-  return config.inDomainRole === "teacher" ? "teacher" : "student";
+  if (at <= 0) return false;
+  return STUDENT_LOCAL_PART.test(normalized.slice(0, at));
 }
 
 /** 由電郵及角色推導穩定的學習者 ID，讓學習記錄跟隨學校帳戶。
@@ -125,13 +124,9 @@ export interface GoogleProfile {
   pictureUrl: string | null;
 }
 
-export function buildSessionUser(
-  profile: GoogleProfile,
-  config: AuthConfig,
-  options: RoleResolutionOptions = {},
-): SessionUser {
+export function buildSessionUser(profile: GoogleProfile, config: AuthConfig): SessionUser {
   const email = normalizeEmail(profile.email);
-  const role = resolveSignInRole(email, config, options);
+  const role = resolveSignInRole(email, config);
   return sessionUserSchema.parse({
     email,
     name: profile.name,
@@ -144,16 +139,15 @@ export function buildSessionUser(
 /**
  * 建立工作階段使用者，並在學生已於名冊核對時帶入班別、學號及姓名。
  *
- * 名冊同時是角色判定的依據：名冊內的帳戶一律是學生（見 resolveSignInRole），
- * 因此「校內網域但學號形式不符」的別名帳戶不會取得教師權限。
- * 名冊只收錄學生，因此不在名冊內的帳戶不會因此變成教師或管理員。
+ * 名冊只提供學生身分資料，**不影響角色判定**：名冊內的帳戶一律是學生，
+ * 不在名冊內的帳戶亦不會因此變成教師或管理員（教師只來自 `AUTH_TEACHER_EMAILS`）。
  */
 export function buildSessionUserWithRoster(
   profile: GoogleProfile,
   config: AuthConfig,
   student: RosterStudent | null,
 ): SessionUser {
-  const base = buildSessionUser(profile, config, { rosterStudent: student !== null });
+  const base = buildSessionUser(profile, config);
   if (base.role !== "student" || student === null) return base;
 
   return sessionUserSchema.parse({

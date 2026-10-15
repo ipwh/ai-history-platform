@@ -9,12 +9,13 @@
  *   4. 版權閘門的預設值仍為「不對學生發布」。
  *   5. 契約測試**不會**連接正式資料庫：全程使用暫存資料庫。
  */
+import fs from "node:fs";
 import os from "node:os";
-import path from "node:path";
+import type { DatabaseSync } from "node:sqlite";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { freshTestDatabasePath } from "./test-database";
 
-import { beforeAll, describe, expect, it } from "vitest";
-
-const testDbPath = path.join(os.tmpdir(), `hist-test-migrations-${process.pid}.db`);
+const testDbPath = freshTestDatabasePath("migrations");
 process.env.APP_DATABASE_PATH = testDbPath;
 process.env.LLM_PROVIDER = "mock";
 
@@ -26,6 +27,7 @@ type QuestionsRepo = typeof import("@/server/repositories/questions");
 
 let migrations: Migrations;
 let getDb: Connection["getDb"];
+let connection: Connection;
 let seed: Seed;
 let materialsRepo: MaterialsRepo;
 let questionsRepo: QuestionsRepo;
@@ -47,7 +49,8 @@ function tableColumns(table: string): string[] {
 
 beforeAll(async () => {
   migrations = await import("@/server/db/migrations");
-  getDb = (await import("@/server/db/connection")).getDb;
+  connection = await import("@/server/db/connection");
+  getDb = connection.getDb;
   seed = await import("@/server/seed");
   materialsRepo = await import("@/server/repositories/materials");
   questionsRepo = await import("@/server/repositories/questions");
@@ -167,5 +170,127 @@ describe("升級與冪等", () => {
     expect(process.env.APP_DATABASE_PATH).toBe(testDbPath);
     // data/app.db 是正式／開發資料庫；契約測試不應指向它
     expect(process.env.APP_DATABASE_PATH).not.toContain("data");
+  });
+});
+
+/**
+ * Migration 失敗及並行啟動（Sprint 6，P1 §5）。
+ *
+ * 這些測試使用**獨立**的資料庫檔案，避免影響其他測試的資料庫。
+ * 重點是 fail-closed：失敗的 migration 不會被記錄為已套用，亦不會留下半套 schema。
+ */
+describe("migration 失敗處理與並行啟動", () => {
+  const failurePath = freshTestDatabasePath("migration-failure");
+  const GOVERNANCE_MIGRATION = "0017-document-governance";
+
+  let failureDb: DatabaseSync;
+
+  function columns(): string[] {
+    return (
+      failureDb.prepare("PRAGMA table_info(material_documents)").all() as unknown as {
+        name: string;
+      }[]
+    ).map((row) => row.name);
+  }
+
+  function isRecorded(id: string): boolean {
+    return (
+      failureDb.prepare("SELECT id FROM schema_migrations WHERE id = ?").get(id) !== undefined
+    );
+  }
+
+  beforeAll(() => {
+    for (const suffix of ["", "-wal", "-shm"]) {
+      fs.rmSync(`${failurePath}${suffix}`, { force: true });
+    }
+    failureDb = connection.createDatabase(failurePath);
+  });
+
+  afterAll(() => {
+    failureDb.close();
+  });
+
+  it("部分套用的 migration 會完整回滾，且不會被記錄為已套用", () => {
+    // 模擬「0017 只套用了一部分」（例如有人手動改過資料庫）：先刪除記錄，
+    // 再移除前兩個欄位，令重跑時第 1、2 個語句成功、第 3 個語句因欄位已存在而失敗。
+    // 教材文件的存在用於驗證失敗不會破壞既有資料。
+    failureDb
+      .prepare(
+        `INSERT INTO material_documents
+         (id, file_name, kind, mime_type, size_bytes, status, block_count, image_count, created_at)
+         VALUES ('doc_rollback_probe', 'rollback-probe.docx', 'demo', '', 0, 'ready', 0, 0, '2024-01-01T00:00:00.000Z')`,
+      )
+      .run();
+    failureDb.exec("ALTER TABLE material_documents DROP COLUMN rights_confirmed_at");
+    failureDb.exec("ALTER TABLE material_documents DROP COLUMN rights_confirmed_by");
+    failureDb.prepare("DELETE FROM schema_migrations WHERE id = ?").run(GOVERNANCE_MIGRATION);
+    expect(isRecorded(GOVERNANCE_MIGRATION)).toBe(false);
+
+    expect(() => migrations.runMigrations(failureDb)).toThrowError(/content_reviewed_at/);
+
+    // 回滾：失敗的那次執行加入的欄位都不應留下（只剩原本已存在的兩個）
+    expect(columns().filter((name) => name.includes("confirmed") || name.includes("reviewed"))).toEqual([
+      "content_reviewed_at",
+      "content_reviewed_by",
+    ]);
+    // 沒有記錄為已套用，因此下次啟動會再嘗試，而不是靜默地當作已完成
+    expect(isRecorded(GOVERNANCE_MIGRATION)).toBe(false);
+    // 既有資料不受影響
+    expect(
+      failureDb.prepare("SELECT file_name FROM material_documents WHERE id = 'doc_rollback_probe'").get(),
+    ).toBeDefined();
+  });
+
+  it("修正後可重新套用，schema 及記錄都回到一致狀態", () => {
+    failureDb.exec("ALTER TABLE material_documents DROP COLUMN content_reviewed_at");
+    failureDb.exec("ALTER TABLE material_documents DROP COLUMN content_reviewed_by");
+
+    migrations.runMigrations(failureDb);
+
+    for (const column of [
+      "rights_confirmed_at",
+      "rights_confirmed_by",
+      "content_reviewed_at",
+      "content_reviewed_by",
+    ]) {
+      expect(columns(), `${column} 未建立`).toContain(column);
+    }
+    expect(isRecorded(GOVERNANCE_MIGRATION)).toBe(true);
+  });
+
+  it("已修復的資料庫再啟動時冪等：不會重複套用，記錄無重複", () => {
+    migrations.runMigrations(failureDb);
+    migrations.runMigrations(failureDb);
+
+    const rows = failureDb
+      .prepare("SELECT id, COUNT(*) AS total FROM schema_migrations GROUP BY id")
+      .all() as unknown as { id: string; total: number }[];
+    expect(rows.every((row) => row.total === 1)).toBe(true);
+    expect(rows.map((row) => row.id)).toEqual(migrations.MIGRATIONS.map((migration) => migration.id));
+  });
+
+  it("第二個連線（模擬第二個執行個體啟動）看到的 schema 一致", () => {
+    const second = connection.createDatabase(failurePath);
+    try {
+      const first = failureDb
+        .prepare("SELECT id FROM schema_migrations ORDER BY rowid")
+        .all() as unknown as { id: string }[];
+      const other = second
+        .prepare("SELECT id FROM schema_migrations ORDER BY rowid")
+        .all() as unknown as { id: string }[];
+      expect(other.map((row) => row.id)).toEqual(first.map((row) => row.id));
+    } finally {
+      second.close();
+    }
+  });
+
+  it("連線設有 busy_timeout，令並行啟動可等待短暫的寫入鎖", () => {
+    const db = connection.createDatabase(failurePath);
+    try {
+      const row = db.prepare("PRAGMA busy_timeout").get() as unknown as { timeout?: number };
+      expect(Number(row?.timeout ?? 0)).toBeGreaterThanOrEqual(5000);
+    } finally {
+      db.close();
+    }
   });
 });

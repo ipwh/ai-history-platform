@@ -4,8 +4,10 @@ import { ApiRouteError, handleRoute, jsonOk, parseJsonBody } from "@/server/http
 import { assignTopic, getDocumentBlocks, removeDocument } from "@/server/services/material-service";
 import {
   getDocument,
+  getDocumentGovernance,
   listDistributionAudit,
   recordDistributionChange,
+  recordDocumentGovernance,
   setDocumentStudentDistribution,
 } from "@/server/repositories/materials";
 import { requireAdmin } from "@/server/auth/guards";
@@ -47,8 +49,13 @@ const updateDocumentSchema = z
      */
     studentDistribution: z.boolean().optional(),
     /**
-     * 額外確認：檔名標示為「教師版／答案」的文件必須明確帶上這個旗標才可開放，
-     * 避免管理員在清單上誤按即等同把教師版教材（可能含答案）發布給學生。
+     * 版權／發行權確認：**開放時必須帶上**（true）。這是「學校是否有權向學生發布
+     * 這份內容」的確認，與內容安全覆核是兩件事。
+     */
+    confirmRights: z.boolean().optional(),
+    /**
+     * 內容安全覆核確認：已逐段核對，沒有答案、評分參考、教師註記等不適合學生閱讀的
+     * 內容。檔名標示為教師版（`_TE` 等）的文件**必須**帶上這個旗標才可開放。
      */
     confirmTeacherEdition: z.boolean().optional(),
   })
@@ -57,7 +64,14 @@ const updateDocumentSchema = z
     { message: "請提供要更新的欄位（topicId 或 studentDistribution）" },
   );
 
-/** 指定／解除教材所屬課題，或設定學生閱讀權限（後者會留下稽核記錄） */
+/**
+ * 指定／解除教材所屬課題，或設定學生閱讀權限（後者會留下稽核記錄）。
+ *
+ * 開放（`studentDistribution: true`）需要兩項確認分工清楚：
+ *   1. `confirmRights`：版權／發行權（**一律必要**）；
+ *   2. `confirmTeacherEdition`：內容安全覆核（檔名標示為教師版時**必要**）。
+ * 兩者都會記錄確認者及時間。撤銷立即生效，不需要任何確認。
+ */
 export async function PATCH(request: Request, context: { params: Promise<{ documentId: string }> }) {
   return handleRoute(async () => {
     const admin = await requireAdmin(request);
@@ -67,34 +81,52 @@ export async function PATCH(request: Request, context: { params: Promise<{ docum
     let document = getDocument(documentId);
     if (!document) throw new ApiRouteError("找不到指定的教材文件", 404);
 
+    const actorEmail = admin?.email ?? "（管理員權杖或示範模式）";
+    const actorRole = admin?.role ?? "admin-token-or-demo";
+
     if (body.topicId !== undefined) {
       document = assignTopic(documentId, body.topicId);
     }
-    if (
-      body.studentDistribution === true &&
-      looksLikeTeacherEdition(document.fileName) &&
-      body.confirmTeacherEdition !== true
-    ) {
-      // 教師版教材可能夾附答案、評分參考及教師註記；檔名已明確標示，
-      // 因此要求額外確認，而不是讓「開放學生閱讀」一個按鈕就等於發布教師版內容。
-      throw new ApiRouteError(
-        `「${document.fileName}」的檔名標示為教師版／答案材料，可能包含不適合學生閱讀的內容。` +
-          "確認已核對內容後，請帶同 confirmTeacherEdition: true 再次提交。",
-        409,
-      );
+
+    if (body.studentDistribution === true) {
+      // 開放給學生：先確認版權／發行權，教師版另需內容安全覆核
+      if (body.confirmRights !== true) {
+        throw new ApiRouteError(
+          `開放「${document.fileName}」給學生前，必須先確認版權／發行權（confirmRights: true）：` +
+            "即確認學校有權在平台向學生發布這份內容。系統不會代你判斷版權狀態。",
+          409,
+        );
+      }
+      if (looksLikeTeacherEdition(document.fileName) && body.confirmTeacherEdition !== true) {
+        // 教師版教材可能夾附答案、評分參考及教師註記；檔名已明確標示，
+        // 因此要求獨立的內容安全覆核（與版權確認分開記錄）。
+        throw new ApiRouteError(
+          `「${document.fileName}」的檔名標示為教師版／答案材料，可能包含不適合學生閱讀的內容。` +
+            "確認已逐段核對內容後，請帶同 confirmTeacherEdition: true 再次提交。",
+          409,
+        );
+      }
+
+      recordDocumentGovernance({
+        documentId,
+        rights: { confirmedBy: actorEmail, at: new Date().toISOString() },
+        contentSafety:
+          body.confirmTeacherEdition === true
+            ? { reviewedBy: actorEmail, at: new Date().toISOString() }
+            : undefined,
+      });
     }
+
     if (body.studentDistribution !== undefined) {
       // 重複設定相同值不會留下重複的稽核記錄（避免紀錄被無意義的操作淹沒）
       const changed = document.studentDistribution !== body.studentDistribution;
       if (changed) {
         setDocumentStudentDistribution(documentId, body.studentDistribution);
-        // 操作者一律取自伺服器端身分；以管理員權杖或示範模式操作時另作標示，
-        // 不會因為沒有帳戶就失去記錄，亦不會接受前端提供的操作者名稱。
         recordDistributionChange({
           documentId,
           allowed: body.studentDistribution,
-          actorEmail: admin?.email ?? "（管理員權杖或示範模式）",
-          actorRole: admin?.role ?? "admin-token-or-demo",
+          actorEmail,
+          actorRole,
         });
       }
       document = getDocument(documentId);
@@ -102,6 +134,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ docum
 
     return jsonOk({
       document,
+      governance: getDocumentGovernance(documentId),
       changed: body.studentDistribution === undefined ? null : document?.studentDistribution ?? null,
       distributionAudit: listDistributionAudit(documentId),
     });

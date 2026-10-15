@@ -127,13 +127,21 @@ export interface AuthConfig {  /** 是否已具備啟用登入所需的憑證 */
   adminEmails: string[];
   /**
    * 校內網域但學號形式（s + 7 位數字）不符，且不在 AUTH_TEACHER_EMAILS／
-   * AUTH_ADMIN_EMAILS 及學生名冊內的帳戶，要視為哪一種身分。
+   * AUTH_ADMIN_EMAILS 及學生名冊內的帳戶，**實際生效**的身分。
    *
-   * 預設 "student"（fail-closed）：只要有任何學生的帳戶不是學號形式（例如別名），
-   * 舊行為就會把該學生當成教師，令其可讀取全部學生的練習記錄。
-   * 教師須列在 AUTH_TEACHER_EMAILS，或明確設定 AUTH_IN_DOMAIN_ROLE=teacher。
+   * Sprint 6 起固定為 `"student"`：**網域本身不再授予教職員權限**。
+   *
+   * 原因：舊行為（校內非學號形式一律視為教師）是 fail-open 的。只要有任何學生的帳戶
+   * 是別名（例如 `chan.tai.ming@pochiu.edu.hk`）又不在學生名冊內，該學生就會取得
+   * 教師權限，可讀取**全部**學生的練習記錄。這個風險無法用「請小心」解決，因此改為
+   * 只有明確列在 `AUTH_TEACHER_EMAILS` 的帳戶才可取得教師權限。
+   *
+   * `AUTH_IN_DOMAIN_ROLE` 及 `AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER` 仍然會被讀取，
+   * 但**只用於產生 error 級設定警示**（見 config-diagnostics.ts），不再影響角色判定。
    */
-  inDomainRole: "student" | "teacher";
+  inDomainRole: "student";
+  /** 舊政策變數仍被設定（僅用於提示，已不影響角色判定） */
+  legacyInDomainTeacherConfigured: boolean;
 }
 
 /**
@@ -348,13 +356,15 @@ function readOcrProviderName(): OcrProviderName {
 }
 
 /**
- * 校內網域內「非學號形式且未被明確列出」的帳戶要視為哪一種身分。
- * 預設 student（fail-closed）；只有明確設定 AUTH_IN_DOMAIN_ROLE=teacher 才會沿用
- * 舊行為（校內非學號形式的帳戶一律是教師）。
+ * 舊的「校內網域 = 教師」政策是否仍被設定。
+ *
+ * Sprint 6 起**不再影響角色判定**（只用於提示）。保留讀取是為了讓曾經設定過的部署
+ * 得到明確的 error 級警示，而不是靜默地令教師失去權限而無人察覺。
  */
-function readInDomainRole(): "student" | "teacher" {
+function readLegacyInDomainTeacherConfigured(): boolean {
   const raw = readEnv("AUTH_IN_DOMAIN_ROLE")?.toLowerCase();
-  return raw === "teacher" || raw === "staff" ? "teacher" : "student";
+  const legacyFlag = readBoolean("AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER", false);
+  return raw === "teacher" || raw === "staff" || legacyFlag;
 }
 
 /**
@@ -436,6 +446,7 @@ function readBackupConfig(): BackupConfig {
 export function getServerConfig(): ServerConfig {
   const projectRoot = process.cwd();
   const provider = readProviderName();
+  const legacyInDomainTeacherConfigured = readLegacyInDomainTeacherConfigured();
 
   const apiKey = readLlmApiKey(provider);
 
@@ -494,7 +505,8 @@ export function getServerConfig(): ServerConfig {
       schoolDomains: readList("AUTH_SCHOOL_DOMAINS", [DEFAULT_SCHOOL_DOMAIN]),
       teacherEmails: readList("AUTH_TEACHER_EMAILS"),
       adminEmails: readList("AUTH_ADMIN_EMAILS"),
-      inDomainRole: readInDomainRole(),
+      inDomainRole: "student",
+      legacyInDomainTeacherConfigured,
     },
     ocr: {
       provider: ocrProvider === "google-vision" && ocrApiKey === null ? "tesseract" : ocrProvider,
@@ -526,6 +538,17 @@ export function getServerConfig(): ServerConfig {
 /** 目前使用的 LLM provider 是否為本地示範模式 */
 export function isDemoLlmMode(config: ServerConfig): boolean {
   return config.llm.provider === "mock" || !config.llm.configured;
+}
+
+/**
+ * 是否在正式環境執行（Cloud Run 或 `NODE_ENV=production`）。
+ *
+ * 用於 fail-closed 判斷：示範用途的便利功能（例如自動發布未覆核題目）在正式環境
+ * 一律停用，即使環境變數被複製過來亦不會生效。
+ */
+export function isProductionRuntime(): boolean {
+  if (process.env.NODE_ENV === "production") return true;
+  return (process.env.K_SERVICE ?? "").trim().length > 0;
 }
 
 export const LLM_PROVIDER_LABELS: Record<LlmProviderName, string> = {

@@ -147,19 +147,24 @@ export function describeConfigIssues(): ConfigIssue[] {
         message: "已設定 AUTH_REQUIRE_SIGN_IN=false：未登入者仍可使用學生功能（示範用）。",
       });
     }
-    if (config.auth.inDomainRole === "teacher") {
+    if (config.auth.legacyInDomainTeacherConfigured) {
+      // 舊政策已被移除：只提示，不再影響角色判定（避免靜默地令教師失去權限）
       issues.push({
-        level: "warning",
-        code: "auth-in-domain-teacher",
+        level: "error",
+        code: "auth-legacy-in-domain-teacher-removed",
         message:
-          "已設定 AUTH_IN_DOMAIN_ROLE=teacher：校內網域內、學號形式不符且未列在名單或名冊內的帳戶一律視為教師。若有任何學生的帳戶不是 s 加 7 位數字（例如別名），該學生將可讀取全部學生的練習記錄；建議改為預設值並把教師列在 AUTH_TEACHER_EMAILS。",
+          "偵測到 AUTH_IN_DOMAIN_ROLE 或 AUTH_ALLOW_LEGACY_IN_DOMAIN_TEACHER：這個「校內網域即教師」" +
+          "的政策**已被移除**，不再授予任何教職員權限（它會讓校內別名帳戶取得教師權限，" +
+          "可讀取全部學生的練習記錄）。請改為把教師電郵列在 AUTH_TEACHER_EMAILS，" +
+          "並從部署設定移除這兩個變數；在完成之前，未列入名單的教師會是學生。",
       });
     } else if (config.auth.teacherEmails.length === 0) {
       issues.push({
         level: "warning",
-        code: "auth-in-domain-student",
+        code: "auth-no-teachers-configured",
         message:
-          "校內網域內、學號形式不符的帳戶會視為學生（AUTH_IN_DOMAIN_ROLE 預設值）。校內教師須列在 AUTH_TEACHER_EMAILS 才可使用教師端；如要沿用舊行為（校內非學號形式一律是教師），請明確設定 AUTH_IN_DOMAIN_ROLE=teacher。",
+          "未設定 AUTH_TEACHER_EMAILS：目前沒有任何帳戶可進入教師端（管理員不受影響）。" +
+          "校內教師須明確列在 AUTH_TEACHER_EMAILS 才可使用教師端功能。",
       });
     }
     if (config.roster.enabled) {
