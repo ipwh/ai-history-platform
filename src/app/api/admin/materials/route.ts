@@ -6,6 +6,7 @@ import {
 } from "@/server/services/material-service";
 import { getServerConfig } from "@/server/config";
 import { requireAdmin } from "@/server/auth/guards";
+import { CURRICULUM_TOPICS } from "@/server/seed/curriculum";
 
 export const runtime = "nodejs";
 
@@ -48,8 +49,10 @@ export async function POST(request: Request) {
     if (source === "pilot") {
       const imported = await importPilotMaterialFromDisk();
       if (!imported) {
+        const pilotFileName =
+          CURRICULUM_TOPICS.find((topic) => topic.id === "topic-5")?.materialFile ?? "課題5 …docx";
         throw new ApiRouteError(
-          `找不到專案內的試點教材。請把教材放在 ${config.materialsDir} 並命名為 HNC2A2E_T5_SN_TE.docx，或改用上載功能。`,
+          `找不到專案內的試點教材。請把課題5 的教材放在 ${config.materialsDir} 並命名為 ${pilotFileName}，或改用上載功能。`,
           404,
         );
       }

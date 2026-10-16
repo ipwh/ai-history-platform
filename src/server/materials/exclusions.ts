@@ -47,6 +47,13 @@ const EXCLUSIONS: Record<string, ExcludedContent> = {
       "吾珥",
       "塔廟",
       "甲骨文",
+      // 2026-10 版教材新增的內容：這些名稱在教材中以獨立條目出現（未同時提及河流或文明名稱，
+      // 例如「漢模拉比」、「亞述巴尼拔」、「商朝」），需要逐一列出才會被略過
+      "漢模拉比",
+      "亞述",
+      "商朝",
+      "模漢祖達盧",
+      "階梯井",
     ],
   },
 };
@@ -100,9 +107,28 @@ export interface ExclusionFilterResult<T extends ExclusionFilterInput> {
 }
 
 /**
- * 依序過濾段落：遇到屬排除範圍的標題時，會略過該標題及其後**層級較低**的內容，
- * 直到下一個層級更高的標題為止（即整個小節）。同時略過任何提及排除詞語的段落
+ * 依序過濾段落：遇到屬排除範圍的標題時，會略過該標題及其小節內容（層級更深的標題
+ * 及段落），直到同層或層級更高的標題為止。同時略過任何提及排除詞語的段落
  * （包括表格儲存格內容）。
+ *
+ * **表格一律整段略過，不會只刪除部分列**：教材的「四大古代文明比較表」以欄代表各文明，
+ * 每列都是四個文明並列（例如「文明特徵三：宗教信仰」一列同時有四個文明的做法），
+ * 只刪除命中詞語的列，會令其餘列中不考核文明的內容（例如印度河流域、黃河長江流域）
+ * 仍然寫入資料庫並顯示給學生。考核範圍的古埃及內容在同一份教材的古埃及章節另有
+ * 詳細段落，不會因為整段略過而失去。
+ *
+ * 為甚麼「同層標題」也要結束略過範圍（2026-10 修正）：
+ *   教材的標題層級不一定反映大綱結構——《溫習筆記》把**所有**標題都排成同一層級，
+ *   此時「層級更深的標題」永遠不會出現，一旦遇到屬排除範圍的標題（例如已從課程
+ *   移除的「不同地區的舊石器時代人類」），略過範圍便會一直延伸到文件結尾，
+ *   令後續所有課題內容（例如課題1 的古埃及文明）全部無法匯入。
+ *   不考核的小節標題本身亦在排除詞語名單內，因此以同層標題結束略過範圍不會
+ *   令不考核的兄弟小節漏進資料庫（它們會再次命中排除詞語而被略過）。
+ *
+ * 為甚麼最後一個標題不展開略過範圍：教材末段是「資料／比較」式的內容，標題只是欄位
+ * 標籤（例如「黃河、長江流域文明：商朝文明」之後緊接古埃及的人物卡），其後再沒有
+ * 標題可以結束略過範圍。此時只略過標題本身，其餘段落交由逐段詞語比對，避免把文件
+ * 其餘全部內容（包括考核範圍的古埃及資料）一併略過。
  */
 export function filterExcludedBlocks<T extends ExclusionFilterInput>(
   blocks: T[],
@@ -116,19 +142,27 @@ export function filterExcludedBlocks<T extends ExclusionFilterInput>(
   // 被略過的小節標題層級；null 表示不在被略過的小節內
   let excludedHeadingLevel: number | null = null;
 
-  for (const block of blocks) {
+  const headingLevels = blocks.map((block) => (block.type === "heading" ? block.level ?? 2 : null));
+  /** 索引之後是否仍有同層或層級更高的標題（沒有的話略過範圍無法結束） */
+  const canEndExclusionAfter = (index: number, level: number): boolean =>
+    headingLevels.some(
+      (otherLevel, otherIndex) => otherIndex > index && otherLevel !== null && otherLevel <= level,
+    );
+
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index];
     const isHeading = block.type === "heading";
     const headingLevel = block.level ?? 2;
 
     if (isHeading) {
       if (isExcludedText(topicId, block.text)) {
-        excludedHeadingLevel = headingLevel;
+        excludedHeadingLevel = canEndExclusionAfter(index, headingLevel) ? headingLevel : null;
         skipped += 1;
         continue;
       }
-      // 只有層級更高的標題（例如由「黃河、長江流域文明」回到「四大古代文明的簡介」）
-      // 才會結束略過範圍；同層或更低層的標題仍屬同一科不考核內容
-      if (excludedHeadingLevel !== null && headingLevel < excludedHeadingLevel) {
+      // 同層或層級更高的標題（例如由「黃河、長江流域文明」回到「四大古代文明的簡介」）
+      // 結束略過範圍
+      if (excludedHeadingLevel !== null && headingLevel <= excludedHeadingLevel) {
         excludedHeadingLevel = null;
       }
     }

@@ -26,7 +26,9 @@ import { runOcr } from "../src/server/services/ocr-service";
 import { generateQuestionBank } from "../src/server/services/question-bank";
 import { seedCurriculum, seedDemoQuestionBank } from "../src/server/seed";
 
-const PILOT_FILE = "HNC2A2E_T5_SN_TE.docx";
+// 試點教材＝課題5 的書本內容（路徑來自課程種子，保持單一來源）
+const PILOT_TOPIC = CURRICULUM_TOPICS.find((topic) => topic.id === "topic-5");
+const PILOT_FILE = PILOT_TOPIC?.materialFile ?? "課題5 近代歐洲的興起.docx";
 
 async function main() {
   const config = getServerConfig();

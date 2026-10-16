@@ -1,14 +1,14 @@
 /**
  * materials 來源資料夾的檔案掃描。
  *
- * 2026 學年起 materials 以課題分資料夾存放：
+ * 2026 學年更新的 materials 以**每課一個檔案**存放（例：「課題5 近代歐洲的興起.docx」），
+ * 校內試題檔（`HNCxY2E_QB_TN_*.docx`）則按需要另存於同一資料夾或課題子資料夾。
  *
- *   課題5 近代歐洲的興起/
- *     課題5 近代歐洲的興起.docx     ← 書本內容（AI 出題依據）
- *     HNC2A2E_QB_T5_1.MCQ.docx     ← 校內試題（匯入題庫）
+ *   課題5 近代歐洲的興起.docx     ← 書本內容（AI 出題依據）
+ *   HNC2A2E_QB_T5_1.MCQ.docx     ← 校內試題（匯入題庫）
  *
  * 因此不論是教師端「批次匯入」或匯入腳本，都需要遞迴掃描，
- * 並以「所在資料夾」優先判斷課題。
+ * 並以「所在資料夾」優先判斷課題（沒有子資料夾時由檔名判斷）。
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -16,7 +16,7 @@ import path from "node:path";
 import { CURRICULUM_TOPICS, findTopicSeedByFile } from "../seed/curriculum";
 
 export interface MaterialFileEntry {
-  /** 相對於 materials 資料夾的路徑（例如「課題5 近代歐洲的興起/課題5 近代歐洲的興起.docx」） */
+  /** 相對於 materials 資料夾的路徑（例如「課題5 近代歐洲的興起.docx」或「課題5 近代歐洲的興起/課題5 近代歐洲的興起.docx」） */
   relativePath: string;
   /** 檔案名稱（不含資料夾） */
   fileName: string;

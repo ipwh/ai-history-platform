@@ -46,7 +46,7 @@ const TOPIC_1: TopicSeed = {
   description: "由人類起源、史前時期的生活，到古文明的誕生與特徵，探討人類自古至今基本需要的延續與轉變。",
   order: 1,
   published: true,
-  materialFile: "課題1人類的需要 古與今/課題1人類的需要 古與今.docx",
+  materialFile: "課題1人類的需要 古與今.docx",
   sections: [
     {
       id: "topic-1-origins",
@@ -145,7 +145,7 @@ const TOPIC_2: TopicSeed = {
   description: "由古希臘、古羅馬的古典文明，到中古時代的基督宗教世界與封建社會，了解歐洲文明的發展脈絡。",
   order: 2,
   published: true,
-  materialFile: "課題2 歐洲文明的發展/課題2 歐洲文明的發展.docx",
+  materialFile: "課題2 歐洲文明的發展.docx",
   sections: [
     {
       id: "topic-2-classical",
@@ -216,7 +216,7 @@ const TOPIC_3: TopicSeed = {
   description: "伊斯蘭教的起源與發展、阿拉伯帝國的擴張，以及中古時代歐亞文化交流的成果與影響。",
   order: 3,
   published: true,
-  materialFile: "課題3 伊斯蘭文明的興起/課題3 伊斯蘭文明的興起.docx",
+  materialFile: "課題3 伊斯蘭文明的興起.docx",
   sections: [
     {
       id: "topic-3-islam",
@@ -265,7 +265,7 @@ const TOPIC_4: TopicSeed = {
   description: "信史時期香港的發展、早期居民的民系與姓族生活，以及本地非物質文化遺產的承傳。",
   order: 4,
   published: true,
-  materialFile: "課題4 早期香港地區的歷史/課題4 早期香港地區的歷史.docx",
+  materialFile: "課題4 早期香港地區的歷史.docx",
   sections: [
     {
       id: "topic-4-documented",
@@ -307,7 +307,7 @@ const TOPIC_5: TopicSeed = {
     "由文藝復興、宗教改革、科學革命與啟蒙運動、工業革命，到法國大革命及拿破崙時代，了解近代歐洲如何在思想、宗教、科學、經濟及政治上逐步興起。",
   order: 5,
   published: true,
-  materialFile: "課題5 近代歐洲的興起/課題5 近代歐洲的興起.docx",
+  materialFile: "課題5 近代歐洲的興起.docx",
   sections: [
     {
       id: "topic-5-renaissance",
@@ -484,7 +484,7 @@ const TOPIC_6: TopicSeed = {
   description: "歐洲國家由十六世紀至二十世紀初的殖民擴張：背景、原因、方式及對歐、美、亞、非的影響。",
   order: 6,
   published: true,
-  materialFile: "課題6 歐洲國家的殖民擴張/課題6 歐洲國家的殖民擴張.docx",
+  materialFile: "課題6 歐洲國家的殖民擴張.docx",
   sections: [
     {
       id: "topic-6-early-expansion",
@@ -527,7 +527,7 @@ const TOPIC_7: TopicSeed = {
   description: "由美國革命、獨立與憲法，到十九世紀領土拓展、南北內戰及戰後崛起為世界大國。",
   order: 7,
   published: true,
-  materialFile: "課題7 美國的成立及發展/課題7 美國的成立及發展.docx",
+  materialFile: "課題7 美國的成立及發展.docx",
   sections: [
     {
       id: "topic-7-revolution-causes",
@@ -582,7 +582,7 @@ const TOPIC_8: TopicSeed = {
   description: "英國侵佔香港與殖民管治的建立，以及十九世紀香港的經濟、社會民生狀況與民間團體的貢獻。",
   order: 8,
   published: true,
-  materialFile: "課題8 直至二十世紀初香港的成長與發展/課題8 直至二十世紀初香港的成長與發展.docx",
+  materialFile: "課題8 直至二十世紀初香港的成長與發展.docx",
   sections: [
     {
       id: "topic-8-occupation",
@@ -629,7 +629,7 @@ const TOPIC_9: TopicSeed = {
   description: "兩次世界大戰的背景、成因、導火線、經過及結果，以及兩次大戰期間的經濟問題。",
   order: 9,
   published: true,
-  materialFile: "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰/課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx",
+  materialFile: "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx",
   sections: [
     {
       id: "topic-9-ww1-causes",
@@ -684,7 +684,7 @@ const TOPIC_10: TopicSeed = {
   description: "冷戰的背景與成因、各階段的緊張與緩和，以及後冷戰時代的國際局勢。",
   order: 10,
   published: true,
-  materialFile: "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代/課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代.docx",
+  materialFile: "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代.docx",
   sections: [
     {
       id: "topic-10-coldwar-background",
@@ -727,13 +727,22 @@ const TOPIC_11: TopicSeed = {
   description: "二十世紀以來人類共同面對的挑戰，以及由國際聯盟到聯合國等國際合作的發展與成效。",
   order: 11,
   published: true,
-  materialFile: "課題11 20世紀以來的國際合作/課題11 20世紀以來的國際合作.docx",
+  materialFile: "課題11 20世紀以來的國際合作.docx",
   sections: [
     {
       id: "topic-11-challenges-conflict",
       title: "大型軍事衝突不斷",
       summary: "衝突數目增加與破壞升級，以及推動和平的嘗試。",
-      matchKeywords: ["大型軍事衝突不斷", "衝突數目增加與破壞程度升級", "推動和平的嘗試"],
+      // 2026-10 版教材把此節標題寫成「大戰潛在再起風險」，並以「維和嘗試失敗」分段
+      matchKeywords: [
+        "大型軍事衝突不斷",
+        "衝突數目增加與破壞程度升級",
+        "推動和平的嘗試",
+        "大戰潛在再起風險",
+        "維和嘗試失敗",
+        "兩次大戰造成空前破壞",
+        "促進和平的努力",
+      ],
     },
     {
       id: "topic-11-challenges-poverty",
@@ -745,13 +754,32 @@ const TOPIC_11: TopicSeed = {
       id: "topic-11-challenges-health",
       title: "疾病傳播與醫療問題",
       summary: "傳染病與新興疾病、欠發達國家醫療水平低下。",
-      matchKeywords: ["疾病傳播與醫療問題", "傳染病與新興疾病", "欠發達國家醫療水平低下"],
+      // 2026-10 版教材把此節標題寫成「疾病威脅人類生存」
+      matchKeywords: [
+        "疾病傳播與醫療問題",
+        "傳染病與新興疾病",
+        "欠發達國家醫療水平低下",
+        "疾病威脅人類生存",
+        "新舊疾病傳播迅速",
+        "疾病傳播",
+        "醫療水平",
+      ],
     },
     {
       id: "topic-11-challenges-environment",
       title: "資源開發破壞環境",
       summary: "人口增長與環境開發、自然環境破壞及全球性的環境危機。",
-      matchKeywords: ["資源開發破壞環境", "人口增長與環境開發", "全球性的環境危機", "溫室效應"],
+      // 2026-10 版教材把此節標題寫成「過度開發破壞環境」
+      matchKeywords: [
+        "資源開發破壞環境",
+        "人口增長與環境開發",
+        "全球性的環境危機",
+        "溫室效應",
+        "過度開發破壞環境",
+        "資源枯竭與物種滅絕",
+        "自然環境遭污染破壞",
+        "全球暖化與臭氧層破壞",
+      ],
     },
     {
       id: "topic-11-league",
@@ -776,7 +804,7 @@ const TOPIC_12: TopicSeed = {
   description: "二戰前後香港的經濟、社會與政制發展，日佔時期的生活，以及香港與世界的連結和回歸祖國。",
   order: 12,
   published: true,
-  materialFile: "課題12 二十世紀香港的成長與蛻變/課題12 二十世紀香港的成長與蛻變.docx",
+  materialFile: "課題12 二十世紀香港的成長與蛻變.docx",
   sections: [
     {
       id: "topic-12-pre-war-economy",

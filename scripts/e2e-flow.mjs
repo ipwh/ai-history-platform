@@ -668,7 +668,7 @@ async function main() {
     }
 
     console.log("\n[10] 上載 DOCX 教材（管理員流程）");
-    const pilotPath = path.join(process.cwd(), "materials", "HNC2A2E_T5_SN_TE.docx");
+    const pilotPath = path.join(process.cwd(), "materials", "課題5 近代歐洲的興起.docx");
     if (fs.existsSync(pilotPath)) {
       const docxForm = new FormData();
       docxForm.append(
