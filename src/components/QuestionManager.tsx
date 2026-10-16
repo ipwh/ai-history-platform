@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -117,6 +117,41 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
         status === "open" ? "已重設為待覆核。" : `已將回報標記為「${QUESTION_REPORT_STATUS_LABELS[status]}」。`,
       );
       await refreshReports();
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setBusyReportId(null);
+    }
+  }
+
+  /**
+   * 從回報直接採取題目行動（Sprint 7.8 教師補救流程）：
+   * `withdraw-question` 暫時下架題目（可隨時重新發布）；
+   * `revalidate-question` 重新執行自動品質驗證，通過後才可能發布。
+   * 兩者都由伺服器決定是否可行，前端只是觸發及顯示結果。
+   */
+  async function handleReportAction(
+    reportId: string,
+    action: "withdraw-question" | "revalidate-question",
+  ) {
+    setBusyReportId(reportId);
+    setError(null);
+    try {
+      const result = await api.patch<{
+        remediation?: { autoValidated: boolean; issues: string[] };
+      }>(`/api/teacher/reports?reportId=${encodeURIComponent(reportId)}`, { action });
+      const remediation = result.remediation;
+      if (action === "withdraw-question") {
+        setMessage("已暫時下架題目（學生不再於新練習看到），可隨時重新發布。");
+      } else if (remediation?.autoValidated === true) {
+        setMessage("自動品質驗證通過，已記錄；確認內容後可按「發布」讓學生練習。");
+      } else {
+        setMessage(
+          `自動品質驗證未通過：${(remediation?.issues ?? []).join("；") || "請檢查教材依據及內容"}`,
+        );
+      }
+      await refreshReports();
+      await refreshQuestions();
     } catch (caught) {
       setError(caught);
     } finally {
@@ -304,8 +339,9 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
       <div>
         <h1 className="text-xl font-bold">題目管理</h1>
         <p className="text-sm text-gray-600">
-          生成題目時只會把相關教材段落傳給 LLM，輸出會經過 schema 驗證及教材依據核對；
-          沒有教材依據的題目不會儲存。所有新生成題目預設為草稿，教師查核後才發布給學生。
+          生成題目時只會把相關教材段落傳給 LLM，輸出會經過 schema 驗證、教材依據核對及自動品質驗證；
+          沒有教材依據或答案不唯一的題目不會儲存。通過自動品質驗證的題目會即時供學生自學（毋須教師
+          預先批准），教師可在這裡覆核、修正或重新驗證；未通過驗證的題目維持草稿。
         </p>
       </div>
 
@@ -440,7 +476,7 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
                 ? `；已捨棄 ${generateResult.discardedCount} 題（不合規或沒有教材依據）`
                 : "；全部題目均通過驗證"}
               {warningCount > 0
-                ? `；${warningCount} 題有品質警告（教材未提及的人名或條約名），題目已保留，請核對後才發布`
+                ? `；${warningCount} 題有品質警告（教材未提及的人名或條約名），題目已保留（可能已供學生練習），請核對，如有問題可用回報面板下架`
                 : ""}
               {generateResult.notice ? `。${generateResult.notice}` : ""}
             </Notice>
@@ -477,6 +513,7 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
         onTopicFilterChange={setReportTopicFilter}
         onRefresh={() => void refreshReports()}
         onResolve={(reportId, status) => void handleResolveReport(reportId, status)}
+        onAction={(reportId, action) => void handleReportAction(reportId, action)}
       />
 
       {editorState && topic ? (
@@ -621,6 +658,18 @@ function QuestionListCard({
             <span className="badge" title="目前題目版本；修改後版本會遞增，舊覆核即失效">
               第 {question.revision} 版
             </span>
+            <span className="badge" title="題目建立時間">
+              建立：{question.createdAt.slice(0, 10)}
+            </span>
+            {/* 未確定項目：自動發布已暫緩，學生看不到；教師必須知道這題在等自己核對 */}
+            {question.teacherConfirmationRequired ? (
+              <span
+                className="badge badge-danger"
+                title="品質檢查有未確定項目（例如答案只是教材語句的改寫），自動發布已暫緩，學生看不到這一題。核對內容後按「覆核通過並發布」，或先重新執行自動品質驗證。"
+              >
+                等待教師確認（自動發布暫緩）
+              </span>
+            ) : null}
             {/* 學生是否看得到教材節錄：由版權／教材閘門決定，教師必須知道實際情況 */}
             {review?.sourceExcerptHiddenFromStudents ? (
               <span

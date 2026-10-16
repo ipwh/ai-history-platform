@@ -508,20 +508,21 @@ describe("LLM 輸出驗證", () => {
       {
         questions: [
           {
-            questionType: "fill",
+            questionType: "short",
             difficulty: "basic",
-            question: "宗教改革期間，喀爾文提出以《基督教要義》闡述其主張。",
+            question: "喀爾文提出甚麼主張？",
             options: [],
-            correctAnswer: "喀爾文",
+            correctAnswerIndex: null,
+            correctAnswer: "喀爾文提出以《基督教要義》闡述其主張。",
             explanation: "喀爾文在日內瓦推行宗教改革。",
             knowledgePoint: "宗教改革的發展",
             sourceExcerpt: "德意志神學家馬丁路德發表《九十五條論證》",
             sourceBlockIds: ["blk_1"],
-            gradingPoints: [],
+            gradingPoints: ["提出以《基督教要義》闡述主張", "在日內瓦推行宗教改革"],
           },
         ],
       },
-      { ...context(), questionTypes: ["fill"] },
+      { ...context(), questionTypes: ["short"] },
     );
 
     expect(result.accepted).toHaveLength(1);
@@ -539,8 +540,10 @@ describe("LLM 輸出驗證", () => {
           {
             questionType: "fill",
             difficulty: "basic",
-            question: "德意志神學家馬丁路德提出《九十五條論證》，批評教會濫用贖罪券。",
+            // 填充題必須剛好一個空格，且答案不可在題幹其他位置再次出現
+            question: "德意志神學家＿＿＿提出《九十五條論證》，批評教會濫用贖罪券。",
             options: [],
+            correctAnswerIndex: null,
             correctAnswer: "馬丁路德",
             explanation: "馬丁路德在《九十五條論證》中批評教會濫用贖罪券。",
             knowledgePoint: "宗教改革的展開",
@@ -583,7 +586,7 @@ describe("LLM 輸出驗證", () => {
  * 模型自創名稱會令技能統計失真，因此一律略過並記錄警告，而不是照抄寫入資料庫。
  */
 describe("填充題答案的歷史元素要求", () => {
-  function fillQuestion(answer: string, question = "宗教改革期間，德意志神學家發表《九十五條論證》，批評教會濫用贖罪券。") {
+  function fillQuestion(answer: string, question = "宗教改革期間，德意志神學家發表＿＿＿，批評教會濫用贖罪券。") {
     return {
       questionType: "fill",
       difficulty: "basic",
@@ -620,13 +623,13 @@ describe("填充題答案的歷史元素要求", () => {
     }
   });
 
-  it("未能確認屬歷史元素的答案只記錄品質警告，題目仍然保留", () => {
+  it("未能確認屬歷史元素的答案一律丟棄（fill 採 fail-closed）", () => {
     const result = validateLlmQuestions(
       {
         questions: [
           {
             ...fillQuestion("石刻"),
-            question: "1517年，德意志神學家馬丁路德發表《九十五條論證》，批評教會濫用贖罪券。當時的哪一種技術用於印刷？",
+            question: "當時以＿＿＿技術印刷文件。",
             explanation: "當時以石刻技術印刷文件。",
           },
         ],
@@ -634,9 +637,8 @@ describe("填充題答案的歷史元素要求", () => {
       { ...context(), questionTypes: ["fill"] },
     );
 
-    expect(result.discardedReasons).toEqual([]);
-    expect(result.accepted).toHaveLength(1);
-    expect(result.accepted[0].qualityWarnings.join(" ")).toContain("未見歷史元素標記");
+    expect(result.accepted).toHaveLength(0);
+    expect(result.discardedReasons.join(" ")).toContain("未見歷史元素標記");
   });
 
   it("選擇題及短答題不受填充題答案要求影響", () => {
@@ -753,14 +755,28 @@ describe("選擇題的答案唯一性警告", () => {
     expect(result.accepted[0].qualityWarnings.join()).toContain("包含標準答案");
   });
 
-  it("兩個選項互相包含時提出警告", () => {
+  it("兩個選項只差修飾語（文藝復興／文藝復興時期）時丟棄題目（Sprint 7.8：答案不唯一）", () => {
     const result = validateLlmQuestions(
       mc(["文藝復興", "文藝復興時期", "宗教改革"], "文藝復興"),
       { ...context(), questionTypes: ["mc"] },
     );
 
+    // 學生無法判斷「文藝復興」與「文藝復興時期」哪一個才是標準答案，
+    // 自學平台不可把這種題目當成有明確答案的題目批改
+    expect(result.accepted).toHaveLength(0);
+    expect(result.discardedReasons.join(" ")).toContain("只差修飾語");
+  });
+
+  it("選項包含答案但並非等同（馬丁路德／馬丁路德與加爾文）時只提出警告", () => {
+    // correctAnswerIndex 必須指向標準答案（第 1 個選項），否則會被既有的
+    // 「索引與答案矛盾」檢查丟棄，測不到這裡要測的包含關係
+    const result = validateLlmQuestions(
+      mc(["馬丁路德", "馬丁路德與加爾文", "亨利八世"], "馬丁路德"),
+      { ...context(), questionTypes: ["mc"] },
+    );
+
     expect(result.accepted).toHaveLength(1);
-    expect(result.accepted[0].qualityWarnings.join()).toContain("互相包含");
+    expect(result.accepted[0].qualityWarnings.join()).toContain("包含標準答案");
   });
 
   it("選項互不相關時沒有警告（正常題目不受影響）", () => {

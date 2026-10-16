@@ -44,6 +44,7 @@ interface AttemptRow {
   ai_grading_json: string | null;
   ai_verdict: string | null;
   uncertain: number | null;
+  question_revision: number | null;
 }
 
 export interface Attempt {
@@ -63,6 +64,13 @@ export interface Attempt {
    * 這類答案不可當成正確，亦不可當成「明確學不懂」，進度及重溫佇列會分開處理。
    */
   uncertain: boolean;
+  /**
+   * 批改時所依據的題目版本（練習快照中凍結的版本）。
+   *
+   * 題目其後可能被修正（版本遞增），記下當時版本才能指出「哪些舊作答來自已被修正的
+   * 版本」，而不必（亦不可）靜默改寫學生的歷史分數。
+   */
+  questionRevision: number | null;
 }
 
 function parseJsonArray(value: string): string[] {
@@ -104,6 +112,7 @@ function mapAttempt(row: AttemptRow): Attempt {
     answeredAt: row.answered_at,
     aiGrading: parseAiGrading(row.ai_grading_json),
     uncertain: row.uncertain === 1,
+    questionRevision: row.question_revision ?? null,
   };
 }
 
@@ -226,6 +235,8 @@ export function saveAttempt(input: {
   aiGrading?: AiGrading | null;
   /** 填充題的答案與標準答案只差一個字（見 Attempt.uncertain） */
   uncertain?: boolean;
+  /** 批改所依據的題目版本（練習快照中凍結的版本；見 Attempt.questionRevision） */
+  questionRevision?: number | null;
 }): Attempt {
   const db = getDb();
   const existing = db
@@ -239,7 +250,7 @@ export function saveAttempt(input: {
     db.prepare(
       `UPDATE attempts SET answer = ?, auto_graded = ?, is_correct = ?, self_assessment = ?, answered_at = ?,
          ai_grading_json = COALESCE(?, ai_grading_json), ai_verdict = COALESCE(?, ai_verdict),
-         uncertain = ?
+         uncertain = ?, question_revision = COALESCE(?, question_revision)
        WHERE id = ?`,
     ).run(
       input.answer,
@@ -250,6 +261,7 @@ export function saveAttempt(input: {
       aiGradingJson,
       aiVerdict,
       input.uncertain === true ? 1 : (existing.uncertain ?? 0),
+      input.questionRevision ?? null,
       existing.id,
     );
     const updated = db.prepare("SELECT * FROM attempts WHERE id = ?").get(existing.id) as unknown as
@@ -263,8 +275,8 @@ export function saveAttempt(input: {
   db.prepare(
     `INSERT INTO attempts
      (id, session_id, question_id, learner_id, answer, auto_graded, is_correct, self_assessment, answered_at,
-      ai_grading_json, ai_verdict, uncertain)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ai_grading_json, ai_verdict, uncertain, question_revision)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     input.sessionId,
@@ -278,6 +290,7 @@ export function saveAttempt(input: {
     aiGradingJson,
     aiVerdict,
     input.uncertain === true ? 1 : 0,
+    input.questionRevision ?? null,
   );
   const created = db.prepare("SELECT * FROM attempts WHERE id = ?").get(id) as unknown as
     | AttemptRow
@@ -298,6 +311,41 @@ export function getAttempt(sessionId: string, questionId: string): Attempt | nul
     .prepare("SELECT * FROM attempts WHERE session_id = ? AND question_id = ?")
     .get(sessionId, questionId) as unknown as AttemptRow | undefined;
   return row ? mapAttempt(row) : null;
+}
+
+export function getAttemptById(attemptId: string): Attempt | null {
+  const row = getDb().prepare("SELECT * FROM attempts WHERE id = ?").get(attemptId) as unknown as
+    | AttemptRow
+    | undefined;
+  return row ? mapAttempt(row) : null;
+}
+
+export interface QuestionRevisionDrift {
+  /** 題目被修正後仍未重新作答的次數（批改依據已是舊版本） */
+  staleAttempts: number;
+  /** 該題目的作答總數 */
+  totalAttempts: number;
+}
+
+/**
+ * 某題目的作答之中，有多少筆是以**舊版本**批改的（見 Attempt.questionRevision）。
+ *
+ * 只用於提示教師：題目修正後，之前的成績仍然按當時的版本記錄，系統不會靜默重算。
+ * 沒有版本資料的舊記錄（migration 0019 之前）不計入 staleAttempts。
+ */
+export function countQuestionRevisionDrift(
+  questionId: string,
+  currentRevision: number,
+): QuestionRevisionDrift {
+  const row = getDb()
+    .prepare(
+      `SELECT
+         COUNT(*) AS total,
+         SUM(CASE WHEN question_revision IS NOT NULL AND question_revision <> ? THEN 1 ELSE 0 END) AS stale
+       FROM attempts WHERE question_id = ?`,
+    )
+    .get(currentRevision, questionId) as unknown as { total: number; stale: number | null } | undefined;
+  return { staleAttempts: row?.stale ?? 0, totalAttempts: row?.total ?? 0 };
 }
 
 /** 取得某學習者答錯過的題目 ID（可用於「針對錯題再練習」） */

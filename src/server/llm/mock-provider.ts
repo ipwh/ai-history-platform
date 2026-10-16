@@ -15,10 +15,12 @@ import type { Difficulty, LlmQuestion, QuestionType } from "../../lib/types";
 import {
   extractYears,
   isGarbledOcrText,
+  normalizeForMatch,
   splitSentences,
   truncate,
   TABLE_CELL_SEPARATOR,
 } from "../materials/text-utils";
+import { buildBlankedStem } from "./fill-question";
 import { checkHistoricalAnswer, isYearAnswer } from "./historical-answer";
 import type { LlmProvider, MaterialUnit, QuestionGenerationInput } from "./provider";
 
@@ -49,6 +51,13 @@ function extractQuotedTerms(text: string): string[] {
   }
   return terms;
 }
+
+/**
+ * 「詞語：說明」的冒號後是否為解釋句——判定放在 question-quality.ts，
+ * 令自動品質閘門與生成器共用同一把尺（見該檔的 isExplanatoryDefinition）。
+ */
+import { isExplanatoryDefinition, isTimeDesignation } from "./question-quality";
+export { isExplanatoryDefinition };
 
 function buildFacts(units: MaterialUnit[]): UnitFact[] {
   return units
@@ -97,10 +106,14 @@ function buildOptions(correct: string, candidates: string[]): string[] {
   return options;
 }
 
-function blankOut(text: string, term: string): string | null {
-  if (!text.includes(term)) return null;
-  return text.replace(term, "＿＿＿");
-}
+/**
+ * 把教材句子挖空，並回傳單句題幹。
+ *
+ * 這裡**不可**用 `String.replace(term, "＿＿＿")`：那只會換掉第一處，若同句後文再次
+ * 出現同一詞語，答案就會留在題幹內（學生可直接抄寫）。安全做法見
+ * [fill-question.ts](./fill-question.ts) 的 `buildBlankedStem`：只選「同句內剛好出現
+ * 一次」的句子，否則略過整個素材（寧可少出一題）。
+ */
 
 /**
  * 填充題的答案必須是歷史元素（事件名稱、人物、年份、國家、地點、條約、神祇、思想、
@@ -179,7 +192,8 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
     (fact) =>
       fact.definedTerm !== null &&
       fact.definitionText !== null &&
-      !(fact.definitionText as string).includes(fact.definedTerm as string),
+      !(fact.definitionText as string).includes(fact.definedTerm as string) &&
+      isExplanatoryDefinition(fact.definitionText as string),
   );
   const allDefinedTerms = [
     ...new Set([
@@ -199,15 +213,31 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
 
   const results: LlmQuestion[] = [];
 
+  /**
+   * 已用過的答案（同一份練習的其他題目）。
+   * 補題時會傳入：這類答案一律不再使用，令模型改出其他史實，而不是把同一題改寫再交。
+   * 注意：這只是「避免重複」的提示；最終仍由 question-dedupe.ts 的共用判定把關。
+   */
+  const avoidedAnswers = new Set(
+    (input.avoidAnswers ?? []).map((answer) => normalizeForMatch(answer)),
+  );
+  const isAvoided = (answer: string): boolean =>
+    avoidedAnswers.size > 0 && avoidedAnswers.has(normalizeForMatch(answer));
+
   const push = (question: LlmQuestion): boolean => {
     if (results.length >= input.count) return false;
     if (results.some((item) => item.question === question.question)) return false;
+    if (isAvoided(question.correctAnswer)) return false;
     results.push(question);
     return true;
   };
 
   const nextUnused = (predicate: (fact: UnitFact) => boolean): UnitFact | null =>
     facts.find((fact) => !fact.used && predicate(fact)) ?? null;
+
+  /** 只用合格的定義句出題（見 isExplanatoryDefinition）：不可把教材的標題詞當成說明 */
+  const nextUnusedDefinition = (predicate: (fact: UnitFact) => boolean = () => true): UnitFact | null =>
+    definitionFacts.find((fact) => !fact.used && predicate(fact)) ?? null;
 
   /** 選擇題：依難度指定的模板次序出題 */
   function buildMc(plan: DifficultyPlan): LlmQuestion | null {
@@ -223,7 +253,12 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
 
   /** 由定義句出題：term = 「定義」是指哪一個詞語？；definition = 以下哪一項是「詞語」的說明？ */
   function buildMcFromDefinition(style: "term" | "definition"): LlmQuestion | null {
-    const fact = nextUnused((item) => item.definedTerm !== null);
+    // 「是指哪一個詞語？」的標準答案必須是**詞語**：教材的時間軸句式（「公元1453年：…」）
+    // 若用來出這一種問法，會得出「問詞語但答案是一個年份」的題目（2026-10-16 審計確認），
+    // 因此與填充題一樣排除年份答案。
+    const fact = nextUnusedDefinition(
+      style === "term" ? (item) => !isTimeDesignation(item.definedTerm as string) : () => true,
+    );
     if (!fact) return null;
 
     const term = fact.definedTerm as string;
@@ -278,7 +313,7 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
       const fact = nextUnused((item) => item.years.length === 1);
       if (!fact) return null;
       const year = fact.years[0];
-      const blanked = blankOut(fact.unit.text, year);
+      const blanked = buildBlankedStem(fact.unit.text, year);
       if (!blanked) return null;
       const options = buildOptions(
         year,
@@ -289,12 +324,12 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
       return {
         questionType: "mc",
         difficulty,
-        question: blanked,
+        question: blanked.stem,
         options,
         correctAnswerIndex: 0,
         correctAnswer: year,
         explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
-        ...baseFields(fact, `${input.sectionTitle}：${truncate(blanked, 40)}`, SKILL_CHRONOLOGY),
+        ...baseFields(fact, `${input.sectionTitle}：${truncate(blanked.stem, 40)}`, SKILL_CHRONOLOGY),
         gradingPoints: [],
       };
     }
@@ -302,8 +337,8 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
     const fact = nextUnused((item) => item.quotedTerms.length > 0);
     if (!fact) return null;
     const term = fact.quotedTerms[0];
-    const blanked = blankOut(fact.unit.text, term);
-    if (!blanked || blanked.replace(/\s/g, "").length < 12) return null;
+    const blanked = buildBlankedStem(fact.unit.text, term);
+    if (!blanked) return null;
     const options = buildOptions(
       term,
       allQuotedTerms.filter((candidate) => candidate !== term),
@@ -313,7 +348,7 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
     return {
       questionType: "mc",
       difficulty,
-      question: blanked,
+      question: blanked.stem,
       options,
       correctAnswerIndex: 0,
       correctAnswer: term,
@@ -337,19 +372,21 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
     // 定義句的「詞語」必須是歷史元素，而且不可只是年份：教材的時間軸句式
     // （例如「約公元前3,200年：人類發明文字」）若當成定義句，會得出
     // 「「約公元前3,200年」是指人類發明文字」這種問不通的題目。
-    const fact = nextUnused(
+    const fact = nextUnusedDefinition(
       (item) =>
-        item.definedTerm !== null &&
-        !isYearAnswer(item.definedTerm) &&
-        isAcceptableFillAnswer(item.definedTerm, item.unit.text),
+        !isYearAnswer(item.definedTerm as string) &&
+        isAcceptableFillAnswer(item.definedTerm as string, item.unit.text),
     );
     if (!fact) return null;
     const term = fact.definedTerm as string;
     fact.used = true;
+    // 題幹須保持在硬上限之內（見 fill-question.ts），因此定義句只取前段；
+    // 過長的定義句會在驗證階段被丟棄，令整條題目白費。
+    const definition = truncate(fact.definitionText as string, 60);
     return {
       questionType: "fill",
       difficulty,
-      question: `「＿＿＿」是指${truncate(fact.definitionText as string, 120)}`,
+      question: `「＿＿＿」是指${definition}`,
       options: [],
       correctAnswerIndex: null,
       correctAnswer: term,
@@ -367,18 +404,18 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
       );
       if (!fact) return null;
       const year = fact.years[0];
-      const blanked = blankOut(fact.unit.text, year);
+      const blanked = buildBlankedStem(fact.unit.text, year);
       if (!blanked) return null;
       fact.used = true;
       return {
         questionType: "fill",
         difficulty,
-        question: blanked,
+        question: blanked.stem,
         options: [],
         correctAnswerIndex: null,
         correctAnswer: year,
         explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
-        ...baseFields(fact, `${input.sectionTitle}：${truncate(blanked, 40)}`, SKILL_CHRONOLOGY),
+        ...baseFields(fact, `${input.sectionTitle}：${truncate(blanked.stem, 40)}`, SKILL_CHRONOLOGY),
         gradingPoints: [],
       };
     }
@@ -392,13 +429,13 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
       isAcceptableFillAnswer(candidate, fact.unit.text),
     );
     if (term === undefined) return null;
-    const blanked = blankOut(fact.unit.text, term);
-    if (!blanked || blanked.replace(/\s/g, "").length < 12) return null;
+    const blanked = buildBlankedStem(fact.unit.text, term);
+    if (!blanked) return null;
     fact.used = true;
     return {
       questionType: "fill",
       difficulty,
-      question: blanked,
+      question: blanked.stem,
       options: [],
       correctAnswerIndex: null,
       correctAnswer: term,
@@ -416,7 +453,7 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
   }
 
   function buildShortFromDefinition(plan: DifficultyPlan): LlmQuestion | null {
-    const fact = nextUnused((item) => item.definedTerm !== null);
+    const fact = nextUnusedDefinition();
     if (!fact) return null;
     const term = fact.definedTerm as string;
     const points = splitSentences(fact.definitionText as string)

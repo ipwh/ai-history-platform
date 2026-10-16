@@ -7,7 +7,11 @@
  *   node scripts/e2e-flow.mjs
  *
  * 建議以「匿名示範模式」啟動伺服器，令後台 API（教師端及管理員端）開放（本機測試）：
- *   LLM_PROVIDER=mock GOOGLE_CLIENT_ID= GOOGLE_CLIENT_SECRET= APP_DATABASE_PATH=... node scripts/e2e-flow.mjs --start
+ *   LLM_PROVIDER=mock GOOGLE_CLIENT_ID= GOOGLE_CLIENT_SECRET= APP_DATABASE_PATH=... APP_UPLOADS_DIR=... node scripts/e2e-flow.mjs --start
+ *
+ * 注意：以暫存 APP_DATABASE_PATH 執行時應一併指定 APP_UPLOADS_DIR。未指定時本腳本所上載的
+ *       教材副本會寫進專案的 data/uploads，在暫存資料庫被丟棄後成為孤立檔案
+ *       （2026-10-16 實測：單日累積 463 個、3.4 GB；見 README 第一節及第十一節）。
  *
  * 會測試：健康檢查（版本／資料庫狀態／不洩漏敏感資料）→ 登入狀態 → 課程結構（12 課題）→
  *        學生完整流程（建立練習 → 逐題作答 → 答案、解釋、教材來源 → 成績 → 重做錯題 →
@@ -71,6 +75,11 @@ async function main() {
     const port = new URL(BASE_URL).port || "3000";
     const nextBin = path.join(process.cwd(), "node_modules", "next", "dist", "bin", "next");
     console.log(`啟動 next start（連接埠 ${port}）…`);
+    if (process.env.APP_DATABASE_PATH && !process.env.APP_UPLOADS_DIR) {
+      console.log(
+        "提示：已指定 APP_DATABASE_PATH 但未指定 APP_UPLOADS_DIR，本次上載的教材副本會寫進專案的 data/uploads（見 README 第一節）。",
+      );
+    }
     // 直接呼叫 Next.js 的 CLI，避免在 Windows 上呼叫 npm.cmd 的問題
     server = spawn(process.execPath, [nextBin, "start", "--port", port], {
       stdio: "ignore",
@@ -559,8 +568,14 @@ async function main() {
       (generated?.payload?.questions ?? []).every((q) => (q.sourceExcerpt ?? "").length > 0),
     );
     check(
-      "生成題目預設為草稿待教師查核",
-      (generated?.payload?.questions ?? []).every((q) => q.status === "draft"),
+      "生成的題目已記錄自動品質驗證結果（Sprint 7.8）",
+      (generated?.payload?.questions ?? []).every((q) => q.autoValidatedAt !== null),
+      JSON.stringify((generated?.payload?.questions ?? []).map((q) => q.autoValidatedAt).slice(0, 3)),
+    );
+    check(
+      "通過自動品質驗證的題目即時供學生練習，毋須教師預先批准",
+      (generated?.payload?.questions ?? []).every((q) => q.status === "published"),
+      JSON.stringify((generated?.payload?.questions ?? []).map((q) => q.status).slice(0, 3)),
     );
     check(
       "選擇題的標準答案在選項之內",
@@ -682,16 +697,54 @@ async function main() {
     console.log("\n[11] 管理介面：修改分節及題目狀態");
     const generatedQuestion = generated?.payload?.questions?.[0];
     if (generatedQuestion) {
-      // 發布關卡：沒有對應目前版本的人工覆核紀錄不可發布
-      const blocked = await call("PATCH", `/api/teacher/questions/${generatedQuestion.id}`, {
+      // 發布關卡（Sprint 7.8）：生成流程已為題目記錄自動品質驗證，因此可直接發布；
+      // 「沒有任何驗證紀錄就不可發布」由下面手動建立的題目驗證（該題沒有驗證紀錄）。
+      const autoPublished = await call("PATCH", `/api/teacher/questions/${generatedQuestion.id}`, {
         action: "status",
         status: "published",
       });
       check(
-        "未經人工覆核的題目不可發布（409）",
-        blocked.status === 409,
-        `HTTP ${blocked.status}`,
+        "通過自動品質驗證的題目可以發布（Sprint 7.8）",
+        autoPublished.status === 200 &&
+          autoPublished.payload?.view?.question?.status === "published",
+        `HTTP ${autoPublished.status}`,
       );
+
+      // 教師手動建立的題目沒有自動驗證或人工覆核紀錄 → 不可發布（409）
+      const manual = await call("POST", "/api/teacher/questions", {
+        topicId: topic.id,
+        sectionId: childSection.id,
+        questionType: "mc",
+        difficulty: "basic",
+        question: "E2E 測試：以下哪一項是教師手動建立的題目？",
+        options: ["手動建立", "自動生成", "匯入試題", "示範題庫"],
+        correctAnswer: "手動建立",
+        acceptedAnswers: [],
+        explanation: "這是 E2E 測試用手動建立的題目，用來驗證發布關卡。",
+        knowledgePoint: "E2E 測試",
+        sourceExcerpt: "E2E 測試用節錄",
+        sourceLocation: "E2E 測試用位置",
+        sourceBlockIds: [],
+        gradingPoints: [],
+        origin: "manual",
+        status: "draft",
+      });
+      const manualId = manual.payload?.question?.id;
+      if (manualId) {
+        const blocked = await call("PATCH", `/api/teacher/questions/${manualId}`, {
+          action: "status",
+          status: "published",
+        });
+        check(
+          "沒有任何驗證紀錄的題目不可發布（409）",
+          blocked.status === 409,
+          `HTTP ${blocked.status}`,
+        );
+        const removedManual = await call("DELETE", `/api/teacher/questions/${manualId}`);
+        check("可以刪除測試用的手動題目", removedManual.status === 200);
+      } else {
+        check("可以建立教師手動題目（測試發布關卡用）", false, JSON.stringify(manual.payload)?.slice(0, 200));
+      }
 
       const reviewed = await call(
         "POST",

@@ -344,3 +344,155 @@ describe("migration 失敗處理與並行啟動", () => {
     }
   });
 });
+
+/**
+ * Migration 0020（Sprint 7.9）：`questions.teacher_confirmation_required`。
+ *
+ * Sprint 7.8 的閘門只有 blocking／warning 兩種結果，warning 完全不妨礙自動發布；
+ * 對抗式試點證實「答案只是教材語句改寫」的題目因此照樣發布給學生。0020 加入第三種
+ * 結果所需的欄位：閘門判定未確定時設為 1，三條發布路徑及學生組題都會查核。
+ *
+ * 這個 describe 使用**獨立**資料庫，模擬正式環境由 0019 升級到 0020（而不是在共用
+ * 測試資料庫上動手）：
+ *   1. 舊題目（建立時還沒有這個欄位）一律保留，並以 **0**（未經教師確認）加入；
+ *   2. 舊的已發布題目不會因為升級而變成「等待教師確認」，未確認的題目也不會被
+ *      當成已確認（default 0 是中性的，旗標只由閘門結果設定）；
+ *   3. 容器重啟重複套用同一批 migration 是冪等的；
+ *   4. 這個 migration 只新增一個帶預設值的欄位（舊映像檔的程式碼會忽略它），
+ *      回復做法仍然是向前修正或由備份快照還原——migration 不支援降版（README 第十節）。
+ */
+describe("migration 0020：教師確認旗標（Sprint 7.9）", () => {
+  const upgradePath = freshTestDatabasePath("migration-0020");
+  const MIGRATION_0020 = "0020-teacher-confirmation-required";
+  const LEGACY_DRAFT = "q-migration-0020-draft";
+  const LEGACY_PUBLISHED = "q-migration-0020-published";
+
+  let upgradeDb: DatabaseSync;
+
+  function questionColumns(): string[] {
+    return (
+      upgradeDb.prepare("PRAGMA table_info(questions)").all() as unknown as { name: string }[]
+    ).map((row) => row.name);
+  }
+
+  function legacyRow(id: string): Record<string, unknown> {
+    return upgradeDb
+      .prepare("SELECT id, status, revision, source_verified FROM questions WHERE id = ?")
+      .get(id) as unknown as Record<string, unknown>;
+  }
+
+  /** 讀取 0020 加入的欄位（只在升級之後可用） */
+  function confirmationFlag(id: string): number {
+    const row = upgradeDb
+      .prepare("SELECT teacher_confirmation_required AS flag FROM questions WHERE id = ?")
+      .get(id) as unknown as { flag: number };
+    return Number(row.flag);
+  }
+
+  /** 插入一條「0020 之前」的題目：完全不提及新欄位 */
+  function insertLegacyQuestion(id: string, status: "draft" | "published"): void {
+    upgradeDb
+      .prepare(
+        `INSERT INTO questions
+           (id, topic_id, section_id, question_type, difficulty, question, correct_answer,
+            explanation, knowledge_point, source_excerpt, source_location, origin, status, created_at)
+         VALUES (?, 'topic-migration', 'section-migration', 'mc', 'basic', '舊版題目', '答案',
+                 '舊版解釋', '舊版知識點', '舊版節錄', '舊版位置', 'material-ai', ?, '2026-01-01T00:00:00.000Z')`,
+      )
+      .run(id, status);
+  }
+
+  beforeAll(() => {
+    for (const suffix of ["", "-wal", "-shm"]) {
+      fs.rmSync(`${upgradePath}${suffix}`, { force: true });
+    }
+    upgradeDb = connection.createDatabase(upgradePath);
+
+    // 模擬「尚未套用 0020」的正式資料庫：欄位及套用紀錄一併移除，
+    // 舊題目在沒有新欄位的情況下寫入（正式環境的 3,900+ 題正是這種情況）。
+    upgradeDb.exec("ALTER TABLE questions DROP COLUMN teacher_confirmation_required");
+    upgradeDb.prepare("DELETE FROM schema_migrations WHERE id = ?").run(MIGRATION_0020);
+
+    upgradeDb
+      .prepare(
+        `INSERT INTO topics (id, title, description, published, sort_order, created_at, updated_at)
+         VALUES ('topic-migration', '升級測試課題', '', 1, 0, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+      )
+      .run();
+    upgradeDb
+      .prepare(
+        `INSERT INTO sections
+           (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+         VALUES ('section-migration', 'topic-migration', NULL, '升級測試分節', '', '[]', 0,
+                 '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+      )
+      .run();
+    insertLegacyQuestion(LEGACY_DRAFT, "draft");
+    insertLegacyQuestion(LEGACY_PUBLISHED, "published");
+  });
+
+  afterAll(() => {
+    upgradeDb.close();
+  });
+
+  it("由 0019 升級：舊題目保留，新欄位以 0（未經教師確認）加入", () => {
+    expect(questionColumns()).not.toContain("teacher_confirmation_required");
+    expect(legacyRow(LEGACY_DRAFT).status).toBe("draft");
+    expect(legacyRow(LEGACY_PUBLISHED).status).toBe("published");
+
+    migrations.runMigrations(upgradeDb);
+
+    expect(questionColumns()).toContain("teacher_confirmation_required");
+    expect(
+      upgradeDb.prepare("SELECT id FROM schema_migrations WHERE id = ?").get(MIGRATION_0020),
+    ).toBeDefined();
+
+    for (const id of [LEGACY_DRAFT, LEGACY_PUBLISHED]) {
+      const row = legacyRow(id);
+      // 舊資料完全保留：狀態、版本、教材依據都不變
+      expect(row.revision, id).toBe(1);
+      expect(confirmationFlag(id), id).toBe(0);
+    }
+    // 已發布的舊題目不會因為升級而被標成「等待教師確認」，但旗標仍是 fail-closed 的
+    // 中性值：未確定題目必須由閘門結果（而不是預設值）決定是否暫緩發布。
+    expect(legacyRow(LEGACY_PUBLISHED).status).toBe("published");
+  });
+
+  it("旗標可寫入及讀回，並在容器重啟（重複套用 migration）後保留", () => {
+    upgradeDb
+      .prepare("UPDATE questions SET teacher_confirmation_required = 1 WHERE id = ?")
+      .run(LEGACY_DRAFT);
+    expect(confirmationFlag(LEGACY_DRAFT)).toBe(1);
+
+    migrations.runMigrations(upgradeDb);
+    migrations.runMigrations(upgradeDb);
+
+    expect(confirmationFlag(LEGACY_DRAFT)).toBe(1);
+    expect(confirmationFlag(LEGACY_PUBLISHED)).toBe(0);
+
+    const rows = upgradeDb
+      .prepare("SELECT id, COUNT(*) AS total FROM schema_migrations GROUP BY id")
+      .all() as unknown as { id: string; total: number }[];
+    expect(rows.every((row) => row.total === 1)).toBe(true);
+    expect(rows.map((row) => row.id)).toEqual(migrations.MIGRATIONS.map((migration) => migration.id));
+    // 欄位只會加入一次（重複套用不會嘗試重建，亦不會出錯）
+    expect(questionColumns().filter((name) => name === "teacher_confirmation_required")).toHaveLength(1);
+  });
+
+  it("新欄位是 NOT NULL DEFAULT 0：插入舊式列（不提供此欄位）不會被當成已確認", () => {
+    upgradeDb
+      .prepare(
+        `INSERT INTO questions
+           (id, topic_id, section_id, question_type, difficulty, question, correct_answer,
+            explanation, knowledge_point, source_excerpt, source_location, origin, status, created_at)
+         VALUES ('q-migration-0020-implicit', 'topic-migration', 'section-migration', 'mc', 'basic',
+                 '舊式插入', '答案', '解釋', '知識點', '節錄', '位置', 'material-ai', 'draft',
+                 '2026-01-01T00:00:00.000Z')`,
+      )
+      .run();
+
+    const row = legacyRow("q-migration-0020-implicit");
+    expect(confirmationFlag("q-migration-0020-implicit")).toBe(0);
+    expect(row.status).toBe("draft");
+  });
+});

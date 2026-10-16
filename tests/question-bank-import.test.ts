@@ -522,6 +522,25 @@ t:mc; nil:1
     expect(stored?.qualityWarnings.join("")).toContain("圖片");
   });
 
+  it("匯入的試題沒有段落依據，節錄及來源位置對學生一律不顯示（Sprint 7.5）", async () => {
+    importService.importQuestionBank({
+      topicId: "topic-1",
+      fileName: "HNC1A2E_QB_T1_1.MCQ.docx",
+      text: MCQ_TEXT,
+    });
+    const stored = questions.getQuestion("qb-JTH2ndEdMCQ01001");
+    expect(stored).not.toBeNull();
+    // 匯入時的來源標註：題目文字本身 + 原檔名及題號
+    expect(stored?.sourceBlockIds).toEqual([]);
+    expect(stored?.sourceExcerpt).toContain("最早的人類");
+    expect(stored?.sourceLocation).toContain("HNC1A2E_QB_T1_1.MCQ.docx");
+
+    const { studentExcerptVisibility } = await import("@/server/services/source-visibility");
+    const visibility = studentExcerptVisibility(stored!);
+    expect(visibility.visible).toBe(false);
+    expect(visibility.reason).toBe("unverified-source");
+  });
+
   it("教材匯入後會為「先前找不到依據」的題目重新定位教材依據（雲端首次啟動情境）", async () => {
     // 情境：示範題庫在教材尚未匯入時建立（題目只有原文節錄、沒有段落 ID），
     // 之後教師在介面匯入教材 → 題目應自動重新核對，否則教師端會出現假警報。

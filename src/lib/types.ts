@@ -537,6 +537,32 @@ export const questionBaseSchema = z.object({
    */
   skill: historySkillSchema.nullable().default(null),
   /**
+   * 自動品質驗證通過的時間（Sprint 7.8）。
+   *
+   * 這是**機器檢查**的結果，不是人工覆核：題目通過自動品質閘門後即可供學生自學，
+   * 毋須等待教師逐題預先批准；教師覆核改為事後補救（見 questionReviewSchema）。
+   * null 代表從未通過自動驗證（例如教師手動建立或匯入的題目）。
+   */
+  autoValidatedAt: z.string().nullable().default(null),
+  /**
+   * 通過自動品質驗證的版本編號。與 `revision` 不同即代表內容已改，
+   * 先前的自動驗證不再適用（與人工覆核紀錄的處理方式一致）。
+   */
+  autoValidatedRevision: z.number().int().positive().nullable().default(null),
+  /**
+   * 通過自動品質驗證時的內容指紋（見 questionFingerprint）。
+   * 防止「版本號沒有遞增但內容已改」時誤用舊的自動驗證結果。
+   */
+  autoValidatedFingerprint: z.string().nullable().default(null),
+  /**
+   * 自動發布被暫緩，等待教師確認（伺服器管理，不由前端提供）。
+   *
+   * 品質閘門判定為「未確定」（例如答案只是教材語句的改寫、沒有逐字依據）時設為 true：
+   * 題目仍然保留在題庫，但不會經自動驗證發布給學生（見 question-service 的三條發布路徑）。
+   * 教師核對後手動發布即代表疑問已解決，之後重新驗證會清除這個標記。
+   */
+  teacherConfirmationRequired: z.boolean().default(false),
+  /**
    * 題目內容的版本編號。每當題目內容被修改就會 +1（由伺服器管理，不由前端提供）。
    *
    * 用途：人工覆核必須對應**實際被覆核的那一版**。覆核紀錄記下當時的版本，
@@ -583,12 +609,23 @@ export const studentQuestionSchema = questionBaseSchema.omit({
   sourceBlockIds: true,
   // 品質警告屬教師查核資訊，學生端不會看到
   qualityWarnings: true,
+  // 自動發布暫緩狀態同樣屬教師查核資訊
+  teacherConfirmationRequired: true,
 });
 export type StudentQuestion = z.infer<typeof studentQuestionSchema>;
 
-/** 教師建立／修改題目時提交的內容 */
+/** 教師建立／修改題目時提交的內容（自動品質驗證欄位由伺服器管理，不接受前端提供） */
 export const questionInputSchema = questionBaseSchema
-  .omit({ id: true, createdAt: true, sourceVerified: true, revision: true })
+  .omit({
+    id: true,
+    createdAt: true,
+    sourceVerified: true,
+    revision: true,
+    autoValidatedAt: true,
+    autoValidatedRevision: true,
+    autoValidatedFingerprint: true,
+    teacherConfirmationRequired: true,
+  })
   .extend({ status: questionStatusSchema.default("draft") });
 export type QuestionInput = z.infer<typeof questionInputSchema>;
 
@@ -676,6 +713,15 @@ export const teacherQuestionViewSchema = z.object({
   latestReview: questionReviewSchema.nullable(),
   /** 對應目前版本、且決定為 approved 的覆核紀錄（沒有則為 null） */
   approvedReview: questionReviewSchema.nullable(),
+  /**
+   * 以**舊版本**批改的作答數（Sprint 7.8）。
+   *
+   * 題目被修正後，系統不會靜默重算學生的歷史分數；教師會在題目上看到
+   * 「有 N 筆舊作答是按修正前的版本批改」，據此決定是否需要跟進。
+   */
+  staleAttempts: z.number().int().nonnegative().default(0),
+  /** 該題目的作答總數（判斷影響範圍用） */
+  totalAttempts: z.number().int().nonnegative().default(0),
 });
 export type TeacherQuestionView = z.infer<typeof teacherQuestionViewSchema>;
 
@@ -685,6 +731,7 @@ export const studentExcerptHiddenReasonSchema = z.enum([
   "teacher-edition",
   "exercise-content",
   "missing-source-blocks",
+  "unverified-source",
   "lookup-failed",
 ]);
 export type StudentExcerptHiddenReason = z.infer<typeof studentExcerptHiddenReasonSchema>;
@@ -694,6 +741,8 @@ export const STUDENT_EXCERPT_HIDDEN_REASON_LABELS: Record<StudentExcerptHiddenRe
   "teacher-edition": "來源段落屬教師版內容（答案或評分參考）",
   "exercise-content": "來源段落是練習題目、評分參考或零散文字（非課文內容）",
   "missing-source-blocks": "引用的教材段落已不存在，需重新核對依據",
+  "unverified-source":
+    "來源未經核對（例如匯入的校內試題）：題目沒有對應的教材段落，節錄無法核實，因此不向學生顯示",
   "lookup-failed": "查證教材依據時出錯，已先當作不顯示",
 };
 
@@ -1001,6 +1050,11 @@ export interface TeacherQuestionOverview {
     schoolPaper: number;
     /** 有未處理的學生回報，需教師覆核 */
     flagged: number;
+    /**
+     * 品質閘門判定「未確定」、自動發布被暫緩，等待教師確認的題目數（Sprint 7.9）。
+     * 這些題目一律維持草稿，學生看不到；教師核對後才可發布。
+     */
+    awaitingTeacherConfirmation: number;
   };
   records: {
     /** 已留檔的練習次數 */
@@ -1361,6 +1415,11 @@ export const questionReportInputSchema = z.object({
   questionId: z.string().min(1),
   /** 作答中的練習（用於核對回報者確實做過這題） */
   sessionId: z.string().min(1).nullable().default(null),
+  /**
+   * 相關的作答紀錄（可選）。回報綁定「題目版本 + 該次作答」，
+   * 令教師能直接看到學生當時的答案及批改結果，而不只是「有學生說有問題」。
+   */
+  attemptId: z.string().min(1).nullable().default(null),
   reason: questionReportReasonSchema,
   detail: z.string().max(500).default(""),
 });
@@ -1370,14 +1429,26 @@ export const questionReportSchema = z.object({
   id: z.string().min(1),
   questionId: z.string().min(1),
   sessionId: z.string().nullable().default(null),
+  /** 相關作答紀錄（可為 null：學生未作答時也可回報） */
+  attemptId: z.string().nullable().default(null),
   learnerId: z.string().min(1),
   topicId: z.string().min(1),
   reason: questionReportReasonSchema,
   detail: z.string().default(""),
   status: questionReportStatusSchema,
+  /**
+   * 回報所指向的題目版本及內容指紋。
+   *
+   * 題目可能在回報之後被修改：記下版本及指紋，教師才能確定「學生回報的是哪一版」，
+   * 而不會把舊版回報當成現行版本的缺陷（或相反）。
+   */
+  questionRevision: z.number().int().positive().nullable().default(null),
+  questionFingerprint: z.string().nullable().default(null),
   createdAt: z.string(),
   resolvedAt: z.string().nullable().default(null),
   resolvedBy: z.string().nullable().default(null),
+  /** 教師處理這筆回報時一併採取的行動（例如 withdraw-question、revalidate-question） */
+  resolutionAction: z.string().nullable().default(null),
 });
 export type QuestionReport = z.infer<typeof questionReportSchema>;
 
@@ -1391,6 +1462,14 @@ export const questionReportDetailSchema = questionReportSchema.extend({
   topicTitle: z.string(),
   /** 同一題目的未處理回報數（顯示「待覆核」用） */
   openCountForQuestion: z.number().int().default(1),
+  /** 回報時題目的版本是否已經不是現在這一版（題目已被修改或撤回） */
+  revisionChanged: z.boolean().default(false),
+  /** 相關作答（來自 attempts）：學生當時的答案及批改結果 */
+  attemptAnswer: z.string().nullable().default(null),
+  attemptIsCorrect: z.boolean().nullable().default(null),
+  attemptRevision: z.number().int().nullable().default(null),
+  /** 目前這一版題目是否已通過自動品質驗證（供教師判斷是否需要重新驗證） */
+  questionAutoValidated: z.boolean().default(false),
 });
 export type QuestionReportDetail = z.infer<typeof questionReportDetailSchema>;
 

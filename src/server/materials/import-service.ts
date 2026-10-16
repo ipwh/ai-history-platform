@@ -303,6 +303,12 @@ function reverifyQuestionsForDocument(fileName: string, blocks: MaterialBlock[])
  *   2. 題目的 `sourceLocation` 沒有記錄檔名，令 `reverifyQuestionsForDocument` 無法涵蓋。
  *
  * 比對方式與示範題庫一致：取「最短的相符段落」，避免一次抓到整段長文。
+ *
+ * **沒有來源位置的段落不可用作依據**（Sprint 7.7）：連結後學生端的「教材來源」會顯示
+ * 題目的 `sourceLocation`，而匯入試題的來源位置正是**試題檔的檔名及題號**。若以
+ * `best.sourceLocation || question.sourceLocation` 回退，等於把試題檔名保留下來當作
+ * 學生可見的來源標註。因此：沒有可用來源位置的段落一律略過（不連結），題目維持
+ * 「未通過教材依據核對」，學生端依 fail-closed 政策不顯示節錄及來源位置。
  */
 function reverifyUnverifiedQuestions(topicId: string, blocks: MaterialBlock[]): void {
   const pending = listQuestions({ topicId }).filter((question) => !question.sourceVerified);
@@ -312,10 +318,12 @@ function reverifyUnverifiedQuestions(topicId: string, blocks: MaterialBlock[]): 
     [];
   for (const block of blocks) {
     if (block.type === "image") continue;
+    const sourceLocation = block.sourceLocation.trim();
+    if (sourceLocation.length === 0) continue;
     for (const text of blockSearchTexts(block)) {
       candidates.push({
         blockId: block.id,
-        sourceLocation: block.sourceLocation,
+        sourceLocation,
         length: text.length,
         normalized: normalizeForMatch(text),
       });
@@ -337,7 +345,8 @@ function reverifyUnverifiedQuestions(topicId: string, blocks: MaterialBlock[]): 
     updateQuestion(question.id, {
       ...question,
       sourceBlockIds: [best.blockId],
-      sourceLocation: best.sourceLocation || question.sourceLocation,
+      // 候選段落一律有非空白的來源位置，因此不需（也不可）回退到題目原有的來源標註
+      sourceLocation: best.sourceLocation,
       sourceVerified: true,
     });
   }

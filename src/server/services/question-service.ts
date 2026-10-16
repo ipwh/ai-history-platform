@@ -34,6 +34,7 @@ import { nowIso, newId } from "../db/connection";
 import { getServerConfig, isProductionRuntime } from "../config";
 import { resolveProvider } from "../llm";
 import { LlmProviderError, type LlmProvider } from "../llm/provider";
+import { checkQuestionQuality } from "../llm/question-quality";
 import { validateLlmQuestions } from "../llm/validation";
 import { categorizeLlmError, logLlmUsage } from "./llm-usage";
 import {
@@ -46,9 +47,13 @@ import {
   listLatestReviews,
   listQuestionReviews,
   listQuestions,
+  recordQuestionAutoValidation,
   setQuestionStatus,
+  setTeacherConfirmationRequired,
   updateQuestion,
 } from "../repositories/questions";
+import { getBlocksByIds } from "../repositories/materials";
+import { countQuestionRevisionDrift } from "../repositories/practice";
 import { expandSectionIds, getSection, getTopic, listSections } from "../repositories/topics";
 import { normalizeForMatch, truncate } from "../materials/text-utils";
 import { topicLearningFocusText } from "../seed/curriculum-focus";
@@ -91,6 +96,13 @@ export interface GenerateOptions extends QuestionGenerationRequest {
    * 學生練習路徑必須傳 `student`，否則「教材版權閘門」會被 AI 出題繞過。
    */
   audience?: "student" | "staff";
+  /**
+   * 已用過的標準答案（例如同一份練習已出過的題目）。
+   *
+   * 只用於「補題」：提示模型改出其他史實，避免把同一題改寫後再交一次。
+   * 這不是強制條件——最終仍由 `question-dedupe.ts` 的共用判定把重複題目擋下。
+   */
+  avoidAnswers?: string[];
 }
 
 export interface GenerationResult extends GeneratedQuestionPreview {
@@ -101,7 +113,11 @@ export interface GenerationResult extends GeneratedQuestionPreview {
 }
 
 /**
- * 產生題目並寫入題庫（狀態為草稿，待教師查核後才發布）。
+ * 產生題目並寫入題庫。
+ *
+ * Sprint 7.8 起：通過驗證的題目會記錄自動品質驗證並即時發布供學生自學
+ * （`AUTO_PUBLISH_VALIDATED_QUESTIONS`，預設開啟），毋須教師逐題預先批准；
+ * 未通過驗證的題目維持草稿，由教師覆核、修正或重新驗證。
  */
 export async function generateQuestions(options: GenerateOptions): Promise<GenerationResult> {
   const request = questionGenerationRequestSchema.parse(options);
@@ -184,6 +200,7 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
     count: request.questionCount,
     materialUnits: units,
     distractorUnits,
+    avoidAnswers: options.avoidAnswers ?? [],
   };
 
   const attempt = async (allowFallback: boolean): Promise<void> => {
@@ -290,7 +307,24 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
     }
   }
 
-  const saved = persist ? finalQuestions.map((question) => insertQuestion(question)) : finalQuestions;
+  const saved = persist
+    ? finalQuestions.map((question) => {
+        const inserted = insertQuestion(question);
+        // 通過驗證的題目立即記錄自動品質驗證（並在設定允許時發布），
+        // 學生因此毋須等待教師逐題預先批准即可練習（Sprint 7.8）。
+        return recordAutoValidationAndPublish(inserted.id);
+      })
+    : finalQuestions;
+
+  // Sprint 7.9：未確定項目（例如答案只是教材語句的改寫）不會自動發布，
+  // 只保留為草稿等待教師確認；其他題目不受影響。
+  const heldCount = saved.filter((question) => question.teacherConfirmationRequired).length;
+  if (heldCount > 0) {
+    warnings.push(
+      `有 ${heldCount} 條題目的品質檢查有未確定項目（例如答案只是教材語句的改寫），` +
+        "已保留為草稿並交教師確認，不會自動發布；其他題目不受影響。",
+    );
+  }
 
   return {
     provider: usedProvider.name,
@@ -358,6 +392,30 @@ function approvedReviewFor(question: Question): QuestionReview | null {
 }
 
 /**
+ * 這題目前版本是否已通過**自動品質驗證**（Sprint 7.8）。
+ *
+ * 與人工覆核紀錄一樣綁定版本及內容指紋：內容一改（`revision` 遞增或指紋不同）即失效。
+ * 自動驗證**不是**人工覆核，兩者分開記錄，教師端因此可以分辨。
+ */
+export function autoValidationIsCurrent(question: Question): boolean {
+  return (
+    question.autoValidatedAt !== null &&
+    question.autoValidatedRevision === question.revision &&
+    question.autoValidatedFingerprint === questionFingerprint(question)
+  );
+}
+
+/** 學生可以透過題庫練習這一題嗎（狀態 + 至少一種驗證紀錄） */
+export function isStudentPracticeEligible(question: Question): boolean {
+  return (
+    question.status === "published" &&
+    // 未確定項目尚未由教師確認前，任何自動驗證紀錄都不足以讓學生看到這一題
+    !question.teacherConfirmationRequired &&
+    (approvedReviewFor(question) !== null || autoValidationIsCurrent(question))
+  );
+}
+
+/**
  * 覆核狀態（由題目狀態、版本及覆核紀錄推導；見 questionReviewStateSchema）。
  *
  * 重點：`sourceVerified`（教材依據成立）**不會**影響這個狀態——自動驗證不等於人工覆核。
@@ -386,25 +444,33 @@ export function reviewStateFor(question: Question): QuestionReviewState {
   return "pending-review";
 }
 
-/** 教師端題目檢視資料（題目 + 覆核狀態 + 最新／已通過的覆核紀錄） */
+/** 教師端題目檢視資料（題目 + 覆核狀態 + 最新／已通過的覆核紀錄 + 舊版作答提示） */
 export function teacherQuestionView(question: Question): TeacherQuestionView {
   const reviews = listQuestionReviews(question.id, 1);
+  const drift = countQuestionRevisionDrift(question.id, question.revision);
   return {
     question,
     reviewState: reviewStateFor(question),
     latestReview: reviews[0] ?? null,
     approvedReview: approvedReviewFor(question),
+    staleAttempts: drift.staleAttempts,
+    totalAttempts: drift.totalAttempts,
   };
 }
 
 export function teacherQuestionViews(questions: Question[]): TeacherQuestionView[] {
   const latest = listLatestReviews(questions.map((question) => question.id));
-  return questions.map((question) => ({
-    question,
-    reviewState: reviewStateFor(question),
-    latestReview: latest.get(question.id) ?? null,
-    approvedReview: approvedReviewFor(question),
-  }));
+  return questions.map((question) => {
+    const drift = countQuestionRevisionDrift(question.id, question.revision);
+    return {
+      question,
+      reviewState: reviewStateFor(question),
+      latestReview: latest.get(question.id) ?? null,
+      approvedReview: approvedReviewFor(question),
+      staleAttempts: drift.staleAttempts,
+      totalAttempts: drift.totalAttempts,
+    };
+  });
 }
 
 /** 題目清單用的覆核狀態（不重複題目內容） */
@@ -420,6 +486,8 @@ export function questionReviewStatuses(questions: Question[]): QuestionReviewSta
       approvedReview: view.approvedReview,
       sourceExcerptHiddenFromStudents: !visibility.visible,
       sourceExcerptHiddenReason: visibility.reason,
+      staleAttempts: view.staleAttempts,
+      autoValidated: autoValidationIsCurrent(view.question),
     };
   });
 }
@@ -469,8 +537,15 @@ export function recordQuestionReview(input: {
 
   // 通過覆核 → 可發布；退回或不可用 → 回到草稿（立即不再對學生顯示）
   const nextStatus: QuestionStatus = input.decision === "approved" ? "published" : "draft";
-  const updated = setQuestionStatus(existing.id, nextStatus);
-  if (!updated) throw new QuestionServiceError("題目狀態更新失敗", 500);
+  const published = setQuestionStatus(existing.id, nextStatus);
+  if (!published) throw new QuestionServiceError("題目狀態更新失敗", 500);
+
+  // 教師明確通過覆核＝未確定的品質疑問已由人解決，清除自動發布暫緩標記
+  // （Sprint 7.9：只有人工確認或重新驗證通過可以清除，警告本身不能）。
+  const updated =
+    input.decision === "approved" && published.teacherConfirmationRequired
+      ? (setTeacherConfirmationRequired(published.id, false) ?? published)
+      : published;
 
   return { view: teacherQuestionView(updated), created };
 }
@@ -479,16 +554,26 @@ export function changeQuestionStatus(questionId: string, status: QuestionStatus)
   const existing = getQuestion(questionId);
   if (!existing) throw new QuestionServiceError("找不到指定的題目", 404);
 
-  // 發布關卡：學生可見的題目必須有對應**目前版本**的人工覆核紀錄。
-  // 教援（自動）驗證或舊資料都不會令題目通過這個關卡。
+  // 發布關卡（Sprint 7.8）：學生可見的題目必須有對應**目前版本**的
+  //   - 人工覆核紀錄（教師確認），或
+  //   - 自動品質驗證紀錄（機器檢查通過，毋須等待教師預先批准）。
+  // 兩者都沒有時不可發布；舊資料或教材依據自動核對（sourceVerified）都不算。
   if (status === "published") {
     const approved = approvedReviewFor(existing);
-    if (!approved) {
+    // Sprint 7.9：閘門判定「未確定」的題目不可經自動驗證發布——警告（或自動驗證紀錄）
+    // 不得覆蓋未解決的依據問題。教師人工覆核後發布則屬已解決疑問的正式決定。
+    if (!approved && existing.teacherConfirmationRequired) {
+      throw new QuestionServiceError(
+        "無法發布：此題的品質檢查有未確定項目（答案或教材依據未能確定），須由教師核對內容後再發布。",
+        409,
+      );
+    }
+    if (!approved && !autoValidationIsCurrent(existing)) {
       const state = reviewStateFor(existing);
       const guidance =
         state === "stale-approval"
-          ? "此題在覆核後已被修改，請重新覆核後再發布。"
-          : "此題尚未有教師覆核紀錄，請先覆核（確認史實、用語、選項、答案及解釋）後再發布。";
+          ? "此題在覆核後已被修改，請重新覆核（或重新執行自動品質驗證）後再發布。"
+          : "此題尚未有教師覆核紀錄，亦未通過自動品質驗證，請先重新執行自動品質驗證，或由教師覆核後再發布。";
       throw new QuestionServiceError(`無法發布：${guidance}`, 409);
     }
   }
@@ -499,36 +584,189 @@ export function changeQuestionStatus(questionId: string, status: QuestionStatus)
 }
 
 /**
- * 自動發布由系統生成的題目（**未經人工覆核**）。
+ * 自動發布由系統生成的題目。
  *
- * 只用於 `DEMO_AUTO_PUBLISH_QUESTIONS=true` 的示範／首次建立流程：沒有教師在場時
- * 仍要能試用平台，因此這些題目會直接發布，但它們**不會**留下任何覆核紀錄，
- * 教師端及文件一律標示為「已發布（未經人工覆核）」。
+ * 兩條路徑（Sprint 7.8）：
+ *   1. **通過自動品質驗證**（`AUTO_PUBLISH_VALIDATED_QUESTIONS`，預設開啟）：題目在
+ *      生成階段已通過 schema、教材依據及 question-quality.ts 的品質閘門，因此可以在
+ *      **任何環境**（包括正式環境）立即供學生自學——學生自學不應等待教師逐題預先批准。
+ *      這條路徑只寫入自動驗證紀錄，**不會**留下任何人工覆核紀錄。
+ *   2. 示範模式（`DEMO_AUTO_PUBLISH_QUESTIONS=true`，只限非正式環境）：沒有教師在場時
+ *      仍要能試用平台，未經任何驗證的示範題目亦可發布，同樣不會偽造覆核紀錄。
  *
- * **邊界（fail-closed）**：正式環境（Cloud Run 或 `NODE_ENV=production`）一律拒絕，
- * 即使環境變數被複製過來亦不會生效；亦要求示範自動發布開關為 true。批次腳本
- * （`npm run generate:questions`、`npm run setup`）因此無法把未覆核題目寫入正式題庫。
- *
- * 教師手動發布必須走 `changeQuestionStatus`，那裡會要求對應目前版本的人工覆核紀錄。
+ * 兩者都不成立時 fail-closed：題目留在草稿，由教師處理（覆核、修正或重新驗證）。
+ * 教師手動發布走 `changeQuestionStatus`，那裡同樣接受「人工覆核」或「自動驗證」任一紀錄。
  */
 export function publishAutoGeneratedQuestion(questionId: string): Question {
-  if (isProductionRuntime()) {
-    throw new QuestionServiceError(
-      "已拒絕自動發布：正式環境不可發布未經教師覆核的題目，請由教師在「題目管理」核對後發布。",
-      409,
-    );
-  }
-  if (!getServerConfig().autoPublishMockQuestions) {
-    throw new QuestionServiceError(
-      "已拒絕自動發布：示範自動發布未開啟（DEMO_AUTO_PUBLISH_QUESTIONS）。",
-      409,
-    );
-  }
   const existing = getQuestion(questionId);
   if (!existing) throw new QuestionServiceError("找不到指定的題目", 404);
+
+  const validated =
+    getServerConfig().autoPublishValidatedQuestions &&
+    autoValidationIsCurrent(existing) &&
+    !existing.teacherConfirmationRequired;
+  const demoPublished =
+    !existing.teacherConfirmationRequired &&
+    !isProductionRuntime() &&
+    getServerConfig().autoPublishMockQuestions;
+
+  if (!validated && !demoPublished) {
+    throw new QuestionServiceError(
+      existing.teacherConfirmationRequired
+        ? "已拒絕自動發布：品質檢查有未確定項目，須由教師核對內容後手動發布。"
+        : autoValidationIsCurrent(existing)
+        ? "已拒絕自動發布：自動發布已關閉（AUTO_PUBLISH_VALIDATED_QUESTIONS），請由教師在「題目管理」發布。"
+        : "已拒絕自動發布：題目未通過自動品質驗證，且示範自動發布不適用（DEMO_AUTO_PUBLISH_QUESTIONS／正式環境），請由教師核對後發布。",
+      409,
+    );
+  }
+
   const updated = setQuestionStatus(questionId, "published");
   if (!updated) throw new QuestionServiceError("題目狀態更新失敗", 500);
   return updated;
+}
+
+/**
+ * 擁有者授權的批次發布（`scripts/publish-draft-questions.ts`）可用的候選題目。
+ *
+ * 這個腳本刻意繞過「逐題人工覆核」的關卡（見腳本說明），但**不可**繞過「未確定
+ * （uncertain）項目須由教師確認」的關卡：`teacher_confirmation_required` 代表品質閘門
+ * 無法確認題目的答案依據，自動發布已被暫緩，批次發布不能代替教師確認
+ * （Sprint 7.9，見 migrations 0020 及 `changeQuestionStatus`）。
+ *
+ * `held` 的題目必須由教師在「題目管理」核對後逐題發布（人工覆核或重新執行自動品質驗證）。
+ */
+export function listOwnerPublicationCandidates(filter: { origins?: QuestionOrigin[] } = {}): {
+  publishable: Question[];
+  held: Question[];
+} {
+  const drafts = listQuestions({
+    statuses: ["draft"],
+    ...(filter.origins && filter.origins.length > 0 ? { origins: filter.origins } : {}),
+  });
+  return {
+    publishable: drafts.filter((question) => !question.teacherConfirmationRequired),
+    held: drafts.filter((question) => question.teacherConfirmationRequired),
+  };
+}
+
+/**
+ * 記錄「這一版題目通過自動品質驗證」，並在設定允許時立即發布供學生自學。
+ *
+ * 由生成流程呼叫（題目在寫入題庫前已通過 validateLlmQuestions 的所有檢查，
+ * 包括 question-quality.ts 的品質閘門）。回傳更新後的題目；發布失敗只會令題目
+ * 留在草稿，不會令生成流程失敗（教師之後可以重新驗證或覆核）。
+ */
+export function recordAutoValidationAndPublish(questionId: string): Question {
+  const existing = getQuestion(questionId);
+  if (!existing) throw new QuestionServiceError("找不到指定的題目", 404);
+
+  const validated = recordQuestionAutoValidation({
+    questionId: existing.id,
+    revision: existing.revision,
+    fingerprint: questionFingerprint(existing),
+    validatedAt: nowIso(),
+  });
+  if (!validated) throw new QuestionServiceError("自動驗證紀錄寫入失敗", 500);
+
+  if (!getServerConfig().autoPublishValidatedQuestions) return validated;
+  // 未確定項目（例如答案只是教材語句的改寫）即使已記錄自動驗證，也不得自動發布：
+  // 題目保留為草稿，等待教師確認（見 changeQuestionStatus 及 0020 migration）。
+  if (validated.teacherConfirmationRequired) return validated;
+  const published = setQuestionStatus(validated.id, "published");
+  return published ?? validated;
+}
+
+/**
+ * 重新執行自動品質驗證（教師端的「重新檢查」動作）。
+ *
+ * 只做機器檢查：教材依據（引用的段落仍然存在、節錄仍出自該段落）及完整題目品質
+ * （question-quality.ts）。通過時記錄自動驗證結果（因此可以發布，毋須等待人工覆核），
+ * **不會**建立任何人工覆核紀錄。不通過時回報原因，由教師修正後再試。
+ */
+export function revalidateQuestion(questionId: string): {
+  autoValidated: boolean;
+  sourceIssues: string[];
+  qualityIssues: string[];
+  view: TeacherQuestionView;
+} {
+  const existing = getQuestion(questionId);
+  if (!existing) throw new QuestionServiceError("找不到指定的題目", 404);
+
+  const units = buildMaterialUnits(existing.topicId, [existing.sectionId], {
+    audience: "staff",
+  });
+  const blocks = getBlocksByIds(existing.sourceBlockIds);
+
+  const sourceIssues: string[] = [];
+  if (existing.sourceBlockIds.length === 0) {
+    sourceIssues.push("題目沒有引用任何教材段落，無法核對教材依據");
+  } else {
+    const missing = existing.sourceBlockIds.filter(
+      (blockId) => !blocks.some((block) => block.id === blockId),
+    );
+    if (missing.length > 0) sourceIssues.push(`引用的教材段落已不存在：${missing.join("、")}`);
+    const excerpt = normalizeForMatch(existing.sourceExcerpt);
+    const linked = blocks.some((block) => normalizeForMatch(block.text).includes(excerpt));
+    if (!linked) sourceIssues.push("節錄文字已不在所引用的教材段落之中（教材可能已重新匯入）");
+  }
+
+  const quality = checkQuestionQuality(
+    {
+      questionType: existing.questionType,
+      question: existing.question,
+      options: existing.options,
+      correctAnswer: existing.correctAnswer,
+      explanation: existing.explanation,
+      sourceExcerpt: existing.sourceExcerpt,
+      sourceBlockIds: existing.sourceBlockIds,
+      gradingPoints: existing.gradingPoints,
+    },
+    units.length > 0
+      ? units
+      : blocks.map((block) => ({
+          blockId: block.id,
+          sourceLocation: block.sourceLocation ?? "",
+          text: block.text,
+        })),
+  );
+  const blockingIssues = quality.issues.filter((issue) => issue.severity === "blocking");
+  const uncertainIssues = quality.issues.filter((issue) => issue.severity === "uncertain");
+  const qualityIssues = [...blockingIssues, ...uncertainIssues].map((issue) => issue.message);
+
+  if (sourceIssues.length > 0 || blockingIssues.length > 0) {
+    return {
+      autoValidated: false,
+      sourceIssues,
+      qualityIssues,
+      view: teacherQuestionView(existing),
+    };
+  }
+
+  // 未確定項目（例如答案只是教材語句的改寫）：即使沒有 blocking 問題，仍不可自動發布。
+  // 標記保留在題目上，三條發布路徑都會查核；教師核對後手動發布即代表疑問已解決。
+  if (uncertainIssues.length > 0) {
+    const held = setTeacherConfirmationRequired(existing.id, true) ?? existing;
+    return {
+      autoValidated: false,
+      sourceIssues,
+      qualityIssues,
+      view: teacherQuestionView(held),
+    };
+  }
+
+  const validated = recordQuestionAutoValidation({
+    questionId: existing.id,
+    revision: existing.revision,
+    fingerprint: questionFingerprint(existing),
+    validatedAt: nowIso(),
+  });
+  if (!validated) throw new QuestionServiceError("自動驗證紀錄寫入失敗", 500);
+  // 重新驗證通過代表先前的未確定疑問已解決，清除暫緩標記
+  const cleared = existing.teacherConfirmationRequired
+    ? (setTeacherConfirmationRequired(existing.id, false) ?? validated)
+    : validated;
+  return { autoValidated: true, sourceIssues: [], qualityIssues: [], view: teacherQuestionView(cleared) };
 }
 
 /**

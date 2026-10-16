@@ -1,5 +1,5 @@
 /**
- * Vitest 全域設定：清理上一次執行遺留的暫存測試資料庫。
+ * Vitest 全域設定：清理上一次執行遺留的暫存測試資料庫及暫存上載資料夾。
  *
  * ── 為甚麼需要 ────────────────────────────────────────────────────────
  * 各測試檔以 `${process.pid}` 命名自己的資料庫，而作業系統會**回收 PID**，因此當某次
@@ -8,11 +8,14 @@
  *
  * 隔離本身由 `tests/test-database.ts` 的 `freshTestDatabasePath()` 負責（每個測試檔在
  * 使用資料庫前先刪除自己的檔案，屬確定性做法）。這裡只作**清理**，把長期遺留的檔案
- * 移除，避免暫存目錄無限增長。
+ * 移除，避免暫存目錄無限增長。同一道理亦適用於上載資料夾：正常情況由
+ * `tests/setup-uploads.ts` 在測試檔結束後刪除，這裡只清理程序被強制終止時留下的資料夾。
  *
  * ── 安全規則（Sprint 5 要求逐項驗證；測試見 tests/test-database-cleanup.test.ts）──
  *   1. **只限本套件的檔案**：檔名必須以 `hist-test-` 開頭，並以 `.db`／`.db-wal`／
- *      `.db-shm` 結尾（見 tests/test-database.ts 的 `isTestDatabaseFile`）。
+ *      `.db-shm` 結尾（見 tests/test-database.ts 的 `isTestDatabaseFile`），或為
+ *      `hist-test-uploads-<pid>` 形式的資料夾（見 tests/test-uploads.ts 的
+ *      `isTestUploadsDir`）。
  *   2. **不會刪除無關檔案**：比對的是完整檔名（前綴 + 副檔名），不是包含關係，
  *      因此 `hist-test-…txt`、`hist-test-….db.bak`、`my-hist-test-….db`、
  *      其他專案的 `.db` 一律不受影響。
@@ -27,6 +30,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { isTestDatabaseFile } from "./test-database";
+import { isTestUploadsDir } from "./test-uploads";
 
 /**
  * 只清理超過這個時間沒有更新的檔案。
@@ -79,17 +83,59 @@ export function cleanStaleTestDatabases(now: number = Date.now()): CleanupReport
   return report;
 }
 
+/**
+ * 清理遺留的暫存上載資料夾（`hist-test-uploads-<pid>`）。規則與資料庫檔案相同：只處理
+ * 名稱符合本套件規則、且超過 `STALE_AFTER_MS` 未更新的項目。
+ *
+ * 正常情況不會留下這些資料夾（`tests/setup-uploads.ts` 會在測試檔結束後刪除自己的
+ * 資料夾），這裡只處理程序被強制終止等例外情況。
+ */
+export function cleanStaleTestUploadDirs(now: number = Date.now()): CleanupReport {
+  const directory = os.tmpdir();
+  const report: CleanupReport = { candidates: 0, removed: 0, skippedRecent: 0, failed: 0 };
+
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(directory);
+  } catch {
+    return report;
+  }
+
+  for (const entry of entries) {
+    if (!isTestUploadsDir(entry)) continue;
+    report.candidates += 1;
+    const fullPath = path.join(directory, entry);
+    try {
+      const stats = fs.statSync(fullPath);
+      if (now - stats.mtimeMs < STALE_AFTER_MS) {
+        report.skippedRecent += 1;
+        continue;
+      }
+      fs.rmSync(fullPath, { recursive: true, force: true });
+      report.removed += 1;
+    } catch {
+      report.failed += 1;
+    }
+  }
+
+  return report;
+}
+
 export default function globalSetup(): () => void {
-  const report = cleanStaleTestDatabases();
+  const databases = cleanStaleTestDatabases();
+  const uploads = cleanStaleTestUploadDirs();
 
   if (process.env.VITEST_VERBOSE_SETUP === "1") {
     console.log(
-      `[test-setup] 暫存測試資料庫：移除 ${report.removed}、保留（近期，可能屬並行執行）${report.skippedRecent}、失敗 ${report.failed}`,
+      `[test-setup] 暫存測試資料庫：移除 ${databases.removed}、保留（近期，可能屬並行執行）${databases.skippedRecent}、失敗 ${databases.failed}`,
+    );
+    console.log(
+      `[test-setup] 暫存上載資料夾：移除 ${uploads.removed}、保留（近期，可能屬並行執行）${uploads.skippedRecent}、失敗 ${uploads.failed}`,
     );
   }
 
   return () => {
     // 執行結束後不刪除其他檔案：並行執行的程序可能仍在使用。
-    // 每個測試檔的 DB 由 freshTestDatabasePath 自行處理。
+    // 每個測試檔的 DB 由 freshTestDatabasePath 自行處理，上載資料夾由 setup-uploads.ts 處理。
   };
 }

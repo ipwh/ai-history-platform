@@ -82,12 +82,32 @@ describe("填充題答案的歷史元素檢查", () => {
     expect(checkHistoricalAnswer("三", MATERIAL).definite).toBe(true);
   });
 
-  it("未能確認屬歷史元素時只作不確定判斷（交由呼叫方處理）", () => {
-    const result = checkHistoricalAnswer("鐵器", "鐵器的使用令農業生產效率提升。");
+  it("未能確認屬歷史元素時仍如實回報不確定（由填充題關卡一律丟棄）", () => {
+    const result = checkHistoricalAnswer("石刻", "當時以石刻技術印刷文件。");
     expect(result.ok).toBe(false);
     // 名單及詞尾不可能窮盡所有專有名詞，因此不可當成「明顯不合格」
     expect(result.definite).toBe(false);
+    expect(result.support).toBe("uncertain");
     expect(result.reason).toContain("未見歷史元素標記");
+  });
+
+  it("教材在同一句交代其歷史意義時，接受發明及器物（語境支持）", () => {
+    // 教材明示這項技術改變了生產方式，屬「有歷史意義」的正面證據
+    const supported = checkHistoricalAnswer("鐵器", "鐵器的使用令農業生產效率大幅提升。");
+    expect(supported.ok).toBe(true);
+    expect(supported.support).toBe("supported");
+
+    const steam = checkHistoricalAnswer(
+      "蒸汽機",
+      "工業革命期間，蒸汽機的發明改變了生產方式。",
+    );
+    expect(steam.ok).toBe(true);
+  });
+
+  it("教材只是提及名稱、沒有交代歷史意義時，發明及器物仍屬未能確認", () => {
+    const result = checkHistoricalAnswer("蒸汽機", "工廠內放置了一台蒸汽機。");
+    expect(result.ok).toBe(false);
+    expect(result.support).toBe("uncertain");
   });
 
   it("沒有提供教材原文時仍可檢查年份及詞尾標記", () => {

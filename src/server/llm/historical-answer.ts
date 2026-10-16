@@ -12,18 +12,24 @@
  * 「標籤：說明」句式，標籤本身只是欄位名稱而不是史事。
  *
  * 判斷方式（偏向嚴格）：
- *   1. **明顯不合格**（`definite = true`）：答案是說明句、形容詞，或由通用欄位詞組成，
- *      例如「出現的自然條件」、「定居與建房」、「為生方法」。
- *   2. **找不到歷史元素標記**（`definite = false`）：沒有跡象顯示答案是歷史元素，但也沒有
- *      明顯不合格之處——名單及詞尾不可能窮盡所有專有名詞（例如「鐵器」、「石刻」），
- *      因此交由呼叫者決定：本地示範生成會略過該題，AI 生成則標示警告交由教師核對。
+ *   1. **明顯不合格**（`support = "disallowed"`）：答案是說明句、形容詞，或由通用欄位詞
+ *      組成，例如「出現的自然條件」、「定居與建房」、「為生方法」。
+ *   2. **未能確認**（`support = "uncertain"`）：沒有跡象顯示答案是歷史元素，也沒有
+ *      明顯不合格之處——名單及詞尾不可能窮盡所有專有名詞（例如「石刻」）。
+ *   3. **正面確認**（`support = "supported"`）：年份、制度／條約／事件詞尾、地名、
+ *      人物敘述，或教材在同一句內明確交代其歷史意義的發明與器物（例如工業革命單元
+ *      的「蒸汽機」）。
+ *
+ * **填充題採用 fail-closed**：只有 `supported` 可以接受，`disallowed` 及 `uncertain`
+ * 一律丟棄（見 validation.ts 的填充題關卡）。三者仍然分開回報，令丟棄原因如實反映
+ * 信心，而不是把所有失敗都說成「明顯錯誤」。
  *
  * 限制（必須如實說明）：這是**模式比對，不是內容理解**。它只可以令題目減少（少出一題），
  * 不可當成「答案一定是歷史元素」的證明；教師仍是最終把關者。
  */
 
 export interface HistoricalAnswerCheck {
-  /** 答案是否可能是具有歷史意義的元素 */
+  /** 答案是否**正面**確認為具有歷史意義的元素（support === "supported"） */
   ok: boolean;
   /** 不合格時的原因（繁體中文，供教師核對清單及伺服器日誌顯示） */
   reason: string | null;
@@ -33,7 +39,21 @@ export interface HistoricalAnswerCheck {
    * false = 只是找不到歷史元素標記，可能誤判，只應標示警告交由教師核對。
    */
   definite: boolean;
+  /**
+   * 三分法結果（Sprint 7.4）：
+   *   - `supported`：有正面證據（年份、詞尾、地名、人物、教材語境支持等），可接受；
+   *   - `disallowed`：明顯不是歷史元素（說明句、形容詞、通用欄位詞）；
+   *   - `uncertain`：找不到證據，但也無法斷定不合格。
+   *
+   * **填充題必須 fail-closed**：`uncertain` 一樣不可接受（見 validation.ts）。
+   * 保留 `uncertain` 與 `disallowed` 的分別，是為了令丟棄原因如實反映信心，
+   * 而不是把所有失敗都說成「明顯錯誤」。
+   */
+  support: HistoricalAnswerSupport;
 }
+
+/** 填充題答案的合格程度（見 HistoricalAnswerCheck.support） */
+export type HistoricalAnswerSupport = "supported" | "disallowed" | "uncertain";
 
 /** 答案長度上限：超過此長度多數是完整句子，而不是一個歷史元素 */
 const MAX_ANSWER_LENGTH = 16;
@@ -195,6 +215,49 @@ const INSTITUTION_SUFFIXES = [
 /** 國家、地區、城市及地形的詞尾 */
 const PLACE_SUFFIXES = ["國", "洲", "半島", "群島", "島", "山脈", "河", "海", "湖", "城", "港", "地區", "大陸"];
 
+/**
+ * 政府機構、管治組織及官職的詞尾（例如「元老院」、「公民大會」、「平民護民官」）。
+ * 這類機構名稱是歷史科常見的填充題答案，沒有固定的專有名詞詞尾，
+ * 因此以機構通用詞尾辨認（見試點報告：真實模型曾以「元老院」為答案而被誤拒）。
+ */
+const BODY_SUFFIXES = [
+  "院",
+  "議會",
+  "國會",
+  "內閣",
+  "委員會",
+  "理事會",
+  "大會",
+  "法庭",
+  "法院",
+  "政府",
+  "王室",
+  "朝廷",
+  "教廷",
+  "同盟",
+  "公會",
+  "行會",
+  "聯邦",
+  "執政官",
+  "政官",
+  "護民官",
+  "民官",
+];
+
+/** 思想、主義及原則的詞尾（例如「民族自決」、「天賦權利」） */
+const PRINCIPLE_SUFFIXES = [
+  "主義",
+  "思想",
+  "學說",
+  "理念",
+  "原則",
+  "精神",
+  "自決",
+  "權利",
+  "自由",
+  "平等",
+];
+
 /** 常見的國家、地區、城市及古文明名稱（沒有固定詞尾） */
 const PLACE_NAMES = new Set([
   "英國",
@@ -314,23 +377,61 @@ const DEITY_NAMES = new Set([
 /** 歷史時期名稱（沒有固定詞尾，例如「古代」、「中古」、「史前」） */
 const PERIOD_NAMES = new Set(["古代", "上古", "中古", "中世紀", "近代", "現代", "當代", "史前", "信史"]);
 
-/** 《》及「」內的關鍵詞（教材以引號標示，代表它是課本特別說明的詞語） */
-const QUOTED_TERM_PATTERNS = [/「([^「」]{2,20})」/g, /《([^《》]{2,30})》/g];
+/**
+ * 發明、器物及技術的詞尾。這類答案**不能**單憑詞尾通過：必須同時在教材原文中出現，
+ * 且同一句內有明示其歷史意義的用語（見 `SIGNIFICANCE_CUES`）。原因是發明與器物
+ * 是否具有歷史意義取決於語境（例如「蒸汽機」在工業革命單元是關鍵發明，
+ * 但在其他語境可能只是隨手提及的器物）。教材沒有支持時一律當作「未能確認」。
+ */
+const TECHNOLOGY_SUFFIXES = [
+  "機",
+  "器",
+  "車",
+  "船",
+  "槍",
+  "炮",
+  "砲",
+  "箭",
+  "刀",
+  "劍",
+  "農具",
+  "工具",
+  "印刷術",
+  "造紙術",
+  "鐵路",
+  "運河",
+  "文字",
+];
+
+/**
+ * 教材中明示「這項技術／事物改變了歷史」的用語。只有在**同一句**同時提及該答案及
+ * 其中一個用語時，才可認定教材已交代其歷史意義；單純提及其名稱並不足夠。
+ */
+const SIGNIFICANCE_CUES = [
+  "發明",
+  "革新",
+  "改良",
+  "革命",
+  "改變",
+  "開創",
+  "奠定",
+  "普及",
+  "廣泛應用",
+  "取代",
+  "帶動",
+  "推動",
+  "促進",
+  "大幅",
+  "大大",
+  "提升",
+  "提高",
+  "轉捩點",
+  "里程碑",
+];
 
 /** 詞尾標記：答案必須長於詞尾本身，避免「制度」、「時代」等單獨成詞時被當作專有名詞 */
 function endsWithSuffix(answer: string, suffixes: string[]): boolean {
   return suffixes.some((suffix) => answer.length > suffix.length && answer.endsWith(suffix));
-}
-
-/** 教材是否以「」或《》標示這個詞語（課本如此標示，代表它是課程要求掌握的歷史辭彙） */
-function containsQuotedTerm(materialText: string, answer: string): boolean {
-  if (materialText.length === 0) return false;
-  for (const pattern of QUOTED_TERM_PATTERNS) {
-    for (const match of materialText.matchAll(pattern)) {
-      if (match[1].trim() === answer) return true;
-    }
-  }
-  return false;
 }
 
 /** 教材是否以「人名＋行為動詞」提及這個詞語（例如「馬丁路德發表《九十五條論證》」） */
@@ -338,6 +439,36 @@ function isPersonNameInMaterial(materialText: string, answer: string): boolean {
   if (materialText.length === 0) return false;
   const escaped = answer.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`${escaped}(?=${PERSON_ACTION_VERBS})`).test(materialText);
+}
+
+/**
+ * 答案是否為**教材有提及**的文件／條約／著作名稱。
+ *
+ * 這裡要求兩項條件同時成立：模型把答案寫成《》標題（代表它自稱是文件名稱），
+ * 而且該名稱確實見於教材原文。單靠引號本身**不足夠**——引號只代表教材有提及，
+ * 不代表該詞語具有歷史意義（見本檔開頭說明）。
+ */
+function isMaterialDocumentTitle(answer: string, rawAnswer: string, materialText: string): boolean {
+  if (materialText.length === 0) return false;
+  if (!/《[^《》]{2,30}》/.test(rawAnswer)) return false;
+  return materialText.includes(answer);
+}
+
+/**
+ * 教材是否在同一句內把這個詞語連繫到歷史意義（見 `SIGNIFICANCE_CUES`）。
+ *
+ * 這是「語境支持」判斷：只用於發明、器物及技術（`TECHNOLOGY_SUFFIXES`）。
+ * 詞語必須在教材中出現，且與意義用語同句——避免把「蒸汽機」這類器物當成
+ * 無條件合格，亦避免倚賴模型自稱重要。
+ */
+function isMaterialSupportedTerm(materialText: string, answer: string): boolean {
+  if (materialText.length === 0) return false;
+  if (!materialText.includes(answer)) return false;
+  for (const sentence of materialText.split(/[。！？\n；;]/)) {
+    if (!sentence.includes(answer)) continue;
+    if (SIGNIFICANCE_CUES.some((cue) => sentence.includes(cue))) return true;
+  }
+  return false;
 }
 
 /**
@@ -404,10 +535,11 @@ function isObviouslyNotHistoricalElement(answer: string): boolean {
  */
 export function checkHistoricalAnswer(answer: string, materialText = ""): HistoricalAnswerCheck {
   // 答案可能被引號括住（例如「古代」、《凡爾賽條約》），先移除最外層引號再判斷
-  const value = answer.trim().replace(/^[「『《]+/, "").replace(/[」』》]+$/, "").trim();
+  const raw = answer.trim();
+  const value = raw.replace(/^[「『《]+/, "").replace(/[」』》]+$/, "").trim();
 
   if (value.length === 0) {
-    return { ok: false, reason: "答案是空白", definite: true };
+    return { ok: false, reason: "答案是空白", definite: true, support: "disallowed" };
   }
   if (isObviouslyNotHistoricalElement(value)) {
     return {
@@ -416,30 +548,39 @@ export function checkHistoricalAnswer(answer: string, materialText = ""): Histor
         `填充題的標準答案「${value}」是說明、形容詞或教材的欄位名稱，不是歷史元素` +
         "（事件名稱、人物、年份、國家、地點、條約、神祇、思想、政治制度等）",
       definite: true,
+      support: "disallowed",
     };
   }
 
+  // 注意：出現在引號內（「」／《》）**不是**合格的理由——引號只代表教材有提及，
+  // 不代表該詞語具有歷史意義（見本檔開頭的說明）。
   const isHistoricalElement =
     isYearAnswer(value) ||
     YEAR_PATTERN.test(value) ||
     endsWithSuffix(value, INSTITUTION_SUFFIXES) ||
     endsWithSuffix(value, PLACE_SUFFIXES) ||
+    endsWithSuffix(value, BODY_SUFFIXES) ||
+    endsWithSuffix(value, PRINCIPLE_SUFFIXES) ||
     endsWithSuffix(value, PERSON_TITLE_SUFFIXES) ||
     PLACE_NAMES.has(value) ||
     PERIOD_NAMES.has(value) ||
     DEITY_NAMES.has(value) ||
     DEITY_SUFFIX.test(value) ||
-    value.startsWith("《") ||
-    containsQuotedTerm(materialText, value) ||
-    isPersonNameInMaterial(materialText, value);
+    isMaterialDocumentTitle(value, raw, materialText) ||
+    isPersonNameInMaterial(materialText, value) ||
+    (endsWithSuffix(value, TECHNOLOGY_SUFFIXES) && isMaterialSupportedTerm(materialText, value));
 
-  if (isHistoricalElement) return { ok: true, reason: null, definite: false };
+  if (isHistoricalElement) {
+    return { ok: true, reason: null, definite: false, support: "supported" };
+  }
 
   return {
     ok: false,
     reason:
       `填充題的標準答案「${value}」未見歷史元素標記` +
-      "（事件名稱、人物、年份、國家、地點、條約、神祇、思想、政治制度等），請核對答案是否為史事名稱",
+      "（事件名稱、人物、年份、國家、地點、條約、神祇、思想、政治制度、"
+      + "或教材明確交代其歷史意義的發明與器物），請核對答案是否為史事名稱",
     definite: false,
+    support: "uncertain",
   };
 }

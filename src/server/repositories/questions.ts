@@ -36,6 +36,10 @@ interface QuestionRow {
   quality_warnings_json: string | null;
   skill: string | null;
   revision: number | null;
+  auto_validated_at: string | null;
+  auto_validated_revision: number | null;
+  auto_validated_fingerprint: string | null;
+  teacher_confirmation_required: number | null;
   created_at: string;
 }
 
@@ -73,6 +77,16 @@ function mapQuestion(row: QuestionRow): Question {
     skill: row.skill ?? null,
     // 舊資料庫在 migration 0015 之前的列不會有 revision（回報 null）時視為第 1 版
     revision: row.revision ?? 1,
+    // 舊資料庫在 migration 0019 之前的列沒有自動品質驗證紀錄；
+    // 非正整數的版本（例如外部寫入的 0）一律視為沒有紀錄，避免壞資料令題目無法讀取
+    autoValidatedAt: row.auto_validated_at ?? null,
+    autoValidatedRevision:
+      row.auto_validated_revision !== null && row.auto_validated_revision > 0
+        ? row.auto_validated_revision
+        : null,
+    autoValidatedFingerprint: row.auto_validated_fingerprint ?? null,
+    // 舊資料庫在 migration 0020 之前的列沒有這個欄位（NULL 視為未暫緩）
+    teacherConfirmationRequired: row.teacher_confirmation_required === 1,
     createdAt: row.created_at,
   });
 }
@@ -192,6 +206,22 @@ export function countSchoolPaperQuestions(): number {
   return row?.total ?? 0;
 }
 
+/**
+ * 品質閘門判定「未確定」、自動發布被暫緩的題目數（Sprint 7.9）。
+ *
+ * 這些題目的 `teacher_confirmation_required = 1`，一律留在草稿等待教師確認；
+ * 教師端需要看到這個數字，否則佇列裡只會見到一堆「草稿 + 品質警告」，看不出
+ * 哪一題其實是被閘門暫緩發布。已發布的題目不計入（例外的舊資料由學生端過濾處理）。
+ */
+export function countQuestionsAwaitingTeacherConfirmation(): number {
+  const row = getDb()
+    .prepare(
+      "SELECT COUNT(*) AS total FROM questions WHERE teacher_confirmation_required = 1 AND status = 'draft'",
+    )
+    .get() as unknown as { total: number } | undefined;
+  return row?.total ?? 0;
+}
+
 export function insertQuestion(question: Question): Question {
   const parsed = questionSchema.parse(question);
   getDb()
@@ -200,8 +230,9 @@ export function insertQuestion(question: Question): Question {
        (id, topic_id, section_id, question_type, difficulty, question, options_json, correct_answer,
         accepted_answers_json, explanation, knowledge_point, source_excerpt, source_location,
         source_block_ids_json, grading_points_json, origin, status, source_verified,
-        quality_warnings_json, skill, revision, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        quality_warnings_json, skill, revision, auto_validated_at, auto_validated_revision,
+        auto_validated_fingerprint, teacher_confirmation_required, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       parsed.id,
@@ -225,6 +256,10 @@ export function insertQuestion(question: Question): Question {
       JSON.stringify(parsed.qualityWarnings),
       parsed.skill,
       parsed.revision,
+      parsed.autoValidatedAt,
+      parsed.autoValidatedRevision,
+      parsed.autoValidatedFingerprint,
+      toSqlBool(parsed.teacherConfirmationRequired),
       parsed.createdAt,
     );
   const created = getQuestion(parsed.id);
@@ -240,7 +275,7 @@ export function updateQuestion(questionId: string, question: Question): Question
         question = ?, options_json = ?, correct_answer = ?, accepted_answers_json = ?,
         explanation = ?, knowledge_point = ?, source_excerpt = ?, source_location = ?,
         source_block_ids_json = ?, grading_points_json = ?, origin = ?, status = ?,
-        source_verified = ?, quality_warnings_json = ?, skill = ?,
+        source_verified = ?, quality_warnings_json = ?, skill = ?, teacher_confirmation_required = ?,
         revision = revision + 1 WHERE id = ?`,
     )
     .run(
@@ -263,6 +298,7 @@ export function updateQuestion(questionId: string, question: Question): Question
       toSqlBool(parsed.sourceVerified),
       JSON.stringify(parsed.qualityWarnings),
       parsed.skill,
+      toSqlBool(parsed.teacherConfirmationRequired),
       questionId,
     );
   const updated = getQuestion(questionId);
@@ -273,6 +309,40 @@ export function updateQuestion(questionId: string, question: Question): Question
 export function setQuestionStatus(questionId: string, status: QuestionStatus): Question | null {
   getDb().prepare("UPDATE questions SET status = ? WHERE id = ?").run(status, questionId);
   return getQuestion(questionId);
+}
+
+/**
+ * 設定／清除「自動發布暫緩，等待教師確認」標記（Sprint 7.9）。
+ *
+ * 由自動品質閘門的未確定結果設定；教師確認（人工覆核或重新驗證通過）後清除。
+ */
+export function setTeacherConfirmationRequired(questionId: string, required: boolean): Question | null {
+  getDb()
+    .prepare("UPDATE questions SET teacher_confirmation_required = ? WHERE id = ?")
+    .run(toSqlBool(required), questionId);
+  return getQuestion(questionId);
+}
+
+/**
+ * 記錄「這一版題目通過自動品質驗證」（Sprint 7.8）。
+ *
+ * 只寫入自動驗證的版本及指紋——**不會**留下任何人工覆核紀錄，教師端因此
+ * 仍能分辨「機器檢查通過」與「教師確認過」。
+ */
+export function recordQuestionAutoValidation(input: {
+  questionId: string;
+  revision: number;
+  fingerprint: string;
+  validatedAt: string;
+}): Question | null {
+  getDb()
+    .prepare(
+      `UPDATE questions
+         SET auto_validated_at = ?, auto_validated_revision = ?, auto_validated_fingerprint = ?
+       WHERE id = ?`,
+    )
+    .run(input.validatedAt, input.revision, input.fingerprint, input.questionId);
+  return getQuestion(input.questionId);
 }
 
 export function deleteQuestion(questionId: string): void {

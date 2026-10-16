@@ -37,6 +37,12 @@ export interface QuestionGenerationInput {
    * 正確答案仍必須來自 materialUnits（確保題目有本分節的教材依據）。
    */
   distractorUnits?: MaterialUnit[];
+  /**
+   * 已用過的標準答案（同一份練習已出過的題目）。
+   * 生成時應避免重用這些答案：同一份練習出現兩條答案相同的填充題，
+   * 代表同一件史實問了兩次，對學生沒有額外價值。
+   */
+  avoidAnswers?: string[];
 }
 
 export interface LlmProvider {

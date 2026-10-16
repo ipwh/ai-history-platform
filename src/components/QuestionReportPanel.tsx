@@ -19,6 +19,8 @@ interface QuestionReportPanelProps {
   onTopicFilterChange: (topicId: string) => void;
   onRefresh: () => void;
   onResolve: (reportId: string, status: QuestionReportStatus) => void;
+  /** 從回報採取題目行動（下架／重新驗證）；伺服器負責授權及可行性 */
+  onAction: (reportId: string, action: "withdraw-question" | "revalidate-question") => void;
 }
 
 /** 回報者只顯示「學生／教師／管理員」類別，不顯示帳戶或學習者 ID（減少個資暴露） */
@@ -48,6 +50,7 @@ export function QuestionReportPanel({
   onTopicFilterChange,
   onRefresh,
   onResolve,
+  onAction,
 }: QuestionReportPanelProps) {
   const openCount = reports.filter((report) => report.status === "open").length;
 
@@ -134,6 +137,17 @@ export function QuestionReportPanel({
               {report.detail.length > 0 ? (
                 <p className="text-gray-700">補充說明：{report.detail}</p>
               ) : null}
+              {report.attemptAnswer !== null ? (
+                <p className="text-gray-700">
+                  學生當時答案：{report.attemptAnswer}（
+                  {report.attemptIsCorrect === true
+                    ? "批改為正確"
+                    : report.attemptIsCorrect === false
+                      ? "批改為不正確"
+                      : "未被自動批改"}
+                  ）
+                </p>
+              ) : null}
               <p className="text-xs text-gray-600">
                 {report.topicTitle}
                 {report.sectionTitle ? ` › ${report.sectionTitle}` : ""}｜題目狀態：
@@ -144,7 +158,14 @@ export function QuestionReportPanel({
                       ? "草稿"
                       : "已停用"
                   : "AI 即時生成（只存於該次練習，未存入題庫）"}
+                {report.questionRevision !== null ? `｜回報時版本：v${report.questionRevision}` : ""}
+                {report.questionAutoValidated ? "｜已通過自動品質驗證" : ""}
               </p>
+              {report.revisionChanged ? (
+                <p className="text-xs text-gray-700">
+                  注意：題目在回報之後已被修改，這個回報對應的是舊版本；請以現行版本為準。
+                </p>
+              ) : null}
 
               <div className="flex flex-wrap gap-2">
                 {report.status !== "resolved" ? (
@@ -175,6 +196,26 @@ export function QuestionReportPanel({
                     onClick={() => onResolve(report.id, "open")}
                   >
                     重設為待覆核
+                  </button>
+                ) : null}
+                {report.inQuestionBank && report.questionStatus !== "disabled" ? (
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={busyReportId === report.id}
+                    onClick={() => onAction(report.id, "withdraw-question")}
+                  >
+                    暫時下架題目
+                  </button>
+                ) : null}
+                {report.inQuestionBank ? (
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={busyReportId === report.id}
+                    onClick={() => onAction(report.id, "revalidate-question")}
+                  >
+                    重新執行品質驗證
                   </button>
                 ) : null}
               </div>

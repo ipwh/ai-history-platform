@@ -68,11 +68,17 @@ export function TeacherDashboard({ teacherEmail }: { teacherEmail?: string | nul
           <StatBox label="已停用題目" value={`${questions.disabled}`} />
           <StatBox label="校內試題（待核對）" value={`${questions.schoolPaper}`} />
           <StatBox label="未通過教材核對" value={`${questions.unverified}`} />
+          <StatBox label="待教師確認（自動發布暫緩）" value={`${questions.awaitingTeacherConfirmation}`} />
           <StatBox label="題目待覆核回報" value={`${questions.flagged}`} />
         </div>
         <p className="text-sm text-gray-600">
           校內試題匯入後一律為草稿，需教師核對後才發布給學生；未通過教材依據核對的題目{" "}
           {questions.unverified} 題（校內試題的來源是試卷本身，不需教材依據核對，因此不計入）。
+        </p>
+        <p className="text-sm text-gray-600">
+          「待教師確認」{questions.awaitingTeacherConfirmation} 題是品質檢查有未確定項目的題目
+          （例如答案只是教材語句的改寫、未能確定依據）：自動發布已暫緩，學生看不到，
+          須由教師在「題目管理」核對後逐題發布。
         </p>
       </section>
 

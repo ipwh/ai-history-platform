@@ -14,7 +14,7 @@
  *     若分節教材以敘述為主，可能無法生成題目，會如實回報而不會產生含糊題目。
  *   - DEMO_AUTO_PUBLISH_QUESTIONS（預設 true）為 true 時，示範模式下生成的題目會
  *     自動發布，令學生無需教師逐一審核也可練習；正式環境請設為 false，
- *     讓教師在「題目管理」核對後才發布。
+ *     只影響未經任何驗證的示範題目；通過自動品質驗證的題目另有開關（AUTO_PUBLISH_VALIDATED_QUESTIONS）。
  */
 import { getDb } from "../src/server/db/connection";
 import { DIFFICULTY_LABELS } from "../src/lib/types";
@@ -47,9 +47,12 @@ async function main() {
   }
   console.log(
     report.autoPublish
-      ? `\n✓ 共新增 ${report.created} 題（${byDifficulty}），其中 ${report.published} 題已自動發布（示範模式）。\n` +
-          "  正式環境請設定 DEMO_AUTO_PUBLISH_QUESTIONS=false，讓教師核對後才發布。"
-      : `\n✓ 共新增 ${report.created} 題（${byDifficulty}）（草稿狀態，教師需在「題目管理」發布）。`,
+      ? `\n✓ 共新增 ${report.created} 題（${byDifficulty}），其中 ${report.published} 題已自動發布（示範模式）。`
+      : `\n✓ 共新增 ${report.created} 題（${byDifficulty}）。`,
+  );
+  console.log(
+    `  通過自動品質驗證：${report.autoPublishedValidated} 題，其中 ${report.publishedValidated} 題已即時供學生練習（Sprint 7.8）；` +
+      "未通過驗證者為草稿，需教師在「題目管理」覆核、修正或重新驗證。",
   );  console.log(
     "  題庫難度分佈（所有課題）：" +
       (["basic", "advanced", "challenge"] as const)

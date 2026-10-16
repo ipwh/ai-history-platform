@@ -10,15 +10,22 @@
  *      （`documentIsStudentVisible`：已開放、已確認版權、教師版另需內容覆核紀錄）
  *      且非教師專用的文件時才顯示節錄。
  *   2. 任何一段查不到、不屬可發布文件，或判定過程出錯，一律不顯示。
- *   3. 題目**沒有引用任何教材段落**時（示範題庫的作者標註、教師手動建立的題目），
- *      節錄是作者自行撰寫的文字，因此維持顯示。
+ *   3. 題目**沒有引用任何教材段落**時，只有**作者自行撰寫節錄**的來源（示範題庫、
+ *      教師手動建立的題目）維持顯示；其餘來源一律不顯示（見下）。
  *   4. 引用段落若屬**非課文內容**（教師版教材的練習題目、評分參考及答案、圖片佔位標記、
  *      零散數字），節錄一律不顯示——同樣的判斷用於閱讀頁及出題素材
  *      （見 materials/content-policy.ts）。
+ *   5. **匯入的校內試題（`origin = "school-paper"`）即使沒有引用段落亦不顯示節錄**
+ *      （Sprint 7.5）：匯入時 `sourceExcerpt` 直接取自試題檔的題目文字，`sourceLocation`
+ *      記錄原檔名及題號，兩者都是**試題檔的來源標註，不是教師撰寫的內容**。空白的
+ *      `sourceBlockIds` 只代表「沒有對應的教材段落」，**不可**當成「來源可向學生發布」的
+ *      證明。因此沒有可核對教材依據的題目一律 fail-closed，避免學生端看到試題檔的
+ *      檔名及題號。
  *
  * 只影響節錄文字、來源位置及段落 ID；題目本身、答案、解釋及學習記錄不受影響。
+ * 教師端仍然看得到完整節錄及來源位置（用於核對依據），只是會標示「學生看不到節錄」。
  */
-import type { Question, StudentExcerptHiddenReason } from "@/lib/types";
+import type { Question, QuestionOrigin, StudentExcerptHiddenReason } from "@/lib/types";
 import { getBlocksByIds, listStudentDistributableDocumentIds } from "../repositories/materials";
 import { isTeacherOnlyBlockText } from "../materials/teacher-content";
 import { isNonLessonContent } from "../materials/content-policy";
@@ -26,11 +33,33 @@ import { isNonLessonContent } from "../materials/content-policy";
 /** 學生看不到節錄的原因（型別定義在 lib/types.ts，令教師端顯示的說明與此判定一致） */
 export type { StudentExcerptHiddenReason };
 
+/**
+ * 沒有引用教材段落時，節錄仍可視為**作者自行撰寫**的來源。
+ *
+ * 只有這兩種來源可以成立：
+ *   - `demo`：內建示範題庫，節錄由作者撰寫（見 seed/index.ts）；
+ *   - `manual`：教師在平台手動建立。
+ *
+ * 其餘來源（`school-paper` 匯入試題、`material-ai`／`material-mock` 由教材生成）
+ * 的節錄一律來自教材或試題檔，沒有段落依據時無法核實，因此 fail-closed。
+ * **任何未知來源亦不在名單內**，避免日後新增來源時默默變成可顯示。
+ */
+const AUTHOR_WRITTEN_EXCERPT_ORIGINS: ReadonlySet<QuestionOrigin> = new Set<QuestionOrigin>([
+  "demo",
+  "manual",
+]);
+
 export function studentExcerptVisibility(question: Question): {
   visible: boolean;
   reason: StudentExcerptHiddenReason | null;
 } {
-  if (question.sourceBlockIds.length === 0) return { visible: true, reason: null };
+  if (question.sourceBlockIds.length === 0) {
+    // 空白的 sourceBlockIds 不是「來源可發布」的證明：只有作者自行撰寫的節錄可以顯示。
+    if (!AUTHOR_WRITTEN_EXCERPT_ORIGINS.has(question.origin)) {
+      return { visible: false, reason: "unverified-source" };
+    }
+    return { visible: true, reason: null };
+  }
 
   try {
     const distributable = listStudentDistributableDocumentIds();

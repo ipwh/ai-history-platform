@@ -12,8 +12,12 @@ const generateSchema = questionGenerationRequestSchema.extend({
 });
 
 /**
- * 教師用：生成題目預覽。
- * 生成結果會以草稿狀態寫入題庫，並附上教材依據及來源段落方便查核。
+ * 教師用：生成題目。
+ *
+ * 生成結果會寫入題庫並附上教材依據及來源段落方便查核。**Sprint 7.8 起**：
+ * 通過自動品質驗證的題目會即時發布供學生自學（`AUTO_PUBLISH_VALIDATED_QUESTIONS`，
+ * 預設開啟），回應會帶 `autoValidatedAt` 及發布後的 `status`；未通過驗證的題目
+ * 維持草稿。自動驗證**不會**建立任何人工覆核紀錄。
  */
 export async function POST(request: Request) {
   return handleRoute(async () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { checkHistoricalAnswer } from "@/server/llm/historical-answer";
-import { generateQuestionsFromMaterial } from "@/server/llm/mock-provider";
+import { generateQuestionsFromMaterial, isExplanatoryDefinition } from "@/server/llm/mock-provider";
 import { validateLlmQuestions } from "@/server/llm/validation";
 import { normalizeForMatch } from "@/server/materials/text-utils";
 import type { MaterialUnit } from "@/server/llm/provider";
@@ -268,6 +268,130 @@ describe("本地示範生成（mock provider）", () => {
       if (question.question.includes("」是指")) {
         expect(question.correctAnswer, question.question).not.toMatch(/公元前/);
       }
+    }
+  });
+});
+
+/**
+ * 「詞語：說明」的配對是否可用來出定義式題目。
+ *
+ * 學生回報（2026-10-16）：第 3 題「以下哪一項是「文藝復興期間」的說明？」的選項把
+ * **教材標題詞**（「文藝復興與宗教改革」、「歐洲的新殖民擴張浪潮」）與**說明句**混在一起；
+ * 第 4 題「以下哪一項是「從神本走向人本」的說明？」的標準答案更是標題詞本身
+ * （教材原文：從神本走向人本：文藝復興與宗教改革）。學生無法判斷哪一項才算「說明」。
+ */
+describe("定義式題目：冒號後必須是說明句，不是標題詞", () => {
+  it("辨認說明句與標題詞／名詞短語", () => {
+    expect(isExplanatoryDefinition("學者發現教會翻譯的版本及其對自然的理解存在多處錯誤。")).toBe(
+      true,
+    );
+    expect(isExplanatoryDefinition("歐洲的中古時代結束，進入近代")).toBe(true);
+    expect(isExplanatoryDefinition("文藝復興與宗教改革")).toBe(false);
+    expect(isExplanatoryDefinition("歐洲的新殖民擴張浪潮")).toBe(false);
+  });
+
+  it("教材混有標題詞配對時，標題詞不會當成標準答案或選項", () => {
+    const units: MaterialUnit[] = [
+      {
+        blockId: "amb-1",
+        sourceLocation: "教材 · 第 1 段",
+        text: "文藝復興期間：學者發現教會翻譯的版本及其對自然的理解存在多處錯誤。",
+      },
+      {
+        blockId: "amb-2",
+        sourceLocation: "教材 · 第 2 段",
+        text: "從神本走向人本：文藝復興與宗教改革",
+      },
+      {
+        blockId: "amb-3",
+        sourceLocation: "教材 · 第 3 段",
+        text: "新帝國主義：歐洲的新殖民擴張浪潮",
+      },
+      {
+        blockId: "amb-4",
+        sourceLocation: "教材 · 第 4 段",
+        text: "公元1453年：歐洲的中古時代結束，進入近代",
+      },
+      {
+        blockId: "amb-5",
+        sourceLocation: "教材 · 第 5 段",
+        text: "家庭手工業制度：在家中以人手及簡單工具進行生產，屬於小規模生產。",
+      },
+      {
+        blockId: "amb-6",
+        sourceLocation: "教材 · 第 6 段",
+        text: "工廠制度：工人在工廠內操作機器進行生產，屬於大規模生產。",
+      },
+      {
+        blockId: "amb-7",
+        sourceLocation: "教材 · 第 7 段",
+        text: "權力分立：政府權力分為行政、立法與司法權，並由不同機關行使。",
+      },
+    ];
+    const questions = generateQuestionsFromMaterial({
+      ...baseInput(),
+      difficulty: "advanced",
+      questionTypes: ["mc"],
+      count: 4,
+      materialUnits: units,
+    });
+    const definitionQuestions = questions.filter((question) =>
+      question.question.endsWith("的說明？"),
+    );
+
+    // 合格的說明句仍足夠出題（不是一律不出），但標題詞一律不可成為答案或選項
+    expect(definitionQuestions.length).toBeGreaterThan(0);
+    for (const question of questions) {
+      expect(question.correctAnswer).not.toBe("文藝復興與宗教改革");
+      expect(question.correctAnswer).not.toBe("歐洲的新殖民擴張浪潮");
+      expect(question.options).not.toContain("文藝復興與宗教改革");
+      expect(question.options).not.toContain("歐洲的新殖民擴張浪潮");
+      // 「以下哪一項是「X」的說明？」的所有選項都必須是說明句，否則學生無從判斷
+      if (question.question.endsWith("的說明？")) {
+        for (const option of question.options) {
+          expect(isExplanatoryDefinition(option), option).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("真正的說明句仍可出題（答案與選項都是說明句）", () => {
+    const units: MaterialUnit[] = [
+      {
+        blockId: "ok-1",
+        sourceLocation: "教材 · 第 1 段",
+        text: "家庭手工業制度：在家中以人手及簡單工具進行生產，屬於小規模生產。",
+      },
+      {
+        blockId: "ok-2",
+        sourceLocation: "教材 · 第 2 段",
+        text: "工廠制度：工人在工廠內操作機器進行生產，屬於大規模生產。",
+      },
+      {
+        blockId: "ok-3",
+        sourceLocation: "教材 · 第 3 段",
+        text: "權力分立：政府權力分為行政、立法與司法權，並由不同機關行使。",
+      },
+      {
+        blockId: "ok-4",
+        sourceLocation: "教材 · 第 4 段",
+        text: "蒸汽機：由瓦特改良，令蒸汽成為穩定可靠的新能源。",
+      },
+    ];
+    const questions = generateQuestionsFromMaterial({
+      ...baseInput(),
+      difficulty: "advanced",
+      questionTypes: ["mc"],
+      count: 2,
+      materialUnits: units,
+    });
+    const definitionQuestion = questions.find((question) => question.question.endsWith("的說明？"));
+
+    expect(definitionQuestion).toBeDefined();
+    expect(isExplanatoryDefinition(definitionQuestion!.correctAnswer)).toBe(true);
+    expect(definitionQuestion!.options.length).toBeGreaterThanOrEqual(3);
+    for (const option of definitionQuestion!.options) {
+      expect(isExplanatoryDefinition(option), option).toBe(true);
     }
   });
 });

@@ -5,6 +5,7 @@
  * src/server/services/admin-dashboard.ts 提供，不會在此回傳。
  */
 import {
+  countQuestionsAwaitingTeacherConfirmation,
   countQuestionsByStatus,
   countSchoolPaperQuestions,
   countUnverifiedQuestionsNeedingReview,
@@ -29,6 +30,7 @@ export function getTeacherQuestionOverview(): TeacherQuestionOverview {
       unverified: countUnverifiedQuestionsNeedingReview(),
       schoolPaper: countSchoolPaperQuestions(),
       flagged: countOpenReports(),
+      awaitingTeacherConfirmation: countQuestionsAwaitingTeacherConfirmation(),
     },
     records: {
       sessions: learners.reduce((total, learner) => total + learner.sessions, 0),

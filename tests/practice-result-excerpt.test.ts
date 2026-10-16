@@ -91,7 +91,15 @@ function createSourceDocument(teacherEdition: boolean) {
   return { document, blockId: blocks[0]!.id };
 }
 
-function makeQuestion(blockId: string) {
+function makeQuestion(
+  blockId: string,
+  overrides: {
+    origin?: "manual" | "school-paper";
+    sourceBlockIds?: string[];
+    sourceExcerpt?: string;
+    sourceLocation?: string;
+  } = {},
+) {
   sequence += 1;
   const question = types.questionSchema.parse({
     id: `result-excerpt-${sequence}`,
@@ -105,13 +113,13 @@ function makeQuestion(blockId: string) {
     acceptedAnswers: [],
     explanation: "教材指出文藝復興重視人文主義。",
     knowledgePoint: "文藝復興人文主義",
-    sourceExcerpt: PROTECTED_TEXT,
-    sourceLocation: "未確認來源 第 1 段",
-    sourceBlockIds: [blockId],
+    sourceExcerpt: overrides.sourceExcerpt ?? PROTECTED_TEXT,
+    sourceLocation: overrides.sourceLocation ?? "未確認來源 第 1 段",
+    sourceBlockIds: overrides.sourceBlockIds ?? [blockId],
     gradingPoints: [],
-    origin: "manual",
+    origin: overrides.origin ?? "manual",
     status: "published",
-    sourceVerified: true,
+    sourceVerified: (overrides.origin ?? "manual") !== "school-paper",
     createdAt: new Date().toISOString(),
   });
   const created = practiceRepo.createSession({
@@ -271,5 +279,68 @@ describe("未確認來源文件的節錄不會經路由外洩", () => {
 
     const response = await getResult(sessionId, STUDENT.learnerId);
     expect(await response.text()).toContain(PROTECTED_TEXT);
+  });
+});
+
+/**
+ * Sprint 7.5：匯入的校內試題（`origin = school-paper`）沒有教材段落依據時，
+ * `sourceLocation` 會帶有試題檔的原檔名及題號。這些來源標註**不可**出現在任何
+ * 學生端回應中（未作答前、作答回饋、成績頁）。
+ */
+describe("匯入試題的來源標註不會經學生端路由外洩", () => {
+  const BANK_FILE = "SYNTH_QB_T10_1.MCQ.docx";
+  const BANK_EXCERPT = "合成測試：哪一項是正確的描述？";
+  const BANK_LOCATION = `${BANK_FILE} · 第 8 題 · 合成單元 A`;
+
+  function bankQuestion() {
+    return makeQuestion("blk_unused_for_bank_question", {
+      origin: "school-paper",
+      sourceBlockIds: [],
+      sourceExcerpt: BANK_EXCERPT,
+      sourceLocation: BANK_LOCATION,
+    });
+  }
+
+  it("作答前的題目物件不含節錄、來源位置或段落 ID", async () => {
+    const { sessionId } = bankQuestion();
+    const { GET } = await import("@/app/api/practice/[sessionId]/route");
+    const response = await GET(
+      new Request(
+        `http://localhost:3000/api/practice/${sessionId}?learnerId=${encodeURIComponent(STUDENT.learnerId)}`,
+        { headers: { cookie: cookieFor(STUDENT) } },
+      ),
+      { params: Promise.resolve({ sessionId }) },
+    );
+    const text = await response.text();
+    expect(text).not.toContain(BANK_FILE);
+    expect(text).not.toContain("第 8 題");
+    expect(text).not.toContain(BANK_EXCERPT);
+  });
+
+  it("作答回饋不含試題檔名、題號或節錄（sourceWithheld）", async () => {
+    const { question, sessionId } = bankQuestion();
+    const response = await submitAnswer(sessionId, question.id, STUDENT.learnerId);
+    const text = await response.text();
+    expect(text).not.toContain(BANK_FILE);
+    expect(text).not.toContain("第 8 題");
+    expect(text).not.toContain(BANK_EXCERPT);
+
+    const body = JSON.parse(text) as {
+      feedback: { sourceWithheld: boolean; sourceExcerpt: null; sourceLocation: null };
+    };
+    expect(body.feedback.sourceWithheld).toBe(true);
+    expect(body.feedback.sourceExcerpt).toBeNull();
+    expect(body.feedback.sourceLocation).toBeNull();
+  });
+
+  it("成績回應不含試題檔名、題號或節錄", async () => {
+    const { question, sessionId } = bankQuestion();
+    await submitAnswer(sessionId, question.id, STUDENT.learnerId);
+
+    const response = await getResult(sessionId, STUDENT.learnerId);
+    const text = await response.text();
+    expect(text).not.toContain(BANK_FILE);
+    expect(text).not.toContain("第 8 題");
+    expect(text).not.toContain(BANK_EXCERPT);
   });
 });

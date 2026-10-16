@@ -24,7 +24,7 @@ import { ApiRouteError } from "../http";
 import { getServerConfig } from "../config";
 import { reserveAiOperation } from "./ai-limits";
 import { getBlocksByIds } from "../repositories/materials";
-import { normalizeForMatch } from "../materials/text-utils";
+import { createDuplicateTracker } from "../llm/question-dedupe";
 import {
   createSession,
   getAttempt,
@@ -233,6 +233,8 @@ async function generateForSections(options: {
   allocation: Map<string, number>;
   questionTypes: QuestionType[];
   difficulty: Difficulty;
+  /** 已用過的答案：補題時提示生成器改出其他史實，避免同一題被改寫後再次出現 */
+  avoidAnswers?: string[];
 }): Promise<SectionGenerationOutcome[]> {
   return Promise.all(
     [...options.allocation.entries()].map(async ([sectionId, count]) => {
@@ -248,6 +250,7 @@ async function generateForSections(options: {
           requestType: "question-instant",
           // 學生自行觸發：教材來源只可取用已確認可向學生發布的內容（fail-closed）
           audience: "student",
+          avoidAnswers: options.avoidAnswers,
         });
         return { sectionId, generated, error: null };
       } catch (error) {
@@ -281,10 +284,14 @@ async function generatePracticeQuestions(options: {
 
   const notices: string[] = [];
   const questions: Question[] = [];
-  const usedKeys = new Set<string>();
+  const used = createDuplicateTracker();
   const sectionsWithQuestions = new Set<string>();
   let usedDemoFallback = false;
   let firstError: unknown = null;
+  // 已暫緩自動發布（待教師確認）而被抽起的題數。
+  // 必須在 `collect` 第一次被呼叫**之前**宣告，否則 `collect` 內的 `withheld += 1`
+  // 會擲出 TDZ ReferenceError，令整次練習以 500 失敗（而不是抽起該題）。
+  let withheld = 0;
 
   const collect = (results: SectionGenerationOutcome[]): number => {
     let added = 0;
@@ -296,9 +303,19 @@ async function generatePracticeQuestions(options: {
       usedDemoFallback = usedDemoFallback || outcome.generated.usedDemoFallback;
       if (outcome.generated.notice !== null) notices.push(outcome.generated.notice);
       for (const question of outcome.generated.questions) {
-        const key = normalizeForMatch(question.question);
-        if (usedKeys.has(key)) continue;
-        usedKeys.add(key);
+        // 跨分節、跨呼叫的去重（見 question-dedupe.ts）：舊版只比對題幹完全相同的字串，
+        // 令「同一教材依據、同一答案、題幹略作改寫」的題目同時出現在一份練習之中；
+        // 填充題更進一步按答案去重（同一份練習不出兩條答案相同的填充題）。
+        if (used.isDuplicate(question)) continue;
+        // 已見過的題目（包括下面抽起的未確定題目）一律記錄，補題時才不會重複計算，
+        // 亦會透過 avoidAnswers 提示模型改出其他答案。
+        used.add(question);
+        // Sprint 7.9：品質閘門判定「未確定」（仍待教師確認）的題目不提供給學生；
+        // 其他題目照常進行，未確定的題目只影響它自己（見 withheld 計數）。
+        if (question.teacherConfirmationRequired) {
+          withheld += 1;
+          continue;
+        }
         questions.push(question);
         sectionsWithQuestions.add(outcome.sectionId);
         added += 1;
@@ -309,7 +326,8 @@ async function generatePracticeQuestions(options: {
 
   collect(outcomes);
 
-  // 由已成功出題的分節補足不足的題數（只補一次，避免無限重試）
+  // 由已成功出題的分節補足不足的題數（只補一次，避免無限重試）。
+  // 補題時把已用過的答案交給生成器，令模型改出其他史實，而不是把同一題改寫再交一次。
   let missing = options.questionCount - questions.length;
   if (missing > 0) {
     const fallbackSections = [...sectionsWithQuestions];
@@ -319,6 +337,7 @@ async function generatePracticeQuestions(options: {
         allocation: distributeQuestionCount(missing, fallbackSections),
         questionTypes: options.questionTypes,
         difficulty: options.difficulty,
+        avoidAnswers: used.usedAnswers(),
       });
       collect(topUp);
       missing = options.questionCount - questions.length;
@@ -357,6 +376,11 @@ async function generatePracticeQuestions(options: {
   if (missing > 0) {
     notices.push(
       `AI 這次準備了 ${questions.length} 題（原定 ${options.questionCount} 題），可以相同設定再練習一次以取得新題目。`,
+    );
+  }
+  if (withheld > 0) {
+    notices.push(
+      `有 ${withheld} 條題目的品質檢查有未確定項目，暫時不會提供，已交教師確認；其他題目不受影響。`,
     );
   }
 
@@ -425,7 +449,9 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
       sectionIds,
       questionTypes: parsed.questionTypes,
       statuses: ["published"],
-    });
+      // Sprint 7.9：閘門判定未確定、仍待教師確認的題目不會進入學生練習，
+      // 即使資料庫中因舊資料或人為操作而仍是 published。
+    }).filter((item) => !item.teacherConfirmationRequired);
 
     const sameDifficulty = shuffle(bankAll.filter((item) => item.difficulty === parsed.difficulty));
     selected = sameDifficulty.slice(0, parsed.questionCount);
@@ -458,8 +484,15 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
           // 學生自行觸發：教材來源只可取用已確認可向學生發布的內容（fail-closed）
           audience: "student",
         });
-        if (generated.questions.length > 0) {
-          selected = [...selected, ...generated.questions];
+        // 品質閘門判定「未確定」（仍待教師確認）的題目不得交付學生：這條路徑以往
+        // 直接採用生成結果，會把「自動發布已暫緩」的題目寫進練習快照，令它繞過
+        // 三條發布路徑的關卡（見 question-service 及 0020 migration）。
+        const deliverable = generated.questions.filter(
+          (question) => !question.teacherConfirmationRequired,
+        );
+        const heldCount = generated.questions.length - deliverable.length;
+        if (deliverable.length > 0) {
+          selected = [...selected, ...deliverable];
           origin = "generated";
           notices.push(
             generated.usedDemoFallback
@@ -467,6 +500,11 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
               : "題庫題目不足，已即時按教材內容生成題目。",
           );
           if (generated.notice) notices.push(generated.notice);
+        }
+        if (heldCount > 0) {
+          notices.push(
+            `有 ${heldCount} 條即時生成的題目品質檢查有未確定項目，暫時不會提供，已交教師確認；其他題目不受影響。`,
+          );
         }
       } catch (error) {
         // 學生端只顯示簡短說明，詳細原因（例如教材不足以生成題目）留給教師後台
@@ -666,6 +704,9 @@ export async function submitAnswer(
     // 把「近似答案」的判定寫入記錄：進度及重溫排程需要區分不確定與明確錯誤，
     // 而且之後題目答案若被修改，不應重新詮釋這筆歷史作答。
     uncertain: nearMiss !== null,
+    // 批改依據的題目版本（練習快照中凍結的那一版）：題目之後被修正時，
+    // 教師才能指出哪些舊作答受影響，而不會靜默改寫學生的分數。
+    questionRevision: question.revision,
   });
 
   const answeredCount = listAttempts(sessionId).length;
@@ -706,6 +747,7 @@ export function setSelfAssessment(
     autoGraded: false,
     isCorrect: null,
     selfAssessment,
+    questionRevision: question.revision,
   });
 
   return buildFeedback(question, attempt.answer, attempt, questionUsesOcr(question));

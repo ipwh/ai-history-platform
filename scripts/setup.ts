@@ -138,7 +138,10 @@ async function main() {
     console.log(
       bank.autoPublish
         ? `✓ 共新增 ${bank.created} 題（${byDifficulty}），其中 ${bank.published} 題已自動發布（示範模式）`
-        : `✓ 共新增 ${bank.created} 題（${byDifficulty}）（草稿狀態，待教師發布）`,
+        : `✓ 共新增 ${bank.created} 題（${byDifficulty}）`,
+    );
+    console.log(
+      `  通過自動品質驗證：${bank.autoPublishedValidated} 題，其中 ${bank.publishedValidated} 題已即時供學生練習（Sprint 7.8）；未通過者為草稿待教師處理。`,
     );
     if (bank.insufficientSections.length > 0) {
       console.log(

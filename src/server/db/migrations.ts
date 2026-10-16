@@ -530,6 +530,55 @@ export const MIGRATIONS: Migration[] = [
       `DELETE FROM sections WHERE id = 'topic-1-origins-regions'`,
     ],
   },
+  {
+    id: "0019-auto-quality-gate-and-report-binding",
+    statements: [
+      // ── 自動品質驗證紀錄（Sprint 7.8）────────────────────────────────
+      // 學生自學不應等待教師逐題預先批准。題目通過**自動品質閘門**後即可供學生
+      // 練習；教師覆核改為事後補救（由既有的 question_reviews 負責）。
+      //
+      // 這裡刻意**不**寫入任何覆核紀錄：自動驗證不是人工覆核，教師端一律顯示為
+      // 「已發布（未經人工覆核）」，不會偽造「已覆核」的歷史。
+      //
+      // 與覆核紀錄一樣綁定版本及內容指紋：內容一改（revision 遞增）即失效。
+      `ALTER TABLE questions ADD COLUMN auto_validated_at TEXT`,
+      `ALTER TABLE questions ADD COLUMN auto_validated_revision INTEGER`,
+      `ALTER TABLE questions ADD COLUMN auto_validated_fingerprint TEXT`,
+      // ── 回報綁定題目版本及作答 ─────────────────────────────────────
+      // 回報必須指向「學生實際看到的那一版」：題目之後可能被修正，只有記下
+      // 版本及指紋，教師才能分辨「回報的是舊版」抑或「現行版本仍有問題」。
+      // attempt_id 記錄相關作答，讓教師直接看到學生的答案及批改結果。
+      `ALTER TABLE question_reports ADD COLUMN question_revision INTEGER`,
+      `ALTER TABLE question_reports ADD COLUMN question_fingerprint TEXT`,
+      `ALTER TABLE question_reports ADD COLUMN attempt_id TEXT`,
+      // 教師處理回報時一併採取的行動（例如 make-draft、disable、revalidate），
+      // 令「回報 → 做了甚麼」有紀錄，而不是只有「已處理」。
+      `ALTER TABLE question_reports ADD COLUMN resolution_action TEXT`,
+      // ── 作答記錄的題目版本 ─────────────────────────────────────────
+      // 批改一律使用練習快照中凍結的題目（見 practice-service.submitAnswer）；
+      // 記下當時的版本，才能在題目被修正後指出「哪些舊作答會受影響」，
+      // 而不會靜默改動學生的歷史分數。
+      `ALTER TABLE attempts ADD COLUMN question_revision INTEGER`,
+    ],
+  },
+  {
+    id: "0020-teacher-confirmation-required",
+    statements: [
+      // ── 未解決的品質疑問必須先由教師確認，才可發布給學生 ─────────────
+      //
+      // Sprint 7.8 的閘門只有「blocking（丟棄）」與「warning（提示後仍發布）」兩種結果。
+      // Sprint 7.9 對抗式試點發現這不夠：有些題目**沒有逐字**教材依據，只是教材語句的
+      // 改寫（真實模型最常見的選擇題寫法），既不能直接丟棄（可能完全正確），亦不可
+      // 當作已證實（無法確認答案依據）。這類題目以往只收到警告而照樣自動發布。
+      //
+      // 現在閘門有第三種結果：uncertain（未確定）。此欄標記「自動發布被暫緩，等待教師
+      // 確認」，題目仍然保留在題庫（狀態維持草稿），教師可以在「題目管理」核對後發布。
+      // 自動發布的三條路徑一律查核此欄（見 question-service）。
+      //
+      // 預設 0：舊資料及人工建立的題目不受影響；只有閘門判定未確定時才會設為 1。
+      `ALTER TABLE questions ADD COLUMN teacher_confirmation_required INTEGER NOT NULL DEFAULT 0`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

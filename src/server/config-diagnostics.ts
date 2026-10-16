@@ -339,13 +339,22 @@ export function describeConfigIssues(): ConfigIssue[] {
     });
   }
 
-  // 示範題目的自動發布（正式環境必須由教師核對後才發布）
+  // 示範題目的自動發布（只影響未經任何驗證的本地示範題目；正式環境亦不會生效）
   if (config.autoPublishMockQuestions && process.env.NODE_ENV === "production") {
     issues.push({
       level: "warning",
       code: "auto-publish-questions",
       message:
-        "DEMO_AUTO_PUBLISH_QUESTIONS=true：以本地示範生成執行批次出題時，題目會自動發布為可作答題目，未經教師核對。正式環境應設為 false。",
+        "DEMO_AUTO_PUBLISH_QUESTIONS=true：只影響本地示範生成（未經任何驗證）的題目，且正式環境不會生效；請確認預期與實際一致。",
+    });
+  }
+  // 通過自動品質驗證的題目是否即時供學生自學（Sprint 7.8；預設開啟）
+  if (!config.autoPublishValidatedQuestions) {
+    issues.push({
+      level: "info",
+      code: "auto-publish-validated-disabled",
+      message:
+        "AUTO_PUBLISH_VALIDATED_QUESTIONS=false：通過自動品質驗證的題目會留在草稿，必須由教師發布；確定這是刻意的設定。",
     });
   }
 

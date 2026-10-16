@@ -33,7 +33,10 @@ import {
   type QuestionType,
 } from "../../lib/types";
 import { normalizeForMatch, stripMarkdownArtifacts, truncate } from "../materials/text-utils";
+import { checkFillStem, normalizeForStemMatch } from "./fill-question";
 import { checkHistoricalAnswer } from "./historical-answer";
+import { createDuplicateTracker } from "./question-dedupe";
+import { checkQuestionQuality, hasUncertainIssue } from "./question-quality";
 import type { MaterialUnit } from "./provider";
 
 /**
@@ -225,6 +228,18 @@ const PERSON_LIFE_DATES_PATTERN = /([\u4e00-\u9fa5]{2,5})\s*[（(]\s*\d{3,4}\s*[
 /** 符合句式但不是人名的常見詞語（政府下令、學者提出等） */
 const NON_PERSON_WORDS = new Set([
   "政府",
+  // 轉折及總結連接詞：以行為動詞句式出現時會被誤取成人名
+  // （真實模型輸出：「一方面實現民族自決，另一方面卻埋下隱患」→「另一方面」）
+  "一方面",
+  "另一方面",
+  "上述",
+  "上述兩項",
+  "上述兩次",
+  "納出兩次",
+  "總而言之",
+  "由此可見",
+  "此外",
+  "再者",
   "國家",
   "朝廷",
   "帝國",
@@ -331,6 +346,14 @@ const NON_PERSON_WORDS = new Set([
 /** 語句連接詞：出現在詞語中即代表它多數不是人名或文件名稱 */
 const NON_NAME_CHARS = /[的是了指即稱叫為們等及與和在有所其這那就都也很更最把被從對]/;
 
+/**
+ * 指示詞、量詞及連接片段：出現在詞語中即代表它多數**不是**人名。
+ * 真實模型輸出常令偵測器取到「上述兩項」、「納出兩次」、「洲人因而」等片段，
+ * 這些詞語會被誤報為杜撰人物（見試點報告：17 條題目中 4 條出現這類誤報），
+ * 因此人名候選必須先排除這些字元（只影響人名判斷，不影響文件名稱）。
+ */
+const NON_PERSON_FRAGMENT_CHARS = /[人出因而述兩項次者或由並且已於自以到至]/;
+
 /** 警告訊息中最多列出的名稱數目 */
 const MAX_NAMES_PER_WARNING = 5;
 
@@ -394,6 +417,7 @@ function trimCandidate(candidate: string): string {
 function isPersonLike(candidate: string): boolean {
   if (candidate.length < 2 || candidate.length > 6) return false;
   if (NON_PERSON_WORDS.has(candidate)) return false;
+  if (NON_PERSON_FRAGMENT_CHARS.test(candidate)) return false;
   return !NON_NAME_CHARS.test(candidate);
 }
 
@@ -517,7 +541,7 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
   const providedText = context.units.map((unit) => unit.text).join("\n");
   const accepted: Question[] = [];
   const discardedReasons: string[] = [];
-  const seen = new Set<string>();
+  const seen = createDuplicateTracker();
 
   let rawQuestions: unknown[];
   try {
@@ -707,23 +731,52 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
     }
 
     // 填充題的答案必須是具有歷史意義的元素（事件名稱、人物、年份、國家、地點、條約、
-    // 神祇、思想、政治制度等），見 historical-answer.ts。明顯不合格者丟棄整條題目；
-    // 只是未能確認屬歷史元素者標示品質警告，交由教師核對。
+    // 神祇、思想、政治制度，或教材明確交代其歷史意義的發明與器物）。見 historical-answer.ts。
+    //
+    // **fail-closed（Sprint 7.4）**：品質警告不能代替這項檢查——未能確認屬歷史元素的
+    // 答案一樣丟棄整條題目。教師端不會看到「答案可能不是歷史元素」的警告題目，
+    // 因為它們根本不會進入題庫（寧可少出一題，也不要出一條無從作答的填充題）。
     if (candidate.questionType === "fill") {
       const answerCheck = checkHistoricalAnswer(correctAnswer, providedText);
-      if (answerCheck.definite) {
+      if (!answerCheck.ok) {
         discardedReasons.push(`第 ${index + 1} 題：${answerCheck.reason}`);
         return;
       }
-      if (answerCheck.reason !== null) qualityWarnings.push(answerCheck.reason);
+
+      // 題幹品質：必須剛好一個空格、答案不可在題幹其他位置出現、長度不可超過硬上限。
+      const stemCheck = checkFillStem(question, correctAnswer);
+      if (!stemCheck.ok) {
+        discardedReasons.push(`第 ${index + 1} 題：${stemCheck.reason}`);
+        return;
+      }
+
+      // 空格必須對應標準答案：答案須見於本次提供的教材（否則學生無從由教材作答，
+      // 空格亦無從對應任何史事）。以整份提供教材比對，避免節錄被截斷時誤判。
+      if (!normalizeForStemMatch(providedText).includes(normalizeForStemMatch(correctAnswer))) {
+        discardedReasons.push(
+          `第 ${index + 1} 題的標準答案「${correctAnswer}」未見於提供的教材，無法確認空格對應答案（學生無從作答）`,
+        );
+        return;
+      }
     }
 
-    const duplicateKey = `${normalizeForMatch(question)}|${normalizeForMatch(correctAnswer)}`;
-    if (seen.has(duplicateKey)) {
-      discardedReasons.push(`第 ${index + 1} 題與本次生成的其他題目重複`);
+    // 重複判定（見 question-dedupe.ts）：除了題幹相同，同一教材依據已用相同答案出題
+    // 亦屬重複；填充題更進一步不可在整份練習重用同一答案——模型常把同一件史實改寫成
+    // 兩條題幹略有不同的題目，只比對題幹會漏掉。
+    const dedupeCandidate = {
+      question,
+      questionType: candidate.questionType,
+      correctAnswer,
+      sourceBlockIds: candidate.sourceBlockIds,
+      sourceExcerpt: candidate.sourceExcerpt,
+    };
+    if (seen.isDuplicate(dedupeCandidate)) {
+      discardedReasons.push(
+        `第 ${index + 1} 題與本次生成的其他題目重複（相同題幹，或已用過答案「${correctAnswer}」：填充題不可重用答案，其他題型不可用同一教材依據）`,
+      );
       return;
     }
-    seen.add(duplicateKey);
+    seen.add(dedupeCandidate);
 
     const built = questionSchema.safeParse({
       id: context.idFor(accepted.length),
@@ -756,6 +809,42 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
           .join("；")}`,
       );
       return;
+    }
+
+    // 完整題目的品質閘門（Sprint 7.8，見 question-quality.ts）：schema 與教材依據
+    // 都正確，仍然可能出現「多於一個站得住的答案」等機器可判斷的問題。學生自學
+    // 不再等待教師逐題預先批准，因此這一層必須在寫入題庫／送到學生面前之前把關。
+    const quality = checkQuestionQuality(
+      {
+        questionType: built.data.questionType,
+        question: built.data.question,
+        options: built.data.options,
+        correctAnswer: built.data.correctAnswer,
+        explanation: built.data.explanation,
+        sourceExcerpt: built.data.sourceExcerpt,
+        sourceBlockIds: built.data.sourceBlockIds,
+        gradingPoints: built.data.gradingPoints,
+      },
+      context.units,
+    );
+    if (!quality.ok) {
+      discardedReasons.push(
+        `第 ${index + 1} 題未通過品質檢查：${quality.issues
+          .filter((issue) => issue.severity === "blocking")
+          .map((issue) => issue.message)
+          .join("；")}`,
+      );
+      return;
+    }
+    if (quality.issues.length > 0) {
+      built.data.qualityWarnings.push(
+        ...quality.issues.map((issue) => `品質檢查提示：${issue.message}`),
+      );
+    }
+    // 未確定項目（例如答案只是教材語句的改寫）：保留題目但暫緩自動發布，
+    // 等待教師確認——警告不會覆蓋未解決的依據問題（見 questions.teacher_confirmation_required）。
+    if (hasUncertainIssue(quality.issues)) {
+      built.data.teacherConfirmationRequired = true;
     }
 
     accepted.push(built.data);

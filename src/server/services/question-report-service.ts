@@ -14,6 +14,7 @@ import {
 } from "../../lib/types";
 import { ApiRouteError } from "../http";
 import {
+  getAttemptById,
   getSession,
   getSessionQuestions,
 } from "../repositories/practice";
@@ -28,11 +29,17 @@ import {
   type ReportFilter,
 } from "../repositories/reports";
 import { getSection, getTopic } from "../repositories/topics";
+import {
+  autoValidationIsCurrent,
+  changeQuestionStatus,
+  questionFingerprint,
+  revalidateQuestion,
+} from "./question-service";
 
 export interface SubmitReportResult {
   reportId: string;
   status: QuestionReportStatus;
-  /** 之前已回報同一題目而未處理時為 true（不會重複建立記錄） */
+  /** 之前已回報同一題目版本而未處理時為 true（不會重複建立記錄） */
   alreadyReported: boolean;
 }
 
@@ -42,7 +49,9 @@ export interface SubmitReportResult {
  * 題目可以來自題庫，也可以只存在於練習快照（AI 即時生成的題目不會寫入題庫，
  * 但仍必須可以回報，否則學生最常遇到的就是這類題目）。
  * 提供 sessionId 時會核對該題確實屬於這次練習，避免任意回報；
- * 同一學習者對同一題目已有未處理回報時不會重複建立。
+ * 回報會記錄**當時的題目版本及內容指紋**，以及相關的作答紀錄（如有），
+ * 令教師可以確定「學生回報的是哪一版、當時答了甚麼」。
+ * 同一學習者對同一題目版本已有未處理回報時不會重複建立。
  */
 export function submitQuestionReport(
   learnerId: string,
@@ -70,17 +79,34 @@ export function submitQuestionReport(
   const question = bankQuestion ?? snapshotQuestion;
   if (!question) throw new ApiRouteError("找不到指定的題目", 404);
 
-  if (hasOpenReport(question.id, learnerId)) {
+  // 相關作答（可選）：必須屬於這位學生、這次練習、這一題。
+  let attemptId: string | null = null;
+  if (parsed.attemptId !== null) {
+    const attempt = getAttemptById(parsed.attemptId);
+    if (!attempt) throw new ApiRouteError("找不到相關的作答記錄", 404);
+    if (attempt.learnerId !== learnerId) {
+      throw new ApiRouteError("不能回報其他學習者的作答", 403);
+    }
+    if (attempt.questionId !== question.id) {
+      throw new ApiRouteError("相關作答不屬於這條題目", 400);
+    }
+    attemptId = attempt.id;
+  }
+
+  if (hasOpenReport(question.id, learnerId, question.revision)) {
     return { reportId: "", status: "open", alreadyReported: true };
   }
 
   const report = insertReport({
     questionId: question.id,
     sessionId: parsed.sessionId,
+    attemptId,
     learnerId,
     topicId: question.topicId,
     reason: parsed.reason,
     detail: parsed.detail.trim(),
+    questionRevision: question.revision,
+    questionFingerprint: questionFingerprint(question),
   });
 
   return { reportId: report.id, status: report.status, alreadyReported: false };
@@ -137,6 +163,14 @@ export function listQuestionReports(filter: QuestionReportListFilter = {}): Ques
     if (sectionId.length > 0 && !sectionTitles.has(sectionId)) {
       sectionTitles.set(sectionId, getSection(sectionId)?.title ?? "（分節已刪除）");
     }
+    // 相關作答：教師需要看到學生當時的答案及批改結果，才判斷得了回報是否成立
+    const attempt = report.attemptId ? getAttemptById(report.attemptId) : null;
+    // 題目可能在回報之後被修正或撤回：標示版本已經不同，避免教師把舊版回報
+    // 當成現行版本的缺陷（或相反）
+    const revisionChanged =
+      question !== undefined &&
+      report.questionRevision !== null &&
+      report.questionRevision !== question.revision;
     return {
       ...report,
       question: question?.question ?? snapshot?.question ?? "（題目已刪除）",
@@ -145,6 +179,11 @@ export function listQuestionReports(filter: QuestionReportListFilter = {}): Ques
       sectionTitle: sectionId.length > 0 ? (sectionTitles.get(sectionId) as string) : "",
       topicTitle: topicTitles.get(report.topicId) as string,
       openCountForQuestion: openCounts.get(report.questionId) ?? 1,
+      revisionChanged,
+      attemptAnswer: attempt?.answer ?? null,
+      attemptIsCorrect: attempt?.isCorrect ?? null,
+      attemptRevision: attempt?.questionRevision ?? null,
+      questionAutoValidated: question !== undefined && autoValidationIsCurrent(question),
     };
   });
 }
@@ -154,11 +193,97 @@ export function resolveQuestionReport(
   reportId: string,
   status: QuestionReportStatus,
   resolvedBy: string | null,
+  resolutionAction: string | null = null,
 ): QuestionReportDetail | null {
   const existing = getReport(reportId);
   if (!existing) return null;
-  updateReportStatus(reportId, questionReportStatusSchema.parse(status), resolvedBy);
+  updateReportStatus(
+    reportId,
+    questionReportStatusSchema.parse(status),
+    resolvedBy,
+    resolutionAction,
+  );
   return listQuestionReports({ questionId: existing.questionId }).find(
     (item) => item.id === reportId,
   ) ?? null;
+}
+
+/** 教師處理回報時可以一併採取的題目行動（記錄在回報的 resolution_action） */
+export const REPORT_REMEDIATION_ACTIONS = ["withdraw-question", "revalidate-question"] as const;
+export type ReportRemediationAction =
+  | (typeof REPORT_REMEDIATION_ACTIONS)[number]
+  | "revalidate-failed"
+  | "not-in-bank";
+
+export interface ReportRemediationResult {
+  /** 實際執行的行動（未執行時為 null，例如題目只在練習快照內） */
+  action: ReportRemediationAction | null;
+  /** 自動品質驗證的結果（revalidate-question 時） */
+  autoValidated: boolean;
+  /** 驗證不通過的原因（給教師看，不是給學生） */
+  issues: string[];
+  view: QuestionReportDetail | null;
+}
+
+/** 教師端：從回報一鍵暫時下架題目（不刪除，可隨時重新發布） */
+export function withdrawQuestionFromReport(
+  reportId: string,
+  resolvedBy: string | null,
+): ReportRemediationResult {
+  const report = getReport(reportId);
+  if (!report) return { action: null, autoValidated: false, issues: [], view: null };
+  const question = getQuestion(report.questionId);
+  if (!question) {
+    resolveQuestionReport(reportId, "resolved", resolvedBy, "not-in-bank");
+    return {
+      action: "not-in-bank",
+      autoValidated: false,
+      issues: ["這條題目只存在於練習快照（AI 即時生成），無法在題庫下架"],
+      view: null,
+    };
+  }
+  changeQuestionStatus(question.id, "disabled");
+  resolveQuestionReport(reportId, "resolved", resolvedBy, "withdraw-question");
+  return {
+    action: "withdraw-question",
+    autoValidated: false,
+    issues: [],
+    view: listQuestionReports({ questionId: question.id }).find((item) => item.id === reportId) ?? null,
+  };
+}
+
+/**
+ * 教師端：重新執行自動品質驗證（修正題目後可立即重新取得學生可用狀態）。
+ *
+ * 通過時記錄自動驗證結果；**不會**建立人工覆核紀錄，因此教師端仍能分辨
+ * 「機器檢查通過」與「教師確認過」。回報本身不會被自動結案。
+ */
+export function revalidateQuestionFromReport(
+  reportId: string,
+  resolvedBy: string | null,
+): ReportRemediationResult {
+  const report = getReport(reportId);
+  if (!report) return { action: null, autoValidated: false, issues: [], view: null };
+  const question = getQuestion(report.questionId);
+  if (!question) {
+    return {
+      action: "not-in-bank",
+      autoValidated: false,
+      issues: ["這條題目只存在於練習快照（AI 即時生成），請先由教師手動建立或修正"],
+      view: null,
+    };
+  }
+  const result = revalidateQuestion(question.id);
+  const action: ReportRemediationAction = result.autoValidated
+    ? "revalidate-question"
+    : "revalidate-failed";
+  if (result.autoValidated) {
+    resolveQuestionReport(reportId, "resolved", resolvedBy, action);
+  }
+  return {
+    action,
+    autoValidated: result.autoValidated,
+    issues: [...result.sourceIssues, ...result.qualityIssues],
+    view: listQuestionReports({ questionId: question.id }).find((item) => item.id === reportId) ?? null,
+  };
 }

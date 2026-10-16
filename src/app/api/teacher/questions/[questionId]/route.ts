@@ -19,9 +19,9 @@ const updateSchema = z.union([
 /**
  * 教師端：發布／停用題目，或修改題目內容。
  *
- * 發布（`status = published`）需要對應**目前版本**的人工覆核紀錄，否則回 409：
- * 自動驗證（教材依據）或舊資料都不會令題目通過這個關卡。
- * 修改已發布的題目會即時下架（回到草稿），必須重新覆核後才可再次發布。
+ * 發布（`status = published`）需要對應**目前版本**的人工覆核紀錄**或**自動品質驗證紀錄，
+ * 否則回 409：單憑教材依據自動核對（`sourceVerified`）或舊資料都不會令題目通過這個關卡。
+ * 修改已發布的題目會即時下架（回到草稿），必須重新覆核或重新執行自動品質驗證才可再次發布。
  */
 export async function PATCH(request: Request, context: { params: Promise<{ questionId: string }> }) {
   return handleRoute(async () => {
