@@ -1895,6 +1895,12 @@ node scripts/e2e-flow.mjs --start   # 端對端 137 項檢查全部通過（含�
     - **受影響的學生歷史**：171 條之中只有 **1 筆作答**及 **1 筆覆核**（其餘 0）。`attempts`／`question_reports` 的 `question_id` 沒有外鍵，因此**作答紀錄沒有被刪除**，只是指向已不存在的題目（孤立作答 75 → 76、孤立回報 15 → 15；增量等於原有紀錄數）。`PRAGMA integrity_check = ok`。
     - **現時題庫**：**473** 條（已發布 471、草稿 1、停用 1）；`material-ai` 308、`demo` 49、`school-paper` 116、`material-mock` **0**；`source_verified = 1` 457、未核對 16；覆核紀錄 27、回報 30、作答 140、教材文件 19、段落 7,950。
     - **連帶更新**：8 題覆核套件重新抽樣後只餘 **5 題**（全部 `material-ai`），仍全部 `pending-review`；校準報告同步更新（仍為 `unmeasured`）；[release-preflight-2026-10.md](docs/release-preflight-2026-10.md) 的本機基準與證據欄位已改為 473／471／457。
+54. **正式部署（2026-10-17，由擁有者指示）**：完成 commit／push（`e46af55`）後，以 Cloud Build 建置映像檔並部署到 Cloud Run `history-self-study`（asia-east2），同時把本機 473 題的資料庫快照上載，令線上環境與本機一致，方便教師直接在線上審核。完整證據（快照 SHA-256、build id／digest、revision、流量、還原日誌、health 回應、回滾指令）見 [release-preflight-2026-10.md](docs/release-preflight-2026-10.md) 第 10 節。
+    - **映像檔**：build `d0ca7a63-852b-4010-b6d9-5ef46aa966b9`（SUCCESS，3M4S），digest `sha256:0a2c4904…b56a18f`；revision **`history-self-study-00026-yik`**，100% 流量；舊 revision `00025-stx` 保留作回滾。
+    - **資料**：舊正式快照（26,787,840 bytes，SHA-256 `707a8d3f…a4663c`）已另存 `gs://…/history/data/app.db.pre-20261017T0506Z`；本機快照（4,866,048 bytes，SHA-256 `8baa6be2…86e7591`）上載為 `history/data/app.db`，新 revision 啟動時成功還原（日誌：`已由雲端還原（4752 KB）`）。
+    - **部署方式**：沒有使用 `cloudbuild.yaml` 的 `--set-env-vars`（會以空白值覆蓋正式設定），改為 `gcloud run deploy --image=… --no-traffic --tag=review` 先驗證再切換流量；既有 `AUTH_TEACHER_EMAILS`、`AUTH_ADMIN_EMAILS`、`AUTH_STAFF_ACCESS_POLICY`、`STUDENT_ROSTER_*`、`BACKUP_*` 全部保留。
+    - **部署後檢查**：`/login` 200；`/api/health` 回 `ok:true`、`database.status:"ok"`、`persistence.restore:"restored"`、`authEnabled:true`、`staffApiOpen:false`、`roster.enforce:true`、`backupEnabled:true`、`lastError:null`。
+    - **取代的舊資料**：正式環境原有 3,994 題（已發布 49）、96 份教材文件及 15 筆作答（全部屬擁有者自己的測試帳戶，沒有學生資料）；上述舊資料保留在回滾快照內。**瀏覽器自動化仍未執行**（專案沒有支援框架）。
 
 ---
 

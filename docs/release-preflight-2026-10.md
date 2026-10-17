@@ -13,11 +13,11 @@
 | --- | --- | --- | --- | --- |
 | 1 | **本機軟件測試** | 程式碼符合已定義的測試與建置 | ✅ **已完成**（見第 2 節） | 第 2 節的指令輸出 |
 | 2 | **本機資料庫完整性** | 本機資料庫可用、結構已升級、沒有未套用的 migration | ✅ **已完成**（見第 3 節） | `PRAGMA integrity_check`、`schema_migrations`（20 個 migration，最後 `0020`） |
-| 3 | **正式資料庫快照** | 正式環境實際的資料內容（題目、教材、覆核） | ❌ **未驗證** — 雲端憑證已過期（Sprint 8.3 記錄），本 Sprint 沒有嘗試登入或還原 | 需授權後以 `npm run snapshot:production` 取得並核對 SHA-256 |
-| 4 | **教材版本一致** | 正式環境是否已用 2026-10-16 的新版 12 課教材 | ❌ **未同步** — 正式環境仍是 2026-10-15 的教材版本；本機已是 2026-10-16 版本 | README 第 45 項／第十二節第 43 項及擁有者事項第 15 項 |
+| 3 | **正式資料庫快照** | 正式環境實際的資料內容（題目、教材、覆核） | ✅ **已驗證（2026-10-17）** — 已下載並核對 SHA-256，並按擁有者指示以本機快照取代（見第 10 節） | 第 10.1／10.2 節 |
+| 4 | **教材版本一致** | 正式環境是否已用 2026-10-16 的新版 12 課教材 | ✅ **已同步（2026-10-17）** — 新映像檔包含 2026-10 教材，資料庫亦已由本機快照取代 | 第 10 節 |
 | 5 | **版權／擁有者授權** | 是否有權向學生發布這些教材 | ✅ **已決定**（2026-10-15，2026-10-16 沿用）— 12 份課本文件逐份開放 | [owner-material-openings.json](teacher-review/owner-material-openings.json) |
 | 6 | **歷史科教師覆核** | 題目的史實、答案、選項及解釋是否適合學生 | ⚠️ **部分完成** — 2026-10-17 12:11–12:16（HKT）擁有者 `ipwh@pochiu.edu.hk` 已在平台記錄 **17 筆覆核通過**（各題 rev 3，經登入工作階段驗證）；`golden-questions.v1.json` 仍為 `pending-review`、0 條，8 題覆核套件仍全部待覆核 | [generated-question-sample-2026-10.json](teacher-review/generated-question-sample-2026-10.json)（8 題套件，全部待覆核） |
-| 7 | **部署及部署後驗證** | 正式服務是否真的按預期運作 | ❌ **未執行** — 本 Sprint 沒有部署 | 部署後必須完成的煙霧測試見 README 第十節第 3 項 |
+| 7 | **部署及部署後驗證** | 正式服務是否真的按預期運作 | ✅ **已執行（2026-10-17）** — revision `history-self-study-00026-yik`，100% 流量；`/api/health` 回報 `ok:true`、`restore:"restored"`、備份啟用且無錯誤 | 第 10.2 節 |
 
 > 本機測試通過（第 1、2 層）**不能**證明第 3–7 層；第 5 層的授權亦**不能**代替第 6 層的教師覆核。
 
@@ -71,7 +71,7 @@ node scripts/e2e-flow.mjs --start            # 端對端（HTTP）：以**隔離
 
 | 優先 | 阻塞 | 說明 | 解除條件 |
 | --- | --- | --- | --- |
-| **P0** | 雲端憑證過期 | 無法取得正式快照、無法部署或核對正式狀態（Sprint 8.3 已記錄，本 Sprint 未嘗試恢復） | 由擁有者重新授權並登入；在此之前不可進行任何正式同步 |
+| ~~P0~~ | ~~雲端憑證過期~~ | **已解除（2026-10-17）** — `gcloud` 已以 `ipwh@pochiu.edu.hk` 登入，成功讀取快照、建置及部署 | 已完成 |
 | **P0** | 正式快照未驗證 | 正式環境的實際題目／教材／覆核數目未知；不能假設與本機相同 | 取得快照並核對 SHA-256 及第 3 節的數字 |
 | **P1** | 教師覆核覆蓋率不足 | 2026-10-17 已有 17 筆具名覆核（`ipwh@pochiu.edu.hk`），但相對 642 條已發布題目仍屬小樣本；`golden-questions.v1.json` 仍為 `pending-review`、0 條，8 題覆核套件全部待覆核 | 具名教師完成覆核套件及更多題目，並把決定寫入平台（見 `generated-question-sample-2026-10.json`） |
 | **P1** | 教材版本不一致 | 正式環境仍是 2026-10-15 教材；本機已更新，但同步未執行 | 依第 4 節順序執行並驗證 |
@@ -198,4 +198,53 @@ node scripts/e2e-flow.mjs --start            # 端對端（HTTP）：以**隔離
 ### 9.2 本節沒有做的事
 
 - 沒有接觸雲端、沒有執行任何 E1–E12 項目、沒有把任何欄位填成已完成。
-- 沒有把本機測試結果（1,017 項測試、137 項端對端檢查）當作正式環境的證據。
+- 沒有把本機測試結果（1,035 項測試、137 項端對端檢查）當作正式環境的證據。
+
+---
+
+## 10. 部署紀錄（2026-10-17，由擁有者指示執行）
+
+> 這是本文件首次出現**已執行**的正式環境操作。以下每一項都是實際輸出，不是計劃。
+
+### 10.1 部署前狀態（唯讀快照核對）
+
+| 項目 | 正式環境（2026-10-15 快照） | 本機（2026-10-17） |
+| --- | --- | --- |
+| 快照 SHA-256 | `707a8d3feca1c7750d7f185959bc735ec0bdb571e604609b3520e04fe0a4663c`（26,787,840 bytes） | `8baa6be219de0c635adb567af1ad4f7b6b0e1af46567d22fa9f54e72186e7591`（4,866,048 bytes，`VACUUM INTO`） |
+| 題目 | 3,994（已發布 49） | 473（已發布 471） |
+| 覆核紀錄 | 0 | 27（17 筆為當日具名教師決定） |
+| 題目回報／作答／練習 | 0／15／3 | 30／140／92 |
+| 教材文件／段落 | 96／58,528 | 19／7,950 |
+| `schema_migrations` | 18 | 20 |
+
+- 正式環境的 15 筆作答全部屬 `teacher:ipwh@pochiu.edu.hk`（擁有者自己的測試），沒有學生資料。
+- 舊快照已另存作回滾：`gs://amiable-nirvana-500300-a0-history-backup/history/data/app.db.pre-20261017T0506Z`（26,787,840 bytes）。
+
+### 10.2 執行步驟與結果
+
+| 步驟 | 實際指令 | 結果 |
+| --- | --- | --- |
+| 1. 建立本機一致性快照 | `VACUUM INTO`（`data/app.db` → 暫存檔），`PRAGMA integrity_check = ok` | 4,866,048 bytes |
+| 2. 備份正式物件 | `gsutil cp …/history/data/app.db …/history/data/app.db.pre-20261017T0506Z` | 成功（26,787,840 bytes） |
+| 3. 建置映像檔 | `gcloud builds submit --tag asia-east2-docker.pkg.dev/amiable-nirvana-500300-a0/history/hk-history-self-study:deploy-20261017 .` | build `d0ca7a63-852b-4010-b6d9-5ef46aa966b9`，**SUCCESS**，3M4S，digest `sha256:0a2c4904409d2177efa5335f266efa6483084acecabf3d08c716f20c0b56a18f` |
+| 4. 上載本機快照 | `gsutil cp <snapshot> gs://amiable-nirvana-500300-a0-history-backup/history/data/app.db` | 成功，物件 SHA-256 `8baa6be2…86e7591` |
+| 5. 先部署不切流量 | `gcloud run deploy history-self-study --image=…:deploy-20261017 --region=asia-east2 --no-traffic --tag=review` | revision `history-self-study-00026-yik`，0% 流量 |
+| 6. 驗證新 revision | `GET https://review---history-self-study-bggdvmswzq-df.a.run.app/login` | **200**；啟動日誌：`[backup] 資料庫備份已啟用（還原：restored，已由雲端還原（4752 KB））` |
+| 7. 切換流量 | `gcloud run services update-traffic history-self-study --to-latest` | `00026-yik` = **100%** |
+| 8. 部署後檢查 | `GET /login` → 200；`GET /api/health` → `ok:true`、`database.status:"ok"`、`persistence.restore:"restored"`、`authEnabled:true`、`staffApiOpen:false`、`roster.enforce:true`、`backupEnabled:true`、`lastError:null` | 全部符合預期 |
+
+- 既有環境變數／Secret 全部保留（`BACKUP_BUCKET`、`AUTH_TEACHER_EMAILS`、`AUTH_ADMIN_EMAILS`、`AUTH_STAFF_ACCESS_POLICY`、`STUDENT_ROSTER_*` 等均存在；沒有使用 `cloudbuild.yaml` 的 `--set-env-vars`，避免以空白值覆蓋正式設定）。
+- 部署後未再上載任何快照；bucket 物件在檢查時仍為本次上載（`2026-10-17T05:06:43Z`）。
+
+### 10.3 回滾方式（未使用）
+
+| 情境 | 指令 |
+| --- | --- |
+| 資料問題 | `gsutil cp gs://amiable-nirvana-500300-a0-history-backup/history/data/app.db.pre-20261017T0506Z gs://amiable-nirvana-500300-a0-history-backup/history/data/app.db`，然後重新部署或重啟（`BACKUP_RESTORE_ON_START=true` 會在啟動時還原） |
+| 程式問題 | `gcloud run services update-traffic history-self-study --region asia-east2 --to-revisions=history-self-study-00025-stx=100`（注意：舊 revision 的資料庫是舊快照，需同時回滾資料） |
+
+### 10.4 部署後仍然未完成的事項
+
+- **歷史科教師覆核**：平台上只有 27 筆覆核紀錄（17 筆具名），相對 471 條已發布題目仍屬小樣本；8 題（現為 5 題）覆核套件全部待覆核，校準仍為 `unmeasured`。
+- **瀏覽器自動化**：專案仍沒有支援的瀏覽器測試框架，未執行。
+- **E1–E12 的正式環境細節**：本次已取得快照身分／完整性（E1、E2）、結構版本（E4）及部署次序（E11、E12）的實際輸出；其餘（教師名冊實際登入、版權批准文件等）仍待擁有者／科主任完成。
