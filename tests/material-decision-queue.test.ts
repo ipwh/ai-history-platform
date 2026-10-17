@@ -187,7 +187,7 @@ describe("36 條待教師決定題目隊列", () => {
   });
 });
 
-describe("課題1 校內試題：仍未能核對教材依據的紀錄（25 條）", () => {
+describe("課題1 校內試題：仍未能核對教材依據的紀錄（原 25 條，2026-10-17 後現存 16 條）", () => {
   const RECORD_PATH = path.join(
     "docs",
     "teacher-review",
@@ -207,6 +207,7 @@ describe("課題1 校內試題：仍未能核對教材依據的紀錄（25 條�
     excerptHeadBlock: { sourceLocation: string; matchedPrefixLength: number } | null;
     singleBlockEvidence: boolean;
     recommendation: string;
+    removedOn?: string;
   }
 
   const record = JSON.parse(fs.readFileSync(RECORD_PATH, "utf8")) as {
@@ -215,12 +216,30 @@ describe("課題1 校內試題：仍未能核對教材依據的紀錄（25 條�
     purpose: string;
     sourceMaterials: string;
     platformRule: string;
+    teacherDecisions: {
+      recordedAt: string;
+      deletedQuestionIds: string[];
+      deletedCount: number;
+      remainingCount: number;
+    };
     entries: RecordEntry[];
   };
 
-  it("紀錄 25 條，全部沒有單一段落依據、且每條都有原因與證據統計", () => {
-    expect(record.version).toBe(1);
+  it("保留原 25 條記錄，並如實標示教師已刪除的 9 條（Sprint 8.8）", () => {
+    expect(record.version).toBe(2);
     expect(record.entries).toHaveLength(25);
+    const removed = record.entries.filter((entry) => entry.removedOn !== undefined);
+    expect(removed).toHaveLength(9);
+    for (const entry of removed) expect(entry.removedOn).toBe("2026-10-17");
+    expect(record.teacherDecisions.deletedCount).toBe(9);
+    expect(record.teacherDecisions.remainingCount).toBe(16);
+    expect(record.teacherDecisions.deletedQuestionIds.sort()).toEqual(
+      removed.map((entry) => entry.questionId).sort(),
+    );
+    expect(record.title).toContain("現存 16 條");
+  });
+
+  it("所有記錄（包括已刪除者）都沒有單一段落依據，且每條都有原因與證據統計", () => {
     const ids = record.entries.map((entry) => entry.questionId);
     expect(new Set(ids).size).toBe(ids.length);
     for (const entry of record.entries) {

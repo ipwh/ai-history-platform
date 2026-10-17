@@ -1,11 +1,13 @@
 {
-  "version": 1,
-  "title": "課題1 校內試題：仍未能核對教材依據（25 條）",
-  "purpose": "記錄課題1 校內試卷題目仍「未通過教材依據核對」的原因及逐行證據：這些題目的原文節錄由題幹、資料引文及子題等多段文字組成，而平台的核對規則要求單一段落包含整個節錄，因此無法取得單一段落依據。學生端本來就不會顯示校內試題的節錄（試題文件屬非授課內容），所以這只是教師端的狀態記錄，不影響學生；教師如要處理，可為題目改用較短的單段節錄（例如只引用資料原文），或把同組子題拆成獨立題目。",
+  "version": 2,
+  "title": "課題1 校內試題：仍未能核對教材依據（原 25 條；2026-10-17 教師刪除 9 條後現存 16 條）",
+  "purpose": "記錄課題1 校內試卷題目仍「未通過教材依據核對」的原因及逐行證據：這些題目的原文節錄由題幹、資料引文及子題等多段文字組成，而平台的核對規則要求單一段落包含整個節錄，因此無法取得單一段落依據。學生端本來就不會顯示校內試題的節錄（試題文件屬非授課內容），所以這只是教師端的狀態記錄，不影響學生；教師如要處理，可為題目改用較短的單段節錄（例如只引用資料原文）、把同組子題拆成獨立題目，或直接刪除不再使用的題目。",
   "sourceMaterials": "materials/ 課題1 校內試卷（HNC1A2E_QB_T1_1.MCQ.docx、HNC1A2E_QB_T1_7.DBQ.docx）",
   "generatedFrom": {
     "database": "data/app.db",
-    "generatedAt": "2026-10-16"
+    "generatedAt": "2026-10-16",
+    "updatedAt": "2026-10-17",
+    "updateSource": "data/app.db（唯讀查詢）與 data/exports/app.db.pre-schoolpaper-links-2026-10-16T1520Z.db（唯讀比對）"
   },
   "platformRule": "sourceVerified = 忽略標點及空白後，**單一**引用段落包含整段原文節錄（src/server/services/validation.ts、import-service.ts 的 reverifyUnverifiedQuestions）；此類題目的節錄由多段文字組成，無法由單一段落支持",
   "entries": [
@@ -28,7 +30,9 @@
       },
       "singleBlockEvidence": false,
       "excerptPreview": "根據下列資料，回答有關問題。",
-      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成",
+      "removedOn": "2026-10-17",
+      "removedBy": "教師在平台刪除（擁有者於本 session 確認屬刻意決定）"
     },
     {
       "questionId": "qb-JTH2ndEdDBQ01004",
@@ -47,7 +51,9 @@
       },
       "singleBlockEvidence": false,
       "excerptPreview": "根據下列資料，回答有關問題。",
-      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成",
+      "removedOn": "2026-10-17",
+      "removedBy": "教師在平台刪除（擁有者於本 session 確認屬刻意決定）"
     },
     {
       "questionId": "qb-JTH2ndEdDBQ01005",
@@ -68,7 +74,9 @@
       },
       "singleBlockEvidence": false,
       "excerptPreview": "根據下列資料，回答有關問題。",
-      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成",
+      "removedOn": "2026-10-17",
+      "removedBy": "教師在平台刪除（擁有者於本 session 確認屬刻意決定）"
     },
     {
       "questionId": "qb-JTH2ndEdDBQ01006",
@@ -89,7 +97,9 @@
       },
       "singleBlockEvidence": false,
       "excerptPreview": "根據下列資料，回答有關問題。",
-      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成",
+      "removedOn": "2026-10-17",
+      "removedBy": "教師在平台刪除（擁有者於本 session 確認屬刻意決定）"
     },
     {
       "questionId": "qb-JTH2ndEdDBQ01007",
@@ -110,7 +120,9 @@
       },
       "singleBlockEvidence": false,
       "excerptPreview": "根據下列資料，回答有關問題。",
-      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成",
+      "removedOn": "2026-10-17",
+      "removedBy": "教師在平台刪除（擁有者於本 session 確認屬刻意決定）"
     },
     {
       "questionId": "qb-JTH2ndEdDBQ01008",
@@ -131,7 +143,9 @@
       },
       "singleBlockEvidence": false,
       "excerptPreview": "根據下列資料，回答有關問題。",
-      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成",
+      "removedOn": "2026-10-17",
+      "removedBy": "教師在平台刪除（擁有者於本 session 確認屬刻意決定）"
     },
     {
       "questionId": "qb-JTH2ndEdDBQ01009",
@@ -150,7 +164,9 @@
       },
       "singleBlockEvidence": false,
       "excerptPreview": "根據下列資料，回答有關問題。",
-      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成",
+      "removedOn": "2026-10-17",
+      "removedBy": "教師在平台刪除（擁有者於本 session 確認屬刻意決定）"
     },
     {
       "questionId": "qb-JTH2ndEdDBQ01010",
@@ -171,7 +187,9 @@
       },
       "singleBlockEvidence": false,
       "excerptPreview": "根據下列資料，回答有關問題。",
-      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成",
+      "removedOn": "2026-10-17",
+      "removedBy": "教師在平台刪除（擁有者於本 session 確認屬刻意決定）"
     },
     {
       "questionId": "qb-JTH2ndEdDBQ01011",
@@ -194,7 +212,9 @@
       },
       "singleBlockEvidence": false,
       "excerptPreview": "根據下列資料，回答有關問題。",
-      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成",
+      "removedOn": "2026-10-17",
+      "removedBy": "教師在平台刪除（擁有者於本 session 確認屬刻意決定）"
     },
     {
       "questionId": "qb-JTH2ndEdDBQ01012",
@@ -562,5 +582,23 @@
       "excerptPreview": "下列哪項是有利於古文明誕生的自然條件？ i. 生物多樣 ii. 地貌豐富 iii. 土地肥沃 iv. 雨水充足",
       "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
     }
-  ]
+  ],
+  "teacherDecisions": {
+    "recordedAt": "2026-10-17",
+    "recordedBy": "本機平台教師操作（/teacher/questions）；由擁有者在 Sprint 8.8 覆核工作階段確認屬刻意決定",
+    "deletedQuestionIds": [
+      "qb-JTH2ndEdDBQ01003",
+      "qb-JTH2ndEdDBQ01004",
+      "qb-JTH2ndEdDBQ01005",
+      "qb-JTH2ndEdDBQ01006",
+      "qb-JTH2ndEdDBQ01007",
+      "qb-JTH2ndEdDBQ01008",
+      "qb-JTH2ndEdDBQ01009",
+      "qb-JTH2ndEdDBQ01010",
+      "qb-JTH2ndEdDBQ01011"
+    ],
+    "deletedCount": 9,
+    "remainingCount": 16,
+    "note": "刪除由教師在平台執行（DELETE /api/teacher/questions/{id}）。此檔案只記錄結果，不代表程式代為決定；被刪題目在刪除前均為 0 作答、0 回報、0 覆核紀錄。原始 25 條的逐行證據保留在本檔案內並以 removedOn 標示。"
+  }
 }

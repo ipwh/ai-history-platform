@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "date": "2026-10-17",
+  "title": "校內試卷題目刪除及題目停用紀錄（Sprint 8.8 覆核工作階段）",
+  "status": "confirmed-by-owner-kept",
+  "note": "以下變動由教師／擁有者在本機平台執行（/teacher/questions），並在同一次覆核工作階段中確認為刻意決定。本檔案只是結果紀錄，不代替平台上的操作，也不代表程式代為作出任何決定。",
+  "evidenceSource": [
+    "data/app.db（唯讀查詢，2026-10-17）",
+    "data/exports/app.db.pre-schoolpaper-links-2026-10-16T1520Z.db（唯讀比對，用於列出被刪題目的刪除前內容）"
+  ],
+  "deleted": {
+    "count": 11,
+    "allHadNoStudentHistory": true,
+    "questions": [
+      {
+        "questionId": "qb-JTH2ndEdTFQ01012",
+        "topicId": "topic-1",
+        "sectionId": "topic-1-periods-paleolithic",
+        "questionType": "mc",
+        "difficulty": "basic",
+        "stemPreview": "克羅馬儂人及元謀人是其中兩個生活在舊石器時代的人類。",
+        "correctAnswer": "是",
+        "sourceVerified": true,
+        "revision": 2,
+        "attemptsBeforeDeletion": 0,
+        "reportsBeforeDeletion": 0,
+        "reviewsBeforeDeletion": 0
+      },
+      {
+        "questionId": "qb-JTH2ndEdLAQ01002",
+        "topicId": "topic-1",
+        "sectionId": "topic-1-periods-paleolithic",
+        "questionType": "short",
+        "difficulty": "basic",
+        "stemPreview": "為甚麼舊石器時代人類會過着游獵生活？（3分）\n@O",
+        "correctAnswer": "（短答題，由教師按得分要點評分）",
+        "sourceVerified": false,
+        "revision": 1,
+        "attemptsBeforeDeletion": 0,
+        "reportsBeforeDeletion": 0,
+        "reviewsBeforeDeletion": 0
+      },
+      {
+        "questionId": "qb-JTH2ndEdDBQ01003",
+        "topicId": "topic-1",
+        "sectionId": "topic-1-periods-paleolithic",
+        "questionType": "short",
+        "difficulty": "advanced",
+        "stemPreview": "根據下列資料，回答有關問題。\n資料I：古人類的雕像\n於中國北京附近的周口店發現遺址。\n他懂得用火。\n他過着不斷遷徙的遊牧生活，未曾定居。\n資料II：在美國國家公",
+        "correctAnswer": "（短答題，由教師按得分要點評分）",
+        "sourceVerified": false,
+        "revision": 1,
+        "attemptsBeforeDeletion": 0,
+        "reportsBeforeDeletion": 0,
+        "reviewsBeforeDeletion": 0
+      },
+      {
+        "questionId": "qb-JTH2ndEdDBQ01004",
+        "topicId": "topic-1",
+        "sectionId": "topic-1-periods-paleolithic",
+        "questionType": "short",
+        "difficulty": "basic",
+        "stemPreview": "根據下列資料，回答有關問題。\n資料I：有關尼安德人生活描述\n尼安德人雖然生活於舊石器時代，卻擁有很多技能。他們會採摘野果，也會通過狩獵及捕魚獲得更多食物。通過研",
+        "correctAnswer": "（短答題，由教師按得分要點評分）",
+        "sourceVerified": false,
+        "revision": 1,
+        "attemptsBeforeDeletion": 0,
+        "reportsBeforeDeletion": 0,
+        "reviewsBeforeDeletion": 0
+      },
+      {
+        "questionId": "qb-JTH2ndEdDBQ01005",
+        "topicId": "topic-1",
+        "sectionId": "topic-1-periods-paleolithic",
+        "questionType": "short",
+        "difficulty": "basic",
+        "stemPreview": "根據下列資料，回答有關問題。\n資料I：考古學家對2014年發現的中國舊石器時代人類遺址的見解\n從遺址可見，古人類的火塘（生火用的灶坑）都被石塊圍住，起到調節火勢",
+        "correctAnswer": "（短答題，由教師按得分要點評分）",
+        "sourceVerified": false,
+        "revision": 1,
+        "attemptsBeforeDeletion": 0,
+        "reportsBeforeDeletion": 0,
+        "reviewsBeforeDeletion": 0
+      },
+      {
+        "questionId": "qb-JTH2ndEdDBQ01006",
+        "topicId": "topic-1",
+        "sectionId": "topic-1-periods-paleolithic",
+        "questionType": "short",
+        "difficulty": "basic",
+        "stemPreview": "根據下列資料，回答有關問題。\n資料I：有關石器時代石器製作的描述\n舊石器時代，人類活動範圍有限，對環境的認識亦較為粗淺，通常在遺址附近就地取材，製作簡單的打製石",
+        "correctAnswer": "（短答題，由教師按得分要點評分）",
+        "sourceVerified": false,
+        "revision": 1,
+        "attemptsBeforeDeletion": 0,
+        "reportsBeforeDeletion": 0,
+        "reviewsBeforeDeletion": 0
+      },
+      {
+        "questionId": "qb-JTH2ndEdDBQ01007",
+        "topicId": "topic-1",
+        "sectionId": "topic-1-periods-paleolithic",
+        "questionType": "short",
+        "difficulty": "advanced",
+        "stemPreview": "根據下列資料，回答有關問題。\n資料I：一幅有關石器時代的圖畫\n除了採摘野果與捕魚，這是我們取得食物的唯一方式。\n資料II：一幅有關石器時代的圖畫\n辨別資料I及I",
+        "correctAnswer": "（短答題，由教師按得分要點評分）",
+        "sourceVerified": false,
+        "revision": 1,
+        "attemptsBeforeDeletion": 0,
+        "reportsBeforeDeletion": 0,
+        "reviewsBeforeDeletion": 0
+      },
+      {
+        "questionId": "qb-JTH2ndEdDBQ01008",
+        "topicId": "topic-1",
+        "sectionId": "topic-1-periods-paleolithic",
+        "questionType": "short",
+        "difficulty": "advanced",
+        "stemPreview": "根據下列資料，回答有關問題。\n資料I：石器時代人類的自述\n我們住在洞穴內，但經常要遷徙。我們平日會採摘野果充飢，亦會用石斧或石矛狩獵馬、兔等動物。\n資料II：石",
+        "correctAnswer": "（短答題，由教師按得分要點評分）",
+        "sourceVerified": false,
+        "revision": 1,
+        "attemptsBeforeDeletion": 0,
+        "reportsBeforeDeletion": 0,
+        "reviewsBeforeDeletion": 0
+      },
+      {
+        "questionId": "qb-JTH2ndEdDBQ01009",
+        "topicId": "topic-1",
+        "sectionId": "topic-1-periods-paleolithic",
+        "questionType": "short",
+        "difficulty": "advanced",
+        "stemPreview": "根據下列資料，回答有關問題。\n資料I：有關史前時期人類的圖片\n這是我們生產工具的唯一方式。\n資料II：有關新石器時代的描述\n村落及農田在新石器時代出現。當時的人",
+        "correctAnswer": "（短答題，由教師按得分要點評分）",
+        "sourceVerified": false,
+        "revision": 1,
+        "attemptsBeforeDeletion": 0,
+        "reportsBeforeDeletion": 0,
+        "reviewsBeforeDeletion": 0
+      },
+      {
+        "questionId": "qb-JTH2ndEdDBQ01010",
+        "topicId": "topic-1",
+        "sectionId": "topic-1-periods-paleolithic",
+        "questionType": "short",
+        "difficulty": "advanced",
+        "stemPreview": "根據下列資料，回答有關問題。\n資料I：有關刀耕火種的描述\n「刀耕火種」是新石器時代最常用的開墾方法。農民會先利用耕具翻動泥土，然後清理雜草，並焚燒草木。含有礦物",
+        "correctAnswer": "（短答題，由教師按得分要點評分）",
+        "sourceVerified": false,
+        "revision": 1,
+        "attemptsBeforeDeletion": 0,
+        "reportsBeforeDeletion": 0,
+        "reviewsBeforeDeletion": 0
+      },
+      {
+        "questionId": "qb-JTH2ndEdDBQ01011",
+        "topicId": "topic-1",
+        "sectionId": "topic-1-periods-paleolithic",
+        "questionType": "short",
+        "difficulty": "advanced",
+        "stemPreview": "根據下列資料，回答有關問題。\n資料I：新石器時代的人口數據\n時期\n人口\n公元前10,000年\n400萬\n公元前4000年\n700萬\n資料II：石器時代人類獲取食",
+        "correctAnswer": "（短答題，由教師按得分要點評分）",
+        "sourceVerified": false,
+        "revision": 1,
+        "attemptsBeforeDeletion": 0,
+        "reportsBeforeDeletion": 0,
+        "reviewsBeforeDeletion": 0
+      }
+    ],
+    "recoverableFrom": "data/exports/app.db.pre-schoolpaper-links-2026-10-16T1520Z.db（仍保存全部被刪題目）"
+  },
+  "disabled": [
+    {
+      "questionId": "q_df1fd4c05d594891",
+      "topicId": "topic-5",
+      "sectionId": "topic-5-renaissance-features",
+      "questionType": "fill",
+      "difficulty": "advanced",
+      "stem": "文藝復興時期歐洲人重視人文主義，不再凡事以神為本，他們試圖跳出宗教框架，創造新的作品與理論，這說明了文藝復興打破教會對歐洲人的思想____。",
+      "correctAnswer": "枷鎖",
+      "explanation": "教材指出文藝復興打破教會對歐洲人的思想枷鎖，使他們試圖跳出宗教框架，創造新的作品與理論。",
+      "sourceExcerpt": "打破教會對歐洲人的思想枷鎖",
+      "sourceLocation": "課題5 近代歐洲的興起.docx · 第 14 段（段落）",
+      "revision": 3,
+      "reason": "擁有者於 2026-10-17 確認為刻意停用（保留停用）"
+    }
+  ],
+  "baselineImpact": {
+    "questionsTotal": "789 → 778",
+    "published": "788 → 776",
+    "schoolPaperPublished": "127 → 116",
+    "sourceVerifiedZero": "25 → 16",
+    "questionReviews": "10（未變；沒有新增覆核紀錄）"
+  },
+  "notDone": [
+    "沒有為任何題目建立覆核紀錄。",
+    "沒有還原任何被刪題目（擁有者確認保留刪除）。",
+    "沒有改動停用題目的內容。"
+  ]
+}
