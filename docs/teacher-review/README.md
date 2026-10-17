@@ -273,8 +273,8 @@
 
 | 檔案／指令 | 用途 | 現況 |
 | --- | --- | --- |
-| `npm run review:package -- --write`（[build-review-package.ts](../../scripts/build-review-package.ts)） | 以**唯讀**方式產生教師覆核套件（v3） | 8 題，全部 `pending-review` |
-| `npm run review:calibration -- --write`（[build-calibration-report.ts](../../scripts/build-calibration-report.ts)） | 把教師決定與機器判定並列，分類為假通過／假攔截／內容問題／教學問題 | [human-vs-machine-calibration-2026-10.json](./human-vs-machine-calibration-2026-10.json)：8 題全部待覆核、0 項分歧，不含任何比率 |
+| `npm run review:package -- --write`（[build-review-package.ts](../../scripts/build-review-package.ts)） | 以**唯讀**方式產生教師覆核套件（v3） | 5 題（`material-mock` 示範題已於 2026-10-17 全部清除，套件只餘 `material-ai`），全部 `pending-review` |
+| `npm run review:calibration -- --write`（[build-calibration-report.ts](../../scripts/build-calibration-report.ts)） | 把教師決定與機器判定並列，分類為假通過／假攔截／內容問題／教學問題 | [human-vs-machine-calibration-2026-10.json](./human-vs-machine-calibration-2026-10.json)：5 題全部待覆核、0 項分歧，不含任何比率 |
 | [review-workflow-audit-2026-10.json](./review-workflow-audit-2026-10.json) | 覆核流程 12 項契約的逐項審核（角色、示範身分、版本綁定、只增不改、暫緩標記、來源可見性）及已知限制 | 發現 1 個實際缺陷並已修正（見下） |
 | [published-question-risk-report-2026-10.json](./published-question-risk-report-2026-10.json) | 兩條在 Sprint 8.6 被重算判 `reject` 的題目之風險評估 | 只有 1 條已發布（`q_058eda0378394d0f`）；另一條為草稿。**沒有**改動任何題目或發布狀態 |
 | [explanation-reference-corrections-2026-10.json](./explanation-reference-corrections-2026-10.json) | 7 條解釋段號的建議修正（v2，附舊值／建議值／信心／所需授權） | 全部 `applied: false`，**未取得授權、未套用** |

@@ -70,11 +70,12 @@ const sample = JSON.parse(fs.readFileSync(FILE, "utf8")) as SampleFile;
 describe("真實生成題目的教師覆核套件（待覆核，不得由程式代填）", () => {
   it("涵蓋代表性的來源、題型及難度，並提供七項審題準則", () => {
     expect(sample.version).toBe(3);
-    expect(sample.items.length).toBeGreaterThanOrEqual(6);
+    // 2026-10-17：擁有者指示清除全部 material-mock 示範題，抽樣因此只餘 material-ai（5 題）
+    expect(sample.items.length).toBeGreaterThanOrEqual(5);
     expect(sample.reviewCriteria.length).toBe(7);
     expect(sample.howToUse.length).toBeGreaterThanOrEqual(4);
     expect(sample.disclaimer.length).toBeGreaterThanOrEqual(3);
-    expect(new Set(sample.items.map((item) => item.provenance.origin)).size).toBeGreaterThanOrEqual(2);
+    expect(new Set(sample.items.map((item) => item.provenance.origin)).size).toBeGreaterThanOrEqual(1);
     expect(new Set(sample.items.map((item) => item.provenance.questionType)).size).toBe(3);
     expect(new Set(sample.items.map((item) => item.provenance.difficulty)).size).toBeGreaterThanOrEqual(2);
     expect(new Set(sample.items.map((item) => item.questionId)).size).toBe(sample.items.length);

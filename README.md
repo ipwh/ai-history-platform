@@ -522,7 +522,7 @@ src/server/seed/                  教育局課程架構、學習重點（精簡�
 src/app/api/                      REST API（學生端、教師端 /api/teacher/**、管理員端 /api/admin/**）
 src/app/                          頁面（學生端 /、/practice/**、/account；教師端 /teacher/**；管理員端 /admin/**）
 src/components/                   前端元件
-tests/                            Vitest 測試（73 個測試檔）及 tests/fixtures/ 測試樣本
+tests/                            Vitest 測試（76 個測試檔）及 tests/fixtures/ 測試樣本
 scripts/setup.ts                  初始化示範環境
 scripts/import-materials.ts       命令列匯入教材
 scripts/generate-question-bank.ts 命令列批次生成題目
@@ -1890,6 +1890,11 @@ node scripts/e2e-flow.mjs --start   # 端對端 137 項檢查全部通過（含�
     - **刪除前已建立一致性快照**：`data/exports/app.db.pre-label-purge-20261017T041644Z.db`（`VACUUM INTO`，5,095,424 bytes）；如要還原，停止服務後以它取代 `data/app.db`。
     - **沒有附帶損失**：`PRAGMA integrity_check = ok`；孤立作答／回報紀錄在刪除前後同為 75／15（來自早前由教師刪除的題目，並非本次操作造成；相關查詢以 `INNER JOIN questions` 讀取，不會把已刪題目計入統計）；覆核紀錄未變。
     - **同時記錄教師覆核進度**：同日 12:11–12:16（HKT）擁有者在平台記錄了 **17 筆覆核通過**（`ipwh@pochiu.edu.hk`，經登入工作階段驗證，rev 3）。現時題目 **644** 條（已發布 642、草稿 1、停用 1）、`material-mock` 由 272 降至 **171**、`source_verified = 0` 仍為 16、覆核紀錄 **27 筆**（10 筆為 2026-10-15 示範紀錄）；8 題覆核套件仍全部待覆核，故校準仍為 `unmeasured`。
+53. **清除全部 material-mock（本地示範生成）題目（2026-10-17，擁有者指示）**：擁有者選擇「清除全部剩餘 material-mock 示範題」，題庫此後只包含教材 + AI 生成（`material-ai`）、作者示範題（`demo`）、校內試卷（`school-paper`）及教師手動題目。共刪除 **171 條**（fill 93、mc 65、short 13，全部 `published`）。紀錄見 [material-mock-purge-2026-10-17.json](docs/teacher-review/material-mock-purge-2026-10-17.json)（測試：[tests/material-mock-purge-record.test.ts](tests/material-mock-purge-record.test.ts)）。
+    - **刪除前快照**：`data/exports/app.db.pre-mock-purge-20261017T043036Z.db`（`VACUUM INTO`，5,005,312 bytes），可完整還原。
+    - **受影響的學生歷史**：171 條之中只有 **1 筆作答**及 **1 筆覆核**（其餘 0）。`attempts`／`question_reports` 的 `question_id` 沒有外鍵，因此**作答紀錄沒有被刪除**，只是指向已不存在的題目（孤立作答 75 → 76、孤立回報 15 → 15；增量等於原有紀錄數）。`PRAGMA integrity_check = ok`。
+    - **現時題庫**：**473** 條（已發布 471、草稿 1、停用 1）；`material-ai` 308、`demo` 49、`school-paper` 116、`material-mock` **0**；`source_verified = 1` 457、未核對 16；覆核紀錄 27、回報 30、作答 140、教材文件 19、段落 7,950。
+    - **連帶更新**：8 題覆核套件重新抽樣後只餘 **5 題**（全部 `material-ai`），仍全部 `pending-review`；校準報告同步更新（仍為 `unmeasured`）；[release-preflight-2026-10.md](docs/release-preflight-2026-10.md) 的本機基準與證據欄位已改為 473／471／457。
 
 ---
 

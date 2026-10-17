@@ -343,7 +343,7 @@ function main(): void {
         sampledQuestions: items.length,
       },
       purpose:
-        "Sprint 8.6：為小量**真實生成題目**準備完整的審題套件。系統提供題目、答案、解釋、逐字來源節錄、" +
+        "Sprint 8.6：為小量**真實生成題目**準備完整的審題套件（2026-10-17 起示範生成題已清除，樣本只餘教材 + AI 題目）。系統提供題目、答案、解釋、逐字來源節錄、" +
         "所引用段落的上下文（Sprint 8.7）、機器檢查結果及審題欄位；史實、課程要求及教學價值的判斷一律由歷史科教師填寫。",
       disclaimer: [
         "每一項決定都是 pending-review：**沒有**任何教師或專家已覆核這些題目，程式不會代填。",
@@ -362,7 +362,7 @@ function main(): void {
         "6. 決定要寫回平台時，於教師介面提交覆核；介面會帶同你正在審閱的題目版本，題目若已被修改會拒絕提交並要求重新載入（不會把決定記到你未看過的版本）。",
       ],
       sampleSelection:
-        "由資料庫以唯讀方式抽出 origin 為 material-ai／material-mock 的題目，按既定組合（兩種來源 × 三種題型 × 不同難度，每組取 id 最小者）抽樣；不包括校內試題（school-paper）及手動題目。",
+        "由資料庫以唯讀方式抽出 origin 為 material-ai／material-mock 的題目，按既定組合（來源 × 題型 × 難度，每組取 id 最小者）抽樣；不包括校內試題（school-paper）及手動題目。2026-10-17 起 material-mock 示範題已按擁有者指示全部清除，因此套件只餘 material-ai 題目。",
       reviewCriteria: REVIEW_CRITERIA.map((criterion) => ({ ...criterion })),
       items,
     };

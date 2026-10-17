@@ -8,9 +8,9 @@
   "accuracyNote": "本報告刻意不含準確率、精確率或任何比率：沒有已完成的教師覆核，就沒有可計算的基準；即使日後有決定，亦須累積具代表性樣本才可討論比率（見 limitations）。",
   "generatedBy": "npm run review:calibration -- --write（scripts/build-calibration-report.ts）",
   "sourcePackage": "docs\\teacher-review\\generated-question-sample-2026-10.json",
-  "sampleSize": 8,
+  "sampleSize": 5,
   "reviewedCount": 0,
-  "pendingCount": 8,
+  "pendingCount": 5,
   "purpose": "把真實教師的覆核決定與機器判定並列，讓日後可以檢視自動規則漏報（false negative）及誤報（false positive）；本報告不會調整任何門檻，也不會把結果回寫平台。",
   "categories": [
     {
@@ -151,56 +151,10 @@
       "humanCategories": [],
       "disagreement": null,
       "outstandingConcernCount": 0
-    },
-    {
-      "questionId": "q_05f3095c0b7a45b8",
-      "questionType": "mc",
-      "origin": "material-mock",
-      "difficulty": "basic",
-      "publishedAtReview": true,
-      "machineOutcome": "pass",
-      "machineCodes": [],
-      "machineHeldAtGeneration": false,
-      "humanDecision": "pending-review",
-      "humanCategories": [],
-      "disagreement": null,
-      "outstandingConcernCount": 0
-    },
-    {
-      "questionId": "q_01c5964415ff4812",
-      "questionType": "fill",
-      "origin": "material-mock",
-      "difficulty": "basic",
-      "publishedAtReview": true,
-      "machineOutcome": "revise",
-      "machineCodes": [
-        "mechanical-deletion"
-      ],
-      "machineHeldAtGeneration": false,
-      "humanDecision": "pending-review",
-      "humanCategories": [],
-      "disagreement": null,
-      "outstandingConcernCount": 0
-    },
-    {
-      "questionId": "q_1893a3b07e2946d1",
-      "questionType": "short",
-      "origin": "material-mock",
-      "difficulty": "basic",
-      "publishedAtReview": true,
-      "machineOutcome": "revise",
-      "machineCodes": [
-        "explanation-restates-answer"
-      ],
-      "machineHeldAtGeneration": false,
-      "humanDecision": "pending-review",
-      "humanCategories": [],
-      "disagreement": null,
-      "outstandingConcernCount": 0
     }
   ],
   "limitations": [
-    "樣本只有 8 題，屬方便抽樣（每種來源／題型／難度取 id 最小者），不代表整體題庫分佈。",
+    "樣本只有 5 題，屬方便抽樣（每種來源／題型／難度取 id 最小者），不代表整體題庫分佈。",
     "在沒有任何教師完成覆核前，本報告只能證明流程可運作，不能證明規則準確；校準狀態會如實標示為 unmeasured。",
     "因此不提供準確率、精確率或任何比率數字；有真實覆核資料後亦須累積到具代表性樣本才可討論。",
     "不同意見只記錄事實與分類，不會自動改動品質閘門的門檻或通知路徑。",
