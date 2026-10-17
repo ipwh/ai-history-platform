@@ -1,0 +1,698 @@
+{
+  "version": 3,
+  "reviewStatus": "pending-review",
+  "generatedBy": "npm run review:package -- --write（scripts/build-review-package.ts）",
+  "generatedFrom": {
+    "database": "data\\app.db",
+    "sampledQuestions": 8
+  },
+  "purpose": "Sprint 8.6：為小量**真實生成題目**準備完整的審題套件。系統提供題目、答案、解釋、逐字來源節錄、所引用段落的上下文（Sprint 8.7）、機器檢查結果及審題欄位；史實、課程要求及教學價值的判斷一律由歷史科教師填寫。",
+  "disclaimer": [
+    "每一項決定都是 pending-review：**沒有**任何教師或專家已覆核這些題目，程式不會代填。",
+    "題目及教材節錄的版權屬原出版者。本檔案位於 docs/（不在 public/），只供教師／管理員審閱，**不會**經學生端路由提供；學生端是否顯示節錄仍由來源可見性規則決定。",
+    "通過自動品質驗證只代表定義好的自動檢查全部通過，不代表史實正確、符合課程要求或具教學價值（見 README「自動準則與教師判斷的分工」）。",
+    "machineChecks.gateRecomputedNow 是以**現行**規則重算的結果，與 gateAtGeneration 可能不同（規則更新或教材重新匯入），差異本身是校準資料，不是錯誤。",
+    "provenance.sourceContext 是所引用段落的原文（每段最多 400 字，超出時以「…」標示並在 textLength 記錄原文長度），用途只是讓教師判斷節錄是否被斷章取義；它不是題目的一部分，也不會提供給學生。"
+  ],
+  "howToUse": [
+    "1. 在平台教師介面（/teacher/questions）開啟同一題，對照課本原文（sourceLocation 指出檔名及段落；provenance.sourceContext 提供所引用段落的原文供快速對照）。",
+    "2. 逐項填寫 reviewChecklist 的七個欄位（學習重點、題目清晰度、史實、答案完整性、錯誤選項、解釋可用性、認知要求）。",
+    "3. 在 reviewComments 寫下具體意見；需要修改時在 outstandingConcerns 列出待辦項目。",
+    "4. 填寫 reviewerDecision：approved（可用）、needs-revision（需修改）、reject（不可用）。",
+    "5. 同時填寫 reviewer（姓名或代號）及 reviewedAt（ISO 日期）。測試會拒絕沒有覆核者的「已覆核」紀錄（不得偽造）。",
+    "6. 決定要寫回平台時，於教師介面提交覆核；介面會帶同你正在審閱的題目版本，題目若已被修改會拒絕提交並要求重新載入（不會把決定記到你未看過的版本）。"
+  ],
+  "sampleSelection": "由資料庫以唯讀方式抽出 origin 為 material-ai／material-mock 的題目，按既定組合（兩種來源 × 三種題型 × 不同難度，每組取 id 最小者）抽樣；不包括校內試題（school-paper）及手動題目。",
+  "reviewCriteria": [
+    {
+      "id": "learningObjective",
+      "label": "這題考核哪一項學習重點？是否在課程範圍之內？"
+    },
+    {
+      "id": "questionClarity",
+      "label": "學生只讀題目文字，是否可以清楚知道要答甚麼？"
+    },
+    {
+      "id": "historicalAccuracy",
+      "label": "題目、答案及解釋的史實是否正確？（須對照課本原文）"
+    },
+    {
+      "id": "answerCompleteness",
+      "label": "標準答案及得分要點是否完整回應題目的要求？"
+    },
+    {
+      "id": "distractorValidity",
+      "label": "錯誤選項是否同類、明確錯誤，而且不會同樣成立？"
+    },
+    {
+      "id": "explanationUsefulness",
+      "label": "解釋是否幫學生理解推理，而不是重複答案或抄錄課文？"
+    },
+    {
+      "id": "cognitiveDemand",
+      "label": "認知要求是否配合難度標示（基礎／進階／挑戰）？"
+    }
+  ],
+  "items": [
+    {
+      "questionId": "q_44c8048aa2214a37",
+      "provenance": {
+        "topicId": "topic-1",
+        "topicTitle": "課題1：人類的需要：古與今",
+        "sectionId": "topic-1-civilisation-background",
+        "sectionTitle": "古文明誕生的背景",
+        "origin": "material-ai",
+        "status": "published",
+        "difficulty": "basic",
+        "difficultyLabel": "基礎",
+        "questionType": "mc",
+        "revision": 4,
+        "createdAt": "2026-10-13T00:17:22.475Z",
+        "sourceLocation": "課題1人類的需要 古與今.docx · 第 31 段（清單）",
+        "sourceBlockIds": [
+          "blk_54dae8acd8a748ea"
+        ],
+        "sourceExcerpt": "生活模式的變化；城市生活的展開；文字的出現",
+        "sourceExcerptLength": 21,
+        "sourceContext": [
+          {
+            "blockId": "blk_54dae8acd8a748ea",
+            "sourceLocation": "課題1人類的需要 古與今.docx · 第 31 段（清單）",
+            "type": "list",
+            "textLength": 21,
+            "text": "生活模式的變化；城市生活的展開；文字的出現"
+          }
+        ],
+        "sourceVerified": true
+      },
+      "learningObjective": {
+        "knowledgePoint": "古文明誕生的背景包括生活模式的變化、城市生活的展開和文字的出現。",
+        "skill": null,
+        "intendedDifficulty": "基礎",
+        "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
+      },
+      "content": {
+        "question": "下列哪一項是古文明誕生的背景之一？",
+        "options": [
+          "生活模式的變化",
+          "鐵器的廣泛使用",
+          "民主制度的建立",
+          "帝國的對外擴張"
+        ],
+        "correctAnswer": "生活模式的變化",
+        "acceptedAnswers": [],
+        "gradingPoints": [],
+        "explanation": "教材在古文明誕生的背景下列出生活模式的變化、城市生活的展開和文字的出現，並無提及鐵器、民主制度或帝國擴張。"
+      },
+      "machineChecks": {
+        "gateAtGeneration": {
+          "teacherConfirmationRequired": false,
+          "qualityWarnings": [],
+          "autoValidatedAt": null
+        },
+        "gateRecomputedNow": {
+          "outcome": "pass",
+          "codes": [],
+          "notes": [],
+          "materialsChecked": 4
+        },
+        "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
+      },
+      "reviewChecklist": {
+        "learningObjective": null,
+        "questionClarity": null,
+        "historicalAccuracy": null,
+        "answerCompleteness": null,
+        "distractorValidity": null,
+        "explanationUsefulness": null,
+        "cognitiveDemand": null
+      },
+      "reviewComments": null,
+      "reviewerDecision": "pending-review",
+      "reviewer": null,
+      "reviewedAt": null,
+      "outstandingConcerns": [],
+      "notes": null
+    },
+    {
+      "questionId": "q_01ab2dd42ab54498",
+      "provenance": {
+        "topicId": "topic-9",
+        "topicTitle": "課題9：20世紀的國際紛爭及危機(I)–兩次世界大戰",
+        "sectionId": "topic-9-impact",
+        "sectionTitle": "兩次世界大戰的影響",
+        "origin": "material-ai",
+        "status": "published",
+        "difficulty": "challenge",
+        "difficultyLabel": "挑戰",
+        "questionType": "mc",
+        "revision": 3,
+        "createdAt": "2026-10-13T00:23:46.638Z",
+        "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx · 第 98 段（清單）",
+        "sourceBlockIds": [
+          "blk_7e89c7995ed040cb"
+        ],
+        "sourceExcerpt": "德、意因接納了對本國不利的戰後安排，國內反政府的聲音高漲。",
+        "sourceExcerptLength": 29,
+        "sourceContext": [
+          {
+            "blockId": "blk_7e89c7995ed040cb",
+            "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx · 第 98 段（清單）",
+            "type": "list",
+            "textLength": 144,
+            "text": "一戰的戰後問題為和平蒙上陰影。\n英、法受困於戰後經濟與社會問題，缺乏能力且不願涉足歐洲事務；\n德、意因接納了對本國不利的戰後安排，國內反政府的聲音高漲。\n戰後問題持續困擾着歐洲；1920年代末全球經濟危機爆發 → 國際局勢進一步惡化。\n德國、意大利與日本相繼發動侵略，另一場大戰逐步逼近。"
+          }
+        ],
+        "sourceVerified": true
+      },
+      "learningObjective": {
+        "knowledgePoint": "德、意兩國因戰後安排不利而導致國內反政府聲音高漲",
+        "skill": null,
+        "intendedDifficulty": "挑戰",
+        "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
+      },
+      "content": {
+        "question": "一戰後，德國與意大利同樣出現國內反政府聲音高漲的情況，下列哪項敘述最能解釋這個現象？",
+        "options": [
+          "兩國都因接納了對本國不利的戰後安排而引發國民不滿",
+          "兩國都因美國恢復孤立政策而失去經濟援助",
+          "兩國都因日本在中國及太平洋地區擴張而受到威脅",
+          "兩國都因英法兩國重建步伐緩慢而趁機擴張勢力"
+        ],
+        "correctAnswer": "兩國都因接納了對本國不利的戰後安排而引發國民不滿",
+        "acceptedAnswers": [],
+        "gradingPoints": [],
+        "explanation": "教材指出德、意因接納了對本國不利的戰後安排，國內反政府的聲音高漲。德國簽訂苛刻的《凡爾賽條約》令國民憤怒，意大利雖為戰勝國卻無法取得協約國承諾給予的土地，國民不滿政府無能。其餘選項所述的美國孤立政策、日本擴張及英法疲弱，均不是教材用來解釋德、意國內反政府聲音高漲的原因。"
+      },
+      "machineChecks": {
+        "gateAtGeneration": {
+          "teacherConfirmationRequired": false,
+          "qualityWarnings": [],
+          "autoValidatedAt": null
+        },
+        "gateRecomputedNow": {
+          "outcome": "revise",
+          "codes": [
+            "answer-not-in-material"
+          ],
+          "notes": [
+            "標準答案「兩國都因接納了對本國不利的戰後安排而引發國民不滿」是教材語句的改寫（與教材用語的文字重疊率 74%；這只是用字相似程度，不是答案正確性的評分），並非教材原文，未能確定答案依據，須由教師核對後才可發布"
+          ],
+          "materialsChecked": 6
+        },
+        "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
+      },
+      "reviewChecklist": {
+        "learningObjective": null,
+        "questionClarity": null,
+        "historicalAccuracy": null,
+        "answerCompleteness": null,
+        "distractorValidity": null,
+        "explanationUsefulness": null,
+        "cognitiveDemand": null
+      },
+      "reviewComments": null,
+      "reviewerDecision": "pending-review",
+      "reviewer": null,
+      "reviewedAt": null,
+      "outstandingConcerns": [],
+      "notes": null
+    },
+    {
+      "questionId": "q_00a5f90be12d4191",
+      "provenance": {
+        "topicId": "topic-12",
+        "topicTitle": "課題12：20世紀香港的成長與蛻變",
+        "sectionId": "topic-12-japanese-occupation",
+        "sectionTitle": "日佔時期（1941-1945年）",
+        "origin": "material-ai",
+        "status": "published",
+        "difficulty": "advanced",
+        "difficultyLabel": "進階",
+        "questionType": "fill",
+        "revision": 3,
+        "createdAt": "2026-10-13T00:25:27.568Z",
+        "sourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 172 段（清單）",
+        "sourceBlockIds": [
+          "blk_0685c65b19f64862"
+        ],
+        "sourceExcerpt": "日佔期間，約有一百萬人被迫離開香港，全港人口由1941 年約一百六十多萬人銳減至1945年約六十多萬人。",
+        "sourceExcerptLength": 52,
+        "sourceContext": [
+          {
+            "blockId": "blk_0685c65b19f64862",
+            "sourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 172 段（清單）",
+            "type": "list",
+            "textLength": 114,
+            "text": "日佔當局推行強制歸鄉政策，將大量港人遣返內地，以節省資源供軍隊使用。\n日軍亦強擄或誘騙港人到其他佔領地（例如東南亞）勞役。\n日佔期間，約有一百萬人被迫離開香港，全港人口由1941 年約一百六十多萬人銳減至1945年約六十多萬人。"
+          }
+        ],
+        "sourceVerified": true
+      },
+      "learningObjective": {
+        "knowledgePoint": "日佔時期香港人口銳減的情況",
+        "skill": null,
+        "intendedDifficulty": "進階",
+        "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
+      },
+      "content": {
+        "question": "日佔當局推行強制歸鄉政策，將大量港人遣返內地，以節省資源供軍隊使用。日佔期間，約有一百萬人被迫離開香港，全港人口由1941年約一百六十多萬人銳減至1945年約多少萬人？",
+        "options": [],
+        "correctAnswer": "六十多萬人",
+        "acceptedAnswers": [],
+        "gradingPoints": [],
+        "explanation": "日佔當局推行強制歸鄉政策，將大量港人遣返內地，以節省資源供軍隊使用，日軍亦強擄或誘騙港人到其他佔領地勞役。日佔期間約有一百萬人被迫離開香港，全港人口由1941年約一百六十多萬人銳減至1945年約六十多萬人。"
+      },
+      "machineChecks": {
+        "gateAtGeneration": {
+          "teacherConfirmationRequired": false,
+          "qualityWarnings": [],
+          "autoValidatedAt": null
+        },
+        "gateRecomputedNow": {
+          "outcome": "pass",
+          "codes": [],
+          "notes": [],
+          "materialsChecked": 117
+        },
+        "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
+      },
+      "reviewChecklist": {
+        "learningObjective": null,
+        "questionClarity": null,
+        "historicalAccuracy": null,
+        "answerCompleteness": null,
+        "distractorValidity": null,
+        "explanationUsefulness": null,
+        "cognitiveDemand": null
+      },
+      "reviewComments": null,
+      "reviewerDecision": "pending-review",
+      "reviewer": null,
+      "reviewedAt": null,
+      "outstandingConcerns": [],
+      "notes": null
+    },
+    {
+      "questionId": "q_062fdfd516314f3d",
+      "provenance": {
+        "topicId": "topic-5",
+        "topicTitle": "課題5：近代歐洲的興起",
+        "sectionId": "topic-5-renaissance-features",
+        "sectionTitle": "主要特點",
+        "origin": "material-ai",
+        "status": "draft",
+        "difficulty": "basic",
+        "difficultyLabel": "基礎",
+        "questionType": "fill",
+        "revision": 3,
+        "createdAt": "2026-10-15T08:48:22.170Z",
+        "sourceLocation": "課題5 近代歐洲的興起.docx · 第 43 段（清單）",
+        "sourceBlockIds": [
+          "blk_9a9c7c3007db427f"
+        ],
+        "sourceExcerpt": "歐洲人重視人文主義，不再凡事以神為本。",
+        "sourceExcerptLength": 19,
+        "sourceContext": [
+          {
+            "blockId": "blk_9a9c7c3007db427f",
+            "sourceLocation": "課題5 近代歐洲的興起.docx · 第 43 段（清單）",
+            "type": "list",
+            "textLength": 19,
+            "text": "歐洲人重視人文主義，不再凡事以神為本。"
+          }
+        ],
+        "sourceVerified": true
+      },
+      "learningObjective": {
+        "knowledgePoint": "人文主義是文藝復興時期的重要思想，強調以人為中心。",
+        "skill": "正確地使用歷史辭彙",
+        "intendedDifficulty": "基礎",
+        "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
+      },
+      "content": {
+        "question": "文藝復興時期，歐洲人重視人文主義，不再凡事以神為本，這種思想強調以人為中心，重視彰顯人性、人類的價值，以及理解自然的能力，稱為＿＿＿＿＿＿。",
+        "options": [],
+        "correctAnswer": "人文主義",
+        "acceptedAnswers": [],
+        "gradingPoints": [
+          "答案須為人文主義，不可填寫其他主義或思想。"
+        ],
+        "explanation": "文藝復興時期歐洲人重視人文主義，強調以人為中心，彰顯人性、人類的價值及理解自然的能力。"
+      },
+      "machineChecks": {
+        "gateAtGeneration": {
+          "teacherConfirmationRequired": false,
+          "qualityWarnings": [],
+          "autoValidatedAt": null
+        },
+        "gateRecomputedNow": {
+          "outcome": "reject",
+          "codes": [
+            "answer-in-stem"
+          ],
+          "notes": [
+            "題幹已出現標準答案「人文主義」"
+          ],
+          "materialsChecked": 13
+        },
+        "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
+      },
+      "reviewChecklist": {
+        "learningObjective": null,
+        "questionClarity": null,
+        "historicalAccuracy": null,
+        "answerCompleteness": null,
+        "distractorValidity": null,
+        "explanationUsefulness": null,
+        "cognitiveDemand": null
+      },
+      "reviewComments": null,
+      "reviewerDecision": "pending-review",
+      "reviewer": null,
+      "reviewedAt": null,
+      "outstandingConcerns": [],
+      "notes": null
+    },
+    {
+      "questionId": "q_1a39b73d316b4683",
+      "provenance": {
+        "topicId": "topic-5",
+        "topicTitle": "課題5：近代歐洲的興起",
+        "sectionId": "topic-5-renaissance-origin",
+        "sectionTitle": "起源與發展",
+        "origin": "material-ai",
+        "status": "published",
+        "difficulty": "advanced",
+        "difficultyLabel": "進階",
+        "questionType": "short",
+        "revision": 3,
+        "createdAt": "2026-10-13T00:20:53.194Z",
+        "sourceLocation": "課題5 近代歐洲的興起.docx · 第 60 段（清單）",
+        "sourceBlockIds": [
+          "blk_8c1499c9de024d54"
+        ],
+        "sourceExcerpt": "意大利半島是古羅馬文明的搖籃，保留了大量文化遺產。",
+        "sourceExcerptLength": 25,
+        "sourceContext": [
+          {
+            "blockId": "blk_8c1499c9de024d54",
+            "sourceLocation": "課題5 近代歐洲的興起.docx · 第 60 段（清單）",
+            "type": "list",
+            "textLength": 32,
+            "text": "意大利半島是古羅馬文明的搖籃，保留了大量文化遺產。\n至中古後期："
+          }
+        ],
+        "sourceVerified": true
+      },
+      "learningObjective": {
+        "knowledgePoint": "文藝復興在意大利半島興起的原因",
+        "skill": null,
+        "intendedDifficulty": "進階",
+        "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
+      },
+      "content": {
+        "question": "文藝復興首先在意大利半島興起，並逐漸傳播至歐洲其他地區。試根據意大利半島的條件，說明文藝復興首先在意大利半島興起的兩個原因。",
+        "options": [],
+        "correctAnswer": "意大利半島是古羅馬文明的搖籃，保留了大量文化遺產；半島上出現多個商業繁榮的城邦，當地富裕階層也樂於資助文藝創作與學術研究。",
+        "acceptedAnswers": [],
+        "gradingPoints": [
+          "意大利半島是古羅馬文明的搖籃，保留了大量文化遺產。",
+          "半島上出現多個商業繁榮的城邦。",
+          "當地富裕階層也樂於資助文藝創作與學術研究。"
+        ],
+        "explanation": "教材指出意大利半島是古羅馬文明的搖籃，保留了大量文化遺產；半島上出現多個商業繁榮的城邦，當地富裕階層也樂於資助文藝創作與學術研究，這些條件促使文藝復興首先在意大利半島興起。"
+      },
+      "machineChecks": {
+        "gateAtGeneration": {
+          "teacherConfirmationRequired": false,
+          "qualityWarnings": [],
+          "autoValidatedAt": null
+        },
+        "gateRecomputedNow": {
+          "outcome": "revise",
+          "codes": [
+            "dimension-unsupported"
+          ],
+          "notes": [
+            "題目要求「因果」的思考，但教材沒有提供相應內容（教材沒有交代因果關係，不可出「為甚麼」、「有甚麼影響」一類需要推論因果的題目。）；請改為考核教材明確交代的內容"
+          ],
+          "materialsChecked": 6
+        },
+        "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
+      },
+      "reviewChecklist": {
+        "learningObjective": null,
+        "questionClarity": null,
+        "historicalAccuracy": null,
+        "answerCompleteness": null,
+        "distractorValidity": null,
+        "explanationUsefulness": null,
+        "cognitiveDemand": null
+      },
+      "reviewComments": null,
+      "reviewerDecision": "pending-review",
+      "reviewer": null,
+      "reviewedAt": null,
+      "outstandingConcerns": [],
+      "notes": null
+    },
+    {
+      "questionId": "q_058eda0378394d0f",
+      "provenance": {
+        "topicId": "topic-12",
+        "topicTitle": "課題12：20世紀香港的成長與蛻變",
+        "sectionId": "topic-12-post-war-economy",
+        "sectionTitle": "戰後香港的蛻變：經濟發展",
+        "origin": "material-mock",
+        "status": "published",
+        "difficulty": "basic",
+        "difficultyLabel": "基礎",
+        "questionType": "mc",
+        "revision": 3,
+        "createdAt": "2026-10-10T08:19:44.783Z",
+        "sourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 274 段（清單）",
+        "sourceBlockIds": [
+          "blk_3beeb572d02c4904"
+        ],
+        "sourceExcerpt": "1970年代起：打擊貪污與公務員本地化",
+        "sourceExcerptLength": 19,
+        "sourceContext": [
+          {
+            "blockId": "blk_3beeb572d02c4904",
+            "sourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 20 段（清單）",
+            "type": "list",
+            "textLength": 158,
+            "text": "經濟發展\n有利的內外因素促進經濟發展\n轉口港→工業中心（1950-1970年代）\n工業中心→國際金融中心（1970年代至今）\n社會發展\n房屋方面：公營房屋的持續發展\n教育方面：免費教育與專上教育的發展\n管治與政制發展\n1960年代起：加強官民溝通\n1970年代起：打擊貪污與公務員本地化\n1980年代起：發展代議政制"
+          }
+        ],
+        "sourceVerified": true
+      },
+      "learningObjective": {
+        "knowledgePoint": "戰後香港的蛻變：經濟發展：1970年代起",
+        "skill": null,
+        "intendedDifficulty": "基礎",
+        "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
+      },
+      "content": {
+        "question": "「打擊貪污與公務員本地化」是指以下哪一個詞語？",
+        "options": [
+          "1970年代起",
+          "房屋方面",
+          "教育方面",
+          "1960年代起"
+        ],
+        "correctAnswer": "1970年代起",
+        "acceptedAnswers": [],
+        "gradingPoints": [],
+        "explanation": "教材原文：1970年代起：打擊貪污與公務員本地化"
+      },
+      "machineChecks": {
+        "gateAtGeneration": {
+          "teacherConfirmationRequired": false,
+          "qualityWarnings": [],
+          "autoValidatedAt": null
+        },
+        "gateRecomputedNow": {
+          "outcome": "reject",
+          "codes": [
+            "stem-answer-type-mismatch"
+          ],
+          "notes": [
+            "題幹問「哪一個詞語」，但標準答案「1970年代起」是一個年份；應改寫成明確問年份的題目（或改問對應的歷史詞語）"
+          ],
+          "materialsChecked": 27
+        },
+        "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
+      },
+      "reviewChecklist": {
+        "learningObjective": null,
+        "questionClarity": null,
+        "historicalAccuracy": null,
+        "answerCompleteness": null,
+        "distractorValidity": null,
+        "explanationUsefulness": null,
+        "cognitiveDemand": null
+      },
+      "reviewComments": null,
+      "reviewerDecision": "pending-review",
+      "reviewer": null,
+      "reviewedAt": null,
+      "outstandingConcerns": [],
+      "notes": null
+    },
+    {
+      "questionId": "q_017338c7055d43de",
+      "provenance": {
+        "topicId": "topic-6",
+        "topicTitle": "課題6：歐洲國家的殖民擴張",
+        "sectionId": "topic-6-early-expansion",
+        "sectionTitle": "早期擴張（十六世紀初至十八世紀末）的背景及原因",
+        "origin": "material-mock",
+        "status": "published",
+        "difficulty": "basic",
+        "difficultyLabel": "基礎",
+        "questionType": "fill",
+        "revision": 3,
+        "createdAt": "2026-10-10T08:18:38.447Z",
+        "sourceLocation": "課題6 歐洲國家的殖民擴張.docx · 第 13 段（清單）",
+        "sourceBlockIds": [
+          "blk_9572f9505cc64cb8"
+        ],
+        "sourceExcerpt": "社會及文化方面：「白人的負擔」思想與傳教",
+        "sourceExcerptLength": 20,
+        "sourceContext": [
+          {
+            "blockId": "blk_9572f9505cc64cb8",
+            "sourceLocation": "課題6 歐洲國家的殖民擴張.docx · 第 13 段（清單）",
+            "type": "list",
+            "textLength": 72,
+            "text": "經濟方面\n資源與市場需求殷切\n亞非人口與資源龐大\n政治方面\n歐洲領土擴展空間有限\n民族主義的盛行與變質\n社會及文化方面：「白人的負擔」思想與傳教"
+          }
+        ],
+        "sourceVerified": true
+      },
+      "learningObjective": {
+        "knowledgePoint": "早期擴張（十六世紀初至十八世紀末）的背景及原因：社會及文化方面",
+        "skill": null,
+        "intendedDifficulty": "基礎",
+        "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
+      },
+      "content": {
+        "question": "「＿＿＿」是指「白人的負擔」思想與傳教",
+        "options": [],
+        "correctAnswer": "社會及文化方面",
+        "acceptedAnswers": [],
+        "gradingPoints": [],
+        "explanation": "教材原文：社會及文化方面：「白人的負擔」思想與傳教"
+      },
+      "machineChecks": {
+        "gateAtGeneration": {
+          "teacherConfirmationRequired": false,
+          "qualityWarnings": [],
+          "autoValidatedAt": null
+        },
+        "gateRecomputedNow": {
+          "outcome": "pass",
+          "codes": [],
+          "notes": [],
+          "materialsChecked": 39
+        },
+        "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
+      },
+      "reviewChecklist": {
+        "learningObjective": null,
+        "questionClarity": null,
+        "historicalAccuracy": null,
+        "answerCompleteness": null,
+        "distractorValidity": null,
+        "explanationUsefulness": null,
+        "cognitiveDemand": null
+      },
+      "reviewComments": null,
+      "reviewerDecision": "pending-review",
+      "reviewer": null,
+      "reviewedAt": null,
+      "outstandingConcerns": [],
+      "notes": null
+    },
+    {
+      "questionId": "q_08a00abf1b534c12",
+      "provenance": {
+        "topicId": "topic-1",
+        "topicTitle": "課題1：人類的需要：古與今",
+        "sectionId": "topic-1-periods-neolithic",
+        "sectionTitle": "新石器時代",
+        "origin": "material-mock",
+        "status": "published",
+        "difficulty": "basic",
+        "difficultyLabel": "基礎",
+        "questionType": "short",
+        "revision": 4,
+        "createdAt": "2026-10-10T08:17:51.466Z",
+        "sourceLocation": "課題1人類的需要 古與今.docx · 第 20 段（清單）",
+        "sourceBlockIds": [
+          "blk_09df5a0903044a93"
+        ],
+        "sourceExcerpt": "技術改良與文化發展：學會打磨石器，令石器變得更鋒利及光滑；學會紡織與製作陶器，並發展出文化藝術及原始宗教",
+        "sourceExcerptLength": 52,
+        "sourceContext": [
+          {
+            "blockId": "blk_09df5a0903044a93",
+            "sourceLocation": "課題1人類的需要 古與今.docx · 第 20 段（清單）",
+            "type": "list",
+            "textLength": 123,
+            "text": "距今約一萬二千年 — 距今約四千年\n糧食的生產：農耕與畜牧的出現，令糧食供應變得較穩定\n定居與建房：村落陸續出現，以村落為基礎的農耕社會形成\n技術改良與文化發展：學會打磨石器，令石器變得更鋒利及光滑；學會紡織與製作陶器，並發展出文化藝術及原始宗教"
+          }
+        ],
+        "sourceVerified": true
+      },
+      "learningObjective": {
+        "knowledgePoint": "新石器時代：技術改良與文化發展",
+        "skill": null,
+        "intendedDifficulty": "基礎",
+        "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
+      },
+      "content": {
+        "question": "試說明「技術改良與文化發展」。",
+        "options": [],
+        "correctAnswer": "學會打磨石器，令石器變得更鋒利及光滑；學會紡織與製作陶器，並發展出文化藝術及原始宗教",
+        "acceptedAnswers": [],
+        "gradingPoints": [
+          "學會打磨石器，令石器變得更鋒利及光滑；",
+          "學會紡織與製作陶器，並發展出文化藝術及原始宗教"
+        ],
+        "explanation": "教材原文：技術改良與文化發展：學會打磨石器，令石器變得更鋒利及光滑；學會紡織與製作陶器，並發展出文化藝術及原始宗教"
+      },
+      "machineChecks": {
+        "gateAtGeneration": {
+          "teacherConfirmationRequired": false,
+          "qualityWarnings": [],
+          "autoValidatedAt": null
+        },
+        "gateRecomputedNow": {
+          "outcome": "pass",
+          "codes": [],
+          "notes": [],
+          "materialsChecked": 35
+        },
+        "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
+      },
+      "reviewChecklist": {
+        "learningObjective": null,
+        "questionClarity": null,
+        "historicalAccuracy": null,
+        "answerCompleteness": null,
+        "distractorValidity": null,
+        "explanationUsefulness": null,
+        "cognitiveDemand": null
+      },
+      "reviewComments": null,
+      "reviewerDecision": "pending-review",
+      "reviewer": null,
+      "reviewedAt": null,
+      "outstandingConcerns": [],
+      "notes": null
+    }
+  ]
+}

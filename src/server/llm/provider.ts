@@ -4,6 +4,7 @@
  * 之後由 validation 模組驗證 schema 及教材依據。
  */
 import type { Difficulty, LlmQuestion, LlmUsage, QuestionType } from "../../lib/types";
+import type { MaterialAnalysis } from "./material-analysis";
 
 /** 傳給 LLM 的最小教材單位（只傳與當前分節相關的段落） */
 export interface MaterialUnit {
@@ -37,6 +38,20 @@ export interface QuestionGenerationInput {
    * 正確答案仍必須來自 materialUnits（確保題目有本分節的教材依據）。
    */
   distractorUnits?: MaterialUnit[];
+  /**
+   * 教材的結構化語意分析（Sprint 8.5，見 material-analysis.ts）。
+   *
+   * 由呼叫端（生成流程）以確定性規則預先整理，令模型看到的是教材的**歷史脈絡**
+   * （關鍵詞語、時序、因果、轉變、比較、意義，以及教材**沒有**交代的面向），
+   * 而不是一連串互不相關的句子。沒有提供時提示詞會略去分析段落
+   * （例如直接以 provider 做單元測試），生成規則本身不受影響。
+   */
+  materialAnalysis?: MaterialAnalysis;
+  /**
+   * 上一輪未通過品質閘門的問題（Sprint 8.5）：有限次重試時，把具體問題交回模型，
+   * 要求它針對問題重寫，而不是原句重交一次。
+   */
+  revisionNotes?: string[];
   /**
    * 已用過的標準答案（同一份練習已出過的題目）。
    * 生成時應避免重用這些答案：同一份練習出現兩條答案相同的填充題，

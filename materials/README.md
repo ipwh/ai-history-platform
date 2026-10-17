@@ -51,6 +51,24 @@ npm run import:materials -- --ocr              # 匯入後執行 OCR（辨識圖
      否則學生閱讀頁會同時顯示新舊兩份教材。
 3. **重新開放給學生**：重新匯入會令發行權回到 fail-closed，需再次確認：
    `npm run open:materials -- --owner-email <擁有者電郵> --reason "<理由>" --apply`
-4. **驗證**：`npm test`、`npm run typecheck`；在 `/learn/<topicId>` 檢查課文，
-   並在 `/teacher/questions` 查看標示為「未通過教材依據核對」的題目。
+4. **重新連結題目依據（如需要）**：若該次更新有逐條核對過的對應清單，以
+   `APP_DATABASE_PATH=<快照> npm run remap:references -- --apply` 套用
+   （`docs/material-remapping/`；預設模擬、可重複執行、第二次為 no-op）。
+5. **套用題目修正動作清單（如需要）**：把題目按新教材改寫或刪除（擁有者指示「一切以新教材內容為準」時）：
+   `APP_DATABASE_PATH=<快照> npm run apply:question-queue -- --apply`
+   （及 `-- --manifest docs/material-remapping/2026-10-wording-alignment.json --apply` 統一同批題目用詞）。
+   預設模擬；每條驗證題目內容指紋及逐字節錄；重複執行為 no-op；**不會**建立任何覆核紀錄。
+   > **`--` 不可以省略**：`npm run <腳本> --apply` 的 `--apply` 會被 npm 吞掉，腳本會以模擬模式執行並
+   > 顯示「將套用」，看起來像成功但沒有寫入（2026-10-16 實測）。請確認報告顯示「模式：套用（--apply）」
+   > 及「已套用」數字。
+6. **驗證**：`npm test`、`npm run typecheck`；在 `/learn/<topicId>` 檢查課文，
+   並在 `/teacher/questions` 檢查題目（逐條處理建議見 `docs/teacher-review/material-decision-queue-2026-10.json`）。
+   學生可見節錄的驗證請用**唯讀**端點（`/api/topics`、`/learn/<topicId>`），
+   **不要**用 `GET /api/health`：它會執行 `ensureBootstrap()` 及保留期清理（會寫入資料）。
+
+> **已改名的檔案（離線快照）**：第 2 步的「在 `/admin/materials` 刪除」只適用於有管理介面的
+> 情況；在「快照 + 還原」的離線流程（README 第十節做法 A）請改用
+> `npm run retire:materials -- --files "<檔名,…>" --apply`，刪除路徑完全相同
+> （`deleteDocumentWithFile` → `repairQuestionsWithMissingBlocks`），並會回報每個課題的
+> 題目修復結果。
 

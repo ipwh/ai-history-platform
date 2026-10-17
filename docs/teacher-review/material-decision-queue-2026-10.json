@@ -1,0 +1,1534 @@
+{
+  "version": 1,
+  "title": "2026-10 教材更新：36 條待教師決定的題目隊列",
+  "purpose": "2026-10 版學生教材取代舊版後，36 條題目的原文節錄在新教材找不到逐字相符的段落，維持「未通過教材依據核對」（學生端依 fail-closed 不顯示節錄）。本隊列逐條列出問題、現行教材證據及建議行動，交由歷史科教師處理。系統不會自動改寫、改答案或停用任何題目。",
+  "prerequisites": "處理方式與平台契約一致：改動題目內容會令 revision +1，舊有的覆核與自動驗證紀錄依既有規則失效；停用（status = disabled）不會刪除任何學生作答或學習記錄。",
+  "generatedAt": "2026-10-16",
+  "sourceDatabase": "data/app.db（本機）",
+  "groups": {
+    "answer-or-interpretation": "答案或歷史解釋與新教材矛盾，須歷史科教師判斷",
+    "answer-key-terminology": "答案鍵用詞與新版不符，須更正答案或明訂接受答案",
+    "legacy-data-labels": "舊教師版資料題標籤，題目本身無法作答",
+    "content-removed-or-damaged": "新教材已刪去內容或題幹破損"
+  },
+  "entries": [
+    {
+      "questionId": "q_6bfd31fd0e474404",
+      "topicId": "topic-3",
+      "sectionId": "topic-3-asia",
+      "questionType": "fill",
+      "status": "published",
+      "group": "answer-or-interpretation",
+      "groupLabel": "答案或歷史解釋與新教材矛盾，須歷史科教師判斷",
+      "issue": "填充題答案記錄為「伊本．西那」（《羅傑之書》的作者），但新教材把《羅傑之書》歸於伊德里西；答案本身與現行教材不符。",
+      "currentTextbookEvidence": "課題3 第 158 段：「伊德里西的《羅傑之書》劃分當時已知世界的地理區域…」。伊本．西那在新教材只與《醫典》一同出現（第 154 段）。",
+      "recommendedAction": "correct-answer",
+      "actionDetail": "把答案由「伊本．西那」更正為「伊德里西」（並在教師端重新核對後發布）。更正會令題目版本 +1，既有覆核／自動驗證紀錄依既有規則失效。",
+      "requiresHistoryTeacher": true,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "伊本．西那：《羅傑之書》",
+        "sourceLocation": "HNC1B2E_T3_SN_TE.docx · 第 275 段（清單）（第 5 項）",
+        "referencedBlockIds": [
+          "blk_824ca01e8fdf46b0"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "直接更正答案為「伊德里西」——這是資料錯誤，不是用詞差異（新教材第 158 段）。",
+        "proposedAnswer": "伊德里西"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_aac7a714deaf4e39",
+      "topicId": "topic-6",
+      "sectionId": "topic-6-impact-europe",
+      "questionType": "mc",
+      "status": "published",
+      "group": "answer-or-interpretation",
+      "groupLabel": "答案或歷史解釋與新教材矛盾，須歷史科教師判斷",
+      "issue": "題目把「勢力範圍」的正確答案定為「主權由宗主國擁有」，但新教材的定義是主權名義上仍屬當地統治者。",
+      "currentTextbookEvidence": "課題6 第 105 段：「定義：歐洲國家在某地實施控制，並專享貿易等特殊權益的區域／主權歸屬：名義上屬當地統治者，但須允許歐洲國家享有特殊權益」。搜尋「主權由宗主國擁有」0 命中。",
+      "recommendedAction": "teacher-decision",
+      "actionDetail": "須由教師決定：把正確選項改為「主權屬於當地統治者」（現時是錯誤選項）並重寫解釋，或停用此題。系統不會自動改答案或選項。",
+      "requiresHistoryTeacher": true,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "勢力範圍：主權由宗主國擁有",
+        "sourceLocation": "HNC2A2E_T6_SN_TE.docx · 第 227 段（清單）（第 5 項）",
+        "referencedBlockIds": [
+          "blk_d645e36a50194832"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "把正確選項改為現時的錯誤選項「主權屬於當地統治者」，並改寫解釋區分殖民地／保護國／勢力範圍；不願改選項則停用。",
+        "proposedQuestion": "以下哪一項是「勢力範圍」的說明？（選項：主權名義上屬當地統治者，但須允許歐洲國家享有特殊權益／完全失去主權、由宗主國直接統治／當地統治者喪失外交、軍事及部分內政權力）",
+        "proposedAnswer": "名義上屬當地統治者，但須允許歐洲國家享有特殊權益（新教材第 105 段）"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_7de1f4d6f91242ff",
+      "topicId": "topic-6",
+      "sectionId": "topic-6-impact-europe",
+      "questionType": "short",
+      "status": "published",
+      "group": "answer-or-interpretation",
+      "groupLabel": "答案或歷史解釋與新教材矛盾，須歷史科教師判斷",
+      "issue": "短答題答案「保護國＝主權屬於當地統治者」與新教材不符（新教材強調統治者喪失外交、軍事及部分內政權力）。",
+      "currentTextbookEvidence": "課題6 第 92-93 段：「保護國：在外國的『保護』名義下，遭強迫簽訂條約，並須放棄大部分主權的國家或地區…統治者實為傀儡，必須服從宗主國命令，失去外交、軍事及部分內政權力」；第 103 段主權歸屬同。搜尋「主權屬於當地統治者」0 命中。",
+      "recommendedAction": "teacher-decision",
+      "actionDetail": "須由教師決定：更新答案與得分要點（改為「喪失外交、軍事及部分內政權力」等），或停用。",
+      "requiresHistoryTeacher": true,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "保護國：主權屬於當地統治者",
+        "sourceLocation": "HNC2A2E_T6_SN_TE.docx · 第 229 段（清單）（第 5 項）",
+        "referencedBlockIds": [
+          "blk_9fb40dbf8eaa4788"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "按新教材第 92–93、103 段更新答案與得分要點；或改寫成「比較殖民地、保護國與勢力範圍的分別」。",
+        "proposedAnswer": "保護國是在外國「保護」名義下遭強迫簽約、須放棄大部分主權的國家或地區；當地統治者實為傀儡，失去外交、軍事及部分內政權力。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_401ca2e500034b90",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-ww2",
+      "questionType": "short",
+      "status": "published",
+      "group": "answer-or-interpretation",
+      "groupLabel": "答案或歷史解釋與新教材矛盾，須歷史科教師判斷",
+      "issue": "答案「兩次世界大戰削弱了歐洲列強的殖民統治，推動非殖民地化的展開」把兩次大戰並列為削弱殖民統治的原因，但新教材只把 1919 年寫成「非殖民地化思想萌芽」、1945 年寫成「非殖民地化展開」，未支持「削弱殖民統治」的講法。",
+      "currentTextbookEvidence": "課題9 第 271 段大事年表：1919 巴黎和會「民族自決原則：非殖民地化思想萌芽」；1945「第二次世界大戰結束→亞、非兩洲的非殖民地化展開」。課題9 其餘段落沒有「削弱歐洲列強的殖民統治」的對應敘述。",
+      "recommendedAction": "teacher-decision",
+      "actionDetail": "須由教師決定：按新教材改寫答案與得分要點（例如「一戰後民族自決原則促使非殖民地化思想萌芽；二戰後亞、非兩洲的非殖民地化展開」），或停用。",
+      "requiresHistoryTeacher": true,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "兩次世界大戰削弱了歐洲列強的殖民統治，推動非殖民地化的展開，亞、非兩洲的殖民地人民在二次大戰後紛紛爭取獨立。",
+        "sourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 525 段（清單）（第 1 項）",
+        "referencedBlockIds": [
+          "blk_abc9a77ade5d4510"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "按新教材第 271 段改寫答案與得分要點（3 點）；不想改寫則停用。",
+        "proposedAnswer": "一戰後巴黎和會的民族自決原則促使非殖民地化思想萌芽；二戰結束後，亞、非兩洲的非殖民地化展開。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_9531dd6d6ad34d4a",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "mc",
+      "status": "published",
+      "group": "answer-key-terminology",
+      "groupLabel": "答案鍵用詞與新版不符，須更正答案或明訂接受答案",
+      "issue": "選擇題答案為「臭氧層洞」，新教材已改寫為「臭氧層空洞」，且影響改為紫外線／危害健康（不再是太陽輻射／皮膚癌）。",
+      "currentTextbookEvidence": "課題11 第 229 段：「部分污染物破壞臭氧層，使南極洲上空出現『臭氧層空洞』，讓更多紫外線進入地球，危害人類與生態健康」。搜尋「臭氧層洞」0 命中。",
+      "recommendedAction": "correct-answer",
+      "actionDetail": "把答案與選項改為「臭氧層空洞」，並更新解釋；或在教師端確認接受「臭氧層洞」為同義答案（須教師明確決定，系統不會自動接受）。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "部分有害氣體更造成南極洲上空的「臭氧層洞」，讓更多太陽輻射直接照射地球，增加人類患上皮膚癌的風險。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 32 段（清單）（第 4 項）",
+        "referencedBlockIds": [
+          "blk_cb5f0ff79c6e417c"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "把正確選項與題幹用詞改為新教材第 229 段的寫法，並更新解釋（選項 B、C 不變）。",
+        "proposedQuestion": "部分有害氣體更造成南極洲上空的「＿＿＿」，讓更多紫外線進入地球，危害人類與生態健康。",
+        "proposedAnswer": "臭氧層空洞"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_b87d77c973a140dc",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "fill",
+      "status": "published",
+      "group": "answer-key-terminology",
+      "groupLabel": "答案鍵用詞與新版不符，須更正答案或明訂接受答案",
+      "issue": "與 q_9531dd6d6ad34d4a 相同：填充題答案「臭氧層洞」，新教材寫「臭氧層空洞」。",
+      "currentTextbookEvidence": "課題11 第 229 段（同上）。搜尋「臭氧層洞」0 命中。",
+      "recommendedAction": "correct-answer",
+      "actionDetail": "更正答案為「臭氧層空洞」；或把「臭氧層洞」列入接受答案。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "部分有害氣體造成南極洲上空的「臭氧層洞」，讓更多太陽輻射直接照射地球，增加人類患上皮膚癌的風險。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 147 段（清單）（第 1 項）",
+        "referencedBlockIds": [
+          "blk_e0942f0fe5da4a72"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "答案改為「臭氧層空洞」；如想寬鬆，可同時接受「臭氧層洞」。",
+        "proposedQuestion": "部分有害氣體造成南極洲上空的「＿＿＿」，讓更多紫外線進入地球，危害人類與生態健康。",
+        "proposedAnswer": "臭氧層空洞"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_10e7e20afbf14a17",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "fill",
+      "status": "published",
+      "group": "answer-key-terminology",
+      "groupLabel": "答案鍵用詞與新版不符，須更正答案或明訂接受答案",
+      "issue": "填充題答案為「欠發達國家」，新教材一律改稱「發展中國家」，學生依新教材作答會被判錯。",
+      "currentTextbookEvidence": "課題11 第 80-82 段以「發展中國家」描述同一組國家（第 80 段：「部分在發達國家已受控的疾病如肺結核、麻疹與瘧疾，仍在這些地區肆虐」）。搜尋「欠發達國家」0 命中。",
+      "recommendedAction": "correct-answer",
+      "actionDetail": "把答案改為「發展中國家」（可同時接受「欠發達國家」），並更新題幹與解釋的用詞。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "部分在較發達國家絕跡的疾病如肺結核、麻疹、瘧疾等，仍於這些國家肆虐。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 40 段（清單）（第 7 項）",
+        "referencedBlockIds": [
+          "blk_e4fa0b91116e4fd6"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "答案改為「發展中國家」，題幹用詞同步改為「發達國家／發展中國家」（可保留接受「欠發達國家」）。",
+        "proposedQuestion": "二十世紀末，部分在發達國家已受控的疾病如肺結核、麻疹、瘧疾等，仍於哪些國家肆虐？",
+        "proposedAnswer": "發展中國家"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_367c44de30bc4771",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "fill",
+      "status": "published",
+      "group": "answer-key-terminology",
+      "groupLabel": "答案鍵用詞與新版不符，須更正答案或明訂接受答案",
+      "issue": "填充題答案為「欠發達國家收入不穩」，答案文字含新版已不使用的用詞；新教材的同一概念寫成「發展中國家：收入不穩 + 向發達國家借貸 → 負債不斷上升」。",
+      "currentTextbookEvidence": "課題11 第 8 段：「發展中國家：收入不穩 + 向發達國家借貸 → 負債不斷上升」；第 45 段：「這導致發展中國家債務不斷累積，長期陷入貧窮與借貸的惡性循環」。",
+      "recommendedAction": "correct-answer",
+      "actionDetail": "把答案改為「發展中國家收入不穩」（或「收入不穩」，並明訂接受寫法），題幹用詞同步更新。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "價格受國際需求影響，收入不穩。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 25 段（清單）（第 4 項）",
+        "referencedBlockIds": [
+          "blk_aaccd2c18933461f"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "答案改為「發展中國家收入不穩」（或簡化為「收入不穩」）；更佳是整題改寫（見建議題目）。",
+        "proposedQuestion": "發展中國家主要依靠出口農產品與天然資源賺取外匯，收入不穩，又持續向發達國家借貸。這種情況與甚麼因素有關？請填寫一個因素。",
+        "proposedAnswer": "收入不穩（新教材第 8 段：「發展中國家：收入不穩 + 向發達國家借貸 → 負債不斷上升」）"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_5cad8ee22c1e40ef",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-league",
+      "questionType": "fill",
+      "status": "published",
+      "group": "answer-key-terminology",
+      "groupLabel": "答案鍵用詞與新版不符，須更正答案或明訂接受答案",
+      "issue": "填充題答案為「大戰」，新教材的同一句寫成「最終無法阻止第二次世界大戰爆發」，學生填「第二次世界大戰」會被判錯。",
+      "currentTextbookEvidence": "課題11 第 245 段：「至1930年代，它面對極權國家的侵略束手無策，最終無法阻止第二次世界大戰爆發。」",
+      "recommendedAction": "correct-answer",
+      "actionDetail": "把答案改為「第二次世界大戰」（或同時接受「大戰」、「世界大戰」），令答案鍵與教材用詞一致。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "至1930年代，它面對極權國家的侵略束手無策，最終無法阻止大戰再起。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 143 段（清單）（第 1 項）",
+        "referencedBlockIds": [
+          "blk_dcb17a7460dd4c22"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "答案改為「第二次世界大戰」，並接受「大戰」「世界大戰」；否則學生依新教材作答會被判錯。",
+        "proposedAnswer": "第二次世界大戰"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_6fa63925fcda4780",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-league",
+      "questionType": "fill",
+      "status": "published",
+      "group": "answer-key-terminology",
+      "groupLabel": "答案鍵用詞與新版不符，須更正答案或明訂接受答案",
+      "issue": "與 q_5cad8ee22c1e40ef 相同：答案「大戰」，新教材寫「第二次世界大戰」。",
+      "currentTextbookEvidence": "課題11 第 245 段（同上）。",
+      "recommendedAction": "correct-answer",
+      "actionDetail": "同上；兩題應以同一政策處理，避免同一概念出現兩種答案鍵。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "至1930年代，它面對極權國家的侵略束手無策，最終無法阻止大戰再起。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 143 段（清單）（第 1 項）",
+        "referencedBlockIds": [
+          "blk_dcb17a7460dd4c22"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "與 q_5cad8ee22c1e40ef 同一處理（兩題答案鍵必須一致）。",
+        "proposedAnswer": "第二次世界大戰"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_cc6088757ff240f1",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "short",
+      "status": "published",
+      "group": "answer-key-terminology",
+      "groupLabel": "答案鍵用詞與新版不符，須更正答案或明訂接受答案",
+      "issue": "短答題以「國際合作的背景＝聯合國的成立及其工作」為答案，但新教材把「國際合作的背景」寫成「二十世紀以來人類共同面對的挑戰」；「聯合國的成立及其工作」在新教材是另一個小節標題。",
+      "currentTextbookEvidence": "課題11 第 42 及 75 段：「國際合作的背景：二十世紀以來人類共同面對的挑戰」；第 85 段：「成立：《聯合國憲章》於1945年簽署生效，聯合國正式成立」。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "把題幹與答案改為新教材的對應關係（背景＝共同面對的挑戰；聯合國成立＝第 85 段），或停用此題。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "國際合作的背景：聯合國的成立及其工作",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 148 段（標題）",
+        "referencedBlockIds": [
+          "blk_34a118367e3041be"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫題幹與答案以符合新教材（第 42／75 段的「國際合作的背景」）；或另出一題「聯合國在 1945 年成立的背景」。",
+        "proposedQuestion": "試說明「國際合作的背景」，並列出兩項二十世紀以來人類共同面對的挑戰。",
+        "proposedAnswer": "二十世紀以來人類共同面對的挑戰（例如大戰再起風險、全球貧富差距、過度開發破壞環境、疫症傳播）"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_b236dc0ccf3c4e0d",
+      "topicId": "topic-3",
+      "sectionId": "topic-3-asia",
+      "questionType": "short",
+      "status": "published",
+      "group": "legacy-data-labels",
+      "groupLabel": "舊教師版資料題標籤，題目本身無法作答",
+      "issue": "短答題以舊教師版資料題的標籤「個人所知」為題幹，學生無法得知要回答甚麼；答案內容其實是穆斯林煉金術著作傳入歐洲的影響。",
+      "currentTextbookEvidence": "新教材課題3 第 149 段：「穆斯林學者如賈比爾等參考古希臘的哲學理論…他們的著作其後傳入歐洲」；搜尋「個人所知」在新版學生教材 0 命中（只在舊教師版出現）。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫成真正的歷史題（例如「伊斯蘭世界的煉金術研究如何影響歐洲化學的發展？」），或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "個人所知：歐洲人參考穆斯林學者的實驗紀錄與煉金術著作，推動了歐洲的煉金術發展，奠定歐洲早期化學的基礎。(1分)",
+        "sourceLocation": "HNC1B2E_T3_SN_TE.docx · 第 298 段（清單）（第 3 項）",
+        "referencedBlockIds": [
+          "blk_e5b47aa448c540fb"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成真正的歷史題（新教材第 149 段）。",
+        "proposedQuestion": "伊斯蘭世界的煉金術研究如何影響歐洲化學的發展？",
+        "proposedAnswer": "穆斯林學者以實驗等科學方法研究物質的性質與化學反應，他們的著作其後傳入歐洲，成為歐洲早期化學的基礎。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_bb48a9e1547a417e",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "mc",
+      "status": "published",
+      "group": "legacy-data-labels",
+      "groupLabel": "舊教師版資料題標籤，題目本身無法作答",
+      "issue": "選擇題以「民系X」為題幹（舊資料題的佔位標籤），選項也只是標籤清單，未經舊題目材料無法理解。",
+      "currentTextbookEvidence": "新教材課題4 第 39 段有「四大民系」內容（廣府人、客家人、水上人與福佬），但搜尋「民系X」0 命中。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為考核四大民系的實際題目（例如「以下哪一項是香港四大民系之一？」），或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "民系X：廣府人。（1分）",
+        "sourceLocation": "HNC1B2E_T4_SN_TE.docx · 第 345 段（清單）（第 2 項）",
+        "referencedBlockIds": [
+          "blk_ce881ba7bb0943e9"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成考核四大民系的題目（新教材第 39 段），或停用。",
+        "proposedQuestion": "香港的「四大民系」包括以下哪一項？",
+        "proposedAnswer": "廣府人（四大民系為廣府人、客家人、水上人與福佬）"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_d309b521e6554723",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "fill",
+      "status": "published",
+      "group": "legacy-data-labels",
+      "groupLabel": "舊教師版資料題標籤，題目本身無法作答",
+      "issue": "填充題以「民系Y」為答案（舊資料題的佔位標籤）。",
+      "currentTextbookEvidence": "同 q_bb48a9e1547a417e：新教材沒有「民系Y」，只有四大民系的內容（課題4 第 39 段）。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為直接問民系名稱的題目，或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "民系Y：水上人。（1分）",
+        "sourceLocation": "HNC1B2E_T4_SN_TE.docx · 第 345 段（清單）（第 2 項）",
+        "referencedBlockIds": [
+          "blk_ce881ba7bb0943e9"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成直接問民系生活方式的題目，或停用。",
+        "proposedQuestion": "水上人是香港四大民系之一，他們傳統上以甚麼維生？",
+        "proposedAnswer": "捕魚"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_8d788c6209e14004",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "short",
+      "status": "published",
+      "group": "legacy-data-labels",
+      "groupLabel": "舊教師版資料題標籤，題目本身無法作答",
+      "issue": "短答題以「資料線索」為題幹（舊資料題的標籤），答案則是民系謀生方式的描述。",
+      "currentTextbookEvidence": "新教材課題4 第 39-58 段有民系及謀生方式內容；搜尋「資料線索」在新版學生教材 0 命中。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為問民系生活方式差異的題目，或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "資料線索：在為生方法方面，廣府人（民系X）以務農為生，水上人（民系Y）以捕魚為生。（1分）",
+        "sourceLocation": "HNC1B2E_T4_SN_TE.docx · 第 347 段（清單）（第 1 項）",
+        "referencedBlockIds": [
+          "blk_4734f1d4091949ab"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成問民系謀生方式差異的題目，或停用。",
+        "proposedQuestion": "廣府人與水上人在謀生方式上有何不同？",
+        "proposedAnswer": "廣府人以務農為生，水上人以捕魚為生。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_320d50660ed04361",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "mc",
+      "status": "published",
+      "group": "legacy-data-labels",
+      "groupLabel": "舊教師版資料題標籤，題目本身無法作答",
+      "issue": "選擇題以「有關香港其中一項非物質文化遺產的描述」為題幹、答案為「資料」（舊資料題的標籤）。",
+      "currentTextbookEvidence": "新教材課題4 第 25 段有「大澳遊涌」等非物質文化遺產內容；「資料」作為題目標籤在新版學生教材沒有對應。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為考核大澳遊涌等非物質文化遺產的題目，或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "資料：有關香港其中一項非物質文化遺產的描述",
+        "sourceLocation": "HNC1B2E_T4_SN_TE.docx · 第 349 段（標題）",
+        "referencedBlockIds": [
+          "blk_c0b1713e15134c23"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成考核非物質文化遺產例子的題目（新教材第 24–28 段），或停用。",
+        "proposedQuestion": "以下哪一項是課本列出的四項本地非物質文化遺產例子之一？",
+        "proposedAnswer": "大澳遊涌（其餘例子：香港潮人盂蘭勝會、長洲太平清醮、大坑舞火龍）"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_332eb48af69b42c9",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "fill",
+      "status": "published",
+      "group": "legacy-data-labels",
+      "groupLabel": "舊教師版資料題標籤，題目本身無法作答",
+      "issue": "填充題以「獨有龍舟活動」為答案（舊資料題的標籤），新教材寫的是「大澳遊涌」。",
+      "currentTextbookEvidence": "新教材課題4 第 25 段：「大澳遊涌」；搜尋「獨有龍舟活動」0 命中。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為直接問大澳遊涌（或其文化意義）的題目，或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "「獨有龍舟活動」：大澳遊涌。（1分）",
+        "sourceLocation": "HNC1B2E_T4_SN_TE.docx · 第 353 段（清單）（第 1 項）",
+        "referencedBlockIds": [
+          "blk_665ea6fcf1aa48c6"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成直接問大澳遊涌所屬類別的題目（新教材第 106–125 段有「非物質文化遺產」專節），或停用。",
+        "proposedQuestion": "大澳遊涌、長洲太平清醮、大坑舞火龍都屬於香港的甚麼？",
+        "proposedAnswer": "非物質文化遺產"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_35c49b48d3044613",
+      "topicId": "topic-6",
+      "sectionId": "topic-6-impact-europe",
+      "questionType": "mc",
+      "status": "published",
+      "group": "legacy-data-labels",
+      "groupLabel": "舊教師版資料題標籤，題目本身無法作答",
+      "issue": "選擇題以「有關日本對歐洲國家殖民擴張回應的文章節錄」為題幹、答案為「資料」（舊資料題的標籤）。",
+      "currentTextbookEvidence": "新教材課題6 第 153-160 段有日本回應歐洲擴張的內容（鎖國、《安政條約》、改革自強）；但「資料」標籤在新版學生教材沒有對應。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為考核日本回應（例如鎖國與《安政條約》）的題目，或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "資料：有關日本對歐洲國家殖民擴張回應的文章節錄",
+        "sourceLocation": "HNC2A2E_T6_SN_TE.docx · 第 240 段（段落）",
+        "referencedBlockIds": [
+          "blk_4bf2557cbda44f46"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成考核日本回應歐洲擴張的題目（新教材第 153–160 段），或停用。",
+        "proposedQuestion": "十九世紀中葉，日本如何回應歐洲國家的擴張？",
+        "proposedAnswer": "先實施鎖國政策；1858 年在壓力下簽訂《安政條約》（五國通商條約），放棄部分主權；其後改革自強。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_f9722f18360144ef",
+      "topicId": "topic-7",
+      "sectionId": "topic-7-revolution",
+      "questionType": "fill",
+      "status": "published",
+      "group": "legacy-data-labels",
+      "groupLabel": "舊教師版資料題標籤，題目本身無法作答",
+      "issue": "填充題以「資料」為答案（舊資料題的標籤），題幹描述門羅的 1823 年講話。",
+      "currentTextbookEvidence": "新教材課題7 第 93 段：「時任總統門羅遂於1823年發表國情咨文，提出新的外交政策」；搜尋「資料線索／個人所知」0 命中。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為直接考核門羅主義背景的題目（例如門羅於哪一年發表國情咨文），或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "資料：美國總統於1823年發表的講話節錄",
+        "sourceLocation": "HNC2B2E_T7_SN_TE.docx · 第 308 段（段落）",
+        "referencedBlockIds": [
+          "blk_d810ab1c640045c1"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成直接問門羅主義背景的題目（新教材第 93 段），或停用。",
+        "proposedQuestion": "門羅於哪一年發表國情咨文、提出門羅主義？",
+        "proposedAnswer": "1823年"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_316ed0ea39f340fe",
+      "topicId": "topic-7",
+      "sectionId": "topic-7-revolution",
+      "questionType": "short",
+      "status": "published",
+      "group": "legacy-data-labels",
+      "groupLabel": "舊教師版資料題標籤，題目本身無法作答",
+      "issue": "短答題以「發表講話的總統」為題幹（舊資料題的標籤）；答案「門羅」本身在新教材有支持，但題幹沒有說明是哪一場講話。",
+      "currentTextbookEvidence": "新教材課題7 第 93 段（門羅於 1823 年發表國情咨文，提出門羅主義）。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫題幹為「門羅主義由哪一位總統提出／哪一年提出？」，或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "發表講話的總統：門羅。(1分)",
+        "sourceLocation": "HNC2B2E_T7_SN_TE.docx · 第 313 段（清單）（第 1 項）",
+        "referencedBlockIds": [
+          "blk_6855e38b1cdb41a5"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫題幹使其可以作答（新教材第 93、213 段），或停用。",
+        "proposedQuestion": "門羅主義由哪一位美國總統提出？",
+        "proposedAnswer": "門羅"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_ee9dfe073a754b91",
+      "topicId": "topic-7",
+      "sectionId": "topic-7-revolution",
+      "questionType": "mc",
+      "status": "published",
+      "group": "legacy-data-labels",
+      "groupLabel": "舊教師版資料題標籤，題目本身無法作答",
+      "issue": "選擇題以「資料線索」為答案（舊資料題的標籤），選項中甚至出現「個人所知」。",
+      "currentTextbookEvidence": "新教材課題7 第 93 段門羅主義三大原則可支持內容層面；但標籤本身在新版學生教材沒有對應。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為考核門羅主義原則的題目，或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "資料線索：根據門羅主義，歐洲國家干預美洲事務，會被美國視為對其和平與安全的威脅。(1分)",
+        "sourceLocation": "HNC2B2E_T7_SN_TE.docx · 第 323 段（段落）",
+        "referencedBlockIds": [
+          "blk_745d506325c14ad3"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成考核門羅主義原則的題目（新教材第 93 段），或停用。",
+        "proposedQuestion": "根據門羅主義，歐洲列強干預美洲事務會被美國視為甚麼？",
+        "proposedAnswer": "對其和平與安全的威脅（「美洲是美洲人的美洲」）"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_53877c3e5d384e99",
+      "topicId": "topic-7",
+      "sectionId": "topic-7-revolution",
+      "questionType": "fill",
+      "status": "published",
+      "group": "legacy-data-labels",
+      "groupLabel": "舊教師版資料題標籤，題目本身無法作答",
+      "issue": "填充題以「個人所知」為答案（舊資料題的標籤），題幹引述門羅主義的影響（該內容本身在新教材有對應）。",
+      "currentTextbookEvidence": "新教材課題7 第 213 段：「由美國總統門羅於1823年提出的美國新外交方針…並有利美國日後在美洲擴張勢力，在美洲大陸建立領導地位」。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為問門羅主義影響的題目（例如「門羅主義對美國日後在美洲的地位有甚麼影響？」），或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "個人所知：門羅主義不只成功令歐洲國家放棄在美洲重新殖民，更有利美國日後向中、南美洲擴張勢力，在美洲大陸建立領導地位。(2分)",
+        "sourceLocation": "HNC2B2E_T7_SN_TE.docx · 第 324 段（段落）",
+        "referencedBlockIds": [
+          "blk_4fb1e6a04b2d406b"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成問門羅主義影響的題目（新教材第 95／213 段），或停用。",
+        "proposedQuestion": "門羅主義對美國在美洲的地位有甚麼影響？",
+        "proposedAnswer": "阻止歐洲列強在美洲加強殖民擴張，便利美國日後在美洲（包括中、南美洲）擴張勢力，逐步在美洲大陸確立領導地位。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_b97234f5f1cd4086",
+      "topicId": "topic-6",
+      "sectionId": "topic-6-impact-europe",
+      "questionType": "fill",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "題幹引述的舊文章（「1850年代…日本決定和平對外開放…與美、英、法、俄、荷等國簽署通商條約」）在新教材不存在，而新教材把簽約年份寫成 1858 年，與題目答案「1850年（代）」衝突。",
+      "currentTextbookEvidence": "課題6 第 160 段：「1858年，幕府在外交壓力下，與美國、英國、法國、俄國及荷蘭簽訂一系列不平等條約，即《安政條約》…」；搜尋「和平對外開放」0 命中。",
+      "recommendedAction": "disable",
+      "actionDetail": "建議停用（或由教師按 1858 年《安政條約》整題重寫，包括題幹、答案與解釋）。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "1850年代，眼見中國在對英國與法國的戰爭中失利，日本決定和平對外開放。這雖然為日本帶來屈辱，但同時帶來空前進步的契機。與美、英、法、俄、荷等國簽署通商條約，放棄部分國家主權後，日本人決心要建立一個與西方人一樣，甚至超越他們的現代化國家……",
+        "sourceLocation": "HNC2A2E_T6_SN_TE.docx · 第 241 段（段落）",
+        "referencedBlockIds": [
+          "blk_37b9c589e18442d0"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "建議停用（題幹的舊文章及 1850 年代與新教材的 1858 年《安政條約》衝突）；如要保留便須以 1858 年重寫整題（題幹、答案、解釋）。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_b8d6ecfb9c2142e8",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-treaty",
+      "questionType": "fill",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "題目要求指出「二戰的影響：歐洲殖民國家國力衰退」，新教材的課題9 已沒有這項內容。",
+      "currentTextbookEvidence": "搜尋「二戰的影響」0 命中；課題9 只在第 271 段寫 1945「亞、非兩洲的非殖民地化展開」，沒有「歐洲殖民國家國力衰退」。",
+      "recommendedAction": "disable",
+      "actionDetail": "建議停用；如要保留，須由教師按新教材重寫（例如改問「二戰結束後亞、非兩洲出現甚麼發展」）。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "二戰的影響：歐洲殖民國家國力衰退",
+        "sourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 218 段（標題）",
+        "referencedBlockIds": [
+          "blk_bdfbc750e1444e43"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "建議停用：新教材已刪去「歐洲殖民國家國力衰退」的內容，沒有學生授權教材可作依據。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_c6fc8cd15ce64a54",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-treaty",
+      "questionType": "short",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "題目以「通過宗主國扶植」為題幹、答案為「美國的殖民地（菲律賓）」，屬舊教師版配對練習的標籤及例子，新教材沒有這組內容。",
+      "currentTextbookEvidence": "搜尋「宗主國扶植」0 命中；「菲律賓」在新版 12 課學生教材中沒有作為殖民地獨立的例子。",
+      "recommendedAction": "disable",
+      "actionDetail": "建議停用（新教材已刪除非殖民地化的獨立方式分類及例子）。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "通過宗主國扶植：美國的殖民地（菲律賓）",
+        "sourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 223 段（清單）（第 3 項）",
+        "referencedBlockIds": [
+          "blk_7fa2a8ae05a74961"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "建議停用：新教材已刪去非殖民地化的獨立方式分類及例子（搜尋「宗主國扶植」0 命中）。"
+      },
+      "resolution": {
+        "status": "deleted",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "note": "新教材完全沒有相關內容，已從題庫刪除（題目內容見動作清單；可由資料庫備份還原）。"
+      }
+    },
+    {
+      "questionId": "q_b0579928bff84e53",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-treaty",
+      "questionType": "mc",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "選擇題以「通過與宗主國協商」為答案、以英國殖民地清單為題幹，屬舊版配對練習內容。",
+      "currentTextbookEvidence": "搜尋「通過與宗主國協商」0 命中；「緬甸」只在新教材課題6 第 173 段的大事年表以「英國侵佔緬甸」出現，與非殖民地化無關。",
+      "recommendedAction": "disable",
+      "actionDetail": "建議停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "通過與宗主國協商：英國的殖民地（緬甸、印度、巴基斯坦、馬來亞、新加坡與汶萊）",
+        "sourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 223 段（清單）（第 3 項）",
+        "referencedBlockIds": [
+          "blk_7fa2a8ae05a74961"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "建議停用：屬舊版配對練習內容，「通過與宗主國協商」在新教材 0 命中。"
+      },
+      "resolution": {
+        "status": "deleted",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "note": "新教材完全沒有相關內容，已從題庫刪除（題目內容見動作清單；可由資料庫備份還原）。"
+      }
+    },
+    {
+      "questionId": "q_59a6ec63802c4523",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-treaty",
+      "questionType": "fill",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "填充題以「通過武裝鬥爭」為答案、法國及荷蘭殖民地清單為題幹，屬舊版配對練習內容。",
+      "currentTextbookEvidence": "搜尋「武裝鬥爭」0 命中；越南、老撾、柬埔寨、印尼在新版學生教材沒有作為武裝獨立例子出現。",
+      "recommendedAction": "disable",
+      "actionDetail": "建議停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "通過武裝鬥爭：法國及荷蘭的殖民地（越南、老撾、柬埔寨與印尼）",
+        "sourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 223 段（清單）（第 3 項）",
+        "referencedBlockIds": [
+          "blk_7fa2a8ae05a74961"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "建議停用：屬舊版配對練習內容，「武裝鬥爭」在新教材 0 命中。"
+      },
+      "resolution": {
+        "status": "deleted",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "note": "新教材完全沒有相關內容，已從題庫刪除（題目內容見動作清單；可由資料庫備份還原）。"
+      }
+    },
+    {
+      "questionId": "q_88fc4367278b4546",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-ww1-result",
+      "questionType": "mc",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "選擇題以「一戰的影響」為答案、以「民族獨立意識的萌芽」為題幹描述；新教材的對應寫法是 1919 年的「非殖民地化思想萌芽」，標籤結構已改。",
+      "currentTextbookEvidence": "課題9 第 271 段 1919 列：「民族自決原則：非殖民地化思想萌芽」；搜尋「民族獨立意識」0 命中。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為考核「一戰後民族自決原則與非殖民地化思想萌芽」的題目（選項亦須更新），或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "一戰的影響：民族獨立意識的萌芽",
+        "sourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 215 段（標題）",
+        "referencedBlockIds": [
+          "blk_48fc384fd47e4921"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成新教材的說法（第 271 段 1919 年「非殖民地化思想萌芽」）並更新選項（現有選項含「3. 小結」等舊編號），或停用。",
+        "proposedQuestion": "下列哪一項是第一次世界大戰對殖民地造成的影響？",
+        "proposedAnswer": "巴黎和會確立民族自決原則，令非殖民地化思想萌芽。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_f320342907b640c8",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-ww1-trigger",
+      "questionType": "short",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "題目問與「容許奧匈代表參與調查」相關的內容（塞爾維亞以違反憲法為由拒絕），新教材已刪去最後通牒的細節。",
+      "currentTextbookEvidence": "課題9 第 303 段只寫：「奧匈指控塞爾維亞涉及事件，向其發出最後通牒。最後，奧塞戰爭於同年7月爆發，並升級為世界大戰。」搜尋「容許奧匈代表參與調查」0 命中。",
+      "recommendedAction": "disable",
+      "actionDetail": "建議停用；教師如要保留，須按新教材重寫（現教材沒有可作答的依據）。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "塞爾維亞接納俄國的意見，接受大部分要求，但認為「容許奧匈代表參與調查」違反國家憲法而拒絕。",
+        "sourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 92 段（清單）（第 9 項）",
+        "referencedBlockIds": [
+          "blk_456c9eef04774b8d"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "建議停用；如要保留，改以新教材第 303 段的最後通牒概要重新命題。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_d893eba3b65b4e49",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-ww1-trigger",
+      "questionType": "short",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "題目問「施里芬計劃」，新教材的第一次世界大戰導火線部分沒有提及。",
+      "currentTextbookEvidence": "搜尋「施里芬」0 命中（課題9 第 293-303 段只有巴爾幹戰爭、塞拉耶佛事件及最後通牒的概要）。",
+      "recommendedAction": "disable",
+      "actionDetail": "建議停用；新教材已刪去此內容，無學生授權教材可作依據。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "8 月3 日，德國執行「施里芬計劃」，進攻中立的比利時以取道攻打法國，觸發法、英兩國參戰。",
+        "sourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 94 段（清單）（第 5 項）",
+        "referencedBlockIds": [
+          "blk_0814ca1f14a84a8f"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "建議停用：新教材沒有提及「施里芬計劃」（搜尋 0 命中）。"
+      },
+      "resolution": {
+        "status": "deleted",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "note": "新教材完全沒有相關內容，已從題庫刪除（題目內容見動作清單；可由資料庫備份還原）。"
+      }
+    },
+    {
+      "questionId": "q_44e1838369244a50",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-ww1-trigger",
+      "questionType": "fill",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "填充題答案為「四十八」（小時最後通牒時限），新教材沒有寫時限。",
+      "currentTextbookEvidence": "課題9 第 303 段（同上，沒有時限）；搜尋「四十八小時」0 命中。",
+      "recommendedAction": "disable",
+      "actionDetail": "建議停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "在德國支持下，奧匈於7月23日向塞爾維亞發出最後通牒，並要求對方於四十八小時內回應。",
+        "sourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 92 段（清單）（第 9 項）",
+        "referencedBlockIds": [
+          "blk_456c9eef04774b8d"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "建議停用：新教材沒有寫最後通牒的時限（搜尋「四十八小時」0 命中）。"
+      },
+      "resolution": {
+        "status": "deleted",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "note": "新教材完全沒有相關內容，已從題庫刪除（題目內容見動作清單；可由資料庫備份還原）。"
+      }
+    },
+    {
+      "questionId": "q_8fc2332cb98a4c11",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-conflict",
+      "questionType": "mc",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "選擇題答案「衝突數目增加與破壞程度升級」在新教材已刪去此描述。",
+      "currentTextbookEvidence": "搜尋「衝突數目增加」0 命中；課題11 第 287 段只概括「兩次大戰造成空前破壞」「兩次世界大戰造成嚴重傷亡與經濟破壞」。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為新教材可支持的特點（例如「二十世紀大型軍事衝突的特點是破壞規模空前、傷亡與經濟損失嚴重」），或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "衝突數目增加與破壞程度升級",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 5 段（清單）（第 4 項）",
+        "referencedBlockIds": [
+          "blk_2bc4cea4f9e14361"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成新教材可支持的特點（第 287 段「兩次大戰造成空前破壞」等），或停用。",
+        "proposedQuestion": "下列哪一項最能說明二十世紀大型軍事衝突的特點？",
+        "proposedAnswer": "破壞規模空前：兩次世界大戰造成嚴重傷亡與經濟破壞。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_50e0d5bc27e3422a",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-conflict",
+      "questionType": "fill",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "題幹與答案不一致：題幹是一段戰爭傷亡與經濟損失的敘述，答案卻是「二十世紀的世界局勢動盪不安。」（題目破損，無法作答）。",
+      "currentTextbookEvidence": "新教材課題11 第 78 段有對應內容（「兩次大戰共導致超過八千萬人死亡」等），但題目本身問不出答案。",
+      "recommendedAction": "disable",
+      "actionDetail": "建議停用或由教師整題重寫（題幹與答案必須對應同一問題）。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "二十世紀的世界局勢動盪不安。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 17 段（清單）（第 7 項）",
+        "referencedBlockIds": [
+          "blk_0cf909e353be41d7"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "建議停用：題幹是一段戰爭傷亡與經濟損失的敘述，答案卻是「二十世紀的世界局勢動盪不安。」，兩者對不上（題目破損）。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_e4031ed7b25b4a18",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-conflict",
+      "questionType": "fill",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "填充題答案為「平民」（兩場大戰死者包括大量平民），新教材已沒有「平民」的說法。",
+      "currentTextbookEvidence": "搜尋「包括大量平民」0 命中；課題11 第 78 段只寫「兩次大戰共導致超過八千萬人死亡」。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫題幹與答案以符合新教材（例如改問「兩次世界大戰共造成多少人死亡？」），或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "兩場戰事造成超過八千萬人死亡，包括大量平民。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 17 段（清單）（第 7 項）",
+        "referencedBlockIds": [
+          "blk_0cf909e353be41d7"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫題幹與答案以符合新教材（第 78 段只寫「共導致超過八千萬人死亡」，沒有「平民」），或停用。",
+        "proposedQuestion": "根據上述資料，兩次世界大戰合共造成超過多少人死亡？",
+        "proposedAnswer": "八千萬人"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_05d22484343240d5",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "fill",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "填充題以 1999 年「歐洲與非洲每十萬人口擁有的醫護人數」圖表為依據，新教材已刪去該圖表。",
+      "currentTextbookEvidence": "搜尋「每十萬人口」0 命中；課題11 第 80 段改以文字描述醫護資源短缺（「這些國家醫療資源短缺…人民的感染與死亡率因而遠高於發達國家」）。",
+      "recommendedAction": "disable",
+      "actionDetail": "建議停用；教師如要保留，須改以第 80 段的文字內容重新命題。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "1999年歐洲與非洲每十萬人口擁有的醫護人數",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 42 段（段落）",
+        "referencedBlockIds": [
+          "blk_d84e99e2654d4e0b"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "建議停用（新教材已刪去「每十萬人口擁有的醫護人數」圖表）；如要保留，改以第 80 段的文字內容命題。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    },
+    {
+      "questionId": "q_aef95458fecc49a7",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "mc",
+      "status": "published",
+      "group": "content-removed-or-damaged",
+      "groupLabel": "新教材已刪去內容或題幹破損",
+      "issue": "選擇題要求把「欠發達國家集中於非洲…較發達國家集中於歐洲…」對應到「至二十世紀末」這個標籤；新教材已改為「發達國家／發展中國家」的定義式寫法，標籤對應不再成立。",
+      "currentTextbookEvidence": "課題11 第 31-34 段：「十九世紀末起：…」、「二戰後：…」、「發達國家：」、「（至二十世紀末）僅佔全球約三成人口，卻擁有全球近八成財富；」；第 287 段則把地區分布列在「財富分布不均」之下。",
+      "recommendedAction": "rewrite",
+      "actionDetail": "改寫為考核財富分布的題目（用「發展中國家」用詞），或停用。",
+      "requiresHistoryTeacher": false,
+      "state": {
+        "sourceVerified": false,
+        "revision": 5,
+        "sourceExcerpt": "至二十世紀末：欠發達國家集中於非洲、東南亞、南亞與南美洲，較發達國家則集中於歐洲、北美洲及大洋洲。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 21 段（清單）（第 5 項）",
+        "referencedBlockIds": [
+          "blk_12afab3f360341c3"
+        ],
+        "referencedBlocksExist": false,
+        "teacherConfirmationRequired": false,
+        "autoValidatedRevision": null
+      },
+      "impact": {
+        "attempts": 0,
+        "reviewApprovals": 0,
+        "note": "沒有任何人工覆核紀錄；改答案或停用不會令既有覆核失效（因為本來就沒有）。"
+      },
+      "suggestion": {
+        "suggestion": "改寫成考核財富分布的題目（用「發達國家／發展中國家」用詞），或停用。",
+        "proposedQuestion": "至二十世紀末，發達國家與發展中國家的財富分布有何特點？",
+        "proposedAnswer": "發達國家佔全球約三成人口，卻擁有全球近八成財富、耗用約七成資源；發展中國家集中於非洲、東南亞、南亞與南美洲，人口眾多但資源匱乏。"
+      },
+      "resolution": {
+        "status": "rewritten",
+        "appliedAt": "2026-10-16",
+        "manifest": "docs/teacher-review/question-queue-actions-2026-10.json",
+        "revision": 6,
+        "note": "已按新教材改寫（或更正答案），並以新教材段落作為教材依據。"
+      }
+    }
+  ]
+}

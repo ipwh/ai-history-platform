@@ -25,18 +25,21 @@
  * 只影響節錄文字、來源位置及段落 ID；題目本身、答案、解釋及學習記錄不受影響。
  * 教師端仍然看得到完整節錄及來源位置（用於核對依據），只是會標示「學生看不到節錄」。
  */
-import type { Question, QuestionOrigin, StudentExcerptHiddenReason } from "@/lib/types";
+import type { Question, StudentExcerptHiddenReason } from "@/lib/types";
 import { getBlocksByIds, listStudentDistributableDocumentIds } from "../repositories/materials";
 import { isTeacherOnlyBlockText } from "../materials/teacher-content";
 import { isNonLessonContent } from "../materials/content-policy";
+import { AUTHOR_WRITTEN_EXCERPT_ORIGINS } from "../materials/block-search";
 
 /** 學生看不到節錄的原因（型別定義在 lib/types.ts，令教師端顯示的說明與此判定一致） */
 export type { StudentExcerptHiddenReason };
 
 /**
- * 沒有引用教材段落時，節錄仍可視為**作者自行撰寫**的來源。
+ * 沒有引用教材段落時，節錄仍可視為**作者自行撰寫**的來源（名單為下方匯入的
+ * `AUTHOR_WRITTEN_EXCERPT_ORIGINS`；定義放在 [block-search.ts](../materials/block-search.ts)，
+ * 因為「節錄可否作為自動連結的教材依據」的規則同樣需要它——兩處必須一致，否則同一個來源
+ * 會在「可否自動連結」與「可否顯示」之間得到不同結論）：
  *
- * 只有這兩種來源可以成立：
  *   - `demo`：內建示範題庫，節錄由作者撰寫（見 seed/index.ts）；
  *   - `manual`：教師在平台手動建立。
  *
@@ -44,11 +47,6 @@ export type { StudentExcerptHiddenReason };
  * 的節錄一律來自教材或試題檔，沒有段落依據時無法核實，因此 fail-closed。
  * **任何未知來源亦不在名單內**，避免日後新增來源時默默變成可顯示。
  */
-const AUTHOR_WRITTEN_EXCERPT_ORIGINS: ReadonlySet<QuestionOrigin> = new Set<QuestionOrigin>([
-  "demo",
-  "manual",
-]);
-
 export function studentExcerptVisibility(question: Question): {
   visible: boolean;
   reason: StudentExcerptHiddenReason | null;

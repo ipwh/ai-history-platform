@@ -33,10 +33,12 @@ import {
   type QuestionType,
 } from "../../lib/types";
 import { normalizeForMatch, stripMarkdownArtifacts, truncate } from "../materials/text-utils";
+import { MIN_EXCERPT_LENGTH } from "../materials/block-search";
 import { checkFillStem, normalizeForStemMatch } from "./fill-question";
 import { checkHistoricalAnswer } from "./historical-answer";
 import { createDuplicateTracker } from "./question-dedupe";
-import { checkQuestionQuality, hasUncertainIssue } from "./question-quality";
+import { checkQuestionQuality, isMachineRevisable, type QualityOutcome } from "./question-quality";
+import { analyseMaterial, type MaterialAnalysis } from "./material-analysis";
 import type { MaterialUnit } from "./provider";
 
 /**
@@ -101,6 +103,18 @@ function findAmbiguousOptions(options: string[], correctAnswer: string): string[
 export interface ValidationResult {
   accepted: Question[];
   discardedReasons: string[];
+  /**
+   * 每條通過結構檢查的題目的品質判定（Sprint 8.5）。
+   * 生成流程據此決定是否需要有限次重寫（`isMachineRevisable`）；
+   * 判定本身仍然對應既有機制（見 question-quality.ts 的 QualityOutcome）。
+   */
+  qualityOutcomes: {
+    questionId: string;
+    outcome: QualityOutcome;
+    machineRevisable: boolean;
+    /** 供重試提示使用的問題說明 */
+    notes: string[];
+  }[];
 }
 
 export interface ValidationContext {
@@ -113,6 +127,12 @@ export interface ValidationContext {
   difficulty: Difficulty;
   origin: QuestionOrigin;
   units: MaterialUnit[];
+  /**
+   * 教材的結構化語意分析（Sprint 8.5，見 material-analysis.ts）。
+   * 呼叫端已經算好時傳入，令模型提示與品質閘門使用**同一份**分析；
+   * 未提供時即場由 `units` 計算（結果相同，只是多算一次）。
+   */
+  analysis?: MaterialAnalysis;
   now: string;
   idFor: (index: number) => string;
 }
@@ -228,6 +248,18 @@ const PERSON_LIFE_DATES_PATTERN = /([\u4e00-\u9fa5]{2,5})\s*[（(]\s*\d{3,4}\s*[
 /** 符合句式但不是人名的常見詞語（政府下令、學者提出等） */
 const NON_PERSON_WORDS = new Set([
   "政府",
+  // 指向教材本身的詞語：Sprint 8.5 的解釋規則要求說明「答案與教材的關係」，
+  // 因此解釋常以「教材指出…」開頭，若不排除會誤報為杜撰人名
+  "教材",
+  "課文",
+  "課本",
+  "資料",
+  "本文",
+  "文中",
+  "上文",
+  "下文",
+  "圖表",
+  "表格",
   // 轉折及總結連接詞：以行為動詞句式出現時會被誤取成人名
   // （真實模型輸出：「一方面實現民族自決，另一方面卻埋下隱患」→「另一方面」）
   "一方面",
@@ -539,8 +571,12 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
   const unitMap = new Map(context.units.map((unit) => [unit.blockId, unit]));
   /** 已提供的教材原文，用於核對題目中的年份是否有教材依據 */
   const providedText = context.units.map((unit) => unit.text).join("\n");
+  // 教材語意分析（確定性）：品質閘門用它判斷「題目要求的思考面向是否真的由教材支持」。
+  // 呼叫端（生成流程）通常已算好並傳入，令提示詞與閘門使用同一份分析。
+  const analysis = context.analysis ?? analyseMaterial({ units: context.units });
   const accepted: Question[] = [];
   const discardedReasons: string[] = [];
+  const qualityOutcomes: ValidationResult["qualityOutcomes"] = [];
   const seen = createDuplicateTracker();
 
   let rawQuestions: unknown[];
@@ -550,6 +586,7 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
     return {
       accepted: [],
       discardedReasons: [error instanceof Error ? error.message : String(error)],
+      qualityOutcomes: [],
     };
   }
 
@@ -594,7 +631,8 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
     }
 
     const excerptKey = normalizeForMatch(candidate.sourceExcerpt);
-    if (excerptKey.length < 8) {
+    // 最短節錄長度是全平台共用的規則（見 materials/block-search.ts）
+    if (excerptKey.length < MIN_EXCERPT_LENGTH) {
       discardedReasons.push(`第 ${index + 1} 題的教材節錄太短，無法確認依據`);
       return;
     }
@@ -711,6 +749,20 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
     // 因此只記錄警告交由教師核對，不會丟棄題目（見 findUnverifiedNames）。
     qualityWarnings.push(...buildNameWarnings(findUnverifiedNames(answerText, providedText)));
 
+    // 錯誤選項亦不可依賴教材以外的虛構人物、事件或條約（Sprint 8.5）：
+    // 選擇題的錯誤選項不必見於教材，但「教材完全沒有提及的具體人物／文件」往往是
+    // 模型自行想像出來的，會令學生以為真有其事。同樣只作警告（人名偵測可能出錯）。
+    const distractorText = options
+      .filter((option) => normalizeForMatch(option) !== normalizeForMatch(correctAnswer))
+      .join("\n");
+    if (distractorText.length > 0) {
+      const distractorNames = findUnverifiedNames(distractorText, providedText);
+      const suggestions = buildNameWarnings(distractorNames);
+      if (suggestions.length > 0) {
+        qualityWarnings.push(`錯誤選項可能包含教材沒有交代的名稱：${suggestions.join("；")}`);
+      }
+    }
+
     // 技能標示：只接受課程技能清單內的寫法，自創名稱一律略過並記錄警告
     const resolvedSkill = resolveSkill(candidate.skill);
     if (resolvedSkill.warning !== null) qualityWarnings.push(resolvedSkill.warning);
@@ -826,8 +878,9 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
         gradingPoints: built.data.gradingPoints,
       },
       context.units,
+      analysis,
     );
-    if (!quality.ok) {
+    if (quality.outcome === "reject") {
       discardedReasons.push(
         `第 ${index + 1} 題未通過品質檢查：${quality.issues
           .filter((issue) => issue.severity === "blocking")
@@ -841,14 +894,22 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
         ...quality.issues.map((issue) => `品質檢查提示：${issue.message}`),
       );
     }
-    // 未確定項目（例如答案只是教材語句的改寫）：保留題目但暫緩自動發布，
-    // 等待教師確認——警告不會覆蓋未解決的依據問題（見 questions.teacher_confirmation_required）。
-    if (hasUncertainIssue(quality.issues)) {
+    // 未確定項目（例如答案只是教材語句的改寫）或可修正的教學品質問題（例如解釋只是
+    // 抄錄教材原文）：保留題目但暫緩自動發布，等待教師確認——警告不會覆蓋未解決的
+    // 依據問題（見 questions.teacher_confirmation_required）。生成流程會在寫入前
+    // 有限次重試（見 question-service），令可修正的題目有機會自動改善。
+    if (quality.outcome !== "pass") {
       built.data.teacherConfirmationRequired = true;
     }
+    qualityOutcomes.push({
+      questionId: built.data.id,
+      outcome: quality.outcome,
+      machineRevisable: isMachineRevisable(quality.issues),
+      notes: quality.issues.map((issue) => issue.message),
+    });
 
     accepted.push(built.data);
   });
 
-  return { accepted, discardedReasons };
+  return { accepted, discardedReasons, qualityOutcomes };
 }

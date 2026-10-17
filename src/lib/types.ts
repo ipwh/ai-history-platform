@@ -557,9 +557,13 @@ export const questionBaseSchema = z.object({
   /**
    * 自動發布被暫緩，等待教師確認（伺服器管理，不由前端提供）。
    *
-   * 品質閘門判定為「未確定」（例如答案只是教材語句的改寫、沒有逐字依據）時設為 true：
-   * 題目仍然保留在題庫，但不會經自動驗證發布給學生（見 question-service 的三條發布路徑）。
-   * 教師核對後手動發布即代表疑問已解決，之後重新驗證會清除這個標記。
+   * 品質閘門判定為「未確定」（例如答案只是教材語句的改寫、沒有逐字依據）或「需要修訂」
+   * （例如解釋只是重複答案）時設為 true：題目仍然保留在題庫，但不會經自動驗證發布給學生
+   * （見 question-service 的三條發布路徑）。
+   *
+   * **只有教師的人工覆核決定可以清除這個標記**（`recordQuestionReview` 的 approved）。
+   * 修改題目內容、或按「重新執行品質驗證」等機器動作都不會清除它（fail-closed；
+   * 見 Sprint 8.5／8.6 的相關測試）。
    */
   teacherConfirmationRequired: z.boolean().default(false),
   /**

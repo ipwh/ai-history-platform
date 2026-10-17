@@ -1,0 +1,566 @@
+{
+  "version": 1,
+  "title": "課題1 校內試題：仍未能核對教材依據（25 條）",
+  "purpose": "記錄課題1 校內試卷題目仍「未通過教材依據核對」的原因及逐行證據：這些題目的原文節錄由題幹、資料引文及子題等多段文字組成，而平台的核對規則要求單一段落包含整個節錄，因此無法取得單一段落依據。學生端本來就不會顯示校內試題的節錄（試題文件屬非授課內容），所以這只是教師端的狀態記錄，不影響學生；教師如要處理，可為題目改用較短的單段節錄（例如只引用資料原文），或把同組子題拆成獨立題目。",
+  "sourceMaterials": "materials/ 課題1 校內試卷（HNC1A2E_QB_T1_1.MCQ.docx、HNC1A2E_QB_T1_7.DBQ.docx）",
+  "generatedFrom": {
+    "database": "data/app.db",
+    "generatedAt": "2026-10-16"
+  },
+  "platformRule": "sourceVerified = 忽略標點及空白後，**單一**引用段落包含整段原文節錄（src/server/services/validation.ts、import-service.ts 的 reverifyUnverifiedQuestions）；此類題目的節錄由多段文字組成，無法由單一段落支持",
+  "entries": [
+    {
+      "questionId": "qb-JTH2ndEdDBQ01003",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 3 題 · 舊石器時代",
+      "excerptLineCount": 11,
+      "excerptVerbatimLinesFound": 10,
+      "excerptMissingLines": [
+        "解釋︰_____________________________…"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01004",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 4 題 · 舊石器時代",
+      "excerptLineCount": 6,
+      "excerptVerbatimLinesFound": 6,
+      "excerptMissingLines": [],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01005",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 5 題 · 舊石器時代",
+      "excerptLineCount": 5,
+      "excerptVerbatimLinesFound": 4,
+      "excerptMissingLines": [
+        "對狼、豹等大型夜行掠食者來說，火光與火焰的熱度有威懾的作用。因此，古人類會用火來"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01006",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 6 題 · 舊石器時代",
+      "excerptLineCount": 5,
+      "excerptVerbatimLinesFound": 4,
+      "excerptMissingLines": [
+        "(b) 根據資料I，黑曜岩有甚…"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01007",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 7 題 · 石器時代的演進：舊石器時代；新石器時代",
+      "excerptLineCount": 9,
+      "excerptVerbatimLinesFound": 8,
+      "excerptMissingLines": [
+        "資料線索：_______…"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01008",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 8 題 · 石器時代的演進：舊石器時代；新石器時代",
+      "excerptLineCount": 9,
+      "excerptVerbatimLinesFound": 8,
+      "excerptMissingLines": [
+        "「與舊石器時代人類相比，…"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01009",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 題 · 石器時代的演進：舊石器時代；新石器時代",
+      "excerptLineCount": 7,
+      "excerptVerbatimLinesFound": 7,
+      "excerptMissingLines": [],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01010",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 10 題 · 石器時代的演進：舊石器時代；新石器時代",
+      "excerptLineCount": 6,
+      "excerptVerbatimLinesFound": 5,
+      "excerptMissingLines": [
+        "根據資料I，為甚麼新石器時代的人類會使用「刀耕火種」開墾？…"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01011",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 11 題 · 石器時代的演進：新石器時代",
+      "excerptLineCount": 15,
+      "excerptVerbatimLinesFound": 12,
+      "excerptMissingLines": [
+        "資料II：石器時代人類獲取食物的方式",
+        "採集野果、狩獵、捕魚",
+        "資料II線索及個人所知：…"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01012",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 12 題 · 石器時代的終結：金屬時代",
+      "excerptLineCount": 7,
+      "excerptVerbatimLinesFound": 6,
+      "excerptMissingLines": [
+        "優點：__________________________________…"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01020",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 20 題 · 文明的定義；尼羅河流域文明",
+      "excerptLineCount": 8,
+      "excerptVerbatimLinesFound": 1,
+      "excerptMissingLines": [
+        "資料I：古埃及的統治者與官員",
+        "資料II：古埃及兒童學習書寫",
+        "古埃及的文字",
+        "資料I及II分別反映古埃及擁有哪些文明社會的特徵？（2分）"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01021",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 21 題 · 尼羅河流域文明：死後重生與木乃伊製作",
+      "excerptLineCount": 7,
+      "excerptVerbatimLinesFound": 1,
+      "excerptMissingLines": [
+        "資料I：有關古埃及葬禮的描述",
+        "古埃及人精心設計了一套葬禮儀式，當中包括永久及完整保存屍體，以供靈魂使用。他們也",
+        "資料I中的屍體被稱作甚麼？（1分）",
+        "誰負責進行資料I中的葬禮儀式？（1分）"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01022",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 22 題 · 尼羅河流域文明：法老",
+      "excerptLineCount": 8,
+      "excerptVerbatimLinesFound": 2,
+      "excerptMissingLines": [
+        "資料I：有關古埃及法老的描述",
+        "雖然土地與人民都屬於法老，但他必須遵守習俗。……法老的地位是世襲的。由於神聖的血",
+        "在古埃及，「法老」是甚麼人？（1分）",
+        "所有古埃及人都可以成為法老嗎？試從資料I中引用相關線索，支持你的答案。（1+1分"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01023",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 23 題 · 尼羅河流域文明：死後重生與木乃伊製作",
+      "excerptLineCount": 8,
+      "excerptVerbatimLinesFound": 1,
+      "excerptMissingLines": [
+        "資料I：一幅有關古埃及葬禮的壁畫。壁畫中標記為1的是木乃伊棺木。",
+        "甚麼是木乃伊？（1分）",
+        "為甚麼古埃及人會製作木乃伊？（2分）",
+        "資料I中標記為2的人物正在進行葬禮儀式，試辨別他們的身分。（1分）"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01024",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 24 題 · 尼羅河流域文明：死後重生與木乃伊製作",
+      "excerptLineCount": 8,
+      "excerptVerbatimLinesFound": 1,
+      "excerptMissingLines": [
+        "資料I：有關古埃及人處理屍體方法的描述",
+        "這是一個複雜的工序。他們首先要除去死者的內臟與水分，然後把鹽及香料放進屍體內，再",
+        "辨別資料I中的物件X。（1分）",
+        "它是 _____________。"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01025",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 25 題 · 尼羅河流域文明：死後重生與木乃伊製作",
+      "excerptLineCount": 7,
+      "excerptVerbatimLinesFound": 1,
+      "excerptMissingLines": [
+        "資料I：有關木乃伊的描述",
+        "古埃及人相信靈魂在死後不會消失，並認為完整的屍體是靈魂在來世棲息的必要場所。他們",
+        "……除了解剖屍體取出內臟，更要進行防腐處理。古埃及人將屍體脫水，並在屍體上抹上香",
+        "根據資料I，為甚麼古埃及人會製作木乃伊？（2分）"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01026",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 26 題 · 尼羅河流域文明：文字",
+      "excerptLineCount": 8,
+      "excerptVerbatimLinesFound": 1,
+      "excerptMissingLines": [
+        "資料I：約公元前3000年發明的古埃及文字X",
+        "資料II：約公元前2600年發明的古埃及文字Y",
+        "資料III：有關古埃及人使用文字的描述",
+        "只有少數人懂得書寫古埃及文字X。……文士會先將文字X書寫在墓牆之上，再交由工匠刻"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01027",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 27 題 · 尼羅河流域文明：宗教信仰",
+      "excerptLineCount": 8,
+      "excerptVerbatimLinesFound": 1,
+      "excerptMissingLines": [
+        "我們已知古埃及人信奉的神祇達數百個。……每個城市擁有各自特別崇拜的守護神。神祇的",
+        "資料II：展示古埃及神祇的壁畫及雕像",
+        "阿努比斯：",
+        "保護及引領死後靈魂的神祇"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01028",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 28 題 · 尼羅河流域文明：宗教信仰",
+      "excerptLineCount": 6,
+      "excerptVerbatimLinesFound": 1,
+      "excerptMissingLines": [
+        "資料I：有關古埃及天神的描述",
+        "古埃及人信奉的神有阿蒙、奧西烈斯等。這些天神不少都被繪畫出帶有動物特徵。……阿努",
+        "(a) 根據資料I，推斷動物在古埃及的地位是高或低。試在正確答案的方格填上「✓」",
+        "地位：❑ 高 ❑ 低"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdDBQ01029",
+      "topicId": "topic-1",
+      "questionType": "short",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_7.DBQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 29 題 · 尼羅河流域文明：宗教信仰",
+      "excerptLineCount": 6,
+      "excerptVerbatimLinesFound": 1,
+      "excerptMissingLines": [
+        "資料I：有關古埃及的描述",
+        "奧西烈斯是古埃及城市阿拜多斯的守護神。古埃及人又相信法老是太陽神雷拉的後代，絕對",
+        "資料II：有關古埃及的描述",
+        "古埃及官員幫助法老處理政務。這些官員都接受過教育，曾在學校或神廟學習不同知識，掌"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_7.DBQ.docx · 第 9 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "根據下列資料，回答有關問題。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "根據下列資料，回答有關問題。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01012",
+      "topicId": "topic-1",
+      "questionType": "mc",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_1.MCQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_1.MCQ.docx · 第 12 題 · A. 石器時代的演進",
+      "excerptLineCount": 1,
+      "excerptVerbatimLinesFound": 0,
+      "excerptMissingLines": [
+        "按年代順序排列以下的年份。 i. 公元850年 ii. 公元前800年 iii."
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_1.MCQ.docx · 第 155 段（段落）",
+        "matchedPrefixLength": 12,
+        "textPreview": "按年代順序排列以下的年份。"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "按年代順序排列以下的年份。 i. 公元850年 ii. 公元前800年 iii. 公元前95年 iv. 公元15年",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01017",
+      "topicId": "topic-1",
+      "questionType": "mc",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_1.MCQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_1.MCQ.docx · 第 17 題 · A. 石器時代的演進",
+      "excerptLineCount": 1,
+      "excerptVerbatimLinesFound": 0,
+      "excerptMissingLines": [
+        "下列哪些是對舊石器時代的正確描述？ i. 舊石器時代人類定居生活。 ii. 舊石"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_1.MCQ.docx · 第 231 段（段落）",
+        "matchedPrefixLength": 16,
+        "textPreview": "下列哪些是對舊石器時代的正確描述？"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "下列哪些是對舊石器時代的正確描述？ i. 舊石器時代人類定居生活。 ii. 舊石器時代人類已學懂生火及用火。 iii. 舊石器時代人類已學懂耕作。 iv. 舊石器時代人類學懂利用獸骨製造工具。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01018",
+      "topicId": "topic-1",
+      "questionType": "mc",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_1.MCQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_1.MCQ.docx · 第 18 題 · A. 石器時代的演進",
+      "excerptLineCount": 1,
+      "excerptVerbatimLinesFound": 0,
+      "excerptMissingLines": [
+        "下列哪些是對新石器時代的正確描述？ i. 新石器時代人類開始學懂生火。 ii. "
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_1.MCQ.docx · 第 250 段（段落）",
+        "matchedPrefixLength": 16,
+        "textPreview": "下列哪些是對新石器時代的正確描述？"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "下列哪些是對新石器時代的正確描述？ i. 新石器時代人類開始學懂生火。 ii. 新石器時代人類不懂得畜牧。 iii. 新石器時代人類懂得製造衣服。 iv. 新石器時代人類定居生活。",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01023",
+      "topicId": "topic-1",
+      "questionType": "mc",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_1.MCQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_1.MCQ.docx · 第 23 題 · A. 石器時代的演進",
+      "excerptLineCount": 1,
+      "excerptVerbatimLinesFound": 0,
+      "excerptMissingLines": [
+        "下列哪些屬於一手資料？ 日記 錄像 事件發生時的報章報道 學術論文"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_1.MCQ.docx · 第 326 段（段落）",
+        "matchedPrefixLength": 8,
+        "textPreview": "下列哪些屬於一手資料？"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "下列哪些屬於一手資料？ 日記 錄像 事件發生時的報章報道 學術論文",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01026",
+      "topicId": "topic-1",
+      "questionType": "mc",
+      "status": "published",
+      "paperFileName": "HNC1A2E_QB_T1_1.MCQ.docx",
+      "sourceLocation": "HNC1A2E_QB_T1_1.MCQ.docx · 第 26 題 · B. 古文明的興起",
+      "excerptLineCount": 1,
+      "excerptVerbatimLinesFound": 0,
+      "excerptMissingLines": [
+        "下列哪項是有利於古文明誕生的自然條件？ i. 生物多樣 ii. 地貌豐富 iii"
+      ],
+      "excerptHeadBlock": {
+        "sourceLocation": "HNC1A2E_QB_T1_1.MCQ.docx · 第 376 段（段落）",
+        "matchedPrefixLength": 16,
+        "textPreview": "下列哪項是有利於古文明誕生的自然條件？"
+      },
+      "singleBlockEvidence": false,
+      "excerptPreview": "下列哪項是有利於古文明誕生的自然條件？ i. 生物多樣 ii. 地貌豐富 iii. 土地肥沃 iv. 雨水充足",
+      "recommendation": "保持未通過核對：平台的核對規則要求單一段落包含整個節錄，此題節錄由題幹、資料及子題等多段文字組成"
+    }
+  ]
+}

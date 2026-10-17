@@ -1,0 +1,1377 @@
+{
+  "version": 1,
+  "title": "題目教學品質測試樣本（確定性；機器用）",
+  "purpose": "Sprint 8.5 的教學品質閘門必須有可重複、可解釋的驗收樣本。每個個案記錄：教材樣本、題目（可直接交給 validateLlmQuestions）、預期結果、所測試的失敗模式。樣本由開發者撰寫，教材文字是為測試而寫的合成歷史材料，不是任何教科書原文。",
+  "reviewStatus": "machine-fixtures-not-teacher-approved",
+  "disclaimer": [
+    "本檔案**不是**歷史科教師覆核過的黃金題庫，亦不代表任何題目已獲教學或史實批准。",
+    "它只記錄「閘門在這些樣本上應該得出甚麼判定」，屬軟件測試資料（見 tests/question-quality-gate.test.ts）。",
+    "教師覆核紀錄另見 golden-questions.v1.json（該檔案現時刻意為空，reviewStatus = pending-review）。"
+  ],
+  "materialSets": {
+    "cause-and-effect": [
+      {
+        "blockId": "fx-cause-1",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 1 段（清單）",
+        "text": "十八世紀中葉，工業革命率先在英國的紡織業展開。由於英國擁有豐富的煤鐵資源與海外市場，因此能夠大量生產並外銷棉織品。"
+      },
+      {
+        "blockId": "fx-cause-2",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 2 段（段落）",
+        "text": "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。"
+      }
+    ],
+    "single-statement": [
+      {
+        "blockId": "fx-single-1",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 3 段（清單）",
+        "text": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。"
+      }
+    ],
+    "multi-paragraph": [
+      {
+        "blockId": "fx-multi-1",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 4 段（段落）",
+        "text": "十九世紀中葉，歐洲列強在亞洲爭奪據點。它們先取得沿海的貿易特權，再進一步取得領事裁判權。"
+      },
+      {
+        "blockId": "fx-multi-2",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 5 段（段落）",
+        "text": "取得領事裁判權之後，列強得以用本國法律審理本國僑民，因此當地政府無法約束他們的行為，主權因而受損。"
+      }
+    ],
+    "ambiguous-date-versus-period": [
+      {
+        "blockId": "fx-amb-1",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 6 段（清單）",
+        "text": "公元1453年：歐洲的中古時代結束，進入近代。"
+      },
+      {
+        "blockId": "fx-amb-2",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 7 段（清單）",
+        "text": "中古時代前期（以神為本） | 文藝復興期間（以人為本）"
+      },
+      {
+        "blockId": "fx-amb-3",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 8 段（段落）",
+        "text": "文藝復興（十四至十七世紀）：中古時代後期發生的歐洲文化與思想革新運動，在意大利率先展開。"
+      }
+    ],
+    "chronology-only": [
+      {
+        "blockId": "fx-chron-1",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 9 段（段落）",
+        "text": "十八世紀中葉，英國的棉織品產量大幅增加。其後，英國的鐵路網亦逐步建成。"
+      }
+    ],
+    "comparison-supported": [
+      {
+        "blockId": "fx-compare-1",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 10 段（段落）",
+        "text": "文藝復興強調「以人為本」：重視人的價值與理性。中古時代前期強調「以神為本」：以宗教信仰為中心。兩者的分別在於對人的看法。"
+      }
+    ],
+    "multiple-factors": [
+      {
+        "blockId": "fx-factors-1",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 11 段（清單）",
+        "text": "工業革命在英國展開的因素包括：豐富的煤鐵資源、海外的市場，以及穩定的政治環境。"
+      }
+    ],
+    "hedged-source": [
+      {
+        "blockId": "fx-hedge-1",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 13 段（段落）",
+        "text": "學者相信，這座城市的人口可能曾經超過五萬人。"
+      }
+    ],
+    "ranked-factors": [
+      {
+        "blockId": "fx-factors-2",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 12 段（段落）",
+        "text": "穩定的政治環境是工業革命在英國展開的最重要因素。"
+      }
+    ],
+    "population-figures": [
+      {
+        "blockId": "fx-pop-1",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 15 段（段落）",
+        "text": "日佔期間，約有一百萬人被迫離開香港，全港人口由1941年約一百六十多萬人銳減至1945年約六十多萬人。"
+      }
+    ],
+    "bare-causal-yin": [
+      {
+        "blockId": "fx-chron-2",
+        "sectionId": "fx-section",
+        "sourceLocation": "合成教材 · 第 14 段（段落）",
+        "text": "德、意因接納了對本國不利的戰後安排，國內反政府的聲音高漲。"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "mechanical-blank",
+      "failureMode": "機械式挖空：空格以外幾乎沒有情境，學生無從判斷答案",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "fill",
+        "difficulty": "basic",
+        "question": "＿＿＿興起。",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "工業革命",
+        "explanation": "工業革命先在英國的紡織業展開，其後改變了生產方式。",
+        "knowledgePoint": "工業革命的開展",
+        "sourceExcerpt": "十八世紀中葉，工業革命率先在英國的紡織業展開。",
+        "sourceBlockIds": [
+          "fx-cause-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "mechanical-deletion"
+        ]
+      },
+      "note": "空格以外只有兩個字，學生無法由教材判斷要填甚麼；結構上合格（題幹長度達下限、答案見於節錄）但沒有情境，因此不應自動發布。",
+      "evidence": {
+        "blockId": "fx-cause-1",
+        "quote": "十八世紀中葉，工業革命率先在英國的紡織業展開。"
+      },
+      "polarity": "defective",
+      "pairWith": "recall-supported"
+    },
+    {
+      "id": "copied-explanation-fill",
+      "failureMode": "把教材原文抄一次當作解釋（解釋對理解沒有幫助）",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "fill",
+        "difficulty": "basic",
+        "question": "＿＿＿擁有豐富的煤鐵資源與海外市場，因此工業革命率先在其紡織業展開。",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "英國",
+        "explanation": "教材原文：十八世紀中葉，工業革命率先在英國的紡織業展開。",
+        "knowledgePoint": "工業革命的開展",
+        "sourceExcerpt": "十八世紀中葉，工業革命率先在英國的紡織業展開。",
+        "sourceBlockIds": [
+          "fx-cause-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "explanation-restates-answer"
+        ]
+      },
+      "note": "解釋只是抄錄教材節錄，沒有說明答案與教材的關係 → 可修正，重寫前暫緩自動發布。",
+      "evidence": {
+        "blockId": "fx-cause-1",
+        "quote": "十八世紀中葉，工業革命率先在英國的紡織業展開。"
+      },
+      "polarity": "defective",
+      "pairWith": "fill-explanation-teaches"
+    },
+    {
+      "id": "cause-and-effect-supported",
+      "failureMode": "（正面個案）教材明確交代因果，題目考核因果理解",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "為甚麼工業革命最早在英國展開？",
+        "options": [
+          "英國擁有豐富的煤鐵資源與海外市場",
+          "英國政府立法禁止海外貿易",
+          "英國的工匠拒絕使用機器",
+          "英國缺乏可以通航的河流"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "英國擁有豐富的煤鐵資源與海外市場",
+        "explanation": "教材指出英國由於擁有煤鐵資源及海外市場，因而能夠大量生產並外銷棉織品；錯誤選項所述的情況均會妨礙而不是促成工業革命。",
+        "knowledgePoint": "工業革命的成因",
+        "sourceExcerpt": "由於英國擁有豐富的煤鐵資源與海外市場，因此能夠大量生產並外銷棉織品。",
+        "sourceBlockIds": [
+          "fx-cause-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "教材有「由於…因此…」的明確因果，題目以因果為考核重點，屬應予保留的題目。",
+      "evidence": {
+        "blockId": "fx-cause-1",
+        "quote": "由於英國擁有豐富的煤鐵資源與海外市場，因此能夠大量生產並外銷棉織品。"
+      },
+      "polarity": "acceptable",
+      "pairWith": "chronology-causation-confusion"
+    },
+    {
+      "id": "multi-paragraph-context",
+      "failureMode": "（正面個案）答案需要結合兩段的說明，而不是單一句子",
+      "materialSet": "multi-paragraph",
+      "request": {
+        "questionType": "short",
+        "difficulty": "basic",
+        "question": "列強取得領事裁判權之後，為何會令當地政府的主權受損？",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "因為列強得以用本國法律審理本國僑民，當地政府無法約束他們的行為，主權因而受損。",
+        "explanation": "教材先把「取得領事裁判權」與「用本國法律審理僑民」連起來，再指出當地政府無法約束僑民，因此主權受損；這是一條由兩段說明串連起來的因果關係。",
+        "knowledgePoint": "列強在亞洲的擴張",
+        "sourceExcerpt": "取得領事裁判權之後，列強得以用本國法律審理本國僑民，因此當地政府無法約束他們的行為，主權因而受損。",
+        "sourceBlockIds": [
+          "fx-multi-2"
+        ],
+        "gradingPoints": [
+          "指出列強以本國法律審理本國僑民",
+          "指出當地政府無法約束僑民，因此主權受損"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "考核的是兩段之間的因果連結（題目提及前一段的史實，答案依據後一段），屬跨段理解。",
+      "evidence": {
+        "blockId": "fx-multi-2",
+        "quote": "取得領事裁判權之後，列強得以用本國法律審理本國僑民，因此當地政府無法約束他們的行為，主權因而受損。"
+      },
+      "polarity": "acceptable",
+      "pairWith": null
+    },
+    {
+      "id": "partially-supported-answer",
+      "failureMode": "答案只是教材語句的改寫，並非教材原有用語",
+      "materialSet": "single-statement",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "「重視古典學問並強調人的價值」是哪一種思想的特點？",
+        "options": [
+          "人文主義",
+          "重商主義",
+          "封建制度",
+          "君權神授"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "人文主義",
+        "explanation": "教材指出人文主義強調人的價值與理性，並重視古典學問，因此本題答案為人文主義。",
+        "knowledgePoint": "文藝復興的思想",
+        "sourceExcerpt": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。",
+        "sourceBlockIds": [
+          "fx-single-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "（對照組）答案是教材的關鍵詞語，屬教材原文，因此可自動發布；partial（改寫）個案見下一項。",
+      "evidence": {
+        "blockId": "fx-single-1",
+        "quote": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。"
+      },
+      "polarity": "acceptable",
+      "pairWith": "paraphrased-answer-needs-review"
+    },
+    {
+      "id": "paraphrased-answer-needs-review",
+      "failureMode": "答案是一整句改寫而非教材用語 → 未確定，交教師確認",
+      "materialSet": "single-statement",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "以下哪一項是人文主義的重點？",
+        "options": [
+          "重視人的價值、理性與古典學問",
+          "主張君主權力直接來自神",
+          "認為土地是最重要的財富來源",
+          "規定農民必須依附領主生活"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "重視人的價值、理性與古典學問",
+        "explanation": "教材把人文主義說明為強調人的價值與理性、重視古典學問的思想；本題答案以相近的用語表述，須確認與教材一致。",
+        "knowledgePoint": "文藝復興的思想",
+        "sourceExcerpt": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。",
+        "sourceBlockIds": [
+          "fx-single-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "answer-not-in-material"
+        ]
+      },
+      "note": "答案以改寫方式表述（並非教材原文），重疊率足以顯示有關連但未達逐字依據：保留題目，暫緩自動發布，交教師核對。",
+      "evidence": {
+        "blockId": "fx-single-1",
+        "quote": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。"
+      },
+      "polarity": "defective",
+      "pairWith": "partially-supported-answer"
+    },
+    {
+      "id": "insufficient-material-for-comparison",
+      "failureMode": "教材只有一項資料，卻出要比較兩者的題目",
+      "materialSet": "single-statement",
+      "request": {
+        "questionType": "short",
+        "difficulty": "basic",
+        "question": "試比較人文主義與重商主義的分別。",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "人文主義強調人的價值與理性，並重視古典學問。",
+        "explanation": "教材只交代了人文主義，沒有交代重商主義的內容，因此無從比較兩者。",
+        "knowledgePoint": "文藝復興的思想",
+        "sourceExcerpt": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。",
+        "sourceBlockIds": [
+          "fx-single-1"
+        ],
+        "gradingPoints": [
+          "指出人文主義強調人的價值與理性"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "dimension-unsupported"
+        ]
+      },
+      "note": "教材沒有可比較的兩項資料 → 閘門要求縮窄題目；不直接丟棄（提問用語的判讀可能出錯）。",
+      "evidence": {
+        "blockId": "fx-single-1",
+        "quote": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。"
+      },
+      "polarity": "defective",
+      "pairWith": "comparison-supported"
+    },
+    {
+      "id": "ambiguous-date-versus-period",
+      "failureMode": "教材把年份與時期都連繫到同一件事 → 多於一個站得住的答案",
+      "materialSet": "ambiguous-date-versus-period",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "「歐洲的中古時代結束，進入近代」是指以下哪一個詞語？",
+        "options": [
+          "公元1453年",
+          "文藝復興期間",
+          "英國",
+          "羅馬"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "公元1453年",
+        "explanation": "教材把公元1453年連繫到中古時代的結束。",
+        "knowledgePoint": "中古時代的終結",
+        "sourceExcerpt": "公元1453年：歐洲的中古時代結束，進入近代。",
+        "sourceBlockIds": [
+          "fx-amb-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "discarded",
+        "reasonContains": "答案不是唯一"
+      },
+      "note": "學生無法判斷要答年份還是時期；這正是 2026-10-16 學生回報的實際缺陷。",
+      "evidence": {
+        "blockId": "fx-amb-1",
+        "quote": "公元1453年：歐洲的中古時代結束，進入近代。"
+      },
+      "polarity": "defective",
+      "pairWith": null
+    },
+    {
+      "id": "distractor-supported-by-cited-excerpt",
+      "failureMode": "挖空式選擇題中另一個選項也見於本題引用的教材",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "＿＿＿：工業革命率先在英國的紡織業展開。",
+        "options": [
+          "十八世紀中葉",
+          "紡織業",
+          "英國",
+          "煤鐵資源"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "十八世紀中葉",
+        "explanation": "教材把工業革命的開始時間記為十八世紀中葉。",
+        "knowledgePoint": "工業革命的開展",
+        "sourceExcerpt": "十八世紀中葉，工業革命率先在英國的紡織業展開。",
+        "sourceBlockIds": [
+          "fx-cause-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "discarded",
+        "reasonContains": "也可以填"
+      },
+      "note": "填充式選擇題的空白可以填多個選項，答案並非唯一。",
+      "evidence": {
+        "blockId": "fx-cause-1",
+        "quote": "十八世紀中葉，工業革命率先在英國的紡織業展開。"
+      },
+      "polarity": "defective",
+      "pairWith": null
+    },
+    {
+      "id": "answer-index-mismatch",
+      "failureMode": "correctAnswerIndex 與 correctAnswer 互相矛盾（答案鍵與選項不一致）",
+      "materialSet": "multi-paragraph",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "列強取得領事裁判權之後，對當地政府的管治造成甚麼影響？",
+        "options": [
+          "當地政府無法約束列強僑民，主權因而受損",
+          "當地政府獲得審理外國僑民的權力",
+          "列強放棄在當地的貿易特權",
+          "當地的司法制度完全不受影響"
+        ],
+        "correctAnswerIndex": 1,
+        "correctAnswer": "當地政府無法約束列強僑民，主權因而受損",
+        "explanation": "教材指出當地政府無法約束僑民，因此主權受損。",
+        "knowledgePoint": "列強在亞洲的擴張",
+        "sourceExcerpt": "因此當地政府無法約束他們的行為，主權因而受損。",
+        "sourceBlockIds": [
+          "fx-multi-2"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "discarded",
+        "reasonContains": "correctAnswerIndex 與 correctAnswer 不一致"
+      },
+      "note": "系統不會代為選擇哪一個才是答案，一律丟棄由教師重新生成。",
+      "evidence": {
+        "blockId": "fx-multi-2",
+        "quote": "取得領事裁判權之後，列強得以用本國法律審理本國僑民，因此當地政府無法約束他們的行為，主權因而受損。"
+      },
+      "polarity": "defective",
+      "pairWith": null
+    },
+    {
+      "id": "explanation-repeats-answer",
+      "failureMode": "解釋只把標準答案重複一次",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "工廠制度的出現對工匠的生計造成甚麼影響？",
+        "options": [
+          "工匠生計受到衝擊",
+          "工匠收入大幅增加",
+          "工匠成為工廠東主",
+          "工匠不再需要工作"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "工匠生計受到衝擊",
+        "explanation": "工匠生計受到衝擊",
+        "knowledgePoint": "工業革命的影響",
+        "sourceExcerpt": "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。",
+        "sourceBlockIds": [
+          "fx-cause-2"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "explanation-restates-answer"
+        ]
+      },
+      "note": "解釋沒有交代「為甚麼」；學生無法從錯誤中學習 → 可修正，暫緩自動發布。",
+      "evidence": {
+        "blockId": "fx-cause-2",
+        "quote": "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。"
+      },
+      "polarity": "defective",
+      "pairWith": "explanation-explains-reasoning"
+    },
+    {
+      "id": "explanation-invents-context",
+      "failureMode": "解釋加入了教材沒有交代的年份（杜撰史實）",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "為甚麼工業革命最早在英國展開？",
+        "options": [
+          "英國擁有豐富的煤鐵資源與海外市場",
+          "英國政府禁止海外貿易",
+          "英國工匠拒絕使用機器",
+          "英國沒有可通航的河流"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "英國擁有豐富的煤鐵資源與海外市場",
+        "explanation": "英國在1760年通過法案鼓勵出口，因此工業革命最早在英國展開。",
+        "knowledgePoint": "工業革命的成因",
+        "sourceExcerpt": "由於英國擁有豐富的煤鐵資源與海外市場，因此能夠大量生產並外銷棉織品。",
+        "sourceBlockIds": [
+          "fx-cause-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "discarded",
+        "reasonContains": "教材沒有交代的年份"
+      },
+      "note": "1760 年不在教材之內 → 屬杜撰；這條題目不可進入題庫。",
+      "evidence": {
+        "blockId": "fx-cause-1",
+        "quote": "由於英國擁有豐富的煤鐵資源與海外市場，因此能夠大量生產並外銷棉織品。"
+      },
+      "polarity": "defective",
+      "pairWith": null
+    },
+    {
+      "id": "essential-terminology-preserved",
+      "failureMode": "（正面個案）題目必須使用教材的關鍵詞語（不可因為詞語重疊而誤判）",
+      "materialSet": "multi-paragraph",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "列強在亞洲取得的「領事裁判權」是指甚麼？",
+        "options": [
+          "列強得以用本國法律審理本國僑民",
+          "列強可以在當地徵收關稅",
+          "當地人可以到列強本國定居",
+          "列強放棄在當地的居留權"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "列強得以用本國法律審理本國僑民",
+        "explanation": "教材指出取得領事裁判權之後，列強得以用本國法律審理本國僑民，因此當地政府無法約束他們。",
+        "knowledgePoint": "列強在亞洲的擴張",
+        "sourceExcerpt": "取得領事裁判權之後，列強得以用本國法律審理本國僑民",
+        "sourceBlockIds": [
+          "fx-multi-2"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "選項與節錄重疊是必要的（領事裁判權的定義只能這樣寫），不應因此被當成抄錄。",
+      "evidence": {
+        "blockId": "fx-multi-2",
+        "quote": "取得領事裁判權之後，列強得以用本國法律審理本國僑民，因此當地政府無法約束他們的行為，主權因而受損。"
+      },
+      "polarity": "acceptable",
+      "pairWith": null
+    },
+    {
+      "id": "short-answer-with-equivalent-wording",
+      "failureMode": "（正面個案）短答題的參考答案用另一種寫法表達同樣意思，得分要點覆蓋題目要求",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "short",
+        "difficulty": "basic",
+        "question": "工廠制度出現之後，工人的處境有甚麼轉變？請舉出兩項影響。",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "工廠制度取代家庭手工業，工匠生計受到衝擊；工人因此組織工會爭取改善待遇。",
+        "explanation": "教材指出工廠制度取代家庭手工業，令工匠生計受衝擊，工人於是組織工會爭取改善待遇；兩項影響都能在教材找到依據。",
+        "knowledgePoint": "工業革命的影響",
+        "sourceExcerpt": "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。",
+        "sourceBlockIds": [
+          "fx-cause-2"
+        ],
+        "gradingPoints": [
+          "指出工匠生計受到衝擊",
+          "指出工人組織工會爭取改善待遇"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": []
+      },
+      "note": "得分要點數量符合題目要求的兩項；因為題幹有「轉變」的提問而教材有「取代」的轉變說明，屬可接受（判定為 revise 只因為短答題的參考答案不是教材原文，需教師確認）。",
+      "evidence": {
+        "blockId": "fx-cause-2",
+        "quote": "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。"
+      },
+      "polarity": "defective",
+      "pairWith": null
+    },
+    {
+      "id": "recall-supported",
+      "failureMode": "合理的記憶題（辨認教材的關鍵詞語及說明），不是機械式挖空",
+      "materialSet": "single-statement",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "以下哪一項是「人文主義」的說明？",
+        "options": [
+          "強調人的價值與理性，並重視古典學問",
+          "主張君主的權力直接來自神，人民必須服從",
+          "認為土地是財富的主要來源，應由領主分配",
+          "規定農民必須依附領主生活，不可自由遷移"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "強調人的價值與理性，並重視古典學問",
+        "explanation": "教材把人文主義說明為強調人的價值與理性、並重視古典學問的思想，這一項正符合這段說明；其餘選項與這段說明不符。",
+        "knowledgePoint": "文藝復興的思想",
+        "sourceExcerpt": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。",
+        "sourceBlockIds": [
+          "fx-single-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "基礎題本來就應該考核關鍵詞語及教材的說明；與機械式挖空的分別在於題目提供了完整的說明，學生要讀懂整句才可作答。",
+      "evidence": {
+        "blockId": "fx-single-1",
+        "quote": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。"
+      },
+      "polarity": "acceptable",
+      "pairWith": "mechanical-blank"
+    },
+    {
+      "id": "chronology-causation-confusion",
+      "failureMode": "教材只交代先後（時間順序），題目卻要求學生解釋因果",
+      "materialSet": "chronology-only",
+      "request": {
+        "questionType": "short",
+        "difficulty": "advanced",
+        "question": "為甚麼英國的棉織品產量大幅增加？",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "因為鐵路網建成，所以棉織品可以大量外銷。",
+        "explanation": "教材先說棉織品產量大幅增加，其後才說鐵路網逐步建成。",
+        "knowledgePoint": "工業革命的開展",
+        "sourceExcerpt": "十八世紀中葉，英國的棉織品產量大幅增加。",
+        "sourceBlockIds": [
+          "fx-chron-1"
+        ],
+        "gradingPoints": [
+          "指出棉織品產量大幅增加"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "dimension-unsupported",
+          "unsupported-causation"
+        ]
+      },
+      "note": "教材只順序交代兩件事，沒有交代因果：「產量增加」與「鐵路網建成」的先後不等於因果，因此暫緩自動發布，交教師決定是否可以接受這條題目或需要改寫。",
+      "evidence": {
+        "blockId": "fx-chron-1",
+        "quote": "十八世紀中葉，英國的棉織品產量大幅增加。"
+      },
+      "polarity": "defective",
+      "pairWith": "cause-and-effect-supported"
+    },
+    {
+      "id": "comparison-supported",
+      "failureMode": "教材真的有兩項可比較的資料，比較題有依據",
+      "materialSet": "comparison-supported",
+      "request": {
+        "questionType": "short",
+        "difficulty": "advanced",
+        "question": "文藝復興與中古時代前期對人的看法有甚麼分別？",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "文藝復興強調以人為本，中古時代前期強調以神為本。",
+        "explanation": "教材指出文藝復興強調「以人為本」、中古時代前期強調「以神為本」，兩者的分別在於對人的看法不同。",
+        "knowledgePoint": "文藝復興的思想",
+        "sourceExcerpt": "文藝復興強調「以人為本」：重視人的價值與理性。",
+        "sourceBlockIds": [
+          "fx-compare-1"
+        ],
+        "gradingPoints": [
+          "指出文藝復興以人為本",
+          "指出中古時代前期以神為本"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "教材同時提供兩項可比較的資料（以人為本／以神為本）並寫明「兩者的分別」，因此比較題有教材依據（與 insufficient-material-for-comparison 對照）。",
+      "evidence": {
+        "blockId": "fx-compare-1",
+        "quote": "文藝復興強調「以人為本」：重視人的價值與理性。"
+      },
+      "polarity": "acceptable",
+      "pairWith": "insufficient-material-for-comparison"
+    },
+    {
+      "id": "short-answer-incomplete",
+      "failureMode": "短答題要求兩項影響，但只有一個得分要點（答案不完整）",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "short",
+        "difficulty": "advanced",
+        "question": "工廠制度對工人造成哪兩項影響？",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "工匠生計受到衝擊，工人組織工會爭取改善待遇。",
+        "explanation": "教材指出工匠生計受衝擊，工人其後組織工會爭取改善待遇。",
+        "knowledgePoint": "工業革命的影響",
+        "sourceExcerpt": "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。",
+        "sourceBlockIds": [
+          "fx-cause-2"
+        ],
+        "gradingPoints": [
+          "指出工匠生計受到衝擊"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "answer-incomplete"
+        ]
+      },
+      "note": "題目明確要求兩項，但得分要點只有一項，學生答對兩項也只得一項分；屬可修正的品質問題，暫緩自動發布。",
+      "evidence": {
+        "blockId": "fx-cause-2",
+        "quote": "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。"
+      },
+      "polarity": "defective",
+      "pairWith": "short-answer-complete"
+    },
+    {
+      "id": "short-answer-complete",
+      "failureMode": "短答題要求的項數與得分要點一致（答案完整）",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "short",
+        "difficulty": "advanced",
+        "question": "工廠制度對工人造成哪兩項影響？",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "工匠生計受到衝擊，工人組織工會爭取改善待遇。",
+        "explanation": "教材指出工廠制度取代家庭手工業，工匠生計因此受到衝擊；工人其後組織工會爭取改善待遇。",
+        "knowledgePoint": "工業革命的影響",
+        "sourceExcerpt": "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。",
+        "sourceBlockIds": [
+          "fx-cause-2"
+        ],
+        "gradingPoints": [
+          "指出工匠生計受到衝擊",
+          "指出工人組織工會爭取改善待遇"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "與 short-answer-incomplete 對照：得分要點的數目與題目要求一致，答案因此完整。",
+      "evidence": {
+        "blockId": "fx-cause-2",
+        "quote": "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。"
+      },
+      "polarity": "acceptable",
+      "pairWith": "short-answer-incomplete"
+    },
+    {
+      "id": "explanation-explains-reasoning",
+      "failureMode": "解釋說明推理（為甚麼這個答案成立），不是重複答案",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "工廠制度的出現對工匠的生計造成甚麼影響？",
+        "options": [
+          "工匠生計受到衝擊",
+          "工匠收入大幅增加",
+          "工匠成為工廠東主",
+          "工匠不再需要工作"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "工匠生計受到衝擊",
+        "explanation": "教材指出工廠制度取代家庭手工業，工匠失去原來的工作方式，生計因而受到衝擊；錯誤選項所述的情況與教材相反。",
+        "knowledgePoint": "工業革命的影響",
+        "sourceExcerpt": "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。",
+        "sourceBlockIds": [
+          "fx-cause-2"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "與 explanation-repeats-answer 對照：解釋指出教材的因果（取代家庭手工業 → 生計受衝擊），學生讀到的是推理而不是答案本身。",
+      "evidence": {
+        "blockId": "fx-cause-2",
+        "quote": "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。"
+      },
+      "polarity": "acceptable",
+      "pairWith": "explanation-repeats-answer"
+    },
+    {
+      "id": "fill-explanation-teaches",
+      "failureMode": "填充題的解釋說明答案與教材的關係（不是把教材原文貼一次）",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "fill",
+        "difficulty": "basic",
+        "question": "＿＿＿擁有豐富的煤鐵資源與海外市場，因此工業革命率先在其紡織業展開。",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "英國",
+        "explanation": "英國擁有煤鐵資源及海外市場，令它可以大量生產並外銷棉織品，所以這個位置要填的是國家名稱。",
+        "knowledgePoint": "工業革命的開展",
+        "sourceExcerpt": "十八世紀中葉，工業革命率先在英國的紡織業展開。",
+        "sourceBlockIds": [
+          "fx-cause-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "與 copied-explanation-fill 對照：同樣是填充題，這裡的解釋說明答案在句中扮演的角色，而不是貼上「教材原文」。",
+      "evidence": {
+        "blockId": "fx-cause-1",
+        "quote": "十八世紀中葉，工業革命率先在英國的紡織業展開。"
+      },
+      "polarity": "acceptable",
+      "pairWith": "copied-explanation-fill"
+    },
+    {
+      "id": "exact-year-from-century",
+      "failureMode": "教材只寫世紀，題目卻要求學生答出準確年份",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "short",
+        "difficulty": "advanced",
+        "question": "工業革命率先在英國的紡織業展開，這是在哪一年？",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "十八世紀中葉",
+        "explanation": "教材把工業革命的開展放在十八世紀中葉的英國紡織業，但沒有寫出準確年份。",
+        "knowledgePoint": "工業革命的開展",
+        "sourceExcerpt": "十八世紀中葉，工業革命率先在英國的紡織業展開。",
+        "sourceBlockIds": [
+          "fx-cause-1"
+        ],
+        "gradingPoints": [
+          "指出十八世紀中葉"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "approximate-date-overprecision"
+        ]
+      },
+      "note": "教材只交代「十八世紀中葉」（世紀，100 年範圍），要求學生答出「哪一年」並無教材依據；系統不可代教材把世紀換算成 1700 年。",
+      "evidence": {
+        "blockId": "fx-cause-1",
+        "quote": "十八世紀中葉，工業革命率先在英國的紡織業展開。"
+      },
+      "polarity": "defective",
+      "pairWith": "period-question-supported"
+    },
+    {
+      "id": "period-question-supported",
+      "failureMode": "以教材寫出的時期提問（不要求學生換算年份）",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "short",
+        "difficulty": "basic",
+        "question": "工業革命率先在英國的紡織業展開，這是在甚麼時期？",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "十八世紀中葉",
+        "explanation": "教材把工業革命的開展放在十八世紀中葉的英國紡織業，這是教材寫出的時期。",
+        "knowledgePoint": "工業革命的開展",
+        "sourceExcerpt": "十八世紀中葉，工業革命率先在英國的紡織業展開。",
+        "sourceBlockIds": [
+          "fx-cause-1"
+        ],
+        "gradingPoints": [
+          "指出十八世紀中葉"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "與 exact-year-from-century 對照：同樣的教材與答案，改為考核教材寫出的時期即成立。",
+      "evidence": {
+        "blockId": "fx-cause-1",
+        "quote": "十八世紀中葉，工業革命率先在英國的紡織業展開。"
+      },
+      "polarity": "acceptable",
+      "pairWith": "exact-year-from-century"
+    },
+    {
+      "id": "evaluation-without-material-support",
+      "failureMode": "教材只並列幾項因素，題目卻要求學生判斷哪一項最重要",
+      "materialSet": "multiple-factors",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "advanced",
+        "question": "以下哪一項是工業革命在英國展開的最重要因素？",
+        "options": [
+          "豐富的煤鐵資源",
+          "海外的市場",
+          "穩定的政治環境",
+          "英國的鐵路網"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "豐富的煤鐵資源",
+        "explanation": "教材列出三項因素，其中煤鐵資源最為重要，因此這一項才是答案。",
+        "knowledgePoint": "工業革命的成因",
+        "sourceExcerpt": "工業革命在英國展開的因素包括：豐富的煤鐵資源、海外的市場，以及穩定的政治環境。",
+        "sourceBlockIds": [
+          "fx-factors-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "unsupported-evaluation"
+        ]
+      },
+      "note": "教材把三項因素並列，沒有交代輕重；「最重要」是系統或學生不應代教材作的判斷，因此暫緩自動發布交教師決定。",
+      "evidence": {
+        "blockId": "fx-factors-1",
+        "quote": "工業革命在英國展開的因素包括：豐富的煤鐵資源、海外的市場，以及穩定的政治環境。"
+      },
+      "polarity": "defective",
+      "pairWith": "evaluation-supported-by-material"
+    },
+    {
+      "id": "evaluation-supported-by-material",
+      "failureMode": "教材自己寫明哪一項最重要，題目照教材發問",
+      "materialSet": "ranked-factors",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "advanced",
+        "question": "哪一項是工業革命在英國展開的最重要因素？",
+        "options": [
+          "穩定的政治環境",
+          "豐富的煤鐵資源",
+          "海外的市場",
+          "英國的鐵路網"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "穩定的政治環境",
+        "explanation": "教材指出穩定的政治環境是最重要因素，這一項才符合教材的說法。",
+        "knowledgePoint": "工業革命的成因",
+        "sourceExcerpt": "穩定的政治環境是工業革命在英國展開的最重要因素。",
+        "sourceBlockIds": [
+          "fx-factors-2"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "與 evaluation-without-material-support 對照：輕重判斷由教材原文交代（「穩定的政治環境是……最重要因素」），題目只是照教材發問，因此成立；題幹不可寫「根據教材」，學生作答時不會看到教材。",
+      "evidence": {
+        "blockId": "fx-factors-2",
+        "quote": "穩定的政治環境是工業革命在英國展開的最重要因素。"
+      },
+      "polarity": "acceptable",
+      "pairWith": "evaluation-without-material-support"
+    },
+    {
+      "id": "explanation-asserts-inference",
+      "failureMode": "教材只以推測語氣交代，解釋卻寫成確定史實",
+      "materialSet": "hedged-source",
+      "request": {
+        "questionType": "short",
+        "difficulty": "basic",
+        "question": "這座城市的人口有多少？",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "這座城市的人口曾經超過五萬人。",
+        "explanation": "這座城市的人口超過五萬人，是當時區內最大的城市。",
+        "knowledgePoint": "古代城市",
+        "sourceExcerpt": "學者相信，這座城市的人口可能曾經超過五萬人。",
+        "sourceBlockIds": [
+          "fx-hedge-1"
+        ],
+        "gradingPoints": [
+          "指出人口可能超過五萬人"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "asserted-inference",
+          "unsupported-evaluation"
+        ]
+      },
+      "note": "教材寫的是「學者相信……可能」，解釋卻寫成肯定語氣，還加上教材沒有的「最大」；兩者都令題目暫緩自動發布。",
+      "evidence": {
+        "blockId": "fx-hedge-1",
+        "quote": "學者相信，這座城市的人口可能曾經超過五萬人。"
+      },
+      "polarity": "defective",
+      "pairWith": "explanation-keeps-hedge"
+    },
+    {
+      "id": "explanation-keeps-hedge",
+      "failureMode": "解釋保留教材的推測語氣（不把推論寫成事實）",
+      "materialSet": "hedged-source",
+      "request": {
+        "questionType": "short",
+        "difficulty": "basic",
+        "question": "關於這座城市的人口，學者有甚麼說法？",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "學者相信這座城市的人口可能曾經超過五萬人。",
+        "explanation": "教材指出學者相信這座城市的人口可能超過五萬人；教材對人口的描述帶有推測語氣，作答時應保留「相信」及「可能」等字眼。",
+        "knowledgePoint": "古代城市",
+        "sourceExcerpt": "學者相信，這座城市的人口可能曾經超過五萬人。",
+        "sourceBlockIds": [
+          "fx-hedge-1"
+        ],
+        "gradingPoints": [
+          "指出學者相信人口可能超過五萬人"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "與 explanation-asserts-inference 對照：同樣的教材，解釋保留推測語氣，並要求學生也保留，屬正確處理；題幹不可寫「根據教材」，學生作答時不會看到教材。",
+      "evidence": {
+        "blockId": "fx-hedge-1",
+        "quote": "學者相信，這座城市的人口可能曾經超過五萬人。"
+      },
+      "polarity": "acceptable",
+      "pairWith": "explanation-asserts-inference"
+    },
+    {
+      "id": "explanation-off-topic",
+      "failureMode": "解釋與題目、答案及教材節錄都無關（貼錯內容）",
+      "materialSet": "cause-and-effect",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "basic",
+        "question": "為甚麼工業革命最早在英國展開？",
+        "options": [
+          "豐富的煤鐵資源",
+          "禁止海外貿易",
+          "工匠拒絕使用機器",
+          "缺乏可通航的河流"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "豐富的煤鐵資源",
+        "explanation": "文藝復興在意大利半島的城市共和國之中興起，重視古典學問與人的價值。",
+        "knowledgePoint": "工業革命的成因",
+        "sourceExcerpt": "由於英國擁有豐富的煤鐵資源與海外市場，因此能夠大量生產並外銷棉織品。",
+        "sourceBlockIds": [
+          "fx-cause-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "explanation-off-topic"
+        ]
+      },
+      "note": "解釋講的是另一件史事（文藝復興），學生讀完仍不知道本題答案為何成立；屬可修正的品質問題，生成流程會重寫一次。",
+      "evidence": {
+        "blockId": "fx-cause-1",
+        "quote": "由於英國擁有豐富的煤鐵資源與海外市場，因此能夠大量生產並外銷棉織品。"
+      },
+      "polarity": "defective",
+      "pairWith": null
+    },
+    {
+      "id": "causation-with-bare-yin",
+      "failureMode": "教材以單字「因」交代因果（真實題目校準的反例：不可當成沒有因果）",
+      "materialSet": "bare-causal-yin",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "challenge",
+        "question": "下列哪一項最能解釋一戰後德國與意大利出現反政府聲音的原因？",
+        "options": [
+          "兩國都因接納了對本國不利的戰後安排，國內反政府的聲音高漲",
+          "兩國都因美國恢復孤立政策而失去經濟援助",
+          "兩國都因日本在亞洲擴張而受到威脅",
+          "兩國都因英法重建步伐緩慢而趁機擴張"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "兩國都因接納了對本國不利的戰後安排，國內反政府的聲音高漲",
+        "explanation": "教材指出德國與意大利因接納了對本國不利的戰後安排，國內反政府的聲音高漲；其餘選項所述的原因不見於教材。",
+        "knowledgePoint": "兩次世界大戰之間的國際關係",
+        "sourceExcerpt": "德、意因接納了對本國不利的戰後安排，國內反政府的聲音高漲。",
+        "sourceBlockIds": [
+          "fx-chron-2"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": [
+          "answer-not-in-material"
+        ]
+      },
+      "note": "教材用單字「因」交代因果，因此**不可**再報 unsupported-causation（Sprint 8.6 修正的誤報）。答案是把教材句子改寫成完整句子，仍須教師確認（這是字面比對的固有限制，不是缺陷）。",
+      "polarity": "defective",
+      "pairWith": null,
+      "evidence": {
+        "blockId": "fx-chron-2",
+        "quote": "德、意因接納了對本國不利的戰後安排，國內反政府的聲音高漲。"
+      }
+    },
+    {
+      "id": "numeric-substring-not-answer-leak",
+      "failureMode": "答案只是題幹中另一個數字的一部分（不是洩露答案）",
+      "materialSet": "population-figures",
+      "request": {
+        "questionType": "mc",
+        "difficulty": "advanced",
+        "question": "日佔期間約有一百萬人被迫離開香港，全港人口由1941年約一百六十多萬人銳減至1945年約多少？",
+        "options": [
+          "六十多萬人",
+          "四十多萬人",
+          "八十多萬人",
+          "二百萬人"
+        ],
+        "correctAnswerIndex": 0,
+        "correctAnswer": "六十多萬人",
+        "explanation": "教材指出全港人口由1941年約一百六十多萬人銳減至1945年約六十多萬人；1945年的人口約為六十多萬人。",
+        "knowledgePoint": "日佔時期的香港",
+        "sourceExcerpt": "日佔期間，約有一百萬人被迫離開香港，全港人口由1941年約一百六十多萬人銳減至1945年約六十多萬人。",
+        "sourceBlockIds": [
+          "fx-pop-1"
+        ],
+        "gradingPoints": []
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "pass",
+        "codesInclude": []
+      },
+      "note": "字面上「六十多萬人」出現在題幹的「一百六十多萬人」之內，但兩者是不同的數目，學生不能因此抄到答案；Sprint 8.6 修正為「出現位置前一字是數字用字則不算洩露」。",
+      "polarity": "acceptable",
+      "pairWith": null,
+      "evidence": {
+        "blockId": "fx-pop-1",
+        "quote": "日佔期間，約有一百萬人被迫離開香港，全港人口由1941年約一百六十多萬人銳減至1945年約六十多萬人。"
+      }
+    },
+    {
+      "id": "stem-context-from-another-block",
+      "failureMode": "題幹的背景句取自另一段落（引用段落只提供答案的依據）",
+      "materialSet": "comparison-supported",
+      "request": {
+        "questionType": "short",
+        "difficulty": "advanced",
+        "question": "文藝復興首先在意大利半島興起，試說明「以人為本」的意思。",
+        "options": [],
+        "correctAnswerIndex": null,
+        "correctAnswer": "重視人的價值與理性。",
+        "explanation": "教材指出文藝復興強調「以人為本」，即重視人的價值與理性。",
+        "knowledgePoint": "文藝復興的思想",
+        "sourceExcerpt": "文藝復興強調「以人為本」：重視人的價值與理性。",
+        "sourceBlockIds": [
+          "fx-compare-1"
+        ],
+        "gradingPoints": [
+          "指出重視人的價值與理性"
+        ]
+      },
+      "expected": {
+        "result": "accepted",
+        "outcome": "revise",
+        "codesInclude": []
+      },
+      "note": "題幹的「首先在意大利半島興起」是背景句，答案的依據在引用段落之內；Sprint 8.6 起「最重要／最早」一類用語以**整批教材**判斷，因此不會因為背景句來自另一段而被誤判（本個案仍因答案為改寫而暫緩，屬固有限制）。",
+      "polarity": "defective",
+      "pairWith": null,
+      "evidence": {
+        "blockId": "fx-compare-1",
+        "quote": "文藝復興強調「以人為本」：重視人的價值與理性。"
+      }
+    }
+  ],
+  "coverage": [
+    {
+      "aspect": "機械式教材刪句（挖空）",
+      "defective": "mechanical-blank",
+      "acceptable": "recall-supported"
+    },
+    {
+      "aspect": "合理的記憶題（關鍵詞語及說明）",
+      "defective": null,
+      "acceptable": "recall-supported"
+    },
+    {
+      "aspect": "有意義的因果考核",
+      "defective": "chronology-causation-confusion",
+      "acceptable": "cause-and-effect-supported"
+    },
+    {
+      "aspect": "假因果（時序混淆為因果）",
+      "defective": "chronology-causation-confusion",
+      "acceptable": "cause-and-effect-supported"
+    },
+    {
+      "aspect": "比較題證據不足",
+      "defective": "insufficient-material-for-comparison",
+      "acceptable": "comparison-supported"
+    },
+    {
+      "aspect": "選擇題有多個站得住的答案",
+      "defective": "ambiguous-date-versus-period",
+      "acceptable": "cause-and-effect-supported"
+    },
+    {
+      "aspect": "錯誤選項被同一段教材的另一句支持",
+      "defective": "distractor-supported-by-cited-excerpt",
+      "acceptable": "essential-terminology-preserved"
+    },
+    {
+      "aspect": "短答題答案不完整",
+      "defective": "short-answer-incomplete",
+      "acceptable": "short-answer-complete"
+    },
+    {
+      "aspect": "解釋只是重複答案",
+      "defective": "explanation-repeats-answer",
+      "acceptable": "explanation-explains-reasoning"
+    },
+    {
+      "aspect": "解釋只抄錄教材原文",
+      "defective": "copied-explanation-fill",
+      "acceptable": "fill-explanation-teaches"
+    },
+    {
+      "aspect": "解釋加入教材沒有的內容",
+      "defective": "explanation-invents-context",
+      "acceptable": "explanation-explains-reasoning"
+    },
+    {
+      "aspect": "解釋把教材的推測語氣寫成事實",
+      "defective": "explanation-asserts-inference",
+      "acceptable": "explanation-keeps-hedge"
+    },
+    {
+      "aspect": "解釋與題目無關（貼錯內容）",
+      "defective": "explanation-off-topic",
+      "acceptable": "explanation-explains-reasoning"
+    },
+    {
+      "aspect": "教材只寫世紀，題目要求準確年份",
+      "defective": "exact-year-from-century",
+      "acceptable": "period-question-supported"
+    },
+    {
+      "aspect": "教材只並列因素，題目要求判斷哪一項最重要",
+      "defective": "evaluation-without-material-support",
+      "acceptable": "evaluation-supported-by-material"
+    },
+    {
+      "aspect": "等值／改寫答案應交教師確認",
+      "defective": "paraphrased-answer-needs-review",
+      "acceptable": "partially-supported-answer"
+    },
+    {
+      "aspect": "學生短答的等值寫法（平台以 acceptedAnswers 給分，見 practice 測試）",
+      "defective": null,
+      "acceptable": "short-answer-with-equivalent-wording"
+    },
+    {
+      "aspect": "跨段落教材的引用",
+      "defective": "answer-index-mismatch",
+      "acceptable": "multi-paragraph-context"
+    },
+    {
+      "aspect": "真實題目校準：教材以單字「因」交代因果",
+      "defective": null,
+      "acceptable": "causation-with-bare-yin"
+    },
+    {
+      "aspect": "真實題目校準：答案只是題幹中另一個數字的一部分",
+      "defective": null,
+      "acceptable": "numeric-substring-not-answer-leak"
+    },
+    {
+      "aspect": "真實題目校準：題幹背景句取自另一段落",
+      "defective": null,
+      "acceptable": "stem-context-from-another-block"
+    }
+  ],
+  "notes": [
+    "Sprint 8.5：每個個案都標示 polarity（acceptable／defective）、pairWith（對照組）及 evidence（引用段落 + 逐字原文）。",
+    "acceptable 個案代表「目前規則判定為 pass（可以照既有流程自動驗證及發布）」，**不代表**已獲教師或歷史專家批准。",
+    "human-judgement 個案（例如解釋是否教得好、錯誤選項是否有教學價值）刻意不列入預期結果：這些判斷需要教師，見 docs/teacher-review/README.md。"
+  ],
+  "polarityMeaning": {
+    "acceptable": "目前規則判定為 pass（可以照既有流程自動驗證及發布）；不代表已獲教師或歷史專家批准。",
+    "defective": "目前規則判定為 revise（需要修訂或教師確認）或 reject（丟棄）。包含「題目本身沒有錯，只是系統未能確定」的個案（例如答案只是教材語句的改寫），因此不等於史實錯誤。"
+  },
+  "calibration": [
+    {
+      "date": "2026-10-17",
+      "method": "以 `npm run review:package` 對本機資料庫的 8 條真實生成題目重算品質閘門，逐題對照生成時的判定。",
+      "findings": [
+        "教材以單字「因」交代因果（「德、意因接納了…」）時，系統誤判為「教材沒有交代因果」→ 已加入裸「因」的判斷（剔除原因／因素／因為等）。",
+        "題幹「一百六十多萬人」包含答案「六十多萬人」時，系統誤判為洩露答案 → 已改為檢查出現位置前一字是否為數字用字。",
+        "題幹背景句取自另一段落時，「最重要／最早」誤判為無依據 → 已改為以整批教材判斷。"
+      ],
+      "notFixed": "填充題答案為教材欄目標題（例如「社會及文化方面」）時，品質閘門不會攔截（該規則只在本地示範生成中使用）；示範模式短答題以教材標題為題（例如「試說明「技術改良與文化發展」。」）亦不會被攔截。兩者都需要教師判斷或另立規則，Sprint 8.6 未改動。"
+    }
+  ]
+}

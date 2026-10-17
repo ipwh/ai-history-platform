@@ -1,0 +1,865 @@
+{
+  "version": 1,
+  "title": "2026-10 教材更新：30 條題目教材依據重新連結清單",
+  "purpose": "以 2026-10 版學生教材逐字核對後，把題目的教材依據由舊版本段落重新連結至新版本段落。只改 sourceExcerpt／sourceLocation／sourceBlockIds／sourceVerified，不改題幹、選項、答案、解釋或得分要點。",
+  "sourceMaterials": "materials/ 內 12 份 2026-10 版學生教材（kind = demo，已由擁有者授權向學生發布）",
+  "generatedFrom": {
+    "database": "data/app.db",
+    "previousState": "data/exports/app.db.pre-unverified-triage-2026-10-16T1349Z.db",
+    "generatedAt": "2026-10-16"
+  },
+  "entries": [
+    {
+      "questionId": "q_79f94b7fc7ad464b",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-civilisation-background",
+      "questionType": "mc",
+      "documentFileName": "課題1人類的需要 古與今.docx",
+      "blockIds": [
+        "blk_c65b69f76f954859",
+        "blk_ec6f223a26c44083"
+      ],
+      "sourceLocation": "課題1人類的需要 古與今.docx · 第 124 段（段落）",
+      "excerpt": "與口傳相比，文字能記錄與傳授更多知識，內容也較為準確。",
+      "contentFingerprint": "6b45a02fa196c28db27bb0d43e58ec12bbc1a4f6d97bff2ab353ee435195c31a",
+      "rationale": "第 124 段逐字說明文字能記錄與傳授更多知識，第 125 段「累積的知識促進了古文明的誕生與發展」即答案「文字有助累積前人的智慧及文化，推動文明誕生與發展」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "文字有助累積前人的智慧及文化，推動文明誕生與發展",
+        "sourceLocation": "HNC1A2E_T1_SN_TE.docx · 第 525 段（表格）（表格第 5 列）",
+        "blockIds": [
+          "blk_e0151ba2ca6e4c09"
+        ],
+        "revision": 4,
+        "status": "published"
+      },
+      "appliedRevision": 5,
+      "relatedBlockLocators": [
+        {
+          "documentFileName": "課題1人類的需要 古與今.docx",
+          "sourceLocation": "課題1人類的需要 古與今.docx · 第 125 段（段落）"
+        }
+      ]
+    },
+    {
+      "questionId": "q_bc07aba8dba34840",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-civilisation-background",
+      "questionType": "fill",
+      "documentFileName": "課題1人類的需要 古與今.docx",
+      "blockIds": [
+        "blk_54dae8acd8a748ea",
+        "blk_b227f4614e744504"
+      ],
+      "sourceLocation": "課題1人類的需要 古與今.docx · 第 31 段（清單）",
+      "excerpt": "生活模式的變化；城市生活的展開；文字的出現",
+      "contentFingerprint": "1eb746c5c894ca8532c5d6d4c4c37bc0479e54d260f3349da28e64d6c8827fa6",
+      "rationale": "答案「城市生活」逐字見於第 31 段清單「城市生活的展開」；第 121 段說明城市管理衍生政府與規劃，對應題幹所述「政府與管治、城市建設」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "隨着人口擴張，城市需要管理與規劃衍生政府與管治、城市建設等其他文明特徵",
+        "sourceLocation": "HNC1A2E_T1_SN_TE.docx · 第 525 段（表格）（表格第 5 列）",
+        "blockIds": [
+          "blk_e0151ba2ca6e4c09"
+        ],
+        "revision": 4,
+        "status": "published"
+      },
+      "appliedRevision": 5,
+      "relatedBlockLocators": [
+        {
+          "documentFileName": "課題1人類的需要 古與今.docx",
+          "sourceLocation": "課題1人類的需要 古與今.docx · 第 121 段（清單）"
+        }
+      ]
+    },
+    {
+      "questionId": "q_173bce5a718349ce",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-civilisation-background",
+      "questionType": "mc",
+      "documentFileName": "課題1人類的需要 古與今.docx",
+      "blockIds": [
+        "blk_314b5a867ad640a7",
+        "blk_54dae8acd8a748ea"
+      ],
+      "sourceLocation": "課題1人類的需要 古與今.docx · 第 119 段（段落）",
+      "excerpt": "他們有餘暇可以投入貿易、宗教、科學、藝術創作等活動。",
+      "contentFingerprint": "8cd8b092792ed30ad86f339da33b5297fb5944c7feb3ec70af0c87c8afed4c73",
+      "rationale": "第 119 段逐字「他們有餘暇可以投入貿易、宗教、科學、藝術創作等活動。」即答案內容；第 31 段「生活模式的變化」為題幹引用的標籤。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "生活模式的變化 ｜ 最基本的衣食與居住需要得到滿足人類開始投入貿易、宗教、藝術創作等活動",
+        "sourceLocation": "HNC1A2E_T1_SN_TE.docx · 第 525 段（表格）（表格第 5 列）",
+        "blockIds": [
+          "blk_e0151ba2ca6e4c09"
+        ],
+        "revision": 4,
+        "status": "published"
+      },
+      "appliedRevision": 5,
+      "relatedBlockLocators": [
+        {
+          "documentFileName": "課題1人類的需要 古與今.docx",
+          "sourceLocation": "課題1人類的需要 古與今.docx · 第 31 段（清單）"
+        }
+      ]
+    },
+    {
+      "questionId": "q_e70c615a65ef4bbc",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-periods-neolithic",
+      "questionType": "mc",
+      "documentFileName": "課題1人類的需要 古與今.docx",
+      "blockIds": [
+        "blk_64868c22187a4ea1",
+        "blk_09df5a0903044a93"
+      ],
+      "sourceLocation": "課題1人類的需要 古與今.docx · 第 112 段（表格）",
+      "excerpt": "食：通過農耕及畜牧生產食物，食物供應較穩定充足住：為長期照料農田而定居，並興建較穩固的房屋",
+      "contentFingerprint": "9881de0e8d738ab6e765ad210a73073eb22ec42b56d28583468a368fcdf90b49",
+      "rationale": "第 112 段新石器時代列同時寫出「通過農耕及畜牧生產食物」與「為長期照料農田而定居，並興建較穩固的房屋」，直接把農耕畜牧與定居建房連繫（＝答案「人類開始定居並建造房屋」）。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "農耕與畜牧出現後，人類開始定居並建造房屋。",
+        "sourceLocation": "HNC1A2E_T1_SN_TE.docx · 第 103 段（清單）（第 12 項）",
+        "blockIds": [
+          "blk_20045273fdcb482b"
+        ],
+        "revision": 4,
+        "status": "published"
+      },
+      "appliedRevision": 5,
+      "relatedBlockLocators": [
+        {
+          "documentFileName": "課題1人類的需要 古與今.docx",
+          "sourceLocation": "課題1人類的需要 古與今.docx · 第 20 段（清單）"
+        }
+      ]
+    },
+    {
+      "questionId": "q_20081c1ba3fa4021",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-periods-neolithic",
+      "questionType": "short",
+      "documentFileName": "課題1人類的需要 古與今.docx",
+      "blockIds": [
+        "blk_09df5a0903044a93",
+        "blk_64868c22187a4ea1"
+      ],
+      "sourceLocation": "課題1人類的需要 古與今.docx · 第 20 段（清單）",
+      "excerpt": "定居與建房：村落陸續出現，以村落為基礎的農耕社會形成",
+      "contentFingerprint": "5ffe0f033f70c95584a500b8e1dd5a9edf10211d8fc869af3a6642483455e949",
+      "rationale": "第 20 段「定居與建房：村落陸續出現，以村落為基礎的農耕社會形成」支持答案的定居部分；第 112 段補充房屋與聚居。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "農耕與畜牧的出現，使糧食供應變得更加穩定，有助推動人口上升。",
+        "sourceLocation": "HNC1A2E_T1_SN_TE.docx · 第 103 段（清單）（第 12 項）",
+        "blockIds": [
+          "blk_20045273fdcb482b"
+        ],
+        "revision": 4,
+        "status": "published"
+      },
+      "appliedRevision": 5,
+      "relatedBlockLocators": [
+        {
+          "documentFileName": "課題1人類的需要 古與今.docx",
+          "sourceLocation": "課題1人類的需要 古與今.docx · 第 112 段（表格）"
+        }
+      ]
+    },
+    {
+      "questionId": "q_6fa6d4aa5f154b18",
+      "topicId": "topic-6",
+      "sectionId": "topic-6-impact-europe",
+      "questionType": "fill",
+      "documentFileName": "課題6 歐洲國家的殖民擴張.docx",
+      "blockIds": [
+        "blk_438c1e3a278242f4"
+      ],
+      "sourceLocation": "課題6 歐洲國家的殖民擴張.docx · 第 96 段（清單）",
+      "excerpt": "殖民地：完全失去主權、由宗主國直接擁有與統治的地區，並視為宗主國領土的一部分。",
+      "contentFingerprint": "1a4170cbd2c678234bfcebfdb2fbc6019d1b43d9c3e36b9da817850ceeda102b",
+      "rationale": "第 96 段逐字定義「殖民地」並寫明「委派殖民官員（例如總督）實行直接統治」，對應答案「殖民地」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "殖民地：由殖民地官員直接管治",
+        "sourceLocation": "HNC2A2E_T6_SN_TE.docx · 第 227 段（清單）（第 5 項）",
+        "blockIds": [
+          "blk_d645e36a50194832"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_703652ade8524504",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-ww2",
+      "questionType": "mc",
+      "documentFileName": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx",
+      "blockIds": [
+        "blk_91436e50d5f44c24"
+      ],
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx · 第 271 段（表格）",
+      "excerpt": "鞏固亞、非國家的獨立地位促使第三世界的形成",
+      "contentFingerprint": "c74ef0fe5f24352706f2fd0e6a4f383a0207e68a85ced994daa578a98f1f2a60",
+      "rationale": "第 271 段大事年表 1955 萬隆會議一列逐字「鞏固亞、非國家的獨立地位促使第三世界的形成」（＝答案「第三世界」）；1961 不結盟運動一列亦提到第三世界。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "戰後的非殖民地化（民族民主運動）與「第三世界」的冒起",
+        "sourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 523 段（段落）",
+        "blockIds": [
+          "blk_3ef0827636a84f30"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_56c24cb665fa4653",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-conflict",
+      "questionType": "fill",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_0f58e97e87f84089"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 28 段（清單）",
+      "excerpt": "1920年代：國聯曾數次成功斡旋成員國紛爭，避免局勢惡化。",
+      "contentFingerprint": "4dfe42a7547769675a319b4ecbf42194d72031bc74d8052d61de1702fa0b22a0",
+      "rationale": "第 28 段逐字「1920年代：國聯曾數次成功斡旋成員國紛爭，避免局勢惡化。」支持答案「1920年代」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "1920年代：國聯曾數次成功斡旋成員國紛爭，避免衝突升級。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 19 段（清單）（第 9 項）",
+        "blockIds": [
+          "blk_d1b28db0af6f42f0"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_c1f8b48892644a55",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-conflict",
+      "questionType": "short",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_14a3a7183d804651"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 245 段（清單）",
+      "excerpt": "至1930年代，它面對極權國家的侵略束手無策，最終無法阻止第二次世界大戰爆發。",
+      "contentFingerprint": "ab465dce873fce70f33920f68d06ab5466e56be2e40a7f51469d6561e55b9b13",
+      "rationale": "第 245 段逐字「至1930年代，它面對極權國家的侵略束手無策，最終無法阻止第二次世界大戰爆發。」；答案「無法阻止大戰再起」與新版「無法阻止第二次世界大戰爆發」為同一史實（短答自我檢查）。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "1930年代：它面對極權國家的侵略束手無策，無法阻止大戰再起。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 19 段（清單）（第 9 項）",
+        "blockIds": [
+          "blk_d1b28db0af6f42f0"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_bebc1e60e12f4034",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-league",
+      "questionType": "short",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_14a3a7183d804651"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 245 段（清單）",
+      "excerpt": "至1930年代，它面對極權國家的侵略束手無策，最終無法阻止第二次世界大戰爆發。",
+      "contentFingerprint": "6d05654301fe2fda89691aab7b89f5aacf9e27a1702e9846c482ff113f7be152",
+      "rationale": "同 q_c1f8b48892644a55：第 245 段逐字支持「面對極權國家的侵略束手無策」及「無法阻止（第二次世界）大戰爆發」兩項得分要點。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "至1930年代，它面對極權國家的侵略束手無策，最終無法阻止大戰再起。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 143 段（清單）（第 1 項）",
+        "blockIds": [
+          "blk_dcb17a7460dd4c22"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_a2c7b14c18284a6a",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "fill",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_8dbdeaab797849e9"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 53 段（清單）",
+      "excerpt": "然而，很多國家忽視環境保護，缺乏可持續發展的規劃與相關法規，導致環境污染問題日益嚴重。",
+      "contentFingerprint": "daf688690c3fe422443e698c863b3c370dc08807e8db597f7f67fc8a904dbe75",
+      "rationale": "第 53 段逐字「很多國家忽視環境保護，缺乏可持續發展的規劃與相關法規，導致環境污染問題日益嚴重。」支持答案「環境保護」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "它們在過程中只重視推動城市與經濟發展，因此忽略環境保護，並沒有制定可持續發展的規劃及法例，結果造成過度開發及污染問題。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 29 段（清單）（第 5 項）",
+        "blockIds": [
+          "blk_bf39048b8c7b4e6d"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_b6a855e95b7d4495",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "mc",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_8dbdeaab797849e9"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 53 段（清單）",
+      "excerpt": "然而，很多國家忽視環境保護，缺乏可持續發展的規劃與相關法規，導致環境污染問題日益嚴重。",
+      "contentFingerprint": "c9ccdacc97402578c3e38d5414230eb063f89d3750a60174a4a556642c0aece4",
+      "rationale": "第 53 段「缺乏可持續發展的規劃與相關法規」與答案選項「沒有制定可持續發展的規劃及法例」一致（新版以「忽視環境保護」代替舊版「只重視城市與經濟發展」）。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "它們在過程中只重視推動城市與經濟發展，因此忽略環境保護，並沒有制定可持續發展的規劃及法例，結果造成過度開發及污染問題。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 29 段（清單）（第 5 項）",
+        "blockIds": [
+          "blk_bf39048b8c7b4e6d"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_1331bde8275c449f",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "short",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_8dbdeaab797849e9"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 53 段（清單）",
+      "excerpt": "然而，很多國家忽視環境保護，缺乏可持續發展的規劃與相關法規，導致環境污染問題日益嚴重。",
+      "contentFingerprint": "111910e2ce8fb0f7e2a22e1a7dcfb76eb90b6ae30bb319f52e3b7917c5c1fed1",
+      "rationale": "第 53 段支持城市化／工業化與污染問題的關係；第 49 段「濫伐森林、過度捕撈與過度耕作…大量物種瀕臨滅絕」對應得分要點舉例（短答自我檢查）。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "它們在過程中只重視推動城市與經濟發展，因此忽略環境保護，並沒有制定可持續發展的規劃及法例，結果造成過度開發及污染問題。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 29 段（清單）（第 5 項）",
+        "blockIds": [
+          "blk_bf39048b8c7b4e6d"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_abdfcbab69fe49cc",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "mc",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_a68a77ea607c45f1"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 78 段（清單）",
+      "excerpt": "1918-1919年：歐洲的流感疫情迅速蔓延至北美洲與澳洲，造成數千萬人死亡。",
+      "contentFingerprint": "5ec20dc82893dcfd7f9ad4763cd36511e783de03748a43a4d746373f85e7059d",
+      "rationale": "第 78 段逐字「1918-1919年：歐洲的流感疫情迅速蔓延至北美洲與澳洲，造成數千萬人死亡。」支持答案「1919年」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "1918-1919年：史上最嚴重的流感疫潮爆發，導致超過二千五百萬人死亡",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 38 段（清單）（第 7 項）",
+        "blockIds": [
+          "blk_172cad4e33284507"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_70b9fd416134442e",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "fill",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_a68a77ea607c45f1"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 78 段（清單）",
+      "excerpt": "1957年：亞洲流感擴散至歐洲與北美洲，導致約二百萬人喪生。",
+      "contentFingerprint": "fa8fcbaba4d3571a557004cb291d8addf489b25ab2b5ce58bcb2287cb7c2a45f",
+      "rationale": "第 78 段逐字「1957年：亞洲流感擴散至歐洲與北美洲，導致約二百萬人喪生。」支持答案「1957年」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "1957年：亞洲流感疫症蔓延至歐洲與北美洲，死亡人數高達二百萬人",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 38 段（清單）（第 7 項）",
+        "blockIds": [
+          "blk_172cad4e33284507"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_dc813d90c4c647d5",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "mc",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_a68a77ea607c45f1"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 78 段（清單）",
+      "excerpt": "1976年首次發現的埃博拉病毒，其死亡率超過50%，至今仍缺乏廣泛普及的治癒方法。",
+      "contentFingerprint": "75fdc313e066d185be989df78b34cd14bcec5a104ccd17fbaeecfeda19749233",
+      "rationale": "第 78 段逐字「1976年首次發現的埃博拉病毒，其死亡率超過50%…」支持答案「1976年」；新版把舊版「伊波拉」改寫為「埃博拉」，指同一病毒。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "1976年出現的伊波拉病毒染病死亡率超過百分之五十，疾病至今仍無法預防及根治；",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 38 段（清單）（第 7 項）",
+        "blockIds": [
+          "blk_172cad4e33284507"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_ba04d2b1595d444e",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "mc",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_c80a529afb1f4b6f"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 14 段（清單）",
+      "excerpt": "交通進步及全球化有機會使地區傳染病演變為全球疫症",
+      "contentFingerprint": "19bc7bef6979b5e4a97f7de8e12e8c01e9fc13c48073dff8bafcd59d47238e9a",
+      "rationale": "第 14 段大綱逐字「交通進步及全球化有機會使地區傳染病演變為全球疫症」即答案選項內容。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "交通進步雖然便捷各地往來，但同時令疾病容易擴散，全球化更有機會使地區傳染病演變為全球疫症。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 38 段（清單）（第 7 項）",
+        "blockIds": [
+          "blk_172cad4e33284507"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_837a4dab89fa408e",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "mc",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_a68a77ea607c45f1"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 78 段（清單）",
+      "excerpt": "全球化更使地區性傳染病有機會演變為全球性疫情。",
+      "contentFingerprint": "e272f0d56e671689f8588a567aa732af928607c251a9657ea0625f72876f312a",
+      "rationale": "第 78 段「全球化更使地區性傳染病有機會演變為全球性疫情。」與同段第一句「隨着交通運輸進步與國際經貿往來增加，疾病的傳播速度與範圍大幅擴展。」支持答案「交通進步及全球化令疾病容易擴散」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "交通進步雖然便捷各地往來，但同時令疾病容易擴散，全球化更有機會使地區傳染病演變為全球疫症。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 38 段（清單）（第 7 項）",
+        "blockIds": [
+          "blk_172cad4e33284507"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_2972fc745e3c4d0f",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "fill",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_8b25b3ce3f104f5c"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 82 段（清單）",
+      "excerpt": "這些國家的醫護人員與藥物嚴重短缺，亦缺乏足夠資源改善醫療設施，因此高度依賴發達國家及國際醫療組織的援助。",
+      "contentFingerprint": "f269daaea457552d512bafe6eb09186622608fc4dc7198ef8939fb05d4642a80",
+      "rationale": "第 82 段逐字「這些國家的醫護人員與藥物嚴重短缺，亦缺乏足夠資源改善醫療設施，因此高度依賴發達國家及國際醫療組織的援助。」支持答案「援助」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "欠發達國家缺乏醫護人員與藥物，亦沒有足夠能力以改善醫療設施，十分依賴較發達國家及國際醫療組織的援助。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 40 段（清單）（第 7 項）",
+        "blockIds": [
+          "blk_e4fa0b91116e4fd6"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_56260c5e1fb043bb",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "short",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_0eed78db80c4413a",
+        "blk_8b25b3ce3f104f5c"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 80 段（清單）",
+      "excerpt": "這些國家醫療資源短缺，且戰亂頻仍，當地政府難以有效防控疫情，人民的感染與死亡率因而遠高於發達國家。",
+      "contentFingerprint": "e0bf82c85ddd6e4dce57806df067b7448059ec922e471c7dbc2487c3ee1b5ec2",
+      "rationale": "第 80 段逐條支持得分要點：缺乏醫療與衛生知識、環境污染、資源短缺與戰亂、感染與死亡率遠高於發達國家；第 82 段支持「依賴外部援助」（短答自我檢查）。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "欠發達國家缺乏醫護人員與藥物，亦沒有足夠能力以改善醫療設施，十分依賴較發達國家及國際醫療組織的援助。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 40 段（清單）（第 7 項）",
+        "blockIds": [
+          "blk_e4fa0b91116e4fd6"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": [
+        {
+          "documentFileName": "課題11 20世紀以來的國際合作.docx",
+          "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 82 段（清單）"
+        }
+      ]
+    },
+    {
+      "questionId": "q_54b270c73d464baf",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "mc",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_41da8f1688c6488e"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 8 段（清單）",
+      "excerpt": "發展中國家：收入不穩 + 向發達國家借貸 → 負債不斷上升",
+      "contentFingerprint": "59575cba0f4152c837aa840bdc994e0900aa2eada6bae1e4076312f36a5d7d5b",
+      "rationale": "第 8 段逐字「發展中國家：收入不穩 + 向發達國家借貸 → 負債不斷上升」即答案選項內容（舊題的「欠發達國家」在新版稱「發展中國家」，指同一組國家）。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "欠發達國家：收入不穩 + 向較發達國家借貸 → 負債不斷上升",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 3 段（清單）（第 6 項）",
+        "blockIds": [
+          "blk_563f9c6ef1aa4064"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_750b4d351bf64529",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "fill",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_01d68be462a54d23"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 31 段（清單）",
+      "excerpt": "十九世紀末起：歐美國家憑着經濟、軍事、科技等巨大優勢，加快在全球的殖民擴張，掠奪大量財富與資源。",
+      "contentFingerprint": "66ddaa3a83a6ee5cc65224ac4c89979d5e3b90c290b3faeb498e85ce39a6fab4",
+      "rationale": "第 31 段逐字「十九世紀末起：歐美國家憑着經濟、軍事、科技等巨大優勢，加快在全球的殖民擴張，掠奪大量財富與資源。」支持答案「十九世紀末起」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "十九世紀末起：歐美國家憑着經濟、軍事、科技等巨大優勢，加快在全球的殖民擴張，取得大量財富與資源。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 21 段（清單）（第 5 項）",
+        "blockIds": [
+          "blk_12afab3f360341c3"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_163e9008f57d4378",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "short",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_01d68be462a54d23"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 31 段（清單）",
+      "excerpt": "二戰後：這些國家的殖民地雖然陸續獨立，但歐美國家仍然掌控全球經濟，國際間貧富不均的情況持續。",
+      "contentFingerprint": "3cd5f633f316f8ab3a6e3a8b0304aafbee5d4d709012703438fd53f324e33ad7",
+      "rationale": "第 31 段逐字「二戰後：這些國家的殖民地雖然陸續獨立，但歐美國家仍然掌控全球經濟，國際間貧富不均的情況持續。」支持答案「二戰後」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "二戰後：殖民地雖然陸續獨立，但歐美國家仍然掌握世界的經濟命脈，貧富不均的情況持續。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 21 段（清單）（第 5 項）",
+        "blockIds": [
+          "blk_12afab3f360341c3"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_77e7395afb2d42b7",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "mc",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_d6fb6ede2278472b",
+        "blk_31ee5248a246449f"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 33 段（段落）",
+      "excerpt": "（至二十世紀末）僅佔全球約三成人口，卻擁有全球近八成財富；",
+      "contentFingerprint": "3052d945d1ec38b0bcf6c22dcc23fd74da0de4906558b503a0ded22c6fa1fbe2",
+      "rationale": "第 33 段「（至二十世紀末）僅佔全球約三成人口，卻擁有全球近八成財富；」＋第 34 段「消耗全球約七成資源。」支持答案的三項數據。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "後者只佔全球三成人口，卻擁有全球近八成財富、耗用全球七成的資源。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 21 段（清單）（第 5 項）",
+        "blockIds": [
+          "blk_12afab3f360341c3"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": [
+        {
+          "documentFileName": "課題11 20世紀以來的國際合作.docx",
+          "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 34 段（段落）"
+        }
+      ]
+    },
+    {
+      "questionId": "q_a2ab34d608954a57",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "fill",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_41da8f1688c6488e"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 8 段（清單）",
+      "excerpt": "陷入貧窮與借貸的惡性循環",
+      "contentFingerprint": "65382951cb547ea1710a939ff040193bab0e495d6e655e6f2a9ac031b25147d6",
+      "rationale": "第 8 段「陷入貧窮與借貸的惡性循環」逐字支持答案「惡性循環」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "欠發達國家負債不斷上升，陷入貧窮與借貸的惡性循環，經濟增長有限。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 25 段（清單）（第 4 項）",
+        "blockIds": [
+          "blk_aaccd2c18933461f"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_1132db41064a45e3",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "mc",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_d6fb6ede2278472b"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 33 段（段落）",
+      "excerpt": "（至二十世紀末）僅佔全球約三成人口，卻擁有全球近八成財富；",
+      "contentFingerprint": "795ec5b3eecbb24cba65ed729d724ec5c0c4d976bd307157afd65257be86b643",
+      "rationale": "第 33 段逐字支持答案「較發達國家只佔全球三成人口，卻擁有全球近八成財富」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "後者只佔全球三成人口，卻擁有全球近八成財富、耗用全球七成的資源。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 21 段（清單）（第 5 項）",
+        "blockIds": [
+          "blk_12afab3f360341c3"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_9c91cecb7b6849dc",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-united-nations",
+      "questionType": "short",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_e1bccd4fb8c5496a"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 85 段（清單）",
+      "excerpt": "目標：推動國際合作，維持和平、促進發展，並尊重人權與基本自由",
+      "contentFingerprint": "5c1a4da51c040a2755224d4c9cb9cbe81b9d2e077b2b459de36647be0d99b777",
+      "rationale": "第 85 段「目標：推動國際合作，維持和平、促進發展，並尊重人權與基本自由」支持答案「推動國際合作，以維持和平及促進發展」（新版增列「尊重人權與基本自由」，短答自我檢查）。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "目標：推動國際合作，以維持和平及促進發展",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 45 段（清單）（第 3 項）",
+        "blockIds": [
+          "blk_91644038f00d48fc"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_8282065385794559",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-united-nations",
+      "questionType": "mc",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_f79677aebfd04f01"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 89 段（清單）",
+      "excerpt": "工作：外交調停、司法裁決、武器禁運與制裁、軍事部署、監察停火等",
+      "contentFingerprint": "82b5ebd3cb7afd912ccbefcdc6db0bafc4113ac363e201df7a7b15465d727baf",
+      "rationale": "第 89 段逐字列出聯合國維持和平的「工作：外交調停、司法裁決、武器禁運與制裁、軍事部署、監察停火等」，對應答案「工作」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "工作：調停、制裁、派遣維持和平部隊、監察停火協議等",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 50 段（清單）（第 3 項）",
+        "blockIds": [
+          "blk_2c6cbc44c65442f9"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_bcee6ef4211f4729",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-united-nations",
+      "questionType": "fill",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_f79677aebfd04f01"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 89 段（清單）",
+      "excerpt": "成效：成功制止多場衝突；有助維持衝突後的和平局面",
+      "contentFingerprint": "9ec5ab5fe05ab84b76324d9577f8f925c930a275940a08cc4d28d8087c0a51fc",
+      "rationale": "第 89 段「成效：成功制止多場衝突；有助維持衝突後的和平局面」；第 293 段成效列「多次成功和平解決領土紛爭及制止多場衝突」對應答案「成效」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "成效：和平化解爭端的重要協商橋樑；有助達致長久和平",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 50 段（清單）（第 3 項）",
+        "blockIds": [
+          "blk_2c6cbc44c65442f9"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    },
+    {
+      "questionId": "q_07336d3a018348ab",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-united-nations",
+      "questionType": "mc",
+      "documentFileName": "課題11 20世紀以來的國際合作.docx",
+      "blockIds": [
+        "blk_e7e44f65a27547f0"
+      ],
+      "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 145 段（清單）",
+      "excerpt": "1948-2000年間：聯合國在全球完成48 項維和行動",
+      "contentFingerprint": "722daf862cbcab23a1411924d0aa3641dfed57e8cad2d7b9ebbbcb8d368f7608",
+      "rationale": "第 145 段逐字「1948-2000年間：聯合國在全球完成48 項維和行動」支持答案「聯合國完成四十八次維和行動」。",
+      "verifiedAt": "2026-10-16",
+      "verification": "逐字比對：節錄必須逐字出現在所列段落的文字或表格列之中（未使用關鍵詞或相似度判斷）",
+      "previous": {
+        "excerpt": "1948-2000年間：聯合國完成四十八次維和行動，工作範圍遍及各地。",
+        "sourceLocation": "HNC3B_T11_SN_TE.docx · 第 94 段（清單）（第 6 項）",
+        "blockIds": [
+          "blk_a7c4ad54ed78454f"
+        ],
+        "revision": 5,
+        "status": "published"
+      },
+      "appliedRevision": 6,
+      "relatedBlockLocators": []
+    }
+  ]
+}

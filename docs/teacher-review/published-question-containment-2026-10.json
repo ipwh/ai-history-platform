@@ -1,0 +1,202 @@
+{
+  "version": 1,
+  "date": "2026-10-17",
+  "title": "已發布題目風險與下架機制驗證（Sprint 8.8 第一階段）",
+  "status": "investigated-verified-on-disposable-copy-not-actioned",
+  "supersedes": "published-question-risk-report-2026-10.json（Sprint 8.7 第一階段的初步判斷；本檔案補上完整內容、閘門理由、下架機制實測及系統性發現）",
+  "method": [
+    "以唯讀方式查詢 data/app.db：questions、material_blocks、material_documents、question_reviews、question_reports、attempts。",
+    "在 data/app.db 的**暫存副本**上以應用程式自身的程式碼路徑重算閘門（questionService.revalidateQuestion）及示範下架（changeQuestionStatus）。",
+    "以合成教材重建同一題形，寫成可重複執行的一致性測試（tests/published-question-containment.test.ts）。",
+    "沒有改動 data/app.db、任何題目、覆核紀錄、回報或發布設定；沒有接觸正式環境。"
+  ],
+  "gateRules": {
+    "stem-answer-type-mismatch": "題幹文字要求的答案類型與標準答案不符。實作見 src/server/llm/question-quality.ts 的 stemAnswerTypeReason：題幹出現「詞語」而標準答案是年份／時期（isTimeDesignation），或題幹問「哪一年」而答案是時期名稱。屬 blocking，判定為 reject。",
+    "answer-in-stem": "標準答案（正規化後）直接出現在題幹，且不是「引號引述＋是指」的正常問法、也不是更長數字的一部分（Sprint 8.6 修正）。屬 blocking，判定為 reject。實作見 answerLeakReason。"
+  },
+  "questions": [
+    {
+      "questionId": "q_058eda0378394d0f",
+      "verifiedAt": "2026-10-17",
+      "provenance": {
+        "origin": "material-mock",
+        "questionType": "mc",
+        "difficulty": "basic",
+        "status": "published",
+        "revision": 3,
+        "createdAt": "2026-10-10T08:19:44.783Z",
+        "topicId": "topic-12",
+        "sectionId": "topic-12-post-war-economy",
+        "sourceVerified": true,
+        "teacherConfirmationRequired": false,
+        "autoValidatedAt": null,
+        "autoValidatedRevision": null,
+        "autoValidatedFingerprint": null
+      },
+      "content": {
+        "stem": "「打擊貪污與公務員本地化」是指以下哪一個詞語？",
+        "options": ["1970年代起", "房屋方面", "教育方面", "1960年代起"],
+        "correctAnswer": "1970年代起",
+        "acceptedAnswers": [],
+        "gradingPoints": [],
+        "explanation": "教材原文：1970年代起：打擊貪污與公務員本地化"
+      },
+      "materialEvidence": {
+        "sourceExcerpt": "1970年代起：打擊貪污與公務員本地化",
+        "sourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 274 段（清單）",
+        "citedBlockId": "blk_3beeb572d02c4904",
+        "citedBlockType": "list",
+        "citedBlockCurrentSourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 20 段（清單）",
+        "document": "課題12 二十世紀香港的成長與蛻變.docx",
+        "documentKind": "demo",
+        "studentDistribution": true,
+        "documentCreatedAt": "2026-10-16T12:46:31.681Z",
+        "citedBlockText": "經濟發展\n有利的內外因素促進經濟發展\n轉口港→工業中心（1950-1970年代）\n工業中心→國際金融中心（1970年代至今）\n社會發展\n房屋方面：公營房屋的持續發展\n教育方面：免費教育與專上教育的發展\n管治與政制發展\n1960年代起：加強官民溝通\n1970年代起：打擊貪污與公務員本地化\n1980年代起：發展代議政制",
+        "excerptVerbatimInCitedBlock": true,
+        "note": "題目儲存的 source_location 段號（第 274 段）與段落現時位置（第 20 段）不同，屬 2026-10 教材重新匯入後的段號漂移；節錄文字本身在該段落內逐字存在，source_verified = 1 仍然成立。"
+      },
+      "humanActivity": { "reviews": 0, "reports": 0, "attempts": 0 },
+      "machineFinding": {
+        "outcome": "reject",
+        "code": "stem-answer-type-mismatch",
+        "message": "題幹問「哪一個詞語」，但標準答案「1970年代起」是一個年份；應改寫成明確問年份的題目（或改問對應的歷史詞語）",
+        "reproducedOnCopy": true,
+        "reproducedBy": "questionService.revalidateQuestion（決策 blocked，qualityIssues 一項）；tests/published-question-containment.test.ts 以合成教材重現同一判定（checkQuestionQuality → reject）"
+      },
+      "assessment": {
+        "classification": "genuinely-defective-not-false-positive",
+        "historicalAccuracy": "無錯誤：引用段落確實把「打擊貪污與公務員本地化」列在「1970年代起」之下，答案與教材一致。",
+        "answerKey": "與教材一致；但答案是一個時期標示（1970年代起），不是題幹所問的「詞語」。",
+        "evidenceSupport": "充足（逐字見於引用段落），不屬無依據題目。",
+        "structuralProblem": [
+          "題幹問「哪一個詞語」，四個選項卻同時包含時期標示（1970年代起、1960年代起）與政策範疇標示（房屋方面、教育方面）——題目要求學生辨認的是清單的**上一層標籤**，而不是任何歷史詞語。",
+          "選項來自同一清單的不同層級，令題目實際考核「能否背出清單排版」，而非歷史理解；任何只記得「房屋方面／教育方面」屬社會發展的學生都會被兩個時期選項混淆。",
+          "解釋是「教材原文：1970年代起：打擊貪污與公務員本地化」，即原句照錄，沒有說明為甚麼其他選項不對，也沒有解釋公務員本地化的歷史意義。"
+        ],
+        "studentSafetyRisk": "無安全風險（內容不涉及敏感或有害材料）。",
+        "pedagogicalRisk": "高：題幹與答案類型不符、選項跨層級、解釋無教學作用。學生會看到一個「照字面答不對」的題目。",
+        "reachability": "可達：status = published、teacher_confirmation_required = 0，學生練習的題庫查詢（status = published 且非暫緩）會包含此題。已在副本上實測（見 containment.verified）。"
+      },
+      "recommendation": {
+        "forOwnerOrTeacher": [
+          "1) 立即下架（不改內容）：教師／管理員在 /teacher/questions 對此題按「暫時下架」（PATCH /api/teacher/questions/q_058eda0378394d0f {action:'status', status:'disabled'}），或經回報面板的「暫時下架題目」。已在副本上實測：下架後即時離開學生題庫，教師仍可讀取內容，沒有刪除任何資料。",
+          "2) 其後改寫（需擁有者及歷史科教師批准）：把題幹改為在該清單層級上可作答的問法（例如問「1970年代起的管治措施是甚麼？」並以「打擊貪污與公務員本地化」為答案），同時把解釋改為說明推理，而不是照錄原文。改寫會令 revision 遞增、既有驗證失效，必須重新覆核。",
+          "3) 不建議只改答案：把答案改成「房屋方面」等於改動史實對應，且仍然跨層級；必須改題幹及選項。"
+        ],
+        "notDoneHere": "本階段沒有下架、沒有改寫、沒有改動任何狀態或內容；下架屬發布狀態變更，必須由具名的教師或管理員在平台上作出。",
+        "severity": "P0（單題）：學生可見的題目有已確認的結構缺陷；下架成本低、可逆。"
+      }
+    },
+    {
+      "questionId": "q_062fdfd516314f3d",
+      "verifiedAt": "2026-10-17",
+      "provenance": {
+        "origin": "material-ai",
+        "questionType": "fill",
+        "difficulty": "basic",
+        "status": "draft",
+        "revision": 3,
+        "createdAt": "2026-10-15T08:48:22.170Z",
+        "topicId": "topic-5",
+        "sectionId": "topic-5-renaissance-features",
+        "sourceVerified": true,
+        "teacherConfirmationRequired": false,
+        "autoValidatedAt": null
+      },
+      "content": {
+        "stem": "文藝復興時期，歐洲人重視人文主義，不再凡事以神為本，這種思想強調以人為中心，重視彰顯人性、人類的價值，以及理解自然的能力，稱為＿＿＿＿＿＿。",
+        "options": [],
+        "correctAnswer": "人文主義",
+        "acceptedAnswers": [],
+        "gradingPoints": ["答案須為人文主義，不可填寫其他主義或思想。"],
+        "explanation": "文藝復興時期歐洲人重視人文主義，強調以人為中心，彰顯人性、人類的價值及理解自然的能力。"
+      },
+      "materialEvidence": {
+        "sourceExcerpt": "歐洲人重視人文主義，不再凡事以神為本。",
+        "sourceLocation": "課題5 近代歐洲的興起.docx · 第 43 段（清單）",
+        "citedBlockId": "blk_9a9c7c3007db427f",
+        "citedBlockType": "list",
+        "document": "課題5 近代歐洲的興起.docx",
+        "studentDistribution": true,
+        "citedBlockText": "歐洲人重視人文主義，不再凡事以神為本。",
+        "excerptVerbatimInCitedBlock": true
+      },
+      "humanActivity": { "reviews": 0, "reports": 0, "attempts": 0 },
+      "machineFinding": {
+        "outcome": "reject",
+        "code": "answer-in-stem",
+        "message": "題幹已出現標準答案「人文主義」",
+        "reproducedOnCopy": true,
+        "reproducedBy": "questionService.revalidateQuestion（決策 blocked）；tests/published-question-containment.test.ts 以相同題形重現"
+      },
+      "assessment": {
+        "classification": "genuinely-defective-not-false-positive",
+        "detail": "題幹在描述句內直接寫出「人文主義」，答案同一詞語，學生無需作答即可抄出；這是填充題最典型的洩露答案。",
+        "studentSafetyRisk": "無（且題目為草稿，學生看不到）。",
+        "reachability": "不可達：status = draft，學生題庫查詢不會包含草稿。"
+      },
+      "recommendation": {
+        "forOwnerOrTeacher": [
+          "保持草稿：本階段毋須任何動作，亦不應發布。",
+          "修正方向（需授權）：把描述句中的「人文主義」改寫成不含答案的描述（例如保留「以人為中心、彰顯人性」等描述而刪去答案詞），令學生需要自行回想詞語；或改為選擇題，令答案不在題幹出現。",
+          "修正後仍須重新執行品質驗證，並由教師覆核（草稿不會因時間或其他題目的改動而自動通過）。"
+        ],
+        "severity": "P2：學生接觸風險為零，但如日後直接發布會產生無效題目；下架機制已測試，毋須即時處理。",
+        "notDoneHere": "本階段沒有改動此題的任何欄位或狀態（維持 draft）；草稿不會因為其他題目的改動而自動通過驗證。"
+      }
+    }
+  ],
+  "containment": {
+    "supportedMechanisms": [
+      "PATCH /api/teacher/questions/{questionId} {action:'status', status:'disabled'} → questionService.changeQuestionStatus：即時生效、可逆、保留題目內容與歷史。",
+      "教師回報面板「暫時下架題目」→ questionService.withdrawQuestionFromReport：改為 disabled，並在回報紀錄寫下處理人及動作。",
+      "改為 draft（PATCH status:'draft'）：語意上表示「未準備好」，效果同樣令題目離開學生題庫。"
+    ],
+    "whyDisabledInsteadOfDelete": "刪除會令回報、作答及覆核紀錄一併消失，失去稽核依據；disabled 保留所有歷史，並可隨時由教師重新發布（重新發布仍需目前版本的驗證紀錄）。",
+    "verified": {
+      "environment": "data/app.db 的暫存副本（APP_DATABASE_PATH 指向暫存目錄；資料庫與上載目錄在驗證後刪除）",
+      "steps": [
+        "revalidateQuestion(q_058eda0378394d0f) → decision = blocked，qualityIssues = 1（stem-answer-type-mismatch）",
+        "學生題庫查詢（topic-12／topic-12-post-war-economy／mc／published）包含此題：true",
+        "changeQuestionStatus(id, 'disabled') → status = disabled",
+        "同一題庫查詢：不再包含此題（false）",
+        "isStudentPracticeEligible：false；題目內容仍可由教師讀取（未被刪除）",
+        "createPractice（topic-12，該分節，mc，basic，5 題）→ 回傳題目不含此題",
+        "changeQuestionStatus(id, 'published') → 409「此題尚未有教師覆核紀錄，亦未通過自動品質驗證」",
+        "副本已還原為原狀態（published），副本隨後刪除"
+      ],
+      "result": "下架機制有效、即時、可逆，且沒有改動任何真實資料。"
+    },
+    "whatAnAuthorisedOperatorMustDo": "由具名教師或管理員在平台上執行下架（會留下紀錄）。本報告不代替該決定，也沒有執行。"
+  },
+  "systemicFindings": [
+    {
+      "id": "read-time-gate-vs-publish-time-gate",
+      "severity": "P1（系統性，需擁有者決定）",
+      "finding": "發布關卡只在**發布動作**時檢查「目前版本」的覆核或自動驗證紀錄；學生練習的讀取路徑只過濾 status = published 及 teacher_confirmation_required = 0。因此歷史上已發布、但沒有任何驗證紀錄的題目仍然可以看到。",
+      "evidence": "本機 data/app.db（2026-10-17 唯讀）：788 條已發布題目中，788 條沒有 auto_validated_at，亦沒有任何對應目前版本且 approved 的覆核紀錄；學生的題庫查詢仍然會取出它們。q_058eda0378394d0f 即屬此類。",
+      "implication": "把讀取路徑改成同時要求驗證紀錄，會令全部 788 條題目即時消失；這是產品決定，不能在維護工作中靜默加入。",
+      "recommendation": "由擁有者決定：(a) 安排一次授權維護，逐批為已發布題目補記自動驗證（並接受補記只是機器檢查）；或 (b) 在讀取路徑加入強制條件，並同時接受題庫在短時間內大幅縮減；或 (c) 明確把「已發布」定義為發布時的判斷，並在文件說明舊資料不受新關卡追溯。未取得決定前不改動。"
+    },
+    {
+      "id": "eligibility-helper-not-used-at-runtime",
+      "severity": "P2（文件／語意一致性）",
+      "finding": "question-service 匯出的 isStudentPracticeEligible 要求「status = published、非暫緩，且有目前版本的覆核或自動驗證紀錄」，但 practice-service 並沒有呼叫它（只用 status 及 teacher_confirmation_required）。名稱令人以為它是實際的學生可見性規則。",
+      "evidence": "程式碼搜尋：isStudentPracticeEligible 只出現在 question-service 定義及測試，practice-service 沒有引用。",
+      "recommendation": "已在 JSDoc 註明它是**較嚴格**的輔助判定、不是讀取路徑的實際過濾條件；是否統一兩者屬上一個系統性決定的同一問題。"
+    },
+    {
+      "id": "stored-source-location-drift",
+      "severity": "P2（文字層面）",
+      "finding": "q_058eda0378394d0f 儲存的 source_location 是「第 274 段」，而引用段落現時是「第 20 段」（2026-10 教材重新匯入後段號改變）。節錄仍逐字見於該段落，source_verified = 1 正確，但教師看到的段號與課本不符。",
+      "evidence": "questions.source_location 與 material_blocks.source_location 比對。",
+      "recommendation": "與 Sprint 8.6／8.7 的 7 條同類個案一併處理；本階段不套用任何修正。"
+    }
+  ],
+  "notDoneDeliberately": [
+    "沒有下架、發布、停用或改寫任何題目（包括 q_058eda0378394d0f）。",
+    "沒有建立或修改覆核紀錄、回報或作答紀錄。",
+    "沒有套用來源位置或解釋段號修正。",
+    "沒有改動讀取路徑的發布條件（屬擁有者決定）。"
+  ]
+}

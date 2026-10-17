@@ -21,7 +21,7 @@ import {
   updateBlock,
 } from "../repositories/materials";
 import { getTopic, listSections } from "../repositories/topics";
-import { importMaterial, UnsupportedMaterialError } from "../materials/import-service";
+import { importMaterial, repairQuestionsWithMissingBlocks, UnsupportedMaterialError } from "../materials/import-service";
 import { detectTopicId, resolveMaterialPath } from "../materials/material-files";
 import { extractQuestionBankText, isQuestionBankFileName } from "../materials/question-bank";
 import { CURRICULUM_TOPICS } from "../seed/curriculum";
@@ -255,8 +255,91 @@ export function assignTopic(documentId: string, topicId: string | null): Materia
   return updated;
 }
 
-export function removeDocument(documentId: string): string | null {
+export interface RemoveDocumentOutcome {
+  /** 被刪除的原始檔案（沒有保存原始檔案時為 null） */
+  removedFile: string | null;
+  /** 刪除後修復引用該文件段落的題目所得結果 */
+  repair: { repointed: number; pruned: number; withheld: number };
+}
+
+/**
+ * 刪除教材文件，並修復引用該文件段落的題目。
+ *
+ * 回報修復結果（重新定位／剔除失效引用／標示未通過核對的數目），供命令列退掉
+ * 被取代的舊教材時記錄，讓教師看得出刪除對題目做了甚麼。
+ */
+export function removeDocumentDetailed(documentId: string): RemoveDocumentOutcome {
   const document = getDocument(documentId);
   if (!document) throw new UnsupportedMaterialError("找不到指定的教材文件");
-  return deleteDocumentWithFile(documentId);
+  const removedFile = deleteDocumentWithFile(documentId);
+  // 引用該文件段落的題目不會再找到依據：先嘗試按原文節錄重新定位到其他段落，
+  // 找不到者標示為「未通過教材依據核對」，避免教師端仍顯示「已核對」但其實沒有依據。
+  const repair = document.topicId
+    ? repairQuestionsWithMissingBlocks(document.topicId)
+    : { repointed: 0, pruned: 0, withheld: 0 };
+  return { removedFile, repair };
+}
+
+export function removeDocument(documentId: string): string | null {
+  return removeDocumentDetailed(documentId).removedFile;
+}
+
+export interface RetireMaterialOutcome {
+  fileName: string;
+  documentId: string | null;
+  topicId: string | null;
+  action: "planned" | "retired" | "not-found";
+  repair: { repointed: number; pruned: number; withheld: number } | null;
+}
+
+/**
+ * 退掉被取代的教材文件（以**檔名逐個指定**，不做任何模式比對）。
+ *
+ * 用途：2026-10 版教材以新檔名取代舊教師版文件後，舊文件仍是獨立的文件（不會被同名
+ * 取代機制處理），需要在離線快照上逐份退掉（見 materials/README.md）。
+ * 刪除路徑與管理介面相同（`deleteDocumentWithFile` → `repairQuestionsWithMissingBlocks`），
+ * 因此題目的教材依據、學生端 fail-closed 行為與管理介面完全一致。
+ *
+ * `dryRun` 只列出將會刪除的文件，不寫入。
+ */
+export function retireMaterialsByFileName(
+  fileNames: string[],
+  options: { dryRun?: boolean } = {},
+): RetireMaterialOutcome[] {
+  const dryRun = options.dryRun ?? false;
+  const outcomes: RetireMaterialOutcome[] = [];
+  for (const fileName of fileNames) {
+    const matches = listDocuments().filter((document) => document.fileName === fileName);
+    if (matches.length === 0) {
+      outcomes.push({
+        fileName,
+        documentId: null,
+        topicId: null,
+        action: "not-found",
+        repair: null,
+      });
+      continue;
+    }
+    for (const document of matches) {
+      if (dryRun) {
+        outcomes.push({
+          fileName,
+          documentId: document.id,
+          topicId: document.topicId,
+          action: "planned",
+          repair: null,
+        });
+        continue;
+      }
+      const { repair } = removeDocumentDetailed(document.id);
+      outcomes.push({
+        fileName,
+        documentId: document.id,
+        topicId: document.topicId,
+        action: "retired",
+        repair,
+      });
+    }
+  }
+  return outcomes;
 }

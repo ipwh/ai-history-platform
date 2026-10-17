@@ -129,6 +129,9 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
    * `withdraw-question` 暫時下架題目（可隨時重新發布）；
    * `revalidate-question` 重新執行自動品質驗證，通過後才可能發布。
    * 兩者都由伺服器決定是否可行，前端只是觸發及顯示結果。
+   *
+   * Sprint 8.6：機器檢查通過但題目仍待教師確認時，訊息必須說清楚「要由你覆核」，
+   * 不可顯示成驗證失敗，亦不可暗示已可發布。
    */
   async function handleReportAction(
     reportId: string,
@@ -138,13 +141,17 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
     setError(null);
     try {
       const result = await api.patch<{
-        remediation?: { autoValidated: boolean; issues: string[] };
+        remediation?: { action: string | null; autoValidated: boolean; issues: string[] };
       }>(`/api/teacher/reports?reportId=${encodeURIComponent(reportId)}`, { action });
       const remediation = result.remediation;
       if (action === "withdraw-question") {
         setMessage("已暫時下架題目（學生不再於新練習看到），可隨時重新發布。");
       } else if (remediation?.autoValidated === true) {
         setMessage("自動品質驗證通過，已記錄；確認內容後可按「發布」讓學生練習。");
+      } else if (remediation?.action === "awaiting-teacher-confirmation") {
+        setMessage(
+          "機器檢查已通過，但這條題目仍待教師確認（自動發布暫緩）：請核對內容後按「覆核通過並發布」。",
+        );
       } else {
         setMessage(
           `自動品質驗證未通過：${(remediation?.issues ?? []).join("；") || "請檢查教材依據及內容"}`,
@@ -286,8 +293,19 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
    *
    * 「覆核通過」即發布（會檢查目前版本是否有覆核紀錄）；「退回修改」及
    * 「不可用」必須填寫原因，因此會先要求教師輸入。
+   *
+   * Sprint 8.8：覆核通過也可以填寫理由（可留空），令「為甚麼這一版可用」同樣有紀錄，
+   * 而不是只有退回／不可用才有原因。理由會與決定、版本及覆核者一併寫入不可修改的紀錄。
+   *
+   * Sprint 8.7：提交時一併送出教師**實際看到的版本**（`expectedRevision`）。
+   * 若另一位教師（或同一位在另一個分頁）在提交前改了題目，伺服器會回 409 並提示
+   * 重新載入，避免覆核被記到沒有看過的內容上。
    */
-  async function handleReview(questionId: string, decision: QuestionReviewDecision) {
+  async function handleReview(
+    questionId: string,
+    expectedRevision: number,
+    decision: QuestionReviewDecision,
+  ) {
     setError(null);
     let reason: string | null = null;
     if (decision !== "approved") {
@@ -304,11 +322,21 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
         return;
       }
       reason = trimmed;
+    } else {
+      const input = window.prompt(
+        "覆核理由（可留空；例如：答案與教材一致、選項互不重疊、解釋說明推理）",
+        "",
+      );
+      if (input === null) return;
+      const trimmed = input.trim();
+      reason = trimmed.length > 0 ? trimmed : null;
     }
     try {
       const result = await api.post<{ created: boolean }>(
         `/api/teacher/questions/${questionId}/review`,
-        reason === null ? { decision } : { decision, reason },
+        reason === null
+          ? { decision, expectedRevision }
+          : { decision, reason, expectedRevision },
       );
       setMessage(
         decision === "approved"
@@ -608,7 +636,12 @@ function QuestionListCard({
   /** 每題的未處理回報數（顯示「待覆核」） */
   openReportCounts?: Map<string, number>;
   onStatus: (questionId: string, status: QuestionStatus) => Promise<void>;
-  onReview: (questionId: string, decision: QuestionReviewDecision) => Promise<void>;
+  /** 第二個參數是教師看到的版本（樂觀鎖），見 handleReview */
+  onReview: (
+    questionId: string,
+    expectedRevision: number,
+    decision: QuestionReviewDecision,
+  ) => Promise<void>;
   onDelete: (questionId: string) => Promise<void>;
   onEdit: (question: Question) => void;
 }) {
@@ -649,7 +682,8 @@ function QuestionListCard({
               }`}
               title={
                 review?.approvedReview
-                  ? `由 ${review.approvedReview.reviewerEmail} 於 ${review.approvedReview.createdAt.slice(0, 10)} 覆核第 ${review.approvedReview.revision} 版`
+                  ? `由 ${review.approvedReview.reviewerEmail} 於 ${review.approvedReview.createdAt.slice(0, 10)} 覆核第 ${review.approvedReview.revision} 版` +
+                    (review.approvedReview.reason ? `；理由：${review.approvedReview.reason}` : "")
                   : "尚未有教師覆核紀錄"
               }
             >
@@ -784,7 +818,7 @@ function QuestionListCard({
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() => void onReview(question.id, "approved")}
+                onClick={() => void onReview(question.id, question.revision, "approved")}
               >
                 覆核通過並發布
               </button>
@@ -794,14 +828,14 @@ function QuestionListCard({
                 <button
                   type="button"
                   className="btn"
-                  onClick={() => void onReview(question.id, "returned")}
+                  onClick={() => void onReview(question.id, question.revision, "returned")}
                 >
                   退回修改
                 </button>
                 <button
                   type="button"
                   className="btn"
-                  onClick={() => void onReview(question.id, "rejected")}
+                  onClick={() => void onReview(question.id, question.revision, "rejected")}
                 >
                   標示不可用
                 </button>

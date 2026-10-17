@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "date": "2026-10-17",
+  "title": "已發布題目風險報告：Sprint 8.6 覆核套件中被判 reject 的兩條題目（Sprint 8.7 第一階段）",
+  "status": "investigated-not-actioned",
+  "baselineCorrection": {
+    "reportedBaseline": "Sprint 8.6 報告稱「兩條已發布題目被判 reject」。",
+    "verified": "只有 **1 條**是已發布（q_058eda0378394d0f）。另一條 q_062fdfd516314f3d 在本機資料庫的狀態是 **draft**（從未發布），因此不是「已發布題目」。",
+    "evidence": "唯讀查詢 data/app.db（2026-10-17）：q_062fdfd516314f3d.status = 'draft'；q_058eda0378394d0f.status = 'published'。",
+    "impact": "需要即時風險處理的只有 1 條；另一條屬草稿，沒有學生接觸風險，但仍需改寫後才可發布。"
+  },
+  "method": [
+    "唯讀讀取 data/app.db：questions、material_blocks、material_documents、question_reviews、question_reports、attempts。",
+    "沿用 Sprint 8.6 覆核套件內以現行規則重算的閘門結果（gateRecomputedNow）作為機器證據。",
+    "逐題核對題幹、選項、答案、解釋、節錄是否逐字出自引用段落（source_verified）及教材文件是否已向學生發布（student_distribution）。",
+    "沒有改動任何題目、狀態、覆核紀錄或設定；沒有接觸正式環境。"
+  ],
+  "visibilityMechanism": {
+    "studentSeesQuestionWhen": "questions.status = 'published' 且（即時生成時）不在題庫的題目只存在於練習快照；學生組題只取 status='published' 且 teacher_confirmation_required = 0 的題目（practice-service）。",
+    "studentSeesExcerptWhen": "另需 source_verified = 1 且所屬 material_documents.student_distribution = 1（source-visibility.ts）；與題目的發布狀態分開。",
+    "existingMechanismsToWithholdAnAuthorisedOperatorCanUse": [
+      "教師／管理員在 /teacher/questions 的題目回報面板按「暫時下架題目」→ PATCH /api/teacher/reports?reportId=… {action:'withdraw-question'} → question-service.withdrawQuestionFromReport → changeQuestionStatus(id,'disabled')。可隨時重新發布。",
+      "教師／管理員直接 PATCH /api/teacher/questions/{questionId} {status:'disabled'}（或 'draft'）→ changeQuestionStatus。",
+      "擁有者授權的批次腳本 npm run publish:drafts 只用於**發布**，不應用於下架。",
+      "如需在發布層阻擋某一課，管理員可把課題設為未發布（PATCH /api/admin/topics）；但這會影響整個課題，不是逐題處理。"
+    ],
+    "whatThisReportDoesNotDo": "本報告沒有執行任何下架動作；下架屬發布狀態變更，必須由具名的教師或管理員在平台上作出（並留下紀錄）。"
+  },
+  "items": [
+    {
+      "questionId": "q_062fdfd516314f3d",
+      "origin": "material-ai",
+      "questionType": "fill",
+      "difficulty": "basic",
+      "status": "draft",
+      "studentVisible": false,
+      "teacherConfirmationRequired": false,
+      "sourceVerified": true,
+      "revision": 3,
+      "createdAt": "2026-10-15T08:48:22.170Z",
+      "content": {
+        "question": "文藝復興時期，歐洲人重視人文主義，不再凡事以神為本，這種思想強調以人為中心，重視彰顯人性、人類的價值，以及理解自然的能力，稱為＿＿＿＿＿＿。",
+        "correctAnswer": "人文主義",
+        "gradingPoints": ["答案須為人文主義，不可填寫其他主義或思想。"],
+        "explanation": "文藝復興時期歐洲人重視人文主義，強調以人為中心，彰顯人性、人類的價值及理解自然的能力。",
+        "sourceExcerpt": "歐洲人重視人文主義，不再凡事以神為本。",
+        "sourceLocation": "課題5 近代歐洲的興起.docx · 第 43 段（清單）",
+        "sourceBlockIds": ["blk_9a9c7c3007db427f"],
+        "documentStudentDistribution": true
+      },
+      "machineFinding": {
+        "outcome": "reject",
+        "codes": ["answer-in-stem"],
+        "message": "題幹已出現標準答案「人文主義」"
+      },
+      "assessment": {
+        "factualRisk": "none-observed",
+        "answerKeyRisk": "high-as-written",
+        "studentSafetyRisk": "none (draft, not visible)",
+        "detail": "題幹本身已寫出「重視人文主義」，而標準答案正是「人文主義」；填入答案只考驗抄寫，無法考核理解。教材依據（節錄逐字出自第 43 段、文件已向學生開放）成立，歷史陳述與教材一致。"
+      },
+      "humanReviewRecords": 0,
+      "studentReports": 0,
+      "attempts": 0,
+      "verdict": "no-containment-needed-draft",
+      "recommendedAction": "保持草稿。要重新啟用必須改寫題幹（移除「人文主義」字樣，例如改為描述該思想再問名稱），改寫後版本會遞增，需重新驗證或教師覆核。",
+      "ownerOrTeacherDecisionRequired": true
+    },
+    {
+      "questionId": "q_058eda0378394d0f",
+      "origin": "material-mock",
+      "questionType": "mc",
+      "difficulty": "basic",
+      "status": "published",
+      "studentVisible": true,
+      "teacherConfirmationRequired": false,
+      "sourceVerified": true,
+      "revision": 3,
+      "createdAt": "2026-10-10T08:19:44.783Z",
+      "content": {
+        "question": "「打擊貪污與公務員本地化」是指以下哪一個詞語？",
+        "options": ["1970年代起", "房屋方面", "教育方面", "1960年代起"],
+        "correctAnswer": "1970年代起",
+        "explanation": "教材原文：1970年代起：打擊貪污與公務員本地化",
+        "sourceExcerpt": "1970年代起：打擊貪污與公務員本地化",
+        "sourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 274 段（清單）",
+        "sourceBlockIds": ["blk_3beeb572d02c4904"],
+        "documentStudentDistribution": true
+      },
+      "machineFinding": {
+        "outcome": "reject",
+        "codes": ["stem-answer-type-mismatch"],
+        "message": "題幹問「哪一個詞語」，但標準答案「1970年代起」是一個年份；應改寫成明確問年份的題目（或改問對應的歷史詞語）"
+      },
+      "assessment": {
+        "factualRisk": "low",
+        "answerKeyRisk": "high-as-written",
+        "studentSafetyRisk": "low-but-real (published and answerable only by guessing the timeline label)",
+        "detail": "教材是時間線清單（「1960年代起：加強官民溝通／1970年代起：打擊貪污與公務員本地化／1980年代起：發展代議政制」），原本的「詞語」其實是年代標籤。題幹問「哪一個詞語」但答案是年代，屬題型與答案不符；選項混入同一清單的欄目（房屋方面／教育方面），令題目只剩字面配對，沒有歷史理解考核。歷史配對本身與教材一致，因此不是史實錯誤。",
+        "additionalNote": "解釋只是抄錄教材原文（「教材原文：……」），Sprint 8.5 的解釋檢查會把它判為需要修訂；此題在該規則之前生成。"
+      },
+      "humanReviewRecords": 0,
+      "studentReports": 0,
+      "attempts": 0,
+      "verdict": "human-review-required",
+      "recommendedAction": "由歷史科教師決定：改寫為問年代的題目，或改問對應的管治措施（例如「1970年代起，香港政府推行哪一項措施？」），或直接停用。在教師作出決定之前，如認為風險不可接受，可由教師／管理員用既有機制「暫時下架」（disabled）——本報告沒有執行。",
+      "ownerOrTeacherDecisionRequired": true
+    }
+  ],
+  "confidenceNotes": [
+    "機器判定屬**確定性字面檢查**：兩條都是明確的結構問題（答案出現在題幹、題型與答案不符），不是模糊的語意推測，因此誤判機會低。",
+    "但「是否仍可使用」屬教學判斷：例如把 q_058eda0378394d0f 改寫成年代題後，是否適合基礎程度，必須由教師決定。",
+    "兩題的作答紀錄及題目回報皆為 0，因此沒有學生已受影響的證據（不代表題目沒有問題）。"
+  ],
+  "regressionTestsAdded": [],
+  "regressionTestsRationale": "本階段沒有發現新的程式缺陷：兩條題目都是既有規則（answer-in-stem、stem-answer-type-mismatch）已正確攔截的內容問題，因此沒有新增測試。"
+}

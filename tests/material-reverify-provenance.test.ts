@@ -173,6 +173,48 @@ async function importSyntheticLesson(paragraphs: string[]) {
   });
 }
 
+/**
+ * 建立一條「未通過核對」的合成題目（供最短節錄長度的迴歸測試使用）。
+ *
+ * `sourceLocation` 由呼叫端指定：含被匯入的檔名時會一併經過 `reverifyQuestionsForDocument`，
+ * 不含時只會經由 `reverifyUnverifiedQuestions`。
+ */
+function createSyntheticQuestionForLesson(options: {
+  excerpt: string;
+  sourceLocation: string;
+  origin?: "material-ai" | "demo";
+}) {
+  documentSequence += 1;
+  return questions.insertQuestion({
+    id: `q-excerpt-${documentSequence}`,
+    topicId: "topic-1",
+    sectionId: "topic-1-origins",
+    questionType: "mc",
+    difficulty: "basic",
+    question: "合成問題：古人類最早出現於哪一洲？",
+    options: ["非洲", "亞洲", "歐洲", "美洲"],
+    correctAnswer: "非洲",
+    acceptedAnswers: [],
+    explanation: "合成解釋：教材指出古人類於非洲出現。",
+    knowledgePoint: "合成知識點",
+    sourceExcerpt: options.excerpt,
+    sourceLocation: options.sourceLocation,
+    sourceBlockIds: [],
+    gradingPoints: [],
+    origin: options.origin ?? "material-ai",
+    status: "published",
+    sourceVerified: false,
+    skill: null,
+    qualityWarnings: [],
+    autoValidatedAt: null,
+    autoValidatedRevision: null,
+    autoValidatedFingerprint: null,
+    teacherConfirmationRequired: false,
+    revision: 1,
+    createdAt: new Date().toISOString(),
+  });
+}
+
 beforeAll(async () => {
   importService = await import("@/server/materials/import-service");
   materialsRepo = await import("@/server/repositories/materials");
@@ -311,5 +353,95 @@ describe("教材匯入後的重新定位不可外洩試題檔的來源標註", (
     const after = questions.getQuestion("qb-SYNTHMCQ00003");
     expect(after?.sourceBlockIds).toEqual([valid.blockId]);
     expect(after?.sourceLocation).toBe("合成教材 第 3 段");
+  });
+});
+
+describe("最短節錄長度是自動連結的統一規則（2026-10-17 統一）", () => {
+  it("低於最短長度的節錄不會經由重新定位變成已核對（兩個自動路徑）", async () => {
+    // 兩條獨立的合成課文，各自對應一條短節錄題目；來源位置分別「不含」及「含」被匯入的檔名，
+    // 令兩條題目分別只會經過 `reverifyUnverifiedQuestions` 及 `reverifyQuestionsForDocument`。
+    const shortA = "合成短語甲";
+    const shortB = "合成短語乙丙";
+    expect(shortA.length).toBeLessThan(8);
+    expect(shortB.length).toBeLessThan(8);
+
+    const questionA = createSyntheticQuestionForLesson({
+      excerpt: shortA,
+      sourceLocation: "合成來源（不含教材檔名，短節錄甲）",
+    });
+    const questionB = createSyntheticQuestionForLesson({
+      excerpt: shortB,
+      sourceLocation: `${LESSON_FILE} · 合成合成段落（短節錄乙）`,
+    });
+
+    // 匯入含有這兩段短文字的教材：段落確實存在且逐字包含節錄
+    await importSyntheticLesson([`合成課文：${shortA} 是本次測試的短語。`, `${shortB} 也是本次測試的短語。`]);
+
+    // 非空洞檢查：兩個候選段落都存在，而且文字逐字包含節錄
+    const blocks = materialsRepo.listBlocksByTopic("topic-1");
+    for (const [excerpt, label] of [
+      [shortA, "短節錄甲"],
+      [shortB, "短節錄乙"],
+    ] as const) {
+      expect(blocks.some((block) => block.text.includes(excerpt)), label).toBe(true);
+    }
+
+    for (const [question, label] of [
+      [questionA, "短節錄甲"],
+      [questionB, "短節錄乙"],
+    ] as const) {
+      const after = questions.getQuestion(question.id)!;
+      // 短片段會在無關段落中出現，不可自動連結 → 維持未通過核對
+      expect(after.sourceBlockIds, label).toEqual([]);
+      expect(after.sourceVerified, label).toBe(false);
+      // 學生端維持 fail-closed（節錄不是作者撰寫的來源）
+      const visibility = sourceVisibility.studentExcerptVisibility(after);
+      expect(visibility.visible, label).toBe(false);
+      expect(visibility.reason, label).toBe("unverified-source");
+    }
+  });
+
+  it("達到最短長度的節錄仍會正常連結（非空洞對照組）", async () => {
+    const long = "合成長句：古人類於非洲出現並向各地遷徙。";
+    expect(long.length).toBeGreaterThanOrEqual(8);
+    const question = createSyntheticQuestionForLesson({
+      excerpt: long,
+      sourceLocation: `${LESSON_FILE} · 合成合成段落（長節錄）`,
+    });
+
+    await importSyntheticLesson([`合成課文甲：${long}`, "合成課文乙：與本題無關的內容。"]);
+
+    const after = questions.getQuestion(question.id)!;
+    expect(after.sourceVerified).toBe(true);
+    expect(after.sourceBlockIds).toHaveLength(1);
+    const block = materialsRepo
+      .listBlocksByTopic("topic-1")
+      .find((candidate) => candidate.id === after.sourceBlockIds[0]);
+    expect(block).toBeDefined();
+    // 連結到的段落必須逐字包含節錄（非空洞：不是「有連結就算通過」）
+    expect(block!.text).toContain(long);
+    expect(block!.sourceLocation).toContain(LESSON_FILE);
+  });
+
+  it("作者撰寫的節錄（示範題庫）不受最短長度限制：短標籤仍會定位到教材段落", async () => {
+    const label = "合成短標籤"; // 5 字
+    expect(label.length).toBeLessThan(8);
+    const question = createSyntheticQuestionForLesson({
+      excerpt: label,
+      sourceLocation: "示範題庫（未能自動核對教材位置）",
+      origin: "demo",
+    });
+
+    await importSyntheticLesson([`合成課文：${label} 是本題的來源標註。`]);
+
+    const after = questions.getQuestion(question.id)!;
+    // 示範題庫的 sourceAnchor 本身就是作者提供的來源標註，程式只負責定位
+    expect(after.sourceVerified).toBe(true);
+    expect(after.sourceBlockIds).toHaveLength(1);
+    const block = materialsRepo
+      .listBlocksByTopic("topic-1")
+      .find((candidate) => candidate.id === after.sourceBlockIds[0]);
+    expect(block).toBeDefined();
+    expect(block!.text).toContain(label);
   });
 });

@@ -1,0 +1,410 @@
+{
+  "version": 2,
+  "status": "proposed-not-applied",
+  "title": "七條「解釋引用段號過時」題目的核對結果及建議修正（Sprint 8.6，未套用）",
+  "purpose": "逐題把解釋內的歷史陳述與現行版本控制教材核對，判斷段號是否仍然準確，並提出修正建議。本檔案只是**建議**：沒有任何修正已套用，亦沒有取得擁有者或歷史科教師的授權。",
+  "authorisation": {
+    "required": [
+      "擁有者（批准改動題目內容）",
+      "歷史科教師（確認史實及用語）"
+    ],
+    "obtained": false,
+    "note": "依既有契約，修改解釋屬改動題目內容：會令版本遞增、既有覆核失效，因此必須逐題取得明確授權。本檔案的存在不代表已授權。"
+  },
+  "method": [
+    "以唯讀方式讀取 data/app.db 的 questions 及 material_blocks（2026-10-17）。",
+    "對每一題：核對 (a) 解釋內的段號、(b) 引用段落自身的 source_location、(c) 題目儲存的 source_location、(d) 節錄是否逐字出現在引用段落之內、(e) 解釋的關鍵內容在現行教材的位置。",
+    "分類：still-accurate（段號正確）／outdated-recoverable（段號過時但內容有現行依據）／ambiguous（內容跨多段或段號無法唯一確定）／unsupported（現行教材已無依據）。",
+    "比對採字面比對（正規化標點後）並人工閱讀上下文；沒有使用 AI，也沒有改動任何題目。"
+  ],
+  "items": [
+    {
+      "questionId": "q_cc6088757ff240f1",
+      "origin": "material-mock",
+      "status": "published",
+      "revision": 6,
+      "classification": "outdated-recoverable",
+      "existingExplanation": "教材第 42／75 段：「國際合作的背景：二十世紀以來人類共同面對的挑戰」；課題內容列出大戰再起風險、全球貧富差距、過度開發破壞環境等挑戰。",
+      "evidence": {
+        "blockId": "blk_39ec9239ac8f4809",
+        "blockSourceLocation": "課題11 20世紀以來的國際合作.docx · 第 11 段（段落）",
+        "quote": "國際合作的背景：二十世紀以來人類共同面對的挑戰",
+        "excerptVerbatimInBlock": true,
+        "claimChecks": [
+          "「大戰潛在再起風險」見於同文件第 287 段（表格重點列）",
+          "「全球貧富差距嚴重」見於同文件第 7 段（標題）及第 30 段（清單）",
+          "「過度開發破壞環境」見於同文件第 15 段（標題）及第 46 段（清單）"
+        ]
+      },
+      "verifiedCurrentReference": "第 11 段",
+      "proposedReplacement": "教材第 11 段：「國際合作的背景：二十世紀以來人類共同面對的挑戰」；課題內容列出大戰再起風險、全球貧富差距、過度開發破壞環境等挑戰。",
+      "risk": "只改段號，不改史實陳述；版本會遞增，既有覆核失效。",
+      "applied": false,
+      "verifiedNow": {
+        "checkedOn": "2026-10-17",
+        "database": "data/app.db（唯讀）",
+        "status": "published",
+        "revision": 6,
+        "storedSourceLocation": "課題11 20世紀以來的國際合作.docx · 第 11 段（段落）",
+        "sourceVerified": true,
+        "teacherConfirmationRequired": false,
+        "explanationMatchesManifest": true
+      },
+      "changes": [
+        {
+          "field": "explanation",
+          "oldValue": "教材第 42／75 段：「國際合作的背景：二十世紀以來人類共同面對的挑戰」；課題內容列出大戰再起風險、全球貧富差距、過度開發破壞環境等挑戰。",
+          "proposedValue": "教材第 11 段：「國際合作的背景：二十世紀以來人類共同面對的挑戰」；課題內容列出大戰再起風險、全球貧富差距、過度開發破壞環境等挑戰。",
+          "reason": "只改段號，不改史實陳述；版本會遞增，既有覆核失效。",
+          "confidence": {
+            "level": "high",
+            "reason": "引用句逐字見於現行第 11 段；建議文字只把段號由 42／75 改為 11，其餘字句不變。"
+          }
+        }
+      ],
+      "approvalRequired": {
+        "roles": [
+          "擁有者（批准改動題目內容）",
+          "歷史科教師（確認史實及用語）"
+        ],
+        "obtained": false,
+        "reason": "修改解釋或來源位置會令題目版本遞增、既有覆核失效，屬改動題目內容，必須逐題取得明確授權。",
+        "effectIfApplied": "questions.revision +1；現有覆核紀錄因版本／內容指紋不同而失效（reviewState 變為 stale-approval）；題目須重新覆核才可在教師介面再次發布（自動驗證亦須重跑）。"
+      }
+    },
+    {
+      "questionId": "q_9531dd6d6ad34d4a",
+      "origin": "material-mock",
+      "status": "published",
+      "revision": 6,
+      "classification": "outdated-recoverable",
+      "existingExplanation": "教材第 229 段：部分污染物破壞臭氧層，使南極洲上空出現「臭氧層空洞」，讓更多紫外線進入地球，危害人類與生態健康。",
+      "evidence": {
+        "blockId": "blk_55f206e68978419d",
+        "blockSourceLocation": "課題11 20世紀以來的國際合作.docx · 第 249 段（清單）",
+        "quote": "部分污染物會破壞臭氧層，使南極洲上空出現「臭氧層空洞」，令更多紫外線進入地球，危害人類與生態健康。",
+        "excerptVerbatimInBlock": true,
+        "note": "解釋的用字（「破壞」「讓」）與引用段落（「會破壞」「令」）略有不同；完全相同的句子見於同文件第 62 段。題目的依據是第 249 段，因此應以該段用字為準。"
+      },
+      "verifiedCurrentReference": "第 249 段",
+      "proposedReplacement": "教材第 249 段：部分污染物會破壞臭氧層，使南極洲上空出現「臭氧層空洞」，令更多紫外線進入地球，危害人類與生態健康。",
+      "risk": "改動解釋用字以符合引用段落；版本會遞增，既有覆核失效。",
+      "applied": false,
+      "verifiedNow": {
+        "checkedOn": "2026-10-17",
+        "database": "data/app.db（唯讀）",
+        "status": "published",
+        "revision": 6,
+        "storedSourceLocation": "課題11 20世紀以來的國際合作.docx · 第 249 段（清單）",
+        "sourceVerified": true,
+        "teacherConfirmationRequired": false,
+        "explanationMatchesManifest": true
+      },
+      "changes": [
+        {
+          "field": "explanation",
+          "oldValue": "教材第 229 段：部分污染物破壞臭氧層，使南極洲上空出現「臭氧層空洞」，讓更多紫外線進入地球，危害人類與生態健康。",
+          "proposedValue": "教材第 249 段：部分污染物會破壞臭氧層，使南極洲上空出現「臭氧層空洞」，令更多紫外線進入地球，危害人類與生態健康。",
+          "reason": "改動解釋用字以符合引用段落；版本會遞增，既有覆核失效。",
+          "confidence": {
+            "level": "high",
+            "reason": "引用句逐字見於現行第 249 段；建議文字跟隨原文用字（「會破壞」、「令」），史實陳述不變。"
+          }
+        }
+      ],
+      "approvalRequired": {
+        "roles": [
+          "擁有者（批准改動題目內容）",
+          "歷史科教師（確認史實及用語）"
+        ],
+        "obtained": false,
+        "reason": "修改解釋或來源位置會令題目版本遞增、既有覆核失效，屬改動題目內容，必須逐題取得明確授權。",
+        "effectIfApplied": "questions.revision +1；現有覆核紀錄因版本／內容指紋不同而失效（reviewState 變為 stale-approval）；題目須重新覆核才可在教師介面再次發布（自動驗證亦須重跑）。"
+      }
+    },
+    {
+      "questionId": "q_b87d77c973a140dc",
+      "origin": "material-mock",
+      "status": "published",
+      "revision": 6,
+      "classification": "outdated-recoverable",
+      "existingExplanation": "教材第 229 段：部分污染物破壞臭氧層，使南極洲上空出現「臭氧層空洞」，讓更多紫外線進入地球，危害人類與生態健康。",
+      "evidence": {
+        "blockId": "blk_55f206e68978419d",
+        "blockSourceLocation": "課題11 20世紀以來的國際合作.docx · 第 249 段（清單）",
+        "quote": "部分污染物會破壞臭氧層，使南極洲上空出現「臭氧層空洞」，令更多紫外線進入地球，危害人類與生態健康。",
+        "excerptVerbatimInBlock": true,
+        "note": "與 q_9531dd6d6ad34d4a 同一段教材、同一段過時段號（不同題型）。"
+      },
+      "verifiedCurrentReference": "第 249 段",
+      "proposedReplacement": "教材第 249 段：部分污染物會破壞臭氧層，使南極洲上空出現「臭氧層空洞」，令更多紫外線進入地球，危害人類與生態健康。",
+      "risk": "改動解釋用字以符合引用段落；版本會遞增，既有覆核失效。",
+      "applied": false,
+      "verifiedNow": {
+        "checkedOn": "2026-10-17",
+        "database": "data/app.db（唯讀）",
+        "status": "published",
+        "revision": 6,
+        "storedSourceLocation": "課題11 20世紀以來的國際合作.docx · 第 249 段（清單）",
+        "sourceVerified": true,
+        "teacherConfirmationRequired": false,
+        "explanationMatchesManifest": true
+      },
+      "changes": [
+        {
+          "field": "explanation",
+          "oldValue": "教材第 229 段：部分污染物破壞臭氧層，使南極洲上空出現「臭氧層空洞」，讓更多紫外線進入地球，危害人類與生態健康。",
+          "proposedValue": "教材第 249 段：部分污染物會破壞臭氧層，使南極洲上空出現「臭氧層空洞」，令更多紫外線進入地球，危害人類與生態健康。",
+          "reason": "改動解釋用字以符合引用段落；版本會遞增，既有覆核失效。",
+          "confidence": {
+            "level": "high",
+            "reason": "與 q_9531dd6d6ad34d4a 引用同一段，情況相同：段號由 229 改為 249，並跟隨原文用字。"
+          }
+        }
+      ],
+      "approvalRequired": {
+        "roles": [
+          "擁有者（批准改動題目內容）",
+          "歷史科教師（確認史實及用語）"
+        ],
+        "obtained": false,
+        "reason": "修改解釋或來源位置會令題目版本遞增、既有覆核失效，屬改動題目內容，必須逐題取得明確授權。",
+        "effectIfApplied": "questions.revision +1；現有覆核紀錄因版本／內容指紋不同而失效（reviewState 變為 stale-approval）；題目須重新覆核才可在教師介面再次發布（自動驗證亦須重跑）。"
+      }
+    },
+    {
+      "questionId": "q_367c44de30bc4771",
+      "origin": "material-ai",
+      "status": "published",
+      "revision": 6,
+      "classification": "ambiguous",
+      "existingExplanation": "教材第 8 段：發展中國家收入不穩，又向發達國家借貸，導致負債不斷上升，陷入貧窮與借貸的惡性循環。",
+      "evidence": {
+        "blockId": "blk_ece1b3d0544a44e9",
+        "blockSourceLocation": "課題11 20世紀以來的國際合作.docx · 第 45 段（清單）",
+        "quote": "這導致發展中國家債務不斷累積，長期陷入貧窮與借貸的惡性循環。",
+        "excerptVerbatimInBlock": true,
+        "claimChecks": [
+          "「發展中國家：收入不穩 + 向發達國家借貸 → 負債不斷上升」見於同文件第 8 段（清單）",
+          "題目引用的是第 45 段（結論句），解釋卻把第 8 段與第 45 段的內容合併成一句"
+        ]
+      },
+      "verifiedCurrentReference": "第 8 段（原因）＋ 第 45 段（結果）；題目只引用第 45 段",
+      "proposedReplacement": "教材第 45 段指出這導致發展中國家債務不斷累積，長期陷入貧窮與借貸的惡性循環；第 8 段則列出「收入不穩」及向發達國家借貸是負債上升的原因。",
+      "risk": "屬內容改寫（把兩個段落的關係寫清楚），必須由歷史科教師確認措辭及是否需要保留跨段引述。",
+      "applied": false,
+      "verifiedNow": {
+        "checkedOn": "2026-10-17",
+        "database": "data/app.db（唯讀）",
+        "status": "published",
+        "revision": 6,
+        "storedSourceLocation": "課題11 20世紀以來的國際合作.docx · 第 45 段（清單）",
+        "sourceVerified": true,
+        "teacherConfirmationRequired": false,
+        "explanationMatchesManifest": true
+      },
+      "changes": [
+        {
+          "field": "explanation",
+          "oldValue": "教材第 8 段：發展中國家收入不穩，又向發達國家借貸，導致負債不斷上升，陷入貧窮與借貸的惡性循環。",
+          "proposedValue": "教材第 45 段指出這導致發展中國家債務不斷累積，長期陷入貧窮與借貸的惡性循環；第 8 段則列出「收入不穩」及向發達國家借貸是負債上升的原因。",
+          "reason": "屬內容改寫（把兩個段落的關係寫清楚），必須由歷史科教師確認措辭及是否需要保留跨段引述。",
+          "confidence": {
+            "level": "low",
+            "reason": "題目只引用第 45 段（結論句），解釋卻同時敘述第 8 段的原因；建議文字是跨段改寫，措辭及是否保留跨段引述須由教師決定。"
+          }
+        }
+      ],
+      "approvalRequired": {
+        "roles": [
+          "擁有者（批准改動題目內容）",
+          "歷史科教師（確認史實及用語）"
+        ],
+        "obtained": false,
+        "reason": "修改解釋或來源位置會令題目版本遞增、既有覆核失效，屬改動題目內容，必須逐題取得明確授權。",
+        "effectIfApplied": "questions.revision +1；現有覆核紀錄因版本／內容指紋不同而失效（reviewState 變為 stale-approval）；題目須重新覆核才可在教師介面再次發布（自動驗證亦須重跑）。"
+      }
+    },
+    {
+      "questionId": "q_10e7e20afbf14a17",
+      "origin": "material-ai",
+      "status": "published",
+      "revision": 6,
+      "classification": "outdated-recoverable",
+      "existingExplanation": "教材第 80 段：部分在發達國家已受控的疾病如肺結核、麻疹與瘧疾，仍在發展中國家肆虐。",
+      "evidence": {
+        "blockId": "blk_18b0b3ded9214afd",
+        "blockSourceLocation": "課題11 20世紀以來的國際合作.docx · 第 81 段（段落）",
+        "quote": "部分在發達國家已受控的疾病如肺結核、麻疹與瘧疾，仍在這些地區肆虐。",
+        "excerptVerbatimInBlock": true,
+        "note": "題目同時引用第 80 段（清單，節錄不在其中）及第 81 段（段落，節錄逐字出現）。「仍在發展中國家肆虐」的寫法見於同文件第 287 段（表格），不是引用段落。"
+      },
+      "verifiedCurrentReference": "第 81 段",
+      "proposedReplacement": "教材第 81 段：部分在發達國家已受控的疾病如肺結核、麻疹與瘧疾，仍在這些地區肆虐。",
+      "risk": "改段號及用字（「發展中國家」→「這些地區」）；版本會遞增，既有覆核失效。",
+      "applied": false,
+      "verifiedNow": {
+        "checkedOn": "2026-10-17",
+        "database": "data/app.db（唯讀）",
+        "status": "published",
+        "revision": 6,
+        "storedSourceLocation": "課題11 20世紀以來的國際合作.docx · 第 81 段（段落）",
+        "sourceVerified": true,
+        "teacherConfirmationRequired": false,
+        "explanationMatchesManifest": true
+      },
+      "changes": [
+        {
+          "field": "explanation",
+          "oldValue": "教材第 80 段：部分在發達國家已受控的疾病如肺結核、麻疹與瘧疾，仍在發展中國家肆虐。",
+          "proposedValue": "教材第 81 段：部分在發達國家已受控的疾病如肺結核、麻疹與瘧疾，仍在這些地區肆虐。",
+          "reason": "改段號及用字（「發展中國家」→「這些地區」）；版本會遞增，既有覆核失效。",
+          "confidence": {
+            "level": "medium",
+            "reason": "段號由 80 改為 81 有逐字證據；但建議文字把「發展中國家」改為「這些地區」，屬措辭判斷，須由教師確認是否保留原意。"
+          }
+        }
+      ],
+      "approvalRequired": {
+        "roles": [
+          "擁有者（批准改動題目內容）",
+          "歷史科教師（確認史實及用語）"
+        ],
+        "obtained": false,
+        "reason": "修改解釋或來源位置會令題目版本遞增、既有覆核失效，屬改動題目內容，必須逐題取得明確授權。",
+        "effectIfApplied": "questions.revision +1；現有覆核紀錄因版本／內容指紋不同而失效（reviewState 變為 stale-approval）；題目須重新覆核才可在教師介面再次發布（自動驗證亦須重跑）。"
+      }
+    },
+    {
+      "questionId": "q_55f87a719efa41a2",
+      "origin": "material-ai",
+      "status": "published",
+      "revision": 3,
+      "classification": "still-accurate",
+      "existingExplanation": "教材第344段指出，《中英聯合聲明》的主要內容包括中國將於1997年7月1日對香港恢復行使主權，並設立香港特別行政區。其餘選項在日期或名稱上與教材不符。",
+      "evidence": {
+        "blockId": "blk_c23bf2b9591f4368",
+        "blockSourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 344 段（清單）",
+        "quote": "中國將於1997年7月1日對香港恢復行使主權，並設立香港特別行政區（簡稱香港特區）；",
+        "excerptVerbatimInBlock": true,
+        "note": "解釋的「第 344 段」與引用段落自身的 source_location 一致。過時的是**題目儲存的 source_location 字串**（第 389 段），不是解釋。"
+      },
+      "verifiedCurrentReference": "第 344 段（解釋無需修改）",
+      "proposedReplacement": null,
+      "proposedAction": "fix-source-location-string",
+      "proposedSourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 344 段（清單）",
+      "risk": "只修正顯示用的來源位置字串（不改題目、答案、解釋），仍需擁有者授權及版本紀錄。",
+      "applied": false,
+      "verifiedNow": {
+        "checkedOn": "2026-10-17",
+        "database": "data/app.db（唯讀）",
+        "status": "published",
+        "revision": 3,
+        "storedSourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 389 段（清單）",
+        "sourceVerified": true,
+        "teacherConfirmationRequired": false,
+        "explanationMatchesManifest": true
+      },
+      "changes": [
+        {
+          "field": "sourceLocation",
+          "oldValue": "課題12 二十世紀香港的成長與蛻變.docx · 第 389 段（清單）",
+          "proposedValue": "課題12 二十世紀香港的成長與蛻變.docx · 第 344 段（清單）",
+          "reason": "題目顯示的來源位置指向錯誤段落；解釋本身引用的段號正確，因此只需修正顯示字串。",
+          "confidence": {
+            "level": "high",
+            "reason": "解釋引用的段落（第 344 段）與所引段落的 source_location 一致；只有題目儲存的來源位置字串指錯段落（第 389 段），屬顯示字串修正。"
+          }
+        }
+      ],
+      "approvalRequired": {
+        "roles": [
+          "擁有者（批准改動題目內容）",
+          "歷史科教師（確認史實及用語）"
+        ],
+        "obtained": false,
+        "reason": "修改解釋或來源位置會令題目版本遞增、既有覆核失效，屬改動題目內容，必須逐題取得明確授權。",
+        "effectIfApplied": "questions.revision +1；現有覆核紀錄因版本／內容指紋不同而失效（reviewState 變為 stale-approval）；題目須重新覆核才可在教師介面再次發布（自動驗證亦須重跑）。"
+      }
+    },
+    {
+      "questionId": "q_2ceed84d0a7a4bc7",
+      "origin": "material-ai",
+      "status": "published",
+      "revision": 3,
+      "classification": "still-accurate",
+      "existingExplanation": "教材第344段指出，除外交與國防事務屬中央管理外，香港特區享有高度的自治權。",
+      "evidence": {
+        "blockId": "blk_c23bf2b9591f4368",
+        "blockSourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 344 段（清單）",
+        "quote": "除外交與國防事務屬中央管理外，香港特區享有高度的自治權。",
+        "excerptVerbatimInBlock": true,
+        "note": "與 q_55f87a719efa41a2 引用同一段（該段是《中英聯合聲明》主要內容的清單）。過時的是題目儲存的 source_location 字串（第 434 段，且標示為「表格」），不是解釋。"
+      },
+      "verifiedCurrentReference": "第 344 段（解釋無需修改）",
+      "proposedReplacement": null,
+      "proposedAction": "fix-source-location-string",
+      "proposedSourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 344 段（清單）",
+      "risk": "只修正顯示用的來源位置字串（不改題目、答案、解釋），仍需擁有者授權及版本紀錄。",
+      "applied": false,
+      "verifiedNow": {
+        "checkedOn": "2026-10-17",
+        "database": "data/app.db（唯讀）",
+        "status": "published",
+        "revision": 3,
+        "storedSourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 434 段（表格）",
+        "sourceVerified": true,
+        "teacherConfirmationRequired": false,
+        "explanationMatchesManifest": true
+      },
+      "changes": [
+        {
+          "field": "sourceLocation",
+          "oldValue": "課題12 二十世紀香港的成長與蛻變.docx · 第 434 段（表格）",
+          "proposedValue": "課題12 二十世紀香港的成長與蛻變.docx · 第 344 段（清單）",
+          "reason": "題目顯示的來源位置指向錯誤段落；解釋本身引用的段號正確，因此只需修正顯示字串。",
+          "confidence": {
+            "level": "high",
+            "reason": "與 q_55f87a719efa41a2 引用同一段；題目儲存的來源位置字串（第 434 段，標示為「表格」）與實際段落不符，屬顯示字串修正。"
+          }
+        }
+      ],
+      "approvalRequired": {
+        "roles": [
+          "擁有者（批准改動題目內容）",
+          "歷史科教師（確認史實及用語）"
+        ],
+        "obtained": false,
+        "reason": "修改解釋或來源位置會令題目版本遞增、既有覆核失效，屬改動題目內容，必須逐題取得明確授權。",
+        "effectIfApplied": "questions.revision +1；現有覆核紀錄因版本／內容指紋不同而失效（reviewState 變為 stale-approval）；題目須重新覆核才可在教師介面再次發布（自動驗證亦須重跑）。"
+      }
+    }
+  ],
+  "summary": {
+    "total": 7,
+    "stillAccurate": 2,
+    "outdatedRecoverable": 4,
+    "ambiguous": 1,
+    "unsupported": 0,
+    "note": "與 README 第 45 項原先的假設（7 條的解釋段號都過時）不同：核對後有 2 條的**解釋**其實正確，過時的是題目顯示的來源位置字串。沒有任何一條失去現行教材依據。"
+  },
+  "nextSteps": [
+    "由擁有者決定是否批准這批純文字修正（以及兩條來源位置字串修正）。",
+    "由歷史科教師確認 q_367c44de30bc4771 的建議改寫措辭（跨段引述），以及 q_10e7e20afbf14a17 是否保留「發展中國家」的說法。",
+    "批准後以既有「動作清單 + 內容指紋 + 逐字驗證」機制套用（例如另備 *-apply.json 並在隔離副本先驗證），套用後版本遞增、既有覆核失效，需重新覆核。"
+  ],
+  "recheck": {
+    "date": "2026-10-17",
+    "sprint": "8.7 第四階段",
+    "database": "data/app.db（以唯讀方式開啟，沒有寫入）",
+    "result": [
+      "7 條題目仍全部存在，且分類不變：2 條解釋準確但來源位置字串過時、4 條段號過時但可復原、1 條跨段引述屬模糊。",
+      "4 條 outdated-recoverable 的 source_location 本身已正確；過時的是解釋文字內的段號，這點在 Sprint 8.6 已記錄，重查後一致。",
+      "2 條 still-accurate 的 source_location 仍然指錯段落（第 389 段／第 434 段），解釋引用的第 344 段正確。",
+      "沒有任何一條失去現行教材依據（source_verified = 1）。",
+      "所有題目仍為 published，teacher_confirmation_required = 0；本階段沒有改動任何題目、狀態或覆核紀錄。"
+    ],
+    "stillUnapplied": true,
+    "note": "重查只確認現況與 Sprint 8.6 的提案一致；不構成授權，也沒有套用任何修正。"
+  }
+}

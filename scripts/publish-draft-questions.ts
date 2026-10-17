@@ -44,6 +44,7 @@ import { getServerConfig, isProductionRuntime } from "../src/server/config";
 import { QUESTION_ORIGIN_LABELS, type QuestionOrigin } from "../src/lib/types";
 import { setQuestionStatus } from "../src/server/repositories/questions";
 import { listOwnerPublicationCandidates } from "../src/server/services/question-service";
+import { warnIfNpmSwallowedApply } from "./lifecycle-hints";
 
 function readArg(name: string): string | null {
   const index = process.argv.indexOf(name);
@@ -51,6 +52,7 @@ function readArg(name: string): string | null {
 }
 
 const apply = process.argv.includes("--apply");
+warnIfNpmSwallowedApply(apply);
 const ownerEmail = (readArg("--owner-email") ?? "").trim();
 const reason = (readArg("--reason") ?? "").trim();
 const label = readArg("--label") ?? "local";

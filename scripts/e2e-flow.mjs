@@ -709,6 +709,19 @@ async function main() {
           autoPublished.payload?.view?.question?.status === "published",
         `HTTP ${autoPublished.status}`,
       );
+      // 覆核必須指明教師看到的版本（Sprint 8.7）：先確認版本不符時會被拒絕
+      const reviewRevision =
+        autoPublished.payload?.view?.question?.revision ?? generatedQuestion.revision ?? 1;
+      const staleReview = await call(
+        "POST",
+        `/api/teacher/questions/${generatedQuestion.id}/review`,
+        { decision: "approved", expectedRevision: reviewRevision + 1 },
+      );
+      check(
+        "覆核指明的版本與現行版本不符時會被拒絕（409）",
+        staleReview.status === 409,
+        `HTTP ${staleReview.status}`,
+      );
 
       // 教師手動建立的題目沒有自動驗證或人工覆核紀錄 → 不可發布（409）
       const manual = await call("POST", "/api/teacher/questions", {
@@ -749,7 +762,7 @@ async function main() {
       const reviewed = await call(
         "POST",
         `/api/teacher/questions/${generatedQuestion.id}/review`,
-        { decision: "approved" },
+        { decision: "approved", expectedRevision: reviewRevision },
       );
       check(
         "教師可以記錄人工覆核（通過）",
@@ -778,7 +791,7 @@ async function main() {
       const again = await call(
         "POST",
         `/api/teacher/questions/${generatedQuestion.id}/review`,
-        { decision: "approved" },
+        { decision: "approved", expectedRevision: reviewRevision },
       );
       check("重複覆核不會重複記錄", again.payload?.created === false);
 

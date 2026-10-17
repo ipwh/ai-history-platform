@@ -212,6 +212,8 @@ export function resolveQuestionReport(
 export const REPORT_REMEDIATION_ACTIONS = ["withdraw-question", "revalidate-question"] as const;
 export type ReportRemediationAction =
   | (typeof REPORT_REMEDIATION_ACTIONS)[number]
+  /** 機器驗證通過，但題目仍待教師確認（標記只可由人工覆核清除） */
+  | "awaiting-teacher-confirmation"
   | "revalidate-failed"
   | "not-in-bank";
 
@@ -274,9 +276,14 @@ export function revalidateQuestionFromReport(
     };
   }
   const result = revalidateQuestion(question.id);
-  const action: ReportRemediationAction = result.autoValidated
-    ? "revalidate-question"
-    : "revalidate-failed";
+  // Sprint 8.6：機器檢查通過但仍有暫緩標記時，要如實告訴教師「仍待你確認」，
+  // 不可以當成驗證失敗，也不可以當成已可發布。
+  const action: ReportRemediationAction =
+    result.decision === "auto-validated"
+      ? "revalidate-question"
+      : result.decision === "awaiting-teacher-confirmation"
+        ? "awaiting-teacher-confirmation"
+        : "revalidate-failed";
   if (result.autoValidated) {
     resolveQuestionReport(reportId, "resolved", resolvedBy, action);
   }

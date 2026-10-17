@@ -75,11 +75,14 @@ async function callReview(
   cookie?: string,
 ): Promise<Response> {
   const { POST } = await import("@/app/api/teacher/questions/[questionId]/review/route");
+  // 覆核必須指明教師看到的版本（Sprint 8.7）：預設用資料庫目前版本，
+  // 需要測試過時版本時由 body 覆寫 expectedRevision
+  const current = repo.getQuestion(questionId);
   return POST(
     new Request(`http://localhost:3000/api/teacher/questions/${questionId}/review`, {
       method: "POST",
       headers: { ...(cookie ? { cookie } : {}), "content-type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ expectedRevision: current?.revision ?? 1, ...body }),
     }),
     { params: Promise.resolve({ questionId }) },
   );

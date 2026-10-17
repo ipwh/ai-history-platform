@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "title": "課題1 校內試題：教材依據連結（短答題，10 條）",
+  "purpose": "把校內試題中因匯入標記而從未連結段落的題目，連結到試卷文件內逐字相等的題幹段落；只改 sourceExcerpt／sourceLocation／sourceBlockIds／sourceVerified，題目內容不變。其餘 25 條（MCQ／DBQ）的節錄橫跨多個段落（題幹、資料、選項分列），單一段落無法逐字引用，因此保持「未通過教材依據核對」（學生端本來就不會顯示校內試題的節錄）。",
+  "sourceMaterials": "materials/ 內的課題1 校內試題（kind = question-bank）",
+  "generatedFrom": {
+    "database": "data/app.db",
+    "generatedAt": "2026-10-16"
+  },
+  "entries": [
+    {
+      "questionId": "qb-JTH2ndEdLAQ01001",
+      "action": "link-evidence",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-civilisation-features",
+      "questionType": "short",
+      "beforeFingerprint": "a0ad99031d44fd3c5506eedbedef3615d940bf077faf4bf69a6f49dead4c60ce",
+      "beforeExcerpt": "文字最早在何時發明？文字的發明對歷史的劃分有甚麼影響？（3分）\n@O",
+      "beforeSourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 1 題 · A. 石器時代的演進",
+      "evidence": {
+        "blockIds": [
+          "blk_f17ec24e36364f7e"
+        ],
+        "documentFileName": "HNC1A2E_QB_T1_6.LAQ.docx",
+        "sourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 12 段（段落）",
+        "excerpt": "文字最早在何時發明？文字的發明對歷史的劃分有甚麼影響？（3分）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "reason": "校內試題的節錄帶有匯入時的版面標記（@O），因此從未連結段落；本條把節錄改為試卷文件的逐字題幹並連結該段落，令教師端狀態與事實一致（題目內容、選項及答案不變）。"
+    },
+    {
+      "questionId": "qb-JTH2ndEdLAQ01006",
+      "action": "link-evidence",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-civilisation-features",
+      "questionType": "short",
+      "beforeFingerprint": "fccfb3e8017791c0b539a16e65df36a3159df87b26aec9cacc21220380a9b5ab",
+      "beforeExcerpt": "除城市的出現和文字的發明外，文明社會還具備甚麼常見特徵？（4分）\n@O",
+      "beforeSourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 6 題 · B. 古文明的興起",
+      "evidence": {
+        "blockIds": [
+          "blk_beb1fa5cb99d467d"
+        ],
+        "documentFileName": "HNC1A2E_QB_T1_6.LAQ.docx",
+        "sourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 77 段（段落）",
+        "excerpt": "除城市的出現和文字的發明外，文明社會還具備甚麼常見特徵？（4分）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "reason": "校內試題的節錄帶有匯入時的版面標記（@O），因此從未連結段落；本條把節錄改為試卷文件的逐字題幹並連結該段落，令教師端狀態與事實一致（題目內容、選項及答案不變）。"
+    },
+    {
+      "questionId": "qb-JTH2ndEdLAQ01009",
+      "action": "link-evidence",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-four-civilisations-egypt",
+      "questionType": "short",
+      "beforeFingerprint": "320e353914837d23e17616330f2c94eacead04d3ac82e9abc7796f33b9c4e862",
+      "beforeExcerpt": "試從多神信仰和供奉天神兩方面，指出古埃及的宗教信仰特色。（4分）\n@O",
+      "beforeSourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 9 題 · D. 尼羅河流域文明（古代埃及文明）",
+      "evidence": {
+        "blockIds": [
+          "blk_31bfe68c9cf64edb"
+        ],
+        "documentFileName": "HNC1A2E_QB_T1_6.LAQ.docx",
+        "sourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 125 段（段落）",
+        "excerpt": "試從多神信仰和供奉天神兩方面，指出古埃及的宗教信仰特色。（4分）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "reason": "校內試題的節錄帶有匯入時的版面標記（@O），因此從未連結段落；本條把節錄改為試卷文件的逐字題幹並連結該段落，令教師端狀態與事實一致（題目內容、選項及答案不變）。"
+    },
+    {
+      "questionId": "qb-JTH2ndEdLAQ01010",
+      "action": "link-evidence",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-four-civilisations-egypt",
+      "questionType": "short",
+      "beforeFingerprint": "b48184b3c6530d5d1a5de85c9e03c834cf28846272c9a8c4b124afe37f5d674c",
+      "beforeExcerpt": "古埃及人如何看待死亡？他們又會為死亡作甚麼準備？（4分）\n@O",
+      "beforeSourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 10 題 · D. 尼羅河流域文明（古代埃及文明）",
+      "evidence": {
+        "blockIds": [
+          "blk_61a63b81600c4db1"
+        ],
+        "documentFileName": "HNC1A2E_QB_T1_6.LAQ.docx",
+        "sourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 136 段（段落）",
+        "excerpt": "古埃及人如何看待死亡？他們又會為死亡作甚麼準備？（4分）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "reason": "校內試題的節錄帶有匯入時的版面標記（@O），因此從未連結段落；本條把節錄改為試卷文件的逐字題幹並連結該段落，令教師端狀態與事實一致（題目內容、選項及答案不變）。"
+    },
+    {
+      "questionId": "qb-JTH2ndEdLAQ01011",
+      "action": "link-evidence",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-four-civilisations-egypt",
+      "questionType": "short",
+      "beforeFingerprint": "430cba3c4ac6d85235450716d76c51e520d5ec17e372caab751eff2034e15786",
+      "beforeExcerpt": "試闡述古埃及文字的演變。（5分）\n@O",
+      "beforeSourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 11 題 · D. 尼羅河流域文明（古代埃及文明）",
+      "evidence": {
+        "blockIds": [
+          "blk_52cb7078d23749aa"
+        ],
+        "documentFileName": "HNC1A2E_QB_T1_6.LAQ.docx",
+        "sourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 147 段（段落）",
+        "excerpt": "試闡述古埃及文字的演變。（5分）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "reason": "校內試題的節錄帶有匯入時的版面標記（@O），因此從未連結段落；本條把節錄改為試卷文件的逐字題幹並連結該段落，令教師端狀態與事實一致（題目內容、選項及答案不變）。"
+    },
+    {
+      "questionId": "qb-JTH2ndEdLAQ01012",
+      "action": "link-evidence",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-four-civilisations-egypt",
+      "questionType": "short",
+      "beforeFingerprint": "4fcd0f0b445c7d0eb4c3ce9fd22b4e873ff53bf60f942e7e09e2d0a93f1f965f",
+      "beforeExcerpt": "試簡單說明尼羅河流域文明衰落的過程。（4分）\n@O",
+      "beforeSourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 12 題 · D. 尼羅河流域文明（古代埃及文明）",
+      "evidence": {
+        "blockIds": [
+          "blk_02c7112393c343d8"
+        ],
+        "documentFileName": "HNC1A2E_QB_T1_6.LAQ.docx",
+        "sourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 158 段（段落）",
+        "excerpt": "試簡單說明尼羅河流域文明衰落的過程。（4分）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "reason": "校內試題的節錄帶有匯入時的版面標記（@O），因此從未連結段落；本條把節錄改為試卷文件的逐字題幹並連結該段落，令教師端狀態與事實一致（題目內容、選項及答案不變）。"
+    },
+    {
+      "questionId": "qb-JTH2ndEdLAQ01003",
+      "action": "link-evidence",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-origins",
+      "questionType": "short",
+      "beforeFingerprint": "5a6aeb71e623e38308c8223ff3c3dfc8329f5644cae8f5e9700a00ae7435e6df",
+      "beforeExcerpt": "人類在甚麼時候懂得耕種？這活動的出現如何改變人類的生活模式？（5分）\n@O",
+      "beforeSourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 3 題 · A. 石器時代的演進",
+      "evidence": {
+        "blockIds": [
+          "blk_9e54c6df3f7648e9"
+        ],
+        "documentFileName": "HNC1A2E_QB_T1_6.LAQ.docx",
+        "sourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 34 段（段落）",
+        "excerpt": "人類在甚麼時候懂得耕種？這活動的出現如何改變人類的生活模式？（5分）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "reason": "校內試題的節錄帶有匯入時的版面標記（@O），因此從未連結段落；本條把節錄改為試卷文件的逐字題幹並連結該段落，令教師端狀態與事實一致（題目內容、選項及答案不變）。"
+    },
+    {
+      "questionId": "qb-JTH2ndEdLAQ01004",
+      "action": "link-evidence",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-origins",
+      "questionType": "short",
+      "beforeFingerprint": "bee24e81307f5ad925822ac58b6201b9ad50252546d0d27a783262703495cdf5",
+      "beforeExcerpt": "人類從甚麼時期開始發展文化生活？試簡單說明當時的文化發展。（3分）\n@O",
+      "beforeSourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 4 題 · A. 石器時代的演進",
+      "evidence": {
+        "blockIds": [
+          "blk_04ef7617448a40d3"
+        ],
+        "documentFileName": "HNC1A2E_QB_T1_6.LAQ.docx",
+        "sourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 45 段（段落）",
+        "excerpt": "人類從甚麼時期開始發展文化生活？試簡單說明當時的文化發展。（3分）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "reason": "校內試題的節錄帶有匯入時的版面標記（@O），因此從未連結段落；本條把節錄改為試卷文件的逐字題幹並連結該段落，令教師端狀態與事實一致（題目內容、選項及答案不變）。"
+    },
+    {
+      "questionId": "qb-JTH2ndEdLAQ01005",
+      "action": "link-evidence",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-origins",
+      "questionType": "short",
+      "beforeFingerprint": "7292aab322df26b09009a00b24f59315d3725dc7eb28750b5b163e53128695b6",
+      "beforeExcerpt": "金屬的出現與石器時代的結束有甚麼關係？（3分）\n@O",
+      "beforeSourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 5 題 · A. 石器時代的演進",
+      "evidence": {
+        "blockIds": [
+          "blk_aed1e0ee49654da2"
+        ],
+        "documentFileName": "HNC1A2E_QB_T1_6.LAQ.docx",
+        "sourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 56 段（段落）",
+        "excerpt": "金屬的出現與石器時代的結束有甚麼關係？（3分）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "reason": "校內試題的節錄帶有匯入時的版面標記（@O），因此從未連結段落；本條把節錄改為試卷文件的逐字題幹並連結該段落，令教師端狀態與事實一致（題目內容、選項及答案不變）。"
+    },
+    {
+      "questionId": "qb-JTH2ndEdLAQ01002",
+      "action": "link-evidence",
+      "topicId": "topic-1",
+      "sectionId": "topic-1-periods-paleolithic",
+      "questionType": "short",
+      "beforeFingerprint": "2b912426add05b50953abb6e315213f55594f4c04fdedf8210e11b66be3ea120",
+      "beforeExcerpt": "為甚麼舊石器時代人類會過着游獵生活？（3分）\n@O",
+      "beforeSourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 2 題 · A. 石器時代的演進",
+      "evidence": {
+        "blockIds": [
+          "blk_911ee80f3e6a40d2"
+        ],
+        "documentFileName": "HNC1A2E_QB_T1_6.LAQ.docx",
+        "sourceLocation": "HNC1A2E_QB_T1_6.LAQ.docx · 第 23 段（段落）",
+        "excerpt": "為甚麼舊石器時代人類會過着游獵生活？（3分）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "reason": "校內試題的節錄帶有匯入時的版面標記（@O），因此從未連結段落；本條把節錄改為試卷文件的逐字題幹並連結該段落，令教師端狀態與事實一致（題目內容、選項及答案不變）。"
+    }
+  ]
+}

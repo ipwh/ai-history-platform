@@ -9,18 +9,37 @@
 > 人工覆核改為**事後補救與抽樣**流程。自動驗證紀錄與人工覆核紀錄分開保存，教師端一律
 > 分得出「機器檢查通過」與「教師確認過」。
 >
-> **2026-10-16 教材更新後的待辦**：以 2026-10 版教材取代舊教材後，有 **66 條題目**的原文節錄
+> **2026-10-16 教材更新後的後續處理（已完成）**：以 2026-10 版教材取代舊教材後，有 **66 條題目**的原文節錄
 > 在新教材找不到逐字相符的段落（課題11 佔 35 條，多為舊版用詞改寫，例如「欠發達國家」→
-> 「發展中國家」；其餘為舊教師版的「資料題」練習內容，新教材已刪去）。這些題目已在教師端
-> 標示「未通過教材依據核對」（`sourceVerified = false`），學生端依 fail-closed 不顯示節錄及
-> 來源位置，但**題目仍會出現在練習中**。請在 `/teacher/questions` 逐一決定：重新指定教材依據
-> （以現行段落為準）、改寫題目用詞，或標示不可用；詳見 README 第十二節第 43 項。
+> 「發展中國家」；其餘為舊教師版的「資料題」練習內容，新教材已刪去）。其後逐題把題目**與答案**放回新教材核對：
+> 其中 **30 條**找到逐字相符的段落並重新連結（見 `docs/material-remapping/2026-10-material-refresh.json`）；
+> 其餘 36 條按擁有者指示處理（「一切以新教材內容為準；新教材沒有相關內容者刪除」）：
+>
+> | 處理 | 條數 | 詳情 |
+> | --- | --- | --- |
+> | 改寫（含更正答案、更新用詞） | 31 | 見 `docs/teacher-review/question-queue-actions-2026-10.json` |
+> | 刪除（新教材完全沒有相關內容） | 5 | 非殖民地化方式分類（3 條）、施里芬計劃、最後通牒時限 |
+> | 另：已重新連結題目的用詞對齊 | 23 | 見 `docs/material-remapping/2026-10-wording-alignment.json` |
+>
+> 36 條的處理結果已寫回 `docs/teacher-review/material-decision-queue-2026-10.json` 的 `resolution` 欄位
+> （每條標示改寫後版本號或已刪除）。改寫的題目一律以新教材段落作依據（逐字節錄驗證），
+> **沒有**建立任何人工覆核紀錄；刪除的 5 條在刪除前已確認作答紀錄、題目回報及覆核紀錄均為 0。
+> 教師如認為某條改寫後的題目不合用，可在 `/teacher/questions` 再修改或停用。
+> 尚有 **25 條課題1 校內試題**在教材更新前已「未通過教材依據核對」（屬校內試卷題目，非本次範圍）。
+> 2026-10-16 後續處理：其中 **10 條短答題**的節錄只因匯入時的版面標記（`\n@O`）而從未連結段落，
+> 已改為試卷文件內逐字相等的題幹並連結該段落（見 `docs/teacher-review/school-paper-evidence-links-2026-10.json`）；
+> 餘下 **25 條**（5 條 MCQ、20 條 DBQ）的節錄由題幹、資料引文及子題等多段文字組成，
+> 平台的核對規則要求**單一段落**包含整個節錄，因此無法取得單一段落依據——
+> 逐條原因及逐行證據記錄在 `docs/teacher-review/school-paper-unverified-2026-10.json`。
+> 校內試題（`origin = school-paper`）的節錄本來就不會顯示給學生（見 README「沒有引用段落 ≠ 可以顯示」），
+> 所以這是教師端的狀態記錄，不影響學生；教師如要處理，可為題目改用較短的單段節錄
+> （例如只引用資料原文）或把同組子題拆成獨立題目。
 
 ## 1. 四種狀態必須分開
 
 | 狀態 | 由誰決定 | 代表甚麼 | 系統欄位 |
 | --- | --- | --- | --- |
-| 教材依據成立 | 系統（自動） | `sourceExcerpt` 逐字出現在**該題引用的段落**中 | `Question.sourceVerified` |
+| 教材依據成立 | 系統（自動） | `sourceExcerpt` 逐字出現在**該題引用的段落**中，且節錄長度達 8 字（太短的片段會在無關段落中出現；作者撰寫的節錄——示範題庫、教師手動建立——不受長度限制，見 `src/server/materials/block-search.ts`） | `Question.sourceVerified` |
 | 完整題目品質（答案唯一、選項同類、解釋一致、無答案洩露等） | 系統（自動） | 見 [src/server/llm/question-quality.ts](../../src/server/llm/question-quality.ts) 及 README「自動品質閘門的能力與限制」 | `questions.auto_validated_at`／`auto_validated_revision`／`auto_validated_fingerprint` |
 | **未確定：自動發布暫緩，等待教師確認** | 系統（自動）判定，**須由教師解決** | 標準答案只是教材語句的改寫（非逐字依據）、短答題參考答案引入教材沒有的具體資料等——題目保留在題庫但學生看不到 | `questions.teacher_confirmation_required`（migration `0020`） |
 | 需教師核對的疑點 | 系統（自動） | 教材未提及的人名／條約名、選項重複等 | `Question.qualityWarnings` |
@@ -84,6 +103,8 @@
 3. 在教師端按「覆核通過並發布」，系統會：
    - 把**覆核者（電郵及角色）、時間、決定、題目版本及內容指紋**寫入 `question_reviews`；
    - 將題目狀態設為 `published`，令學生可見。
+   介面提交時會帶同**教師正在審閱的版本**（`expectedRevision`）；若題目在你審閱期間已被別人修改，
+   系統會回 **409** 並要求重新載入，**不會**把你的決定記到你沒有看過的版本上（Sprint 8.7）。
    **經人工覆核與經自動驗證的題目都會出現在學生練習的題庫中**，兩者以教師端的覆核狀態區分；
    沒有任何一種驗證紀錄的題目**不會**出現（學生端的 AI 即時生成亦套用同一套自動品質驗證；
    示範模式自動發布的題目會標示為「已發布（未經人工覆核）」）。
@@ -235,3 +256,100 @@
 **不可混淆的是**：目前學生可見的題目中，**沒有一題**經過歷史科教師確認史實；自動品質
 驗證**不是**史實正確的證明（見 README「自動品質閘門的能力與限制」）。學生回報與教師
 抽樣（第 6.5 節）是現階段發現史實問題的唯一途徑。
+
+**機器用的驗收樣本不是覆核紀錄**：[question-quality-fixtures.v1.json](./question-quality-fixtures.v1.json)
+是 Sprint 8.5 的教學品質閘門測試樣本（合成教材、機器判定，`reviewStatus: machine-fixtures-not-teacher-approved`）。
+它**不是**黃金題庫，也不代表任何題目已獲教師或史實批准；請勿把兩者混為一談。
+
+**真實生成題目的覆核樣本仍待覆核**：[generated-question-sample-2026-10.json](./generated-question-sample-2026-10.json)
+收錄 8 條由本機資料庫抽出的真實生成題目，附出處、完整逐字節錄、所引用段落原文及七項審題欄位。
+每一項的 `reviewerDecision` 都是 `pending-review`，覆核者及日期留空；填寫後必須同時填上覆核者及日期，
+否則測試會失敗（不得偽造覆核）。套件版本為 v3（Sprint 8.7）：每題的 `provenance.sourceContext`
+提供所引用段落的原文（每段上限 400 字），令教師能判斷節錄有沒有被斷章取義。
+
+## 7. Sprint 8.7 新增的覆核工具與證據
+
+| 檔案／指令 | 用途 | 現況 |
+| --- | --- | --- |
+| `npm run review:package -- --write`（[build-review-package.ts](../../scripts/build-review-package.ts)） | 以**唯讀**方式產生教師覆核套件（v3） | 8 題，全部 `pending-review` |
+| `npm run review:calibration -- --write`（[build-calibration-report.ts](../../scripts/build-calibration-report.ts)） | 把教師決定與機器判定並列，分類為假通過／假攔截／內容問題／教學問題 | [human-vs-machine-calibration-2026-10.json](./human-vs-machine-calibration-2026-10.json)：8 題全部待覆核、0 項分歧，不含任何比率 |
+| [review-workflow-audit-2026-10.json](./review-workflow-audit-2026-10.json) | 覆核流程 12 項契約的逐項審核（角色、示範身分、版本綁定、只增不改、暫緩標記、來源可見性）及已知限制 | 發現 1 個實際缺陷並已修正（見下） |
+| [published-question-risk-report-2026-10.json](./published-question-risk-report-2026-10.json) | 兩條在 Sprint 8.6 被重算判 `reject` 的題目之風險評估 | 只有 1 條已發布（`q_058eda0378394d0f`）；另一條為草稿。**沒有**改動任何題目或發布狀態 |
+| [explanation-reference-corrections-2026-10.json](./explanation-reference-corrections-2026-10.json) | 7 條解釋段號的建議修正（v2，附舊值／建議值／信心／所需授權） | 全部 `applied: false`，**未取得授權、未套用** |
+
+**已修正的實際缺陷（覆核版本綁定）**：`POST /api/teacher/questions/[questionId]/review` 以往只接受
+`decision`，教師的頁面若長時間開啟，可對已被別人修改的題目送出 `approved`，覆核紀錄便會綁到教師
+從未看過的版本。現在必須提交 `expectedRevision`（教師看到的版本）：非正整數 → **400**，與現行版本
+不符 → **409** 並要求重新載入，且**不寫入**任何覆核紀錄。教師端三顆按鈕已帶上版本；端對端測試亦
+加了一項「覆核指明的版本與現行版本不符會被拒絕（409）」的檢查。回歸測試見
+[tests/teacher-review-workflow-integrity.test.ts](../../tests/teacher-review-workflow-integrity.test.ts)。
+
+**仍然只可由人決定的事**：史實是否正確、答案是否唯一、錯誤選項是否有意義、解釋是否幫助理解、
+難度及課程取捨。上述工具只整理證據及機器結果，不會代替教師判斷，亦不會因為樣本小而調整門檻。
+
+## 8. Sprint 8.8：教師覆核工作階段指引（給實際審題的歷史科教師）
+
+> 這一節描述**教師實際會做甚麼**，以及系統會如實記錄甚麼。所有紀錄在教師按下決定之前都是
+> `pending-review`；程式不會代填，也不會有「先通過再審」的流程。
+
+### 8.1 在哪裏審題
+
+1. **平台教師介面**（`/teacher/questions`，需教師或管理員帳戶）：每一題顯示題幹、選項（正確答案
+   標示）、標準答案、解釋、知識點、教材依據位置、**逐字節錄**、品質警告、目前版本、覆核狀態、
+   以及「學生看不到節錄」等來源可見性提示。
+2. **覆核套件**（[generated-question-sample-2026-10.json](./generated-question-sample-2026-10.json)）：
+   同一批 8 題的離線版本，另附所引用段落的原文（`provenance.sourceContext`，每段上限 400 字）
+   及生成時／以現行規則重算的閘門結果。**用途是對照原文**，不是替代平台紀錄。
+3. **完整課文**：若該教材文件已開放給學生（`studentDistribution = true`），教師可在課題閱讀頁
+   看到全文；未開放的教材，教師只會看到節錄及出處位置。
+
+### 8.2 審題時要判斷的七項（與套件的 `reviewChecklist` 一致）
+
+| 代號 | 要判斷的事 |
+| --- | --- |
+| `learningObjective` | 這題考核哪一項學習重點？是否在課程範圍之內？ |
+| `questionClarity` | 學生只讀題目文字，是否清楚知道要答甚麼？ |
+| `historicalAccuracy` | 題目、答案及解釋的史實是否正確？（須對照課本原文） |
+| `answerCompleteness` | 標準答案及得分要點是否完整回應題目的要求？ |
+| `distractorValidity` | 錯誤選項是否同類、明確錯誤，而且不會同樣成立？ |
+| `explanationUsefulness` | 解釋是否幫學生理解推理，而不是重複答案或抄錄課文？ |
+| `cognitiveDemand` | 認知要求是否配合難度標示？ |
+
+### 8.3 如何記錄決定（平台）
+
+| 動作 | 系統行為 |
+| --- | --- |
+| 「覆核通過並發布」 | 會先問**覆核理由（可留空）**；提交時帶同**你正在審閱的版本**（`expectedRevision`）。成功後題目即發布、暫緩標記（如有）會由你的決定清除，紀錄含覆核者、時間、版本、內容指紋、理由。 |
+| 「退回修改」 | **必須填寫原因**；題目回到草稿，學生即時看不到。 |
+| 「標示不可用」 | **必須填寫原因**；題目回到草稿，不會自動刪除（保留回報及作答紀錄）。 |
+| 題目在你審閱期間被別人修改 | 提交會回 **409**，訊息會說明「你正在覆核的是第 N 版，目前是第 M 版」；**不會**留下任何紀錄。請重新載入、重新核對後再提交。 |
+| 重複提交相同決定 | 回 `created: false`，不會重複寫入（冪等）。 |
+| 提交失敗（網絡或 400） | 介面顯示錯誤，題目狀態不變；沒有「假成功」訊息。 |
+
+> 覆核紀錄**只增不改、不可刪除**（沒有對應 API）。若同一題其後被修改，舊覆核會被視為
+> `stale-approval`，題目自動回到草稿，必須重新覆核。
+
+### 8.4 已發布題目的風險處理（Sprint 8.8）
+
+[published-question-containment-2026-10.json](./published-question-containment-2026-10.json)
+逐一記錄了兩條被機器判 `reject` 的題目：內容、來源段落、閘門判定理由、可達性、下架機制實測結果，
+以及給擁有者／教師的具體建議。
+
+- `q_058eda0378394d0f`（**已發布**）：題幹問「詞語」但答案是時期標示，選項跨層級；**建議即時下架**，
+  其後改寫並重新覆核。
+- `q_062fdfd516314f3d`（**草稿**）：答案出現在題幹；**保持草稿**，修正後才可發布。
+- 下架方式：在教師介面按「暫時下架」，或 `PATCH /api/teacher/questions/{id}` `{action:'status', status:'disabled'}`。
+  已在資料庫副本上實測：下架即時離開學生題庫、教師仍可讀取、可逆、可再發布（需目前版本的驗證紀錄）。
+
+### 8.5 分歧與校準（未量度）
+
+`npm run review:calibration -- --write` 會把**已記錄的**教師決定與機器判定並列
+（[human-vs-machine-calibration-2026-10.json](./human-vs-machine-calibration-2026-10.json)）。
+現時 `calibrationStatus = unmeasured`、0 項分歧、所有計數為 0：**在沒有真實覆核之前，不存在任何
+可報告的一致率、準確率或誤報率**。任何數字都不得由測試結果或合成樣本推出。
+
+### 8.6 覆核可稽核性的已知限制
+
+覆核紀錄保存版本及內容指紋，但**沒有**保存教師當時看到的題目全文快照，也沒有題目版本歷史表。
+三個改善方案的比較與建議（建議：覆核時寫入不可變快照，一個 nullable 欄位、無 backfill）見
+[review-auditability-options-2026-10.md](./review-auditability-options-2026-10.md)。**未實作任何 migration。**

@@ -1,0 +1,405 @@
+{
+  "version": 1,
+  "title": "2026-10 教材更新：已重新連結題目的用詞對齊（23 條）",
+  "purpose": "把 30 條已重新連結教材依據的題目中，仍沿用舊版用詞或事實者與 2026-10 版新教材對齊（例如「欠發達國家」→「發展中國家」、「伊波拉」→「埃博拉」、避免衝突升級→避免局勢惡化、大戰再起→第二次世界大戰爆發、二千五百萬人→數千萬人）。只改題幹、選項、答案、解釋及得分要點的用詞或事實；節錄與引用段落不變（已逐字對應新教材）。",
+  "sourceMaterials": "materials/ 內 12 份 2026-10 版學生教材（kind = demo）",
+  "generatedFrom": {
+    "database": "data/app.db",
+    "generatedAt": "2026-10-16"
+  },
+  "entries": [
+    {
+      "questionId": "q_54b270c73d464baf",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "mc",
+      "beforeFingerprint": "59575cba0f4152c837aa840bdc994e0900aa2eada6bae1e4076312f36a5d7d5b",
+      "content": {
+        "question": "以下哪一項是「發展中國家」的說明？",
+        "options": [
+          "收入不穩 + 向發達國家借貸 → 負債不斷上升",
+          "歐美國家憑着經濟、軍事、科技等巨大優勢，加快在全球的殖民擴張，掠奪大量財富與資源。",
+          "殖民地雖然陸續獨立，但歐美國家仍然掌控全球經濟，國際間貧富不均的情況持續。",
+          "發展中國家集中於非洲、東南亞、南亞與南美洲，發達國家則集中於歐洲、北美洲及大洋洲。"
+        ],
+        "correctAnswer": "收入不穩 + 向發達國家借貸 → 負債不斷上升",
+        "explanation": "教材第 8 段：發展中國家收入不穩，並向發達國家借貸，導致負債不斷上升，陷入貧窮與借貸的惡性循環。其餘選項分別描述十九世紀末起的殖民擴張、二戰後的貧富不均，以及發達國家與發展中國家的地區分布。"
+      },
+      "resultFingerprint": "2abda1b4781a79dd3a64fb84e45c9b36b8cec3e0a5ebe7630f6aee5e3e8685b1",
+      "reason": "題幹及選項沿用舊用詞「欠發達國家／較發達國家」，與新教材「發展中國家／發達國家」不一致。"
+    },
+    {
+      "questionId": "q_2972fc745e3c4d0f",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "fill",
+      "beforeFingerprint": "f269daaea457552d512bafe6eb09186622608fc4dc7198ef8939fb05d4642a80",
+      "content": {
+        "question": "發展中國家缺乏醫護人員與藥物，亦沒有足夠能力改善醫療設施，十分依賴發達國家及國際醫療組織的____。",
+        "explanation": "教材第 82 段：這些國家的醫護人員與藥物嚴重短缺，亦缺乏足夠資源改善醫療設施，因此高度依賴發達國家及國際醫療組織的援助。"
+      },
+      "resultFingerprint": "ba0eb651c7adf8f5b996f4ff434227c127592b717d75cdf87f1a1bf4e784f7e8",
+      "reason": "題幹沿用「欠發達國家／較發達國家」，與新教材用詞不一致。"
+    },
+    {
+      "questionId": "q_56260c5e1fb043bb",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "short",
+      "beforeFingerprint": "e0bf82c85ddd6e4dce57806df067b7448059ec922e471c7dbc2487c3ee1b5ec2",
+      "content": {
+        "question": "綜合而言，發展中國家在應對疾病傳播與醫療問題上面對哪些困難？",
+        "correctAnswer": "發展中國家醫療水平低下，人民普遍缺乏醫療與衛生知識；醫療資源短缺，且戰亂頻仍，政府難以有效防控疫情，感染與死亡率遠高於發達國家；環境污染及公共衛生條件惡劣，較易成為新病毒的溫床；因此十分依賴發達國家及國際醫療組織的援助。",
+        "gradingPoints": [
+          "指出發展中國家醫療水平低下，人民普遍缺乏醫療與衛生知識",
+          "指出醫療資源短缺、戰亂頻仍，政府難以有效防控疫情，感染與死亡率遠高於發達國家",
+          "指出環境污染及公共衛生條件惡劣，較易成為新病毒的溫床",
+          "指出這些國家十分依賴發達國家及國際醫療組織的援助"
+        ],
+        "explanation": "教材第 80、82 段：發展中國家醫療水平低下、醫療資源短缺且戰亂頻仍，感染與死亡率遠高於發達國家；醫護人員、藥物及醫療設施不足，高度依賴發達國家及國際醫療組織的援助。"
+      },
+      "resultFingerprint": "1d9a20eeedf2f1c6a9b543243514e227610e05d3e3b773256f4a0a618ff0920c",
+      "reason": "題幹、答案及得分要點沿用「欠發達國家／較發達國家」，與新教材用詞不一致。"
+    },
+    {
+      "questionId": "q_a2ab34d608954a57",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "fill",
+      "beforeFingerprint": "65382951cb547ea1710a939ff040193bab0e495d6e655e6f2a9ac031b25147d6",
+      "content": {
+        "question": "發展中國家主要依靠出口農產品與天然資源賺取外匯，價格受國際需求影響，收入不穩，加上持續向發達國家借貸，最終負債不斷上升，陷入貧窮與借貸的＿＿＿＿＿＿。",
+        "explanation": "教材第 8 段：發展中國家收入不穩，並向發達國家借貸，導致負債不斷上升，陷入貧窮與借貸的惡性循環。"
+      },
+      "resultFingerprint": "61d8944d8317c450d63997a5ff584fad3ddf2a847200d0a12850d02eb7f4fa68",
+      "reason": "題幹沿用「欠發達國家／較發達國家」，與新教材用詞不一致。"
+    },
+    {
+      "questionId": "q_837a4dab89fa408e",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "mc",
+      "beforeFingerprint": "e272f0d56e671689f8588a567aa732af928607c251a9657ea0625f72876f312a",
+      "content": {
+        "options": [
+          "發展中國家缺乏醫護人員與藥物",
+          "交通進步及全球化令疾病容易擴散",
+          "新病毒與傳染病的出現更嚴重威脅人類",
+          "部分在發達國家已受控的疾病仍於發展中國家肆虐"
+        ],
+        "explanation": "教材第 14、78 段：交通運輸進步及國際經貿往來增加，令疾病傳播速度與範圍擴大；全球化使地區性傳染病有機會演變為全球性疫情。其餘選項雖屬教材提及的醫療問題，但並非地區疫症演變為全球疫症的主要成因。"
+      },
+      "resultFingerprint": "3516e902f164ef8c93ad61b498697b61d7594383f350494cc4d9cf95835813af",
+      "reason": "選項沿用「欠發達國家／較發達國家」，與新教材用詞不一致。"
+    },
+    {
+      "questionId": "q_ba04d2b1595d444e",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "mc",
+      "beforeFingerprint": "19bc7bef6979b5e4a97f7de8e12e8c01e9fc13c48073dff8bafcd59d47238e9a",
+      "content": {
+        "options": [
+          "交通進步雖然便捷各地往來，但同時令疾病容易擴散，全球化更有機會使地區傳染病演變為全球疫症",
+          "交通進步使人們更易獲得醫療援助，全球化令疾病迅速消失",
+          "交通進步阻礙了疾病傳播，全球化使地區傳染病局限於本地",
+          "交通進步導致醫療水平下降，全球化使疫症只影響發展中國家"
+        ]
+      },
+      "resultFingerprint": "f9449429de128a55911c5d8e0df05bdf5beb972fc33b88ad7896808cb9d33a4e",
+      "reason": "選項 D 沿用「欠發達國家」，與新教材用詞不一致。"
+    },
+    {
+      "questionId": "q_77e7395afb2d42b7",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "mc",
+      "beforeFingerprint": "3052d945d1ec38b0bcf6c22dcc23fd74da0de4906558b503a0ded22c6fa1fbe2",
+      "content": {
+        "question": "以下哪一項最能說明二十世紀末全球貧富差距的財富分布特點？",
+        "options": [
+          "發達國家只佔全球三成人口，卻擁有全球近八成財富、耗用全球七成的資源。",
+          "發展中國家主要集中於歐洲與北美洲，並掌握世界經濟命脈。",
+          "發達國家人口眾多，但資源匱乏，因而收入不穩。",
+          "發展中國家佔全球三成人口，並擁有全球近八成財富。"
+        ],
+        "correctAnswer": "發達國家只佔全球三成人口，卻擁有全球近八成財富、耗用全球七成的資源。",
+        "explanation": "教材第 33–34 段：（至二十世紀末）發達國家僅佔全球約三成人口，卻擁有全球近八成財富，並消耗全球約七成資源，說明財富高度集中。其餘選項把地區分布或財富擁有者的角色錯誤對調。"
+      },
+      "resultFingerprint": "3c7978791c5f4615b0a210048f8290b32c0530a29c6cc113f6599cde16bf300a",
+      "reason": "題幹及選項沿用「欠發達國家／較發達國家」，與新教材用詞不一致。"
+    },
+    {
+      "questionId": "q_1132db41064a45e3",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "mc",
+      "beforeFingerprint": "795ec5b3eecbb24cba65ed729d724ec5c0c4d976bd307157afd65257be86b643",
+      "content": {
+        "options": [
+          "發達國家只佔全球三成人口，卻擁有全球近八成財富",
+          "發展中國家佔全球七成人口，並擁有全球近八成財富",
+          "發達國家佔全球七成人口，並耗用全球三成資源",
+          "發展中國家佔全球三成人口，並耗用全球七成資源"
+        ],
+        "correctAnswer": "發達國家只佔全球三成人口，卻擁有全球近八成財富",
+        "explanation": "教材第 33–34 段：發達國家集中於歐洲、北美洲及大洋洲，僅佔全球約三成人口，卻擁有全球近八成財富，並消耗全球約七成資源。"
+      },
+      "resultFingerprint": "2801b5b66ce21e795bf50dffb015ebb37d3966fb4d525e63f5252933988da13e",
+      "reason": "選項沿用「欠發達國家／較發達國家」，與新教材用詞不一致。"
+    },
+    {
+      "questionId": "q_dc813d90c4c647d5",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "mc",
+      "beforeFingerprint": "75fdc313e066d185be989df78b34cd14bcec5a104ccd17fbaeecfeda19749233",
+      "content": {
+        "question": "＿＿＿年出現的埃博拉病毒染病死亡率超過百分之五十，疾病至今仍無法預防及根治；",
+        "explanation": "教材第 78 段：1976 年首次發現的埃博拉病毒，其死亡率超過 50%，至今仍缺乏廣泛普及的治癒方法。"
+      },
+      "resultFingerprint": "b7a540d4e8b8144e9c33678ec26502052dec1e1ae6cb5e423275ac4db05a2624",
+      "reason": "題幹及解釋沿用舊版病毒名稱「伊波拉」，新教材寫「埃博拉」。"
+    },
+    {
+      "questionId": "q_163e9008f57d4378",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "short",
+      "beforeFingerprint": "3cd5f633f316f8ab3a6e3a8b0304aafbee5d4d709012703438fd53f324e33ad7",
+      "content": {
+        "correctAnswer": "這些國家的殖民地雖然陸續獨立，但歐美國家仍然掌控全球經濟，國際間貧富不均的情況持續。",
+        "gradingPoints": [
+          "指出二戰後這些國家的殖民地雖然陸續獨立",
+          "指出歐美國家仍然掌控全球經濟，國際間貧富不均的情況持續"
+        ],
+        "explanation": "教材第 31 段：二戰後這些國家的殖民地雖然陸續獨立，但歐美國家仍然掌控全球經濟，國際間貧富不均的情況持續。"
+      },
+      "resultFingerprint": "9f32a9da5f7e74fd4bf843b404118a5f59bca7b080feb76c22e04c60ec54c9e1",
+      "reason": "答案沿用舊版「掌握世界的經濟命脈」，新教材寫「掌控全球經濟」。"
+    },
+    {
+      "questionId": "q_750b4d351bf64529",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "fill",
+      "beforeFingerprint": "66ddaa3a83a6ee5cc65224ac4c89979d5e3b90c290b3faeb498e85ce39a6fab4",
+      "content": {
+        "question": "「＿＿＿」是指歐美國家憑着經濟、軍事、科技等巨大優勢，加快在全球的殖民擴張，掠奪大量財富與資源。",
+        "explanation": "教材第 31 段：十九世紀末起，歐美國家憑着經濟、軍事、科技等巨大優勢，加快在全球的殖民擴張，掠奪大量財富與資源。"
+      },
+      "resultFingerprint": "c8455eb3c0fc65f08781cd5f952e411c14bb0e87110ee38d4508bc3c3dcc3503",
+      "reason": "題幹用「取得大量財富與資源」，新教材寫「掠奪大量財富與資源」。"
+    },
+    {
+      "questionId": "q_9c91cecb7b6849dc",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-united-nations",
+      "questionType": "short",
+      "beforeFingerprint": "5c1a4da51c040a2755224d4c9cb9cbe81b9d2e077b2b459de36647be0d99b777",
+      "content": {
+        "correctAnswer": "推動國際合作，維持和平、促進發展，並尊重人權與基本自由。",
+        "gradingPoints": [
+          "指出聯合國的目標是推動國際合作",
+          "指出目標包括維持和平、促進發展，並尊重人權與基本自由"
+        ],
+        "explanation": "教材第 85 段：目標為推動國際合作，維持和平、促進發展，並尊重人權與基本自由。"
+      },
+      "resultFingerprint": "5a83b933590f38b54ed006a1f321162f6d86e5eb45b869f85f12adbeb881b76a",
+      "reason": "答案只寫「維持和平及促進發展」，新教材寫「維持和平、促進發展，並尊重人權與基本自由」。"
+    },
+    {
+      "questionId": "q_8282065385794559",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-united-nations",
+      "questionType": "mc",
+      "beforeFingerprint": "82b5ebd3cb7afd912ccbefcdc6db0bafc4113ac363e201df7a7b15465d727baf",
+      "content": {
+        "question": "「外交調停、司法裁決、武器禁運與制裁、軍事部署、監察停火等」是指以下哪一個詞語？",
+        "explanation": "教材第 89 段：聯合國維持和平的「工作」包括外交調停、司法裁決、武器禁運與制裁、軍事部署、監察停火等；「成效」是成功制止多場衝突、有助維持衝突後的和平局面。"
+      },
+      "resultFingerprint": "349aa58113312d408c74fa8c6d39a03dbbf7669fa3d1ba91bf9e55174430d3cd",
+      "reason": "題幹引述舊版工作清單（調停、制裁、派遣維持和平部隊、監察停火協議），新教材寫「外交調停、司法裁決、武器禁運與制裁、軍事部署、監察停火」。"
+    },
+    {
+      "questionId": "q_bcee6ef4211f4729",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-united-nations",
+      "questionType": "fill",
+      "beforeFingerprint": "9ec5ab5fe05ab84b76324d9577f8f925c930a275940a08cc4d28d8087c0a51fc",
+      "content": {
+        "question": "「＿＿＿」是指聯合國維持和平的工作成功制止多場衝突，並有助維持衝突後的和平局面。",
+        "explanation": "教材第 89 段：維持和平的「成效」是成功制止多場衝突，並有助維持衝突後的和平局面。"
+      },
+      "resultFingerprint": "4a8f4887d9fad9e45344a4df86c6f7a01dbe082dedfa6be789d6f58995e95e1b",
+      "reason": "題幹引述舊版成效描述（和平化解爭端的重要協商橋樑），新教材寫「成功制止多場衝突；有助維持衝突後的和平局面」。"
+    },
+    {
+      "questionId": "q_07336d3a018348ab",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-united-nations",
+      "questionType": "mc",
+      "beforeFingerprint": "722daf862cbcab23a1411924d0aa3641dfed57e8cad2d7b9ebbbcb8d368f7608",
+      "content": {
+        "options": [
+          "聯合國完成48 項維和行動，工作範圍遍及各地",
+          "聯合國對南非實施制裁的議案遭到否決",
+          "聯合國缺乏常設軍隊，曾出現維和部隊被驅逐或脅持的事件",
+          "聯合國調解國際糾紛時遭遇不少挫折"
+        ],
+        "correctAnswer": "聯合國完成48 項維和行動，工作範圍遍及各地",
+        "explanation": "教材第 145 段：1948-2000 年間，聯合國在全球完成 48 項維和行動，工作範圍遍及各地。其餘選項屬聯合國維持和平的局限或挫折。"
+      },
+      "resultFingerprint": "5316d02cadba93b7d951f2aa3b8f77302e0e00836b54c465a52a4bc64bb88b2a",
+      "reason": "選項寫「四十八次維和行動」，新教材寫「48 項維和行動」。"
+    },
+    {
+      "questionId": "q_56c24cb665fa4653",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-conflict",
+      "questionType": "fill",
+      "beforeFingerprint": "4dfe42a7547769675a319b4ecbf42194d72031bc74d8052d61de1702fa0b22a0",
+      "content": {
+        "question": "「＿＿＿」是指國聯曾數次成功斡旋成員國紛爭，避免局勢惡化。",
+        "explanation": "教材第 28 段：1920年代國聯曾數次成功斡旋成員國紛爭，避免局勢惡化；1930年代則未能阻止大國逐步破壞集體安全機制。"
+      },
+      "resultFingerprint": "859b674a6224d69c948554240f7462201585daef045399b6f7b2d514f394ac3d",
+      "reason": "題幹寫「避免衝突升級」，新教材寫「避免局勢惡化」。"
+    },
+    {
+      "questionId": "q_c1f8b48892644a55",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-conflict",
+      "questionType": "short",
+      "beforeFingerprint": "ab465dce873fce70f33920f68d06ab5466e56be2e40a7f51469d6561e55b9b13",
+      "content": {
+        "correctAnswer": "至1930年代，國際聯盟面對極權國家的侵略束手無策，最終無法阻止第二次世界大戰爆發。",
+        "gradingPoints": [
+          "指出國際聯盟面對極權國家的侵略束手無策",
+          "指出國際聯盟最終無法阻止第二次世界大戰爆發"
+        ],
+        "explanation": "教材第 245 段：至1930年代，國聯面對極權國家的侵略束手無策，最終無法阻止第二次世界大戰爆發。"
+      },
+      "resultFingerprint": "2e74b9512743aebe65846080fc320df07d916f616f3d52d188963a1ff1dd46c4",
+      "reason": "答案寫「無法阻止大戰再起」，新教材寫「最終無法阻止第二次世界大戰爆發」。"
+    },
+    {
+      "questionId": "q_bebc1e60e12f4034",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-league",
+      "questionType": "short",
+      "beforeFingerprint": "6d05654301fe2fda89691aab7b89f5aacf9e27a1702e9846c482ff113f7be152",
+      "content": {
+        "correctAnswer": "國際聯盟面對極權國家的侵略束手無策，最終無法阻止第二次世界大戰爆發。",
+        "gradingPoints": [
+          "指出國際聯盟面對極權國家的侵略束手無策",
+          "指出國際聯盟最終無法阻止第二次世界大戰爆發"
+        ],
+        "explanation": "教材第 245 段：至1930年代，國聯面對極權國家的侵略束手無策，最終無法阻止第二次世界大戰爆發。"
+      },
+      "resultFingerprint": "736d357768550a0579ecb633baa5fba0a14c78996f9c997d6d4b48144d06720d",
+      "reason": "答案及得分要點寫「無法阻止大戰再起」，新教材寫「最終無法阻止第二次世界大戰爆發」。"
+    },
+    {
+      "questionId": "q_a2c7b14c18284a6a",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "fill",
+      "beforeFingerprint": "daf688690c3fe422443e698c863b3c370dc08807e8db597f7f67fc8a904dbe75",
+      "content": {
+        "question": "二十世紀期間，全球多國經歷急速的城市化與工業化，過程中很多國家忽視環境保護，缺乏可持續發展的規劃與相關法規，導致環境污染問題日益嚴重。上述內容說明自然環境遭受破壞的其中一個原因是各國在發展過程中忽略了甚麼？",
+        "explanation": "教材第 53 段：很多國家忽視環境保護，缺乏可持續發展的規劃與相關法規，導致環境污染問題日益嚴重。"
+      },
+      "resultFingerprint": "08e076efe1786e75b310bef4b98e3902b2efcc3cd7da1f04dc1c6a508a3bf5a9",
+      "reason": "題幹把成因寫成「只重視推動城市與經濟發展…沒有制定可持續發展的規劃及法例」，新教材寫「很多國家忽視環境保護，缺乏可持續發展的規劃與相關法規」。"
+    },
+    {
+      "questionId": "q_b6a855e95b7d4495",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "mc",
+      "beforeFingerprint": "c9ccdacc97402578c3e38d5414230eb063f89d3750a60174a4a556642c0aece4",
+      "content": {
+        "question": "二十世紀期間，全球多國經歷急速的城市化與工業化，過程中忽略環境保護，造成過度開發及污染問題。下列哪一項是這些國家忽略環境保護的直接原因？",
+        "options": [
+          "缺乏可持續發展的規劃與相關法規",
+          "缺乏國際組織的援助，無法推行環保政策",
+          "國內人口老化，勞動力不足，難以兼顧環境保護",
+          "自然資源匱乏，必須優先開發以維持經濟增長"
+        ],
+        "correctAnswer": "缺乏可持續發展的規劃與相關法規",
+        "explanation": "教材第 53 段：很多國家忽視環境保護，缺乏可持續發展的規劃與相關法規，導致環境污染問題日益嚴重。其餘選項均非教材所述原因。"
+      },
+      "resultFingerprint": "1ded5dddbf5a785cc59203ab49563ba4c4eb041c728ecbaffc37c8d66c533bb9",
+      "reason": "題幹及正確選項沿用舊版「只重視推動城市與經濟發展」，新教材寫「忽視環境保護、缺乏可持續發展的規劃與相關法規」。"
+    },
+    {
+      "questionId": "q_1331bde8275c449f",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "short",
+      "beforeFingerprint": "111910e2ce8fb0f7e2a22e1a7dcfb76eb90b6ae30bb319f52e3b7917c5c1fed1",
+      "content": {
+        "question": "二十世紀期間，全球多國經歷急速的城市化與工業化，過程中忽視環境保護，造成過度開發及污染問題。試根據上述內容，說明城市化與工業化如何導致自然環境遭受破壞。",
+        "correctAnswer": "二十世紀期間全球多國經歷急速的城市化與工業化，城市範圍不斷向自然環境擴展；很多國家忽視環境保護，缺乏可持續發展的規劃與相關法規，結果造成過度開發及污染問題，例如濫伐森林、過度捕撈與耕作破壞生態系統，以及廢棄物污染土地、河流與海洋。",
+        "gradingPoints": [
+          "指出城市化與工業化令城市範圍不斷向自然環境擴展",
+          "指出很多國家忽視環境保護，缺乏可持續發展的規劃與相關法規",
+          "舉出教材提及的破壞例子，例如濫伐森林、過度捕撈與耕作破壞生態系統，或廢棄物污染土地"
+        ],
+        "explanation": "教材第 49、53 段：二十世紀期間全球多國經歷快速的城市化與工業化，城市範圍不斷向自然環境擴展；很多國家忽視環境保護，缺乏可持續發展的規劃與相關法規，導致污染問題惡化；人類濫伐森林、過度捕撈與過度耕作亦嚴重破壞生態系統。"
+      },
+      "resultFingerprint": "d4359c34bdfff15b9d7f92b30ca0227d1e1c8881aa7f5bd18690c0b6f7179533",
+      "reason": "題幹、答案及得分要點沿用舊版「只重視推動城市與經濟發展」，新教材寫「忽視環境保護、缺乏可持續發展的規劃與相關法規」。"
+    },
+    {
+      "questionId": "q_abdfcbab69fe49cc",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "mc",
+      "beforeFingerprint": "5ec20dc82893dcfd7f9ad4763cd36511e783de03748a43a4d746373f85e7059d",
+      "content": {
+        "question": "1918-＿＿＿年：歐洲的流感疫情迅速蔓延至北美洲與澳洲，造成數千萬人死亡",
+        "explanation": "教材第 78 段：1918-1919年，歐洲的流感疫情迅速蔓延至北美洲與澳洲，造成數千萬人死亡。"
+      },
+      "resultFingerprint": "4640df48a371f08bc691ecef463f7446dd698949717056564025aa077be478d0",
+      "reason": "題幹寫「史上最嚴重的流感疫潮爆發，導致超過二千五百萬人死亡」，新教材寫「歐洲的流感疫情迅速蔓延至北美洲與澳洲，造成數千萬人死亡」。"
+    },
+    {
+      "questionId": "q_70b9fd416134442e",
+      "action": "rewrite-content",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "fill",
+      "beforeFingerprint": "fa8fcbaba4d3571a557004cb291d8addf489b25ab2b5ce58bcb2287cb7c2a45f",
+      "content": {
+        "question": "「＿＿＿」是指亞洲流感擴散至歐洲與北美洲，導致約二百萬人喪生。",
+        "explanation": "教材第 78 段：1957年，亞洲流感擴散至歐洲與北美洲，導致約二百萬人喪生。"
+      },
+      "resultFingerprint": "3ce635358d420274cf93c1a5b53e046365f67357b940f0dd96f46f60dee103a6",
+      "reason": "題幹寫「亞洲流感疫症蔓延至歐洲與北美洲，死亡人數高達二百萬人」，新教材寫「亞洲流感擴散至歐洲與北美洲，導致約二百萬人喪生」。"
+    }
+  ]
+}

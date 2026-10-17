@@ -13,6 +13,7 @@ import {
 } from "../../lib/types";
 import type { QuestionGenerationInput } from "./provider";
 import type { AnswerGradingInput } from "./grader";
+import { materialAnalysisPrompt } from "./material-analysis";
 import { historyLearningGoalsText } from "../seed/curriculum-focus";
 
 export const SYSTEM_PROMPT = `你是一位香港中學歷史科教師，熟悉教育局《歷史科課程指引》（中一至中三），負責按教材內容設計練習題。
@@ -49,7 +50,20 @@ ${historyLearningGoalsText()}
 12. **正確答案必須明顯優於其他選項**：不可出現另一個在教材範圍內同樣成立、只是措辭較籠統的選項；錯誤選項必須可以明確判斷為錯（例如與題目文字所寫的資料或結果不符）。若做不到，請改出只涉及單一史事的題目。
 13. 短答題必須提供 correctAnswer（一至兩句參考答案，不可留空）及 gradingPoints（得分要點），每點用一句完整、通順的中文短句表達，不要加編號或標題符號；不要自稱進行正式 HKDSE 評分。
 14. 填充題的標準答案必須是**具有歷史意義的元素**：著名歷史事件名稱、人物、年份、國家、地點、條約、神祇、思想或政治制度（例如《凡爾賽條約》、拿破崙、1764年、羅馬、封建制度、人文主義）。不可用普通詞語、形容詞或教材的欄位名稱作答（例如「重要」、「背景」、「生活方式」、「展開時間」），亦不可把教材的段落標題或小結當作答案。題目文字必須留有一個作答空位，並在題目之內提供足以判斷答案的資料。
-15. 只輸出 JSON，不要輸出任何解釋文字或 Markdown 代碼標記。`;
+15. **出題要由教材的歷史理解出發**：先想清楚要考核哪一項歷史理解（事件的原因與結果、時序、
+    轉變與延續、比較、歷史意義），再用教材的說明組織題目文字。
+    不可把教材一句話挖空、或把教材句子刪去一個名詞就當作題目；題目要考核「為甚麼／有甚麼影響／
+    有何轉變／兩者有何不同」，而不是只考核「這個詞語叫甚麼」。
+16. **解釋要說明推理**，用學生看得懂的說話講清楚：為甚麼這個答案成立、它與教材所講的背景有甚麼
+    關係。不可以只把標準答案重複一次、也不可以把教材原文抄一次當作解釋
+    （例如「教材原文：……」沒有解釋作用；引用關鍵詞語時要同時說明它的意思）。
+17. **選擇題的錯誤選項**必須是同類而**明確錯誤**的史實（人物、事件、制度、年份、地點等），
+    可用常見的時序混淆、張冠李戴或概念混淆來設計；不可杜撰教材沒有提及的具體人物、條約或事件。
+    正確答案必須明顯優於其他選項，而每個錯誤選項都要能在不看教材的情況下判斷為錯。
+18. **教材資料不足時要縮窄題目或不出題**：如果教材只交代一件事件，就不要出比較或排序的題目；
+    如果教材沒有交代因果，就不要出「為甚麼」的題目；如果教材沒有交代意義或影響，
+    就不要出「有何歷史意義」的題目。寧可少出，不可自行補上教材沒有的背景。
+19. 只輸出 JSON，不要輸出任何解釋文字或 Markdown 代碼標記。`;
 
 function formatUnits(input: QuestionGenerationInput): string {
   return input.materialUnits
@@ -99,13 +113,27 @@ ${input.avoidAnswers.map((answer) => `  - ${answer}`).join("\n")}
 把同一件史實改寫成另一句題幹（例如只改動前後文或標點）並不算新題目。`
       : "";
 
+  const analysisSection =
+    input.materialAnalysis !== undefined
+      ? `\n${materialAnalysisPrompt(input.materialAnalysis)}\n`
+      : "";
+
+  const revisionSection =
+    input.revisionNotes && input.revisionNotes.length > 0
+      ? `
+上一輪生成的題目有以下問題，請**針對問題重寫**（不要只改標點或換句話說）：
+${input.revisionNotes.map((note) => `  - ${note}`).join("\n")}
+重寫時請保留教材依據（sourceExcerpt 必須逐字出自單一教材段落），並確保題目考核的是
+教材交代的歷史理解，而不是把教材一句話挖空。`
+      : "";
+
   return `${courseContext ? `${courseContext}\n` : ""}課題：${input.topicTitle}
 分節：${input.sectionTitle}
 難度：${DIFFICULTY_LABELS[input.difficulty]}
 難度要求：${DIFFICULTY_EXPECTATIONS[input.difficulty]}
 需要題型：${formatTypeDistribution(input.questionTypes)}
 題目數量：${input.count} 題（盡量平均分配於上述題型）
-${learningFocus}${avoidAnswers}
+${learningFocus}${avoidAnswers}${analysisSection}${revisionSection}
 教材段落：
 ${formatUnits(input)}
 
@@ -148,6 +176,9 @@ ${formatUnits(input)}
 ${HISTORY_SKILLS.map((skill) => `  - ${skill}`).join("\n")}
   選擇最能代表該題考核重點的一項；現有題型只能考核部分技能，請選最貼近的一項，不要為了覆蓋而虛報。
 - 短答題的 options 留空陣列、correctAnswerIndex 填 null，**但 correctAnswer 必須填寫一至兩句「參考答案」**（不可留空），並提供 3 至 5 個 gradingPoints。
+- 短答題的得分要點數目必須足以回應題目要求：題目問「兩項」就要有兩個要點、問「甚麼影響」就要有對應的影響要點。
+- 解釋必須說明推理（為甚麼答案成立、與教材背景的關係），不可只重複標準答案，也不可直接抄錄教材原文當作解釋。
+- 錯誤選項必須是同類而且明確錯誤的史實；不可杜撰教材沒有提及的具體人物、條約或事件。
 - 用語須符合香港歷史科的書面語（繁體中文），專有名詞、人名、地名及年份沿用教材寫法。`;
 }
 

@@ -1,0 +1,1085 @@
+{
+  "version": 1,
+  "title": "2026-10 教材更新：教師決定隊列的行動清單（36 條）",
+  "purpose": "按新教材內容修正 36 條「未通過教材依據核對」的題目：新教材仍有相關內容者改寫（含更正答案、更新用詞），完全沒有相關內容者刪除。每條都記錄修正前的題目內容指紋、新內容、證據段落（逐字節錄）及理由；已核對既有作答、題目回報及覆核紀錄均為 0，刪除不影響任何學生紀錄。",
+  "sourceMaterials": "materials/ 內 12 份 2026-10 版學生教材（kind = demo，已由擁有者授權向學生發布）",
+  "generatedFrom": {
+    "database": "data/app.db",
+    "generatedAt": "2026-10-16"
+  },
+  "entries": [
+    {
+      "questionId": "q_6bfd31fd0e474404",
+      "action": "rewrite",
+      "topicId": "topic-3",
+      "sectionId": "topic-3-asia",
+      "questionType": "fill",
+      "beforeFingerprint": "2ed81340e266f0488cb1eda674569246a0063b63294b913d9496bedfcb3740a8",
+      "beforeExcerpt": "伊本．西那：《羅傑之書》",
+      "beforeSourceLocation": "HNC1B2E_T3_SN_TE.docx · 第 275 段（清單）（第 5 項）",
+      "content": {
+        "correctAnswer": "伊德里西",
+        "explanation": "教材原文：伊德里西的《羅傑之書》劃分當時已知世界的地理區域，是中古時代具權威性的地理學著作。",
+        "knowledgePoint": "伊斯蘭文明的地理學成就"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_c443d94f129347a9"
+        ],
+        "documentFileName": "課題3 伊斯蘭文明的興起.docx",
+        "sourceLocation": "課題3 伊斯蘭文明的興起.docx · 第 158 段（清單）",
+        "excerpt": "伊德里西的《羅傑之書》",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "4dd8159dd73a8161dfe0c8675bfa243c8c071a99101bab0f4a512d28c8623638",
+      "reason": "答案「伊本．西那」與新教材矛盾：新教材把《羅傑之書》歸於伊德里西（第 158 段）。"
+    },
+    {
+      "questionId": "q_aac7a714deaf4e39",
+      "action": "rewrite",
+      "topicId": "topic-6",
+      "sectionId": "topic-6-impact-europe",
+      "questionType": "mc",
+      "beforeFingerprint": "72895f4915474d2d6ba59eeac17ac5a694ffe23ea737084f2ed2f4fc27e3b2fd",
+      "beforeExcerpt": "勢力範圍：主權由宗主國擁有",
+      "beforeSourceLocation": "HNC2A2E_T6_SN_TE.docx · 第 227 段（清單）（第 5 項）",
+      "content": {
+        "question": "以下哪一項是「勢力範圍」的說明？",
+        "options": [
+          "主權名義上屬當地統治者，但須允許歐洲國家享有特殊權益",
+          "完全失去主權，並由宗主國直接擁有與統治",
+          "當地統治者喪失外交、軍事及部分內政權力"
+        ],
+        "correctAnswer": "主權名義上屬當地統治者，但須允許歐洲國家享有特殊權益",
+        "explanation": "教材第 105 段：勢力範圍是歐洲國家在某地實施控制、專享貿易等特殊權益的區域，主權名義上屬當地統治者；完全失去主權的是殖民地，統治者喪失外交、軍事及部分內政權力的是保護國。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_876ba95437024763"
+        ],
+        "documentFileName": "課題6 歐洲國家的殖民擴張.docx",
+        "sourceLocation": "課題6 歐洲國家的殖民擴張.docx · 第 105 段（清單）",
+        "excerpt": "名義上屬當地統治者，但須允許歐洲國家享有特殊權益",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "0aea08a01877295fc845c2ca389c15a29c56e55d96ce8331b3c5c0d84a7b0195",
+      "reason": "答案「主權由宗主國擁有」是殖民地的定義；新教材的「勢力範圍」主權名義上屬當地統治者（第 105 段）。"
+    },
+    {
+      "questionId": "q_7de1f4d6f91242ff",
+      "action": "rewrite",
+      "topicId": "topic-6",
+      "sectionId": "topic-6-impact-europe",
+      "questionType": "short",
+      "beforeFingerprint": "06a72f446b0100431e43efc686ec37af28b984433c593c3981dc829bb27bcab7",
+      "beforeExcerpt": "保護國：主權屬於當地統治者",
+      "beforeSourceLocation": "HNC2A2E_T6_SN_TE.docx · 第 229 段（清單）（第 5 項）",
+      "content": {
+        "correctAnswer": "保護國是在外國「保護」名義下遭強迫簽訂條約、須放棄大部分主權的國家或地區；當地統治者實為傀儡，必須服從宗主國命令，失去外交、軍事及部分內政權力。",
+        "gradingPoints": [
+          "指出保護國是在外國「保護」名義下遭強迫簽約、須放棄大部分主權的國家或地區",
+          "指出當地統治者須服從宗主國命令，失去外交、軍事及部分內政權力"
+        ],
+        "explanation": "教材第 92–93 段：保護國須放棄大部分主權，統治者實為傀儡，失去外交、軍事及部分內政權力。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_c3f8186ea5a548df",
+          "blk_470dc758db5b44e6"
+        ],
+        "documentFileName": "課題6 歐洲國家的殖民擴張.docx",
+        "sourceLocation": "課題6 歐洲國家的殖民擴張.docx · 第 92 段（清單）",
+        "excerpt": "保護國：在外國的「保護」名義下，遭強迫簽訂條約，並須放棄大部分主權的國家或地區。",
+        "relatedLocators": [
+          {
+            "documentFileName": "課題6 歐洲國家的殖民擴張.docx",
+            "sourceLocation": "課題6 歐洲國家的殖民擴張.docx · 第 93 段（段落）"
+          }
+        ],
+        "relatedExcerpts": [
+          "失去外交、軍事及部分內政權力"
+        ]
+      },
+      "resultFingerprint": "832ce0e65fed4ed2e17b60d504caf14a071ce206d8b09b27c6a3947c6e0d67a8",
+      "reason": "答案「主權屬於當地統治者」與新教材矛盾：保護國須放棄大部分主權，統治者失去外交、軍事及部分內政權力（第 92–93 段）。"
+    },
+    {
+      "questionId": "q_401ca2e500034b90",
+      "action": "rewrite",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-ww2",
+      "questionType": "short",
+      "beforeFingerprint": "e67c2f7c9bfcc6961514c305b9e0f15d11bc9ba3f46e797c5550e0414db0dce7",
+      "beforeExcerpt": "兩次世界大戰削弱了歐洲列強的殖民統治，推動非殖民地化的展開，亞、非兩洲的殖民地人民在二次大戰後紛紛爭取獨立。",
+      "beforeSourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 525 段（清單）（第 1 項）",
+      "content": {
+        "correctAnswer": "第一次世界大戰後，巴黎和會的民族自決原則促使非殖民地化思想萌芽；第二次世界大戰結束後，亞、非兩洲的非殖民地化展開。",
+        "gradingPoints": [
+          "指出一戰後巴黎和會的民族自決原則促使非殖民地化思想萌芽",
+          "指出二戰結束後亞、非兩洲的非殖民地化展開"
+        ],
+        "explanation": "教材第 271 段大事年表：1919 年巴黎和會「民族自決原則：非殖民地化思想萌芽」；1945 年第二次世界大戰結束後「亞、非兩洲的非殖民地化展開」。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_91436e50d5f44c24"
+        ],
+        "documentFileName": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx",
+        "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx · 第 271 段（表格）",
+        "excerpt": "和會由「三巨頭」主導民族自決原則：非殖民地化思想萌芽",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "d4e08a795c9f0808c8b0cc9dab61b2f81af8f17f67f1afe8a40c4f97eea68bb5",
+      "reason": "新教材只寫 1919 年「非殖民地化思想萌芽」、1945 年「非殖民地化展開」，沒有「兩次大戰削弱殖民統治」的講法（第 271 段）。"
+    },
+    {
+      "questionId": "q_9531dd6d6ad34d4a",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "mc",
+      "beforeFingerprint": "2cc508e618799b3d047808d11eefabf95428d7430853482cccd39f1283033aa1",
+      "beforeExcerpt": "部分有害氣體更造成南極洲上空的「臭氧層洞」，讓更多太陽輻射直接照射地球，增加人類患上皮膚癌的風險。",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 32 段（清單）（第 4 項）",
+      "content": {
+        "question": "部分有害氣體更造成南極洲上空的「＿＿＿」，讓更多紫外線進入地球，危害人類與生態健康。",
+        "options": [
+          "臭氧層空洞",
+          "大西洋憲章",
+          "聯合國憲章"
+        ],
+        "correctAnswer": "臭氧層空洞",
+        "explanation": "教材第 229 段：部分污染物破壞臭氧層，使南極洲上空出現「臭氧層空洞」，讓更多紫外線進入地球，危害人類與生態健康。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_55f206e68978419d"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 249 段（清單）",
+        "excerpt": "使南極洲上空出現「臭氧層空洞」",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "06e324b6d647a8ba859a9469afa7d370c7c311f2f224a832fb330ebb3f6d156b",
+      "reason": "新教材寫「臭氧層空洞」及「紫外線／危害健康」，題幹與答案須同步更新（第 229 段）。"
+    },
+    {
+      "questionId": "q_b87d77c973a140dc",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "fill",
+      "beforeFingerprint": "b1090e8bba7bf0ef4e4bc2403ae882c5081591c89b88bfbb830b282e5e044dac",
+      "beforeExcerpt": "部分有害氣體造成南極洲上空的「臭氧層洞」，讓更多太陽輻射直接照射地球，增加人類患上皮膚癌的風險。",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 147 段（清單）（第 1 項）",
+      "content": {
+        "question": "部分有害氣體造成南極洲上空的「＿＿＿」，讓更多紫外線進入地球，危害人類與生態健康。",
+        "correctAnswer": "臭氧層空洞",
+        "acceptedAnswers": [
+          "臭氧層洞"
+        ],
+        "explanation": "教材第 229 段：部分污染物破壞臭氧層，使南極洲上空出現「臭氧層空洞」，讓更多紫外線進入地球，危害人類與生態健康。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_55f206e68978419d"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 249 段（清單）",
+        "excerpt": "使南極洲上空出現「臭氧層空洞」",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "12062b0960efe16887f078d267970c00cf78852b59143c47f355c17c44d715c3",
+      "reason": "同上：填充題答案改為新教材用詞「臭氧層空洞」（第 229 段）。"
+    },
+    {
+      "questionId": "q_10e7e20afbf14a17",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "fill",
+      "beforeFingerprint": "0c60e29272af2738d3e247faf5161be74891ebf57d8569ca47ff8a27798c17f8",
+      "beforeExcerpt": "部分在較發達國家絕跡的疾病如肺結核、麻疹、瘧疾等，仍於這些國家肆虐。",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 40 段（清單）（第 7 項）",
+      "content": {
+        "question": "二十世紀末，部分在發達國家已受控的疾病如肺結核、麻疹、瘧疾等，仍於哪些國家肆虐？",
+        "correctAnswer": "發展中國家",
+        "acceptedAnswers": [
+          "欠發達國家"
+        ],
+        "explanation": "教材第 80 段：部分在發達國家已受控的疾病如肺結核、麻疹與瘧疾，仍在發展中國家肆虐。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_18b0b3ded9214afd",
+          "blk_0eed78db80c4413a"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 81 段（段落）",
+        "excerpt": "部分在發達國家已受控的疾病如肺結核、麻疹與瘧疾，仍在這些地區肆虐。",
+        "relatedLocators": [
+          {
+            "documentFileName": "課題11 20世紀以來的國際合作.docx",
+            "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 80 段（清單）"
+          }
+        ],
+        "relatedExcerpts": [
+          "這些國家醫療資源短缺"
+        ]
+      },
+      "resultFingerprint": "2154740a4cce7d0867cfa8ae6a898c6cee84a76ef90682b47eac56db19ce8f9d",
+      "reason": "新教材一律用「發展中國家／發達國家」，舊題的「欠發達國家」在全套教材 0 命中（第 80 段）。"
+    },
+    {
+      "questionId": "q_367c44de30bc4771",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "fill",
+      "beforeFingerprint": "efd267cca5418464febcfc117012abddbfc1e37c107217256f5184301bc3224f",
+      "beforeExcerpt": "價格受國際需求影響，收入不穩。",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 25 段（清單）（第 4 項）",
+      "content": {
+        "question": "發展中國家主要依靠出口農產品與天然資源賺取外匯，價格受國際需求影響，收入不穩，加上持續向發達國家借貸，最終負債不斷上升，陷入貧窮與借貸的＿＿＿＿。",
+        "correctAnswer": "惡性循環",
+        "acceptedAnswers": [
+          "貧窮與借貸的惡性循環"
+        ],
+        "explanation": "教材第 8 段：發展中國家收入不穩，又向發達國家借貸，導致負債不斷上升，陷入貧窮與借貸的惡性循環。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_ece1b3d0544a44e9"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 45 段（清單）",
+        "excerpt": "陷入貧窮與借貸的惡性循環",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "3723f77a700a548cd5e7b6ee392c080da57b075431c2ddaf153e0ff20e91e53a",
+      "reason": "答案含舊用詞「欠發達國家」；新教材寫「發展中國家…陷入貧窮與借貸的惡性循環」（第 8 段）。"
+    },
+    {
+      "questionId": "q_5cad8ee22c1e40ef",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-league",
+      "questionType": "fill",
+      "beforeFingerprint": "01b2efd76fd33f8e40e91de5ff9b7e5af563918f02d83c0821d6a789eb29378b",
+      "beforeExcerpt": "至1930年代，它面對極權國家的侵略束手無策，最終無法阻止大戰再起。",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 143 段（清單）（第 1 項）",
+      "content": {
+        "question": "國際聯盟在1930年代面對極權國家的侵略束手無策，最終無法阻止＿＿＿＿爆發。",
+        "correctAnswer": "第二次世界大戰",
+        "acceptedAnswers": [
+          "世界大戰",
+          "大戰"
+        ],
+        "explanation": "教材第 245 段：至1930年代，國聯面對極權國家的侵略束手無策，最終無法阻止第二次世界大戰爆發。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_14a3a7183d804651"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 245 段（清單）",
+        "excerpt": "最終無法阻止第二次世界大戰爆發。",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "392877e33e833ef317bc2b44c7bd874d74b2e9eaa1e9aa5fabd5f4561582ce87",
+      "reason": "新教材寫「最終無法阻止第二次世界大戰爆發」，答案須同步（第 245 段）。"
+    },
+    {
+      "questionId": "q_6fa63925fcda4780",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-league",
+      "questionType": "fill",
+      "beforeFingerprint": "ccde1d5205f6cf638b83c97c55f8504f4634ee1af16c1ce9d593e8fdcd45fb8c",
+      "beforeExcerpt": "至1930年代，它面對極權國家的侵略束手無策，最終無法阻止大戰再起。",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 143 段（清單）（第 1 項）",
+      "content": {
+        "question": "國際聯盟於1920年創立，至1930年代面對極權國家的侵略束手無策，最終無法阻止甚麼事件爆發？",
+        "correctAnswer": "第二次世界大戰",
+        "acceptedAnswers": [
+          "世界大戰",
+          "大戰"
+        ],
+        "explanation": "教材第 245 段：至1930年代，國聯面對極權國家的侵略束手無策，最終無法阻止第二次世界大戰爆發。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_14a3a7183d804651"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 245 段（清單）",
+        "excerpt": "最終無法阻止第二次世界大戰爆發。",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "d4008c528edbead114663288712238491f31787084553d1d97aa4df56d49a8ee",
+      "reason": "與 q_5cad8ee22c1e40ef 同一句：答案改為「第二次世界大戰」（第 245 段）。"
+    },
+    {
+      "questionId": "q_cc6088757ff240f1",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-environment",
+      "questionType": "short",
+      "beforeFingerprint": "ed2701fc4d315638dce2016c3f6fa8442d2719ce56ad5a761d08c31b7b5d26d5",
+      "beforeExcerpt": "國際合作的背景：聯合國的成立及其工作",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 148 段（標題）",
+      "content": {
+        "question": "試說明「國際合作的背景」，並舉出兩項人類共同面對的挑戰。",
+        "correctAnswer": "國際合作的背景是二十世紀以來人類共同面對的挑戰，例如世界大戰可能再次爆發的風險、全球貧富差距嚴重、過度開發破壞環境、疫症傳播等。",
+        "gradingPoints": [
+          "指出國際合作的背景是二十世紀以來人類共同面對的挑戰",
+          "舉出至少兩項挑戰（例如大戰再起風險、全球貧富差距、環境破壞、疫症傳播）"
+        ],
+        "explanation": "教材第 42／75 段：「國際合作的背景：二十世紀以來人類共同面對的挑戰」；課題內容列出大戰再起風險、全球貧富差距、過度開發破壞環境等挑戰。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_39ec9239ac8f4809"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 11 段（段落）",
+        "excerpt": "國際合作的背景：二十世紀以來人類共同面對的挑戰",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "5a51cef019a38ac99287a6dc8eb5b00cdac6ac837766618e5a648ce471ac2494",
+      "reason": "新教材的「國際合作的背景」是「二十世紀以來人類共同面對的挑戰」，不是「聯合國的成立及其工作」。"
+    },
+    {
+      "questionId": "q_b236dc0ccf3c4e0d",
+      "action": "rewrite",
+      "topicId": "topic-3",
+      "sectionId": "topic-3-asia",
+      "questionType": "short",
+      "beforeFingerprint": "d7d3252ce87889110f4429a1d4b4cf52ab8e8bdfb69407e3dec633b963a0799d",
+      "beforeExcerpt": "個人所知：歐洲人參考穆斯林學者的實驗紀錄與煉金術著作，推動了歐洲的煉金術發展，奠定歐洲早期化學的基礎。(1分)",
+      "beforeSourceLocation": "HNC1B2E_T3_SN_TE.docx · 第 298 段（清單）（第 3 項）",
+      "content": {
+        "question": "伊斯蘭世界的煉金術研究如何影響歐洲化學的發展？",
+        "correctAnswer": "穆斯林學者參考古希臘哲學理論，並以實驗等科學方法研究物質的性質與化學反應；他們的著作其後傳入歐洲，為歐洲早期化學的發展奠定了基礎。",
+        "gradingPoints": [
+          "指出穆斯林學者以實驗等科學方法研究煉金術、物質性質與化學反應",
+          "指出他們的著作傳入歐洲，為歐洲早期化學的發展奠定基礎"
+        ],
+        "explanation": "教材第 149–150 段：穆斯林學者如賈比爾等以實驗等科學方法研究煉金術，研究物質的性質與化學反應；著作傳入歐洲，為歐洲早期化學的發展奠定了基礎。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_c518016865c04744",
+          "blk_0716a596eb60447c"
+        ],
+        "documentFileName": "課題3 伊斯蘭文明的興起.docx",
+        "sourceLocation": "課題3 伊斯蘭文明的興起.docx · 第 150 段（段落）",
+        "excerpt": "為歐洲早期化學（十七至十九世紀初）的發展奠定了基礎。",
+        "relatedLocators": [
+          {
+            "documentFileName": "課題3 伊斯蘭文明的興起.docx",
+            "sourceLocation": "課題3 伊斯蘭文明的興起.docx · 第 149 段（清單）"
+          }
+        ],
+        "relatedExcerpts": [
+          "研究各種物質的性質與化學反應。"
+        ]
+      },
+      "resultFingerprint": "64a660f935d2241dd45f4f43d62273227cc42495cd768831943ab04cfae04cb2",
+      "reason": "原題以舊教師版標籤「個人所知」為題幹，無法作答；改寫為新教材煉金術與化學的題目（第 149–150 段）。"
+    },
+    {
+      "questionId": "q_bb48a9e1547a417e",
+      "action": "rewrite",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "mc",
+      "beforeFingerprint": "86467afa3f488326da9a1601a55e055aa18cd7770bf14b29203b3606f91f25e2",
+      "beforeExcerpt": "民系X：廣府人。（1分）",
+      "beforeSourceLocation": "HNC1B2E_T4_SN_TE.docx · 第 345 段（清單）（第 2 項）",
+      "content": {
+        "question": "廣府人、客家人與水上人，與以下哪一項合稱香港的「四大民系」？",
+        "options": [
+          "福佬",
+          "潮州人",
+          "上海人",
+          "澳門人"
+        ],
+        "correctAnswer": "福佬",
+        "explanation": "教材第 39 段：從內地南來的漢族當中，廣府人、客家人、水上人與福佬，合稱香港的「四大民系」。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_f9834b1a0a1a46e3"
+        ],
+        "documentFileName": "課題4 早期香港地區的歷史.docx",
+        "sourceLocation": "課題4 早期香港地區的歷史.docx · 第 39 段（清單）",
+        "excerpt": "廣府人、客家人、水上人與福佬，合稱香港的「四大民系」",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "98f37302458b988a91a20d071905ea4e5332840e0a981be8bc34ac74e907c801",
+      "reason": "原題以舊資料題標籤「民系X」為題幹；改寫為考核四大民系的題目（第 39 段）。"
+    },
+    {
+      "questionId": "q_d309b521e6554723",
+      "action": "rewrite",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "fill",
+      "beforeFingerprint": "f639a0ef71c16a98b5bfa93a7e9e33d1deafe97b774d21fa70ed72616a97a1c2",
+      "beforeExcerpt": "民系Y：水上人。（1分）",
+      "beforeSourceLocation": "HNC1B2E_T4_SN_TE.docx · 第 345 段（清單）（第 2 項）",
+      "content": {
+        "question": "香港早期的水上人與福佬主要從事哪兩類行業？",
+        "correctAnswer": "漁業與航運業",
+        "acceptedAnswers": [
+          "以漁業與航運業為主"
+        ],
+        "explanation": "教材第 15 段：水上人與福佬以漁業與航運業為主。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_7f88c358e3f0463a"
+        ],
+        "documentFileName": "課題4 早期香港地區的歷史.docx",
+        "sourceLocation": "課題4 早期香港地區的歷史.docx · 第 15 段（清單）",
+        "excerpt": "水上人與福佬：以漁業與航運業為主",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "d4bed0fa62f15211fa59defdbc36c9ccf1dac6792ed7daf697bab41cd7cb2960",
+      "reason": "原題以舊資料題標籤「民系Y」為答案；改寫為考核水上人與福佬為生方式的題目（第 15 段）。"
+    },
+    {
+      "questionId": "q_8d788c6209e14004",
+      "action": "rewrite",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "short",
+      "beforeFingerprint": "b6c8e0e587f0e75498b688487a8dfcf78abe96aa3848d256b85ca7fa30577081",
+      "beforeExcerpt": "資料線索：在為生方法方面，廣府人（民系X）以務農為生，水上人（民系Y）以捕魚為生。（1分）",
+      "beforeSourceLocation": "HNC1B2E_T4_SN_TE.docx · 第 347 段（清單）（第 1 項）",
+      "content": {
+        "question": "廣府人與客家人、水上人與福佬，在為生方式及居住地上有甚麼分別？",
+        "correctAnswer": "廣府人與客家人多從事農業與墟市貿易，因此定居於內陸地區；水上人與福佬以漁業與航運業為主，居於水上或岸邊。",
+        "gradingPoints": [
+          "指出廣府人與客家人以務農與墟市貿易為主，定居於內陸地區",
+          "指出水上人與福佬以漁業與航運業為主，居於水上或岸邊"
+        ],
+        "explanation": "教材第 15 段：廣府人與客家人以務農與墟市貿易為主；水上人與福佬以漁業與航運業為主。第 83 段：廣府人與客家人多從事農業，定居內陸；水上人及福佬以漁業為主，居於水上或岸邊。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_c9b3b3647b2e4431",
+          "blk_7f88c358e3f0463a"
+        ],
+        "documentFileName": "課題4 早期香港地區的歷史.docx",
+        "sourceLocation": "課題4 早期香港地區的歷史.docx · 第 83 段（清單）",
+        "excerpt": "廣府人與客家人多從事農業，因此定居於內陸地區。",
+        "relatedLocators": [
+          {
+            "documentFileName": "課題4 早期香港地區的歷史.docx",
+            "sourceLocation": "課題4 早期香港地區的歷史.docx · 第 15 段（清單）"
+          }
+        ],
+        "relatedExcerpts": [
+          "水上人與福佬：以漁業與航運業為主"
+        ]
+      },
+      "resultFingerprint": "36ebf06cf8cff7ba7cafb9c2d15a276833139c8b371f3a70599fe2851614c690",
+      "reason": "原題以舊資料題標籤「資料線索」為題幹；改寫為比較民系為生方式與居住地的題目（第 15、83 段）。"
+    },
+    {
+      "questionId": "q_320d50660ed04361",
+      "action": "rewrite",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "mc",
+      "beforeFingerprint": "893e8fd27df0bd49baf1cc0749085065e490235a0609958473747c8b17589a0d",
+      "beforeExcerpt": "資料：有關香港其中一項非物質文化遺產的描述",
+      "beforeSourceLocation": "HNC1B2E_T4_SN_TE.docx · 第 349 段（標題）",
+      "content": {
+        "question": "2014年香港政府公布首份《香港非物質文化遺產清單》，下列哪一項是清單中的四項傳統習俗與節日之一？",
+        "options": [
+          "大澳遊涌",
+          "潑水節",
+          "火把節",
+          "那達慕"
+        ],
+        "correctAnswer": "大澳遊涌",
+        "explanation": "教材第 134 段：2014 年公布的《香港非物質文化遺產清單》包括四項傳統習俗與節日，其中一項是「大澳端午龍舟遊涌」（下文簡稱「大澳遊涌」）。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_1e5f5d97a9614b43"
+        ],
+        "documentFileName": "課題4 早期香港地區的歷史.docx",
+        "sourceLocation": "課題4 早期香港地區的歷史.docx · 第 134 段（清單）",
+        "excerpt": "大澳端午龍舟遊涌（下文簡稱「大澳遊涌」）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "fe59c5090c6533bc5f463b824e98e6667d413f37d4eea71e2d3bd7df2f1e50d2",
+      "reason": "原題以舊資料題標籤「資料」為答案；改寫為考核《香港非物質文化遺產清單》項目的題目（第 134 段）。"
+    },
+    {
+      "questionId": "q_332eb48af69b42c9",
+      "action": "rewrite",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "fill",
+      "beforeFingerprint": "cfca19117ef19543be46cbb20f253adfae5f4eca9f912ff8fce55a91c9212f41",
+      "beforeExcerpt": "「獨有龍舟活動」：大澳遊涌。（1分）",
+      "beforeSourceLocation": "HNC1B2E_T4_SN_TE.docx · 第 353 段（清單）（第 1 項）",
+      "content": {
+        "question": "2014 年公布的《香港非物質文化遺產清單》中，於農曆五月在新界大澳舉行的傳統習俗與節日是＿＿＿＿。",
+        "correctAnswer": "大澳端午龍舟遊涌",
+        "acceptedAnswers": [
+          "大澳遊涌",
+          "端午龍舟遊涌",
+          "龍舟遊涌"
+        ],
+        "explanation": "教材第 134 段：清單中的四項傳統習俗與節日包括「大澳端午龍舟遊涌」（下文簡稱「大澳遊涌」），於農曆五月在大澳舉行。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_1e5f5d97a9614b43"
+        ],
+        "documentFileName": "課題4 早期香港地區的歷史.docx",
+        "sourceLocation": "課題4 早期香港地區的歷史.docx · 第 134 段（清單）",
+        "excerpt": "大澳端午龍舟遊涌（下文簡稱「大澳遊涌」）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "427636283f4140a1c5b2662cb6cb2796d69cd4f10cf38e413df1dc8a9d3fd87d",
+      "reason": "原題以舊資料題標籤「獨有龍舟活動」為答案；改寫為考核大澳遊涌正式名稱的題目（第 134 段）。"
+    },
+    {
+      "questionId": "q_35c49b48d3044613",
+      "action": "rewrite",
+      "topicId": "topic-6",
+      "sectionId": "topic-6-impact-europe",
+      "questionType": "mc",
+      "beforeFingerprint": "86072b80c3ee22ee2d64a23f95b28def7f43403d88ec104a332a1a705d09c0d7",
+      "beforeExcerpt": "資料：有關日本對歐洲國家殖民擴張回應的文章節錄",
+      "beforeSourceLocation": "HNC2A2E_T6_SN_TE.docx · 第 240 段（段落）",
+      "content": {
+        "question": "十九世紀中葉，日本如何回應歐洲國家的擴張？",
+        "options": [
+          "先實施鎖國政策，其後在壓力下簽訂《安政條約》，放棄部分主權，並改革自強",
+          "主動開放全部通商口岸，並歡迎歐洲列強殖民",
+          "與歐洲列強結盟，共同瓜分亞洲",
+          "一直維持鎖國政策，拒絕與任何西方國家往來"
+        ],
+        "correctAnswer": "先實施鎖國政策，其後在壓力下簽訂《安政條約》，放棄部分主權，並改革自強",
+        "explanation": "教材第 153、160 段：日本自 1639 年起實施鎖國政策；1858 年幕府在外交壓力下與美國、英國、法國、俄國及荷蘭簽訂《安政條約》，放棄部分主權，其後改革自強。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_2af9f485f4bf4551",
+          "blk_c50edc6f876c45a3"
+        ],
+        "documentFileName": "課題6 歐洲國家的殖民擴張.docx",
+        "sourceLocation": "課題6 歐洲國家的殖民擴張.docx · 第 160 段（清單）",
+        "excerpt": "1858年，幕府在外交壓力下，與美國、英國、法國、俄國及荷蘭簽訂一系列不平等條約",
+        "relatedLocators": [
+          {
+            "documentFileName": "課題6 歐洲國家的殖民擴張.docx",
+            "sourceLocation": "課題6 歐洲國家的殖民擴張.docx · 第 153 段（清單）"
+          }
+        ],
+        "relatedExcerpts": [
+          "1639年：幕府實施鎖國政策。"
+        ]
+      },
+      "resultFingerprint": "58cf9141b5d6cf2629dd133a6e677784f111cec22cb51c18352f650ada7505a3",
+      "reason": "原題以舊資料題標籤「資料」為答案；改寫為考核日本回應歐洲擴張的題目（第 153、160 段）。"
+    },
+    {
+      "questionId": "q_f9722f18360144ef",
+      "action": "rewrite",
+      "topicId": "topic-7",
+      "sectionId": "topic-7-revolution",
+      "questionType": "fill",
+      "beforeFingerprint": "7f2910458984598362a9cf8cecb5d89aff27c32df670096703ae5abac5edc5aa",
+      "beforeExcerpt": "資料：美國總統於1823年發表的講話節錄",
+      "beforeSourceLocation": "HNC2B2E_T7_SN_TE.docx · 第 308 段（段落）",
+      "content": {
+        "question": "門羅於＿＿＿年發表國情咨文，提出門羅主義。",
+        "correctAnswer": "1823",
+        "acceptedAnswers": [
+          "1823 年",
+          "1823年"
+        ],
+        "explanation": "教材第 93 段：時任總統門羅於 1823 年發表國情咨文，提出新的外交政策，該政策被稱為「門羅主義」。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_a5c1fa80d20c4c3a"
+        ],
+        "documentFileName": "課題7 美國的成立及發展.docx",
+        "sourceLocation": "課題7 美國的成立及發展.docx · 第 93 段（清單）",
+        "excerpt": "時任總統門羅遂於1823 年發表國情咨文",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "5eb3336c60e18972869d491e08509495960c44028fbb4c40fc72bede9899b491",
+      "reason": "原題以舊資料題標籤「資料」為答案；改寫為考核門羅主義發表年份的題目（第 93 段）。"
+    },
+    {
+      "questionId": "q_316ed0ea39f340fe",
+      "action": "rewrite",
+      "topicId": "topic-7",
+      "sectionId": "topic-7-revolution",
+      "questionType": "short",
+      "beforeFingerprint": "fe61fdc1af20886b8d1fb990dc8b8203efb574ad73a3547bf1cdecd37dfa2c98",
+      "beforeExcerpt": "發表講話的總統：門羅。(1分)",
+      "beforeSourceLocation": "HNC2B2E_T7_SN_TE.docx · 第 313 段（清單）（第 1 項）",
+      "content": {
+        "question": "門羅主義由哪一位美國總統提出？",
+        "correctAnswer": "門羅",
+        "acceptedAnswers": [
+          "時任總統門羅"
+        ],
+        "gradingPoints": [
+          "指出門羅主義由時任美國總統門羅於 1823 年發表國情咨文時提出"
+        ],
+        "explanation": "教材第 93 段：時任總統門羅於 1823 年發表國情咨文，提出門羅主義。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_a5c1fa80d20c4c3a"
+        ],
+        "documentFileName": "課題7 美國的成立及發展.docx",
+        "sourceLocation": "課題7 美國的成立及發展.docx · 第 93 段（清單）",
+        "excerpt": "時任總統門羅遂於1823 年發表國情咨文",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "7c19d9fc7e847ed4897da92a304d348d82321fd90f8ef2a829a72e8099e48d14",
+      "reason": "原題以舊資料題標籤「發表講話的總統」為題幹；改寫為直接問提出者的題目（第 93 段）。"
+    },
+    {
+      "questionId": "q_ee9dfe073a754b91",
+      "action": "rewrite",
+      "topicId": "topic-7",
+      "sectionId": "topic-7-revolution",
+      "questionType": "mc",
+      "beforeFingerprint": "ce6b7a94eb95820a58a5314b8dbc02f8deb5db471da7375ea514edce93441682",
+      "beforeExcerpt": "資料線索：根據門羅主義，歐洲國家干預美洲事務，會被美國視為對其和平與安全的威脅。(1分)",
+      "beforeSourceLocation": "HNC2B2E_T7_SN_TE.docx · 第 323 段（段落）",
+      "content": {
+        "question": "根據課本所述的門羅主義，以下哪一項是它的其中一項原則？",
+        "options": [
+          "歐洲列強不得再將美洲視為新的殖民對象",
+          "美國可干預歐洲列強在美洲的現有殖民地",
+          "歐洲列強可協助美國管理美洲事務",
+          "美國須放棄在美洲的擴張"
+        ],
+        "correctAnswer": "歐洲列強不得再將美洲視為新的殖民對象",
+        "explanation": "教材第 93 段列出門羅主義三大原則：美國不干涉歐洲列強在美洲的現有殖民地；歐洲列強不得再將美洲視為新的殖民對象（美洲是美洲人的美洲）；美國不干涉歐洲事務，歐洲列強亦不得干預美洲事務。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_a5c1fa80d20c4c3a"
+        ],
+        "documentFileName": "課題7 美國的成立及發展.docx",
+        "sourceLocation": "課題7 美國的成立及發展.docx · 第 93 段（清單）",
+        "excerpt": "歐洲列強不得再將美洲視為新的殖民對象（美洲是美洲人的美洲）",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "83e7e3937fd23520a8642d88ea800b44c3e1617d8abb2401bef9c54d669b4530",
+      "reason": "原題以舊資料題標籤「資料線索」為答案；改寫為考核門羅主義原則的題目（第 93 段）。"
+    },
+    {
+      "questionId": "q_53877c3e5d384e99",
+      "action": "rewrite",
+      "topicId": "topic-7",
+      "sectionId": "topic-7-revolution",
+      "questionType": "fill",
+      "beforeFingerprint": "5f755f741f2cf96f7691259f82b8adc3fe34bcfe74d5b1d2899b7d533a4e419d",
+      "beforeExcerpt": "個人所知：門羅主義不只成功令歐洲國家放棄在美洲重新殖民，更有利美國日後向中、南美洲擴張勢力，在美洲大陸建立領導地位。(2分)",
+      "beforeSourceLocation": "HNC2B2E_T7_SN_TE.docx · 第 324 段（段落）",
+      "content": {
+        "question": "門羅主義阻止歐洲列強在美洲加強殖民擴張，便利美國日後擴張勢力，使其逐步在美洲大陸確立甚麼地位？",
+        "correctAnswer": "霸權地位",
+        "acceptedAnswers": [
+          "霸權",
+          "領導地位"
+        ],
+        "explanation": "教材第 95 段：該主義阻止歐洲列強在美洲加強殖民擴張，便利了美國日後在北美乃至中、南美洲擴張勢力，使其逐步在美洲大陸確立霸權地位。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_22fc8741ca924699"
+        ],
+        "documentFileName": "課題7 美國的成立及發展.docx",
+        "sourceLocation": "課題7 美國的成立及發展.docx · 第 95 段（清單）",
+        "excerpt": "使其逐步在美洲大陸確立霸權地位",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "bb4d61a30b5240d96447fab5e3de1713473018f54922680a4e58e2e4cf47fb30",
+      "reason": "原題以舊資料題標籤「個人所知」為答案；改寫為考核門羅主義影響的題目（第 95 段）。"
+    },
+    {
+      "questionId": "q_b97234f5f1cd4086",
+      "action": "rewrite",
+      "topicId": "topic-6",
+      "sectionId": "topic-6-impact-europe",
+      "questionType": "fill",
+      "beforeFingerprint": "52860bd43e9469d6cd30f1f0ec7099c22debd62095e3f30fe517abc67d503849",
+      "beforeExcerpt": "1850年代，眼見中國在對英國與法國的戰爭中失利，日本決定和平對外開放。這雖然為日本帶來屈辱，但同時帶來空前進步的契機。與美、英、法、俄、荷等國簽署通商條約，放棄部分國家主權後，日本人決心要建立一個與西方人一樣，甚至超越他們的現代化國家……",
+      "beforeSourceLocation": "HNC2A2E_T6_SN_TE.docx · 第 241 段（段落）",
+      "content": {
+        "question": "＿＿＿年，幕府在外交壓力下，與美國、英國、法國、俄國及荷蘭簽訂一系列不平等條約，即《安政條約》。",
+        "correctAnswer": "1858",
+        "acceptedAnswers": [
+          "1858 年",
+          "1858年"
+        ],
+        "explanation": "教材第 160 段：1858 年，幕府在外交壓力下，與美國、英國、法國、俄國及荷蘭簽訂一系列不平等條約，即《安政條約》（又稱《五國通商條約》）。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_2af9f485f4bf4551"
+        ],
+        "documentFileName": "課題6 歐洲國家的殖民擴張.docx",
+        "sourceLocation": "課題6 歐洲國家的殖民擴張.docx · 第 160 段（清單）",
+        "excerpt": "1858年，幕府在外交壓力下",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "a190cd516011ed29c34c34e27d28ee13ddf4e69374262069b94e6f9d7fde72de",
+      "reason": "舊題幹（1850 年代和平對外開放）在新教材不存在；新教材寫 1858 年《安政條約》（第 160 段），改寫以符合新教材。"
+    },
+    {
+      "questionId": "q_b8d6ecfb9c2142e8",
+      "action": "rewrite",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-treaty",
+      "questionType": "fill",
+      "beforeFingerprint": "0027afcbd0dcb9676c248328018afaacd1a12abd7ab546cc54cdc0d5d80c11fc",
+      "beforeExcerpt": "二戰的影響：歐洲殖民國家國力衰退",
+      "beforeSourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 218 段（標題）",
+      "content": {
+        "question": "＿＿＿＿結束後，亞、非兩洲的非殖民地化展開。",
+        "correctAnswer": "第二次世界大戰",
+        "acceptedAnswers": [
+          "二戰",
+          "世界大戰"
+        ],
+        "explanation": "教材第 271 段大事年表：1945 年第二次世界大戰結束後，亞、非兩洲的非殖民地化展開。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_91436e50d5f44c24"
+        ],
+        "documentFileName": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx",
+        "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx · 第 271 段（表格）",
+        "excerpt": "亞、非兩洲的非殖民地化展開",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "715eef401bd0a54911816471ff68b9f4c77da501d7bb9e407cf2e812646d7eaa",
+      "reason": "新教材沒有「歐洲殖民國家國力衰退」，但寫明二戰結束後亞、非兩洲的非殖民地化展開（第 271 段）。"
+    },
+    {
+      "questionId": "q_88fc4367278b4546",
+      "action": "rewrite",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-ww1-result",
+      "questionType": "mc",
+      "beforeFingerprint": "6afb3ba1025f3de783dd076038172f6b208c6c2a7b329a2263a42b44394bcc06",
+      "beforeExcerpt": "一戰的影響：民族獨立意識的萌芽",
+      "beforeSourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 215 段（標題）",
+      "content": {
+        "question": "下列哪一項是第一次世界大戰對殖民地造成的影響？",
+        "options": [
+          "巴黎和會的民族自決原則令非殖民地化思想萌芽",
+          "歐洲殖民國家國力衰退，殖民地全部即時獨立",
+          "德國失去所有海外殖民地，非洲全部獨立",
+          "美國接管歐洲國家在亞洲的殖民地"
+        ],
+        "correctAnswer": "巴黎和會的民族自決原則令非殖民地化思想萌芽",
+        "explanation": "教材第 271 段：1919 年巴黎和會由「三巨頭」主導，民族自決原則令非殖民地化思想萌芽；至 1945 年第二次世界大戰結束後，亞、非兩洲的非殖民地化才展開。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_91436e50d5f44c24"
+        ],
+        "documentFileName": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx",
+        "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx · 第 271 段（表格）",
+        "excerpt": "和會由「三巨頭」主導民族自決原則：非殖民地化思想萌芽",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "81751b818b206f89f11ada3360a50dbfc89a3a686a357fec80e19942ae47ca16",
+      "reason": "新教材改以「民族自決原則：非殖民地化思想萌芽」表述，題幹與選項一併更新（第 271 段）。"
+    },
+    {
+      "questionId": "q_f320342907b640c8",
+      "action": "rewrite",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-ww1-trigger",
+      "questionType": "short",
+      "beforeFingerprint": "c942c763d81067f7ae812a8266919a5c48430c455228e3f8df98a5b1e4916575",
+      "beforeExcerpt": "塞爾維亞接納俄國的意見，接受大部分要求，但認為「容許奧匈代表參與調查」違反國家憲法而拒絕。",
+      "beforeSourceLocation": "HNC3A2E_T9_SN_TE.docx · 第 92 段（清單）（第 9 項）",
+      "content": {
+        "question": "試說明與「最後通牒」相關的內容。",
+        "correctAnswer": "奧匈皇儲斐迪南大公於塞拉耶佛被暗殺身亡，奧匈指控塞爾維亞涉及事件，向其發出最後通牒；最後奧塞戰爭於同年 7 月爆發，並升級為世界大戰。",
+        "gradingPoints": [
+          "指出奧匈皇儲斐迪南大公於塞拉耶佛被暗殺身亡",
+          "指出奧匈指控塞爾維亞並向其發出最後通牒",
+          "指出奧塞戰爭爆發並升級為世界大戰"
+        ],
+        "explanation": "教材第 303 段：奧匈皇儲斐迪南大公於塞拉耶佛被暗殺身亡。奧匈指控塞爾維亞涉及事件，向其發出最後通牒。最後，奧塞戰爭於同年 7 月爆發，並升級為世界大戰。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_39915372114d4af3"
+        ],
+        "documentFileName": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx",
+        "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx · 第 303 段（清單）",
+        "excerpt": "奧匈指控塞爾維亞涉及事件，向其發出最後通牒。",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "caf5ebd629e590d0ecd88336f1be326cfc040edc901b3a3a77af4833f0434c2b",
+      "reason": "新教材沒有最後通牒的細節（違反憲法等），但保留最後通牒的概要（第 303 段），改寫以符合新教材。"
+    },
+    {
+      "questionId": "q_8fc2332cb98a4c11",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-conflict",
+      "questionType": "mc",
+      "beforeFingerprint": "aa1060b57d9be513bf3d7ec32d77a42faab508be620003ca1802c71224757ad0",
+      "beforeExcerpt": "衝突數目增加與破壞程度升級",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 5 段（清單）（第 4 項）",
+      "content": {
+        "question": "下列哪一項最能說明二十世紀大型軍事衝突的特點？",
+        "options": [
+          "兩次世界大戰造成嚴重傷亡與經濟破壞",
+          "衝突只局限於歐洲，未影響其他地區",
+          "各國長期維持和平，大型衝突極少",
+          "戰爭只造成軍隊傷亡，平民不受影響"
+        ],
+        "correctAnswer": "兩次世界大戰造成嚴重傷亡與經濟破壞",
+        "explanation": "教材第 10 段：二十世紀人類共同面對的挑戰之一是「兩次大戰造成空前破壞——兩次世界大戰造成嚴重傷亡與經濟破壞」。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_97d3994cdef44833"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 10 段（清單）",
+        "excerpt": "兩次世界大戰造成嚴重傷亡與經濟破壞",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "7eb15cb9f1a80ce2abe96ef932135e0e8d829e61eba66666e559364a593277dc",
+      "reason": "新教材沒有「衝突數目增加與破壞程度升級」，改以第 10 段「兩次世界大戰造成嚴重傷亡與經濟破壞」命題。"
+    },
+    {
+      "questionId": "q_50e0d5bc27e3422a",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-conflict",
+      "questionType": "fill",
+      "beforeFingerprint": "d65ddd38b3099588357fd0aa2abcaf7c759d3b56fdbf9db98674099500cf7266",
+      "beforeExcerpt": "二十世紀的世界局勢動盪不安。",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 17 段（清單）（第 7 項）",
+      "content": {
+        "question": "兩次世界大戰共導致超過＿＿＿＿人死亡。",
+        "correctAnswer": "八千萬",
+        "acceptedAnswers": [
+          "八千萬人",
+          "8 千萬"
+        ],
+        "explanation": "教材第 22 段：在二十世紀上半葉，人類經歷了兩場規模空前的世界大戰，兩次大戰共導致超過八千萬人死亡。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_fd07982b29854e50"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 22 段（清單）",
+        "excerpt": "兩次大戰共導致超過八千萬人死亡。",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "77ef84176223358d03daa91f5619c64b57a7b8ef19c28b61f22e7f3a39a2f498",
+      "reason": "原題題幹與答案對不上（題目破損）；改以新教材第 22 段的戰爭傷亡數字重新命題。"
+    },
+    {
+      "questionId": "q_e4031ed7b25b4a18",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-conflict",
+      "questionType": "fill",
+      "beforeFingerprint": "7e09744a6cfd15f2bfbdee1376b18269f626399aa8718dec5ded502e53cf276e",
+      "beforeExcerpt": "兩場戰事造成超過八千萬人死亡，包括大量平民。",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 17 段（清單）（第 7 項）",
+      "content": {
+        "question": "根據上述資料，兩次世界大戰合共造成超過多少人死亡？",
+        "correctAnswer": "八千萬",
+        "acceptedAnswers": [
+          "八千萬人",
+          "超過八千萬人"
+        ],
+        "explanation": "教材第 22 段：兩次大戰共導致超過八千萬人死亡；大規模使用毒氣與核武器更造成大量人員傷殘。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_fd07982b29854e50"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 22 段（清單）",
+        "excerpt": "兩次大戰共導致超過八千萬人死亡。",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "435cda42003732b448c04f6cd45fd72ca930faadbbb83fe14e8b2af57b0febeb",
+      "reason": "新教材只寫「共導致超過八千萬人死亡」，沒有「平民」；題目改以新教材的數字命題（第 22 段）。"
+    },
+    {
+      "questionId": "q_05d22484343240d5",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-health",
+      "questionType": "fill",
+      "beforeFingerprint": "56a92d6f22440d33684c74db3c7aa7db48a35276c082c603d56dd7d5c41a9f27",
+      "beforeExcerpt": "1999年歐洲與非洲每十萬人口擁有的醫護人數",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 42 段（段落）",
+      "content": {
+        "question": "發展中國家醫療資源短缺，且戰亂頻仍，人民的感染與死亡率因而遠高於哪類國家？",
+        "correctAnswer": "發達國家",
+        "acceptedAnswers": [
+          "已發展國家"
+        ],
+        "explanation": "教材第 80 段：這些國家醫療資源短缺，且戰亂頻仍，當地政府難以有效防控疫情，人民的感染與死亡率因而遠高於發達國家。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_0eed78db80c4413a"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 80 段（清單）",
+        "excerpt": "人民的感染與死亡率因而遠高於發達國家。",
+        "relatedLocators": [],
+        "relatedExcerpts": []
+      },
+      "resultFingerprint": "d05c3529e8e918fae3cc64cf2a9954d78bcc7ba50840725ccda194170419c184",
+      "reason": "新教材已刪去「每十萬人口擁有的醫護人數」圖表，改以第 80 段的文字內容命題。"
+    },
+    {
+      "questionId": "q_aef95458fecc49a7",
+      "action": "rewrite",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges-poverty",
+      "questionType": "mc",
+      "beforeFingerprint": "4e8095fc29ccede47e65a11c5bc7bb5aeb0ce7ede8b5877e257931063415bbe2",
+      "beforeExcerpt": "至二十世紀末：欠發達國家集中於非洲、東南亞、南亞與南美洲，較發達國家則集中於歐洲、北美洲及大洋洲。",
+      "beforeSourceLocation": "HNC3B_T11_SN_TE.docx · 第 21 段（清單）（第 5 項）",
+      "content": {
+        "question": "至二十世紀末，全球財富分布有甚麼特點？",
+        "options": [
+          "發達國家佔全球約三成人口，卻擁有全球近八成財富，並消耗約七成資源",
+          "發展中國家佔全球約三成人口，卻擁有全球近八成財富",
+          "發達國家佔全球七成人口，並只消耗全球三成資源",
+          "發展中國家集中於歐洲與北美洲，並掌控全球經濟"
+        ],
+        "correctAnswer": "發達國家佔全球約三成人口，卻擁有全球近八成財富，並消耗約七成資源",
+        "explanation": "教材第 33–34 段：（至二十世紀末）發達國家僅佔全球約三成人口，卻擁有全球近八成財富，消耗全球約七成資源。"
+      },
+      "evidence": {
+        "blockIds": [
+          "blk_d6fb6ede2278472b",
+          "blk_31ee5248a246449f"
+        ],
+        "documentFileName": "課題11 20世紀以來的國際合作.docx",
+        "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 33 段（段落）",
+        "excerpt": "（至二十世紀末）僅佔全球約三成人口，卻擁有全球近八成財富；",
+        "relatedLocators": [
+          {
+            "documentFileName": "課題11 20世紀以來的國際合作.docx",
+            "sourceLocation": "課題11 20世紀以來的國際合作.docx · 第 34 段（段落）"
+          }
+        ],
+        "relatedExcerpts": [
+          "消耗全球約七成資源。"
+        ]
+      },
+      "resultFingerprint": "1d8f77252db59598a1821283373ad70bf6b2c176ea88bcb06922d302ecaa7c3e",
+      "reason": "「至二十世紀末」的標籤對應已改為發達國家／發展中國家的財富分布描述（第 33–34 段）。"
+    },
+    {
+      "questionId": "q_c6fc8cd15ce64a54",
+      "action": "delete",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-treaty",
+      "questionType": "short",
+      "beforeFingerprint": "0ecf5ab2913dae2a2bd7c64063d49f5b32be781a15060f6a1ab93c363f78c4d9",
+      "reason": "新教材已刪去非殖民地化的獨立方式分類及例子：搜尋「宗主國扶植」「菲律賓」在 12 課學生教材 0 命中，無學生授權教材可作依據。",
+      "beforeQuestion": "試說明「通過宗主國扶植」。",
+      "beforeCorrectAnswer": "美國的殖民地（菲律賓）"
+    },
+    {
+      "questionId": "q_b0579928bff84e53",
+      "action": "delete",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-treaty",
+      "questionType": "mc",
+      "beforeFingerprint": "176a46dd5bbb73cc4545d95aee168b399a1273f09cc1884b1cea5c2459e12dc2",
+      "reason": "「通過與宗主國協商」及英國殖民地清單（緬甸、印度、巴基斯坦、馬來亞、新加坡與汶萊）在新教材 0 命中；緬甸只在大事年表以「英國侵佔緬甸」出現，與非殖民地化無關。",
+      "beforeQuestion": "「英國的殖民地（緬甸、印度、巴基斯坦、馬來亞、新加坡與汶萊）」是指以下哪一個詞語？",
+      "beforeCorrectAnswer": "通過與宗主國協商"
+    },
+    {
+      "questionId": "q_59a6ec63802c4523",
+      "action": "delete",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-treaty",
+      "questionType": "fill",
+      "beforeFingerprint": "2e51ee694091ef1d2b792990f489313d20db6c75a2a93b1596fe6b1e160aaabb",
+      "reason": "「通過武裝鬥爭」及法國、荷蘭殖民地清單（越南、老撾、柬埔寨與印尼）在新教材 0 命中。",
+      "beforeQuestion": "「＿＿＿」是指法國及荷蘭的殖民地（越南、老撾、柬埔寨與印尼）",
+      "beforeCorrectAnswer": "通過武裝鬥爭"
+    },
+    {
+      "questionId": "q_d893eba3b65b4e49",
+      "action": "delete",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-ww1-trigger",
+      "questionType": "short",
+      "beforeFingerprint": "81af4fba9ef41a2b10e61ba8f807128dc65e820e850b7e38868be16cd6ea0b0b",
+      "reason": "「施里芬計劃」在 12 課學生教材 0 命中（新教材一戰導火線只保留巴爾幹戰爭、塞拉耶佛事件及最後通牒概要）。",
+      "beforeQuestion": "試說明與「施里芬計劃」相關的內容。",
+      "beforeCorrectAnswer": "8 月3 日，德國執行「施里芬計劃」，進攻中立的比利時以取道攻打法國，觸發法、英兩國參戰。"
+    },
+    {
+      "questionId": "q_44e1838369244a50",
+      "action": "delete",
+      "topicId": "topic-9",
+      "sectionId": "topic-9-ww1-trigger",
+      "questionType": "fill",
+      "beforeFingerprint": "ed8b47387a057ced29d5d202ffce88de1439e46aa832f655805d780dd11a1280",
+      "reason": "最後通牒的「四十八小時」時限在新教材 0 命中（第 303 段只有最後通牒概要，沒有時限）。",
+      "beforeQuestion": "在德國支持下，奧匈於7月23日向塞爾維亞發出最後通牒，並要求對方於＿＿＿＿小時內回應。",
+      "beforeCorrectAnswer": "四十八"
+    }
+  ]
+}

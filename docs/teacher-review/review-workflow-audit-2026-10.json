@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "date": "2026-10-17",
+  "title": "人工覆核工作流程完整性審核（Sprint 8.7 第二階段）",
+  "status": "audited-one-defect-fixed",
+  "scope": "教師介面 → /api/teacher/questions/{id}/review → question-service.recordQuestionReview → question_reviews（SQLite）→ 發布關卡（changeQuestionStatus / isStudentPracticeEligible）。",
+  "method": [
+    "唯讀閱讀程式碼：src/components/QuestionManager.tsx、src/app/api/teacher/questions/[questionId]/review/route.ts、src/app/api/teacher/questions/[questionId]/route.ts、src/app/api/teacher/reports/route.ts、src/server/services/question-service.ts、src/server/repositories/questions.ts、src/server/auth/guards.ts、src/server/services/source-visibility.ts。",
+    "以測試資料庫（每個測試檔各自一份臨時 SQLite）重現每個契約，不接觸 data/app.db。",
+    "沒有修改任何題目、覆核紀錄或發布狀態；所有修正只涉及程式碼契約與測試。"
+  ],
+  "trace": {
+    "ui": "src/components/QuestionManager.tsx：三顆覆核按鈕呼叫 handleReview(questionId, expectedRevision, decision)，expectedRevision 取自目前顯示的 question.revision。",
+    "route": "src/app/api/teacher/questions/[questionId]/review/route.ts：GET 讀覆核狀態、POST 寫覆核決定；POST body 由 reviewSchema 驗證（decision、reason?、expectedRevision）。",
+    "service": "src/server/services/question-service.ts：recordQuestionReview（驗證身分、版本、原因 → insertQuestionReview → setQuestionStatus → 通過時清除 teacherConfirmationRequired）。",
+    "persistence": "src/server/repositories/questions.ts：question_reviews 表（append-only；insertQuestionReview 只插入，findApprovedReview 依 revision + fingerprint 比對）。",
+    "publication": "question-service.changeQuestionStatus 的發布關卡：需要『目前版本』的人工覆核通過紀錄或自動驗證紀錄；isStudentPracticeEligible 再要求 !teacherConfirmationRequired。",
+    "visibility": "src/server/services/source-visibility.ts：學生能否看到節錄另由教材文件的 student_distribution 及題目的 source_verified 決定，與覆核決定無關。"
+  },
+  "checks": [
+    {
+      "id": "authz-route",
+      "requirement": "只有適當授權的用戶可以提交覆核決定",
+      "verdict": "pass",
+      "evidence": "review/route.ts POST 先 await requireTeacher(request)（第 63 行）→ guards.requireStaff({adminOnly:false})：未啟用登入的部署環境回 403、啟用登入但未登入回 401、學生（非 staff）回 403。",
+      "testEvidence": "tests/teacher-review-workflow-integrity.test.ts › 覆核路由不會以示範身分寫入部署環境（3 項）；tests/role-policy.test.ts › 員工端點：政策決定誰能通過 › 未登入不可覆核題目或發布題目（401）、學生不可覆核或發布題目（403）；tests/question-review.test.ts › 學生及未登入者不可覆核（403／401）。",
+      "notes": "學生角色通過 requireStudentOrTeacher 但不會通過 requireStaff，因此無法呼叫此路由。"
+    },
+    {
+      "id": "demo-identity-deployed",
+      "requirement": "部署主機拒絕以合成示範身分寫入覆核紀錄",
+      "verdict": "pass",
+      "evidence": "review/route.ts 第 64 行：沒有 reviewer 且 isProductionRuntime() 且請求非 loopback → 403，即使設定了 HISTORY_ALLOW_UNSAFE_DEMO_MODE 也一樣。本機 loopback 例外，示範身分如實記錄為 role='unauthenticated-demo'、email='（示範模式：未登入）'。",
+      "testEvidence": "同上：『部署環境（K_SERVICE 已設定、非本機網址）沒有工作階段時拒絕覆核』（403、0 筆紀錄）；『本機（loopback）的示範流程仍可記錄覆核，但身分會如實標示為示範』。",
+      "notes": "例外只限 localhost/127.0.0.1/::1，因此 next start 的本機教師測試與端對端測試仍可運作；真實主機不會出現無主覆核紀錄。"
+    },
+    {
+      "id": "blank-identity",
+      "requirement": "空白或格式不正確的覆核者身分不可被靜默接受",
+      "verdict": "pass",
+      "evidence": "recordQuestionReview（question-service.ts 第 589-596 行）trim 後為空即回 400；reviewer 只取自伺服器端工作階段，body 內沒有任何身分欄位可被偽造。",
+      "testEvidence": "tests/teacher-review-workflow-integrity.test.ts › 沒有覆核者電郵時拒絕記錄，並保留題目原狀；tests/question-review.test.ts › 前端提供的覆核者欄位不會被採用。",
+      "notes": "覆核者角色與電郵由 review 路由傳入，前端無法覆寫。"
+    },
+    {
+      "id": "revision-binding",
+      "requirement": "覆核綁定題目版本、內容指紋及伺服器時間",
+      "verdict": "pass",
+      "evidence": "insertQuestionReview 寫入 revision = existing.revision、questionFingerprint(existing)（SHA-256，涵蓋題幹／選項／答案／解釋／知識點／評分點／技能）、createdAt = 伺服器 nowIso()。approvedReviewFor 依 revision + fingerprint 比對，因此內容一改即失效（reviewStateFor → 'stale-approval'）。",
+      "testEvidence": "tests/teacher-review-workflow-integrity.test.ts › 有效的覆核者會留下可稽核的紀錄（版本、指紋、身分、時間）；tests/question-review.test.ts › 通過覆核後即可發布，且覆核紀錄對應目前版本。",
+      "notes": "指紋刻意不包含 sourceExcerpt/sourceLocation，令只改來源位置字串（Sprint 8.6 的 7 項提案）不會令覆核失效；這是既有設計，未在本次改動。"
+    },
+    {
+      "id": "optimistic-lock",
+      "requirement": "過時覆核不能批准教師沒有看過的內容；重複／並發請求不得繞過關卡",
+      "verdict": "fixed-in-this-sprint",
+      "evidence": "Sprint 8.7 新增 expectedRevision（必填整數）：review/route.ts reviewSchema 第 20 行、recordQuestionReview 第 598-607 行驗證（非正整數 → 400；與現行 revision 不符 → 409 並附上目前版本）。修復前：舊頁面可對已修改的題目送出 approved，紀錄會綁到新版本而教師從未看過該內容。",
+      "testEvidence": "tests/teacher-review-workflow-integrity.test.ts › 題目在提交覆核前被修改：拒絕覆核（服務層）；› 缺少或無效的 expectedRevision 會被拒絕（400）；› 提交的版本已過時：回 409（路由層）；› 缺少 expectedRevision：回 400（路由層）。",
+      "notes": "SQLite 於本專案為單一程序存取，兩個請求不會同時插入；即使如此，版本檢查在插入之前、且插入不改變 revision，因此第二次提交只會被冪等判定吸收（created:false）。"
+    },
+    {
+      "id": "append-only-audit",
+      "requirement": "覆核歷史可稽核且只增不改",
+      "verdict": "pass",
+      "evidence": "question_reviews 只有 insertQuestionReview（無 update/delete）；教師路由只有 GET 與 POST，PATCH 只接受 status/edit 兩種 action，DELETE 只刪題目（連帶刪除該題紀錄），不存在修改或刪除單筆覆核紀錄的 API。",
+      "testEvidence": "tests/teacher-review-workflow-integrity.test.ts › 同一版本重複提交相同決定不會重複記錄；不同決定另成新紀錄（可稽核）——approved 後另一位教師 returned，兩筆紀錄並存且題目回到草稿；tests/question-review.test.ts › 覆核紀錄沒有可修改或刪除的 API 路徑。",
+      "notes": "刪除題目會連帶刪除覆核紀錄（外鍵 cascade）；這是既有行為，屬題目層級的刪除而非竄改歷史。"
+    },
+    {
+      "id": "decision-semantics",
+      "requirement": "通過／退回／不可用的語意一致",
+      "verdict": "pass",
+      "evidence": "approved → status='published' 並清除 teacherConfirmationRequired；rejected/returned → status='draft'（立即不再對學生顯示），且兩者都必須提供原因（recordQuestionReview 第 609-613 行回 400）。",
+      "testEvidence": "tests/question-review.test.ts › 退回與不可用都必須提供原因、標示不可用的題目不會發布，狀態為 rejected；tests/publication-safety.test.ts › 教師確認是唯一的解除途徑。",
+      "notes": "『不可用』(rejected) 與『退回修改』(returned) 都令題目離開學生視野，差別只在意圖，記在 reason 與 decision 上。"
+    },
+    {
+      "id": "hold-clear-only-by-human",
+      "requirement": "只有獲授權的人工覆核可以清除教師確認暫緩標記；機器重新驗證不能",
+      "verdict": "pass",
+      "evidence": "revalidateQuestion（question-service.ts 第 776 行起）在通過時回 decision='awaiting-teacher-confirmation' 而不清除標記；changeQuestionStatus 在 !approved && teacherConfirmationRequired 時直接 409，即使存在自動驗證紀錄亦然。",
+      "testEvidence": "tests/teacher-review-workflow-integrity.test.ts › 機器重新驗證不能清除暫緩標記（需由人決定）；tests/automation-confidence-semantics.test.ts。",
+      "notes": "Sprint 8.6 之前 revalidateQuestion 會忽略 revise 並清除標記，此繞過路徑已修正並有測試鎖定。"
+    },
+    {
+      "id": "no-machine-approval",
+      "requirement": "自動驗證不能建立專家批准紀錄",
+      "verdict": "pass",
+      "evidence": "recordAutoValidationAndPublish 只寫 questions.auto_validated_*，不寫 question_reviews；reviewStateFor 對只有自動驗證的已發布題目回 'published-unreviewed'，教師端可分辨。",
+      "testEvidence": "tests/question-review.test.ts › 示範模式的自動發布不會偽造覆核紀錄；tests/automation-confidence-semantics.test.ts；tests/publication-safety.test.ts › recordAutoValidationAndPublish 不會把題目發布。",
+      "notes": "生成流程自動發布屬既有產品決定（學生自學不應等待逐題預批），但紀錄語意已明確標示為機器驗證。"
+    },
+    {
+      "id": "review-does-not-alter-visibility",
+      "requirement": "覆核決定不會順帶公開被暫緩的來源節錄或改動其他發布設定",
+      "verdict": "pass",
+      "evidence": "recordQuestionReview 只改 questions.status 及 teacher_confirmation_required；material_documents.student_distribution 只由管理員教材路由改動；source-visibility.ts 仍要求 source_verified 及 student_distribution。",
+      "testEvidence": "tests/teacher-review-workflow-integrity.test.ts › 覆核通過一題不會令未開放教材的節錄對學生顯示。",
+      "notes": "覆核通過令題目可用於練習，但沒有 source_verified 或教材未開放時，學生只會看到題目而不會看到節錄（既有來源顯示規則）。"
+    },
+    {
+      "id": "stale-review-blocks-publication",
+      "requirement": "已失效的覆核不能批准被實質修改的題目",
+      "verdict": "pass",
+      "evidence": "updateManualQuestion 令 revision 遞增；approvedReviewFor 以 revision + fingerprint 比對，因此舊覆核不再符合，changeQuestionStatus('published') 回 409 並提示需重新覆核或重新驗證。",
+      "testEvidence": "tests/question-review.test.ts › 修改題目後版本遞增，舊覆核失效，且已發布的題目會自動下架、修訂版本或內容指紋不同的覆核紀錄不會令題目通過發布關卡；tests/teacher-review-workflow-integrity.test.ts › 題目在提交覆核前被修改。",
+      "notes": "教師端 reviewStateFor 會顯示 'stale-approval'，QuestionManager 亦有對應提示。"
+    },
+    {
+      "id": "errors-do-not-bypass",
+      "requirement": "錯誤與重試不會令關卡失效",
+      "verdict": "pass",
+      "evidence": "所有失敗路徑（400/403/404/409）都在 insertQuestionReview 之前或之後以例外中止；狀態更新失敗回 500 而不是默默成功；handleRoute 統一轉為 JSON 錯誤，不會回 200。",
+      "testEvidence": "tests/question-review.test.ts › 不存在的題目回 404，不會留下紀錄；上述 400/409 測試均斷言 listQuestionReviews 長度為 0 且題目狀態仍為 draft。",
+      "notes": "覆核紀錄與狀態更新為兩個 SQL 語句但同一程序、同一請求；若狀態更新失敗，會保留覆核紀錄並回 500（紀錄存在但狀態未變），教師可重試並由冪等判定吸收。"
+    }
+  ],
+  "gapsFoundAndFixed": [
+    {
+      "id": "stale-approval-optimistic-lock",
+      "severity": "medium",
+      "description": "覆核 POST 原本不接受版本參數，教師頁面長時間開啟時可對其後被別人修改的題目送出 approved，覆核紀錄會綁到未經審閱的新版本。",
+      "fix": "新增必填 expectedRevision（服務層 400/409、路由 schema、QuestionManager、8 處測試呼叫、端對端腳本），並補 4 項回歸測試。",
+      "files": [
+        "src/server/services/question-service.ts",
+        "src/app/api/teacher/questions/[questionId]/review/route.ts",
+        "src/components/QuestionManager.tsx",
+        "scripts/e2e-flow.mjs",
+        "tests/teacher-review-workflow-integrity.test.ts",
+        "tests/publication-safety.test.ts",
+        "tests/question-quality-gate.test.ts"
+      ]
+    }
+  ],
+  "knownLimitations": [
+    "覆核紀錄不保存教師當時看到的題目全文快照，只保存版本號與內容指紋；若日後需要重建當時內容，須依版本歷史（目前無版本歷史表）或題目指紋反推。要補這個能力需要新增資料表，屬產品決定，未在本次改動。",
+    "『不可用』與『退回修改』都令題目下架，兩者只靠 decision 與 reason 區分，沒有獨立的審核狀態機。",
+    "覆核者身分取自 Google 工作階段電郵；平台沒有獨立的教師名冊驗證，授權範圍由部署設定（ALLOWED_TEACHER_DOMAINS 等）決定。",
+    "端對端流程只用本機示範身分驗證；真實教師帳戶的登入流程仍以既有 auth 測試覆蓋，未在本次重跑真實 Google 登入。"
+  ],
+  "notDoneDeliberately": [
+    "沒有改動既有 10 筆真實覆核紀錄所屬題目的任何內容或狀態。",
+    "沒有放寬任何關卡以配合測試；測試是依契約新增，不是反過來。"
+  ]
+}

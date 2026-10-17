@@ -51,6 +51,7 @@ import {
 } from "../src/server/repositories/materials";
 import { listSections, listTopics } from "../src/server/repositories/topics";
 import { isTeacherOnlyBlockText, looksLikeTeacherEdition } from "../src/server/materials/teacher-content";
+import { warnIfNpmSwallowedApply } from "./lifecycle-hints";
 
 function readArg(name: string): string | null {
   const index = process.argv.indexOf(name);
@@ -58,6 +59,7 @@ function readArg(name: string): string | null {
 }
 
 const apply = process.argv.includes("--apply");
+warnIfNpmSwallowedApply(apply);
 const ownerEmail = (readArg("--owner-email") ?? "").trim();
 const reason = (readArg("--reason") ?? "").trim();
 const label = readArg("--label") ?? "local";

@@ -93,6 +93,26 @@ function baseFields(fact: UnitFact, knowledgePoint: string, skill: string = SKIL
   };
 }
 
+/** 解釋的長度上限（學生要看得完；教材原文只引用關鍵片段） */
+const MAX_EXPLANATION_LENGTH = 180;
+/**
+ * 解釋中引用教材的長度上限。
+ * 太長就等於把整段教材原文貼一次：學生讀不到推理，教學品質閘門
+ * （question-quality.ts 的「解釋只是抄錄教材」）亦會把這種解釋判為需要修訂。
+ */
+const MAX_EXPLANATION_QUOTE = 60;
+
+/**
+ * 解釋必須說明「為甚麼這個答案成立」，而不是把教材原文重貼一次。
+ *
+ * 本地示範生成沒有 AI，但仍可說明答案與教材的關係：引用教材的關鍵片段（保持簡短），
+ * 再指出答案在該敘述中的角色。所有文字都來自教材本身，不會加入教材沒有交代的史實。
+ */
+function explainFromMaterial(fact: UnitFact, note: string): string {
+  const quote = truncate(fact.unit.text, MAX_EXPLANATION_QUOTE);
+  return truncate(`教材段落指出「${quote}」；${note}`, MAX_EXPLANATION_LENGTH);
+}
+
 function buildOptions(correct: string, candidates: string[]): string[] {
   const options = [correct];
   for (const candidate of candidates) {
@@ -278,7 +298,10 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
         options,
         correctAnswerIndex: 0,
         correctAnswer: term,
-        explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
+        explanation: explainFromMaterial(
+          fact,
+          `這句說明所指的是歷史詞語「${term}」，其餘選項是教材其他詞語的說明。`,
+        ),
         ...baseFields(fact, `${input.sectionTitle}：${term}`),
         gradingPoints: [],
       };
@@ -297,7 +320,10 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
       options,
       correctAnswerIndex: 0,
       correctAnswer: definition,
-      explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
+      explanation: explainFromMaterial(
+        fact,
+        `教材用這句話說明「${term}」的意思，所以符合這段說明的就是這一項。`,
+      ),
       ...baseFields(fact, `${input.sectionTitle}：${term}`),
       gradingPoints: [],
     };
@@ -328,7 +354,10 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
         options,
         correctAnswerIndex: 0,
         correctAnswer: year,
-        explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
+        explanation: explainFromMaterial(
+          fact,
+          `教材把「${year}」與所述事件連在一起；其餘年份在教材中沒有對應這段敘述。`,
+        ),
         ...baseFields(fact, `${input.sectionTitle}：${truncate(blanked.stem, 40)}`, SKILL_CHRONOLOGY),
         gradingPoints: [],
       };
@@ -352,7 +381,10 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
       options,
       correctAnswerIndex: 0,
       correctAnswer: term,
-      explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
+      explanation: explainFromMaterial(
+        fact,
+        `被引號標示的「${term}」是這句敘述的關鍵，其餘選項出自教材其他段落。`,
+      ),
       ...baseFields(fact, `${input.sectionTitle}：${term}`),
       gradingPoints: [],
     };
@@ -390,7 +422,10 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
       options: [],
       correctAnswerIndex: null,
       correctAnswer: term,
-      explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
+      explanation: explainFromMaterial(
+        fact,
+        `教材用這句話說明「${term}」的意思，所以要填的是這個歷史詞語。`,
+      ),
       ...baseFields(fact, `${input.sectionTitle}：${term}`),
       gradingPoints: [],
     };
@@ -414,7 +449,10 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
         options: [],
         correctAnswerIndex: null,
         correctAnswer: year,
-        explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
+        explanation: explainFromMaterial(
+          fact,
+          `教材把「${year}」與所述事件連在一起，所以要填的是這個時間。`,
+        ),
         ...baseFields(fact, `${input.sectionTitle}：${truncate(blanked.stem, 40)}`, SKILL_CHRONOLOGY),
         gradingPoints: [],
       };
@@ -439,7 +477,10 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
       options: [],
       correctAnswerIndex: null,
       correctAnswer: term,
-      explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
+      explanation: explainFromMaterial(
+        fact,
+        `要填的是這句敘述中被引號標示的關鍵詞語「${term}」。`,
+      ),
       ...baseFields(fact, `${input.sectionTitle}：${term}`),
       gradingPoints: [],
     };
@@ -469,7 +510,10 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
       options: [],
       correctAnswerIndex: null,
       correctAnswer: truncate(fact.definitionText as string, 200),
-      explanation: `教材原文：${truncate(fact.unit.text, 180)}`,
+      explanation: explainFromMaterial(
+        fact,
+        `教材以這句話交代「${term}」的意思，作答時要寫出其中的要點。`,
+      ),
       ...baseFields(fact, `${input.sectionTitle}：${term}`),
       gradingPoints: points,
     };
@@ -492,7 +536,10 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
       options: [],
       correctAnswerIndex: null,
       correctAnswer: truncate(fact.unit.text, 200),
-      explanation: truncate(fact.unit.text, 180),
+      explanation: explainFromMaterial(
+        fact,
+        `教材以這句話交代與「${term}」相關的內容，作答時要寫出其中的要點。`,
+      ),
       ...baseFields(fact, `${input.sectionTitle}：${term}`),
       gradingPoints: points,
     };

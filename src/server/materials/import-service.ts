@@ -31,7 +31,12 @@ import { filterExcludedBlocks } from "./exclusions";
 import { parseDocx } from "./docx";
 import { parsePdf } from "./pdf";
 import { mapBlocksToSections } from "./section-mapper";
-import { truncate, joinTableRow, normalizeForMatch } from "./text-utils";
+import { truncate, normalizeForMatch } from "./text-utils";
+import {
+  blockSearchTexts,
+  excerptAppearsInBlock,
+  excerptTooShortToLink,
+} from "./block-search";
 import { resolveStorageProvider, removeStoredFile } from "../storage";
 import { MaterialParseError, type ParsedBlock, type ParseResult } from "./types";
 
@@ -248,6 +253,9 @@ export async function importMaterial(options: ImportOptions): Promise<ImportOutc
   // 已建立，或題目的 sourceLocation 沒有記錄檔名），一併重新定位。
   if (savedDocument.topicId) {
     reverifyUnverifiedQuestions(savedDocument.topicId, listBlocksByTopic(savedDocument.topicId));
+    // 被取代的舊文件若以**不同檔名**匯入（例如 HNC*_TE.docx 改為「課題N ….docx」），
+    // 引用舊段落的題目不會被上面的函式涵蓋，需要以「段落已不存在」為條件再修一次。
+    repairQuestionsWithMissingBlocks(savedDocument.topicId);
   }
 
   return {
@@ -263,6 +271,9 @@ export async function importMaterial(options: ImportOptions): Promise<ImportOutc
  * 這裡用題目的原文節錄在新段落中重新定位（表格列會以同一分隔符重組後比對）：
  *   找到 → 更新 sourceBlockIds 並保持「已核對」；
  *   找不到 → 標示為「未通過教材依據核對」，提醒教師重新檢查。
+ *
+ * 節錄短於 `MIN_EXCERPT_LENGTH` 且非作者撰寫時不連結（見 `excerptTooShortToLink`）：
+ * 短片段會在無關段落中出現，自動連結等於給教師錯誤的「已核對」訊號。
  */
 function reverifyQuestionsForDocument(fileName: string, blocks: MaterialBlock[]): void {
   const affected = listQuestions().filter((question) =>
@@ -281,7 +292,10 @@ function reverifyQuestionsForDocument(fileName: string, blocks: MaterialBlock[])
       question.sourceBlockIds.every((blockId) => blocks.some((block) => block.id === blockId));
     if (alreadyValid) continue;
 
-    const needle = normalizeForMatch(question.sourceExcerpt);
+    // 節錄太短且非作者撰寫時不可自動連結：短片段會在無關段落中出現，連結等於給教師
+    // 錯誤的「已核對」訊號（見 block-search.ts 的 excerptTooShortToLink）
+    const shortExcerpt = excerptTooShortToLink(question.sourceExcerpt, question.origin);
+    const needle = shortExcerpt ? "" : normalizeForMatch(question.sourceExcerpt);
     const match =
       needle.length > 0
         ? searchable.find((entry) => entry.texts.some((text) => text.includes(needle)))
@@ -309,6 +323,12 @@ function reverifyQuestionsForDocument(fileName: string, blocks: MaterialBlock[])
  * `best.sourceLocation || question.sourceLocation` 回退，等於把試題檔名保留下來當作
  * 學生可見的來源標註。因此：沒有可用來源位置的段落一律略過（不連結），題目維持
  * 「未通過教材依據核對」，學生端依 fail-closed 政策不顯示節錄及來源位置。
+ *
+ * **節錄低於最短長度時不可自動連結**（2026-10-17 統一，見 `excerptTooShortToLink`）：
+ * 短片段會在無關段落中出現，若在此連結等於給教師錯誤的「已核對」訊號；先前只有
+ * `repairQuestionsWithMissingBlocks` 套用此下限，令同一條題目會因走哪一條路徑而得到
+ * 不同的核對狀態（實際案例：示範題庫的短標籤節錄）。作者撰寫的節錄（`demo`／`manual`）
+ * 不受此限——那些節錄本身就是作者提供的來源標註。
  */
 function reverifyUnverifiedQuestions(topicId: string, blocks: MaterialBlock[]): void {
   const pending = listQuestions({ topicId }).filter((question) => !question.sourceVerified);
@@ -332,6 +352,7 @@ function reverifyUnverifiedQuestions(topicId: string, blocks: MaterialBlock[]): 
   if (candidates.length === 0) return;
 
   for (const question of pending) {
+    if (excerptTooShortToLink(question.sourceExcerpt, question.origin)) continue;
     const needle = normalizeForMatch(question.sourceExcerpt);
     if (needle.length === 0) continue;
 
@@ -352,16 +373,145 @@ function reverifyUnverifiedQuestions(topicId: string, blocks: MaterialBlock[]): 
   }
 }
 
-/** 段落可用來比對原文的文字（表格列會重組成與生成題目時相同的文字） */
-function blockSearchTexts(block: MaterialBlock): string[] {
-  const texts = [block.text];
-  if (block.type === "table" && block.table) {
-    for (const row of block.table) {
-      texts.push(joinTableRow(row.map((cell) => cell.text)));
+/**
+ * 段落已被刪除或取代後，把「引用不存在的段落」的題目重新定位（依原文節錄）。
+ *
+ * 三種處理：
+ *   1. 仍存在的引用段落已逐字包含節錄 → 只把已不存在的段落 ID 剔除（保留可用的依據）；
+ *   2. 找不到仍存在的引用段落 → 在**同一課題**內以逐字相符的最短段落重新定位；
+ *   3. 逐字相符的段落不存在（或節錄太短，不足以辨識）→ 標示為「未通過教材依據核對」
+ *      （`sourceVerified = false`），令教師端看得到，學生端依 fail-closed 不顯示節錄。
+ *
+ * 為甚麼需要這個函式：`reverifyQuestionsForDocument` 只處理「來源位置字串包含重新匯入
+ * 檔名」的題目，`reverifyUnverifiedQuestions` 只處理「本來就未通過核對」的題目。
+ * 管理員刪除教材文件（例如以新檔名取代舊教材後刪除舊文件）時，引用該文件段落的題目
+ * 會保留 `sourceVerified = true`，但段落 ID 已經不存在——形成「教師以為已核對、
+ * 實際上沒有依據，學生看不到節錄」的靜默狀態。
+ *
+ * 安全規則：
+ *   - 只在「逐字包含」時才連結（不使用相似度或關鍵詞）；
+ *   - 候選段落一律需要非空白的來源位置（與 `reverifyUnverifiedQuestions` 同一規則，
+ *     見 Sprint 7.7 的來源標註洩漏修正）；
+ *   - 節錄短於 `MIN_EXCERPT_LENGTH`（8 字）時不可作為依據——太短的片段會在無關段落中
+ *     出現，連結後會給教師錯誤的「已核對」訊號。**作者撰寫的節錄（`demo`／`manual`）
+ *     不受此限**（2026-10-17 統一，見 `excerptTooShortToLink`）：示範題庫的 `sourceAnchor`
+ *     與教師手動指定的節錄本身就是作者提供的來源標註，程式只是把它定位到教材段落；
+ *     若在此攔下，同一條示範題目會因「走哪一條路徑」而在已核對／未核對之間來回改變；
+ *   - 沒有需要改動的題目時完全不寫入（重複匯入不會造成版本號無謂遞增）。
+ *
+ * 回報的三個數字是**結果分類**，不是寫入次數：`withheld` 包括本來就未通過核對、
+ * 這次只是再次確認沒有相符段落的題目（不會因此寫入資料庫）。
+ */
+export function repairQuestionsWithMissingBlocks(topicId: string): {
+  repointed: number;
+  pruned: number;
+  withheld: number;
+} {
+  const blocks = listBlocksByTopic(topicId);
+  const blocksById = new Map(blocks.map((block) => [block.id, block]));
+  const affected = listQuestions({ topicId }).filter(
+    (question) =>
+      question.sourceBlockIds.length > 0 &&
+      question.sourceBlockIds.some((blockId) => !blocksById.has(blockId)),
+  );
+  if (affected.length === 0) return { repointed: 0, pruned: 0, withheld: 0 };
+
+  const candidates: { blockId: string; sourceLocation: string; length: number; normalized: string }[] =
+    [];
+  for (const block of blocks) {
+    if (block.type === "image") continue;
+    const sourceLocation = block.sourceLocation.trim();
+    if (sourceLocation.length === 0) continue;
+    for (const text of blockSearchTexts(block)) {
+      candidates.push({
+        blockId: block.id,
+        sourceLocation,
+        length: text.length,
+        normalized: normalizeForMatch(text),
+      });
     }
   }
-  return texts.map((text) => text.trim()).filter((text) => text.length > 0);
+
+  let repointed = 0;
+  let pruned = 0;
+  let withheld = 0;
+  for (const question of affected) {
+    const excerpt = question.sourceExcerpt.trim();
+    const survivingIds = question.sourceBlockIds.filter((blockId) => blocksById.has(blockId));
+    /** 保留仍然存在的引用；已被刪除的段落 ID 一律剔除，避免教師端顯示指向不存在段落的依據 */
+    const keepSurviving = () => {
+      if (survivingIds.length === question.sourceBlockIds.length) return false;
+      updateQuestion(question.id, {
+        ...question,
+        sourceBlockIds: survivingIds,
+        ...(survivingIds.length === 0 ? { sourceVerified: false } : {}),
+      });
+      return true;
+    };
+
+    if (excerptTooShortToLink(excerpt, question.origin)) {
+      // 節錄太短：不可用來連結到任何段落（作者撰寫的節錄除外，見上方安全規則）
+      if (survivingIds.length === 0 || !question.sourceVerified) {
+        if (keepSurviving()) pruned += 1;
+        withheld += 1;
+        continue;
+      }
+      updateQuestion(question.id, { ...question, sourceVerified: false });
+      withheld += 1;
+      continue;
+    }
+
+    // 1. 已存在的引用段落仍逐字包含節錄 → 只剔除已不存在的 ID
+    const survivingSupport = question.sourceBlockIds
+      .map((blockId) => blocksById.get(blockId))
+      .filter((block): block is MaterialBlock => block !== undefined)
+      .filter((block) => excerptAppearsInBlock(block, excerpt));
+    if (survivingSupport.length > 0 && question.sourceVerified) {
+      const kept = survivingSupport.map((block) => block.id);
+      if (kept.length !== question.sourceBlockIds.length) {
+        updateQuestion(question.id, {
+          ...question,
+          sourceBlockIds: kept,
+          sourceLocation: survivingSupport[0]!.sourceLocation.trim(),
+        });
+        pruned += 1;
+      }
+      continue;
+    }
+
+    // 2. 在同一課題內以逐字相符的最短段落重新定位
+    const needle = normalizeForMatch(excerpt);
+    let best: (typeof candidates)[number] | null = null;
+    for (const candidate of candidates) {
+      if (!candidate.normalized.includes(needle)) continue;
+      if (!best || candidate.length < best.length) best = candidate;
+    }
+    if (best) {
+      updateQuestion(question.id, {
+        ...question,
+        sourceBlockIds: [best.blockId],
+        sourceLocation: best.sourceLocation,
+        sourceVerified: true,
+      });
+      repointed += 1;
+      continue;
+    }
+
+    // 3. 沒有相符段落：不可再聲稱已核對，交由教師處理；同時剔除已不存在的引用
+    if (keepSurviving()) {
+      pruned += 1;
+      withheld += 1;
+      continue;
+    }
+    if (question.sourceVerified) {
+      updateQuestion(question.id, { ...question, sourceVerified: false });
+    }
+    withheld += 1;
+  }
+  return { repointed, pruned, withheld };
 }
+
+/** 段落可用來比對原文的文字（表格列會重組成與生成題目時相同的文字） */
 
 /** 產生給教師快速預覽的文字摘要 */
 export function summarizeBlock(block: MaterialBlock, maxLength = 160): string {

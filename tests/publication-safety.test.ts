@@ -228,7 +228,7 @@ describe("未確定題目的自動發布暫緩（三條發布路徑）", () => {
 });
 
 describe("教師確認是唯一的解除途徑", () => {
-  it("重新驗證通過會清除暫緩標記並可發布", () => {
+  it("重新驗證即使通過也不會清除暫緩標記（需教師覆核）", () => {
     const { blockId, excerpt } = firstSectionBlock();
     const held = insertQuestion({
       id: "q-held-revalidate",
@@ -236,13 +236,28 @@ describe("教師確認是唯一的解除途徑", () => {
       excerpt,
       teacherConfirmationRequired: true,
     });
-    // 題目本身的內容完全符合教材（逐字節錄），因此重新驗證會通過
+    // 題目本身的內容完全符合教材（逐字節錄），機器檢查會通過……
     const revalidated = questionService.revalidateQuestion(held.id);
-    expect(revalidated.autoValidated).toBe(true);
-    expect(questionRepo.getQuestion(held.id)?.teacherConfirmationRequired).toBe(false);
+    expect(revalidated.decision).toBe("awaiting-teacher-confirmation");
+    expect(revalidated.autoValidated).toBe(false);
+    // ……但暫緩標記**不會**由機器動作清除（Sprint 8.6：只有人的決定可以解除）
+    expect(questionRepo.getQuestion(held.id)?.teacherConfirmationRequired).toBe(true);
 
+    // 因此仍不可經自動驗證路徑發布
     const auto = questionService.recordAutoValidationAndPublish(held.id);
-    expect(auto.status).toBe("published");
+    expect(auto.status).toBe("draft");
+    expect(auto.teacherConfirmationRequired).toBe(true);
+    expect(questionRepo.getQuestion(held.id)?.status).toBe("draft");
+
+    // 教師明確覆核後才可發布
+    const reviewed = questionService.recordQuestionReview({
+      questionId: held.id,
+      decision: "approved",
+      expectedRevision: questionRepo.getQuestion(held.id)!.revision,
+      actor: { email: "teacher@example.com", role: "teacher" },
+    });
+    expect(reviewed.view.question.status).toBe("published");
+    expect(questionRepo.getQuestion(held.id)?.teacherConfirmationRequired).toBe(false);
   });
 
   it("人工覆核通過會清除暫存標記並發布", () => {
@@ -256,6 +271,7 @@ describe("教師確認是唯一的解除途徑", () => {
     const result = questionService.recordQuestionReview({
       questionId: held.id,
       decision: "approved",
+      expectedRevision: questionRepo.getQuestion(held.id)!.revision,
       actor: { email: "teacher@example.com", role: "teacher" },
     });
     expect(result.view.question.status).toBe("published");
@@ -283,10 +299,11 @@ describe("教師確認是唯一的解除途徑", () => {
     const payload = (await response.json()) as {
       remediation?: { action?: string; autoValidated?: boolean };
     };
-    // 內容本身逐字引自教材：重新驗證會通過並解除暫緩，但**不會**自行發布——
-    // 發布仍是另一個明確動作（人工覆核或自動發布路徑）。
-    expect(payload.remediation?.action).toBe("revalidate-question");
-    expect(questionRepo.getQuestion(held.id)?.teacherConfirmationRequired).toBe(false);
+    // Sprint 8.6：內容本身逐字引自教材，機器檢查會通過，但暫緩標記只可由教師覆核解除——
+    // 回報補救路線會如實回報「仍待教師確認」，既不當成失敗，也不會自行發布。
+    expect(payload.remediation?.action).toBe("awaiting-teacher-confirmation");
+    expect(payload.remediation?.autoValidated).toBe(false);
+    expect(questionRepo.getQuestion(held.id)?.teacherConfirmationRequired).toBe(true);
     expect(questionRepo.getQuestion(held.id)?.status).toBe("published");
   });
 

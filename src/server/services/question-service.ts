@@ -33,8 +33,10 @@ import { createHash } from "node:crypto";
 import { nowIso, newId } from "../db/connection";
 import { getServerConfig, isProductionRuntime } from "../config";
 import { resolveProvider } from "../llm";
+import { analyseMaterial } from "../llm/material-analysis";
 import { LlmProviderError, type LlmProvider } from "../llm/provider";
-import { checkQuestionQuality } from "../llm/question-quality";
+import type { QuestionGenerationInput } from "../llm/provider";
+import { checkQuestionQuality, isMachineRevisableIssue, qualityOutcome } from "../llm/question-quality";
 import { validateLlmQuestions } from "../llm/validation";
 import { categorizeLlmError, logLlmUsage } from "./llm-usage";
 import {
@@ -168,6 +170,16 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
   let discardedReasons: string[] = [];
   let usedProvider = resolved.provider;
 
+  // 教材的結構化語意分析（Sprint 8.5）：先整理教材實際交代的歷史內容
+  // （關鍵詞語、時序、因果、轉變、比較、意義，以及教材**沒有**交代的面向），
+  // 再把同一份分析同時交給提示詞與品質閘門，令模型與閘門看到同一份材料。
+  const analysis = analyseMaterial({
+    units,
+    topicTitle: topic.title,
+    sectionTitle: sectionTitles.join("、"),
+    ...courseContext,
+  });
+
   const requestType: LlmRequestType = options.requestType ?? "question-bank";
 
   /** 記錄 LLM 用量（本地示範生成不使用外部 API，因此不記錄） */
@@ -201,34 +213,49 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
     materialUnits: units,
     distractorUnits,
     avoidAnswers: options.avoidAnswers ?? [],
+    // 教材的結構化語意分析（Sprint 8.5）：模型先看到教材的歷史脈絡（關鍵詞語、時序、
+    // 因果、轉變、比較、意義，以及教材沒有交代的面向），才設計題目。
+    materialAnalysis: analysis,
+  } satisfies QuestionGenerationInput;
+
+  const validationContext = {
+    topicId: topic.id,
+    sectionId: sectionIds[0],
+    questionTypes: request.questionTypes,
+    difficulty: request.difficulty,
+    origin: resolved.provider.name === "mock" ? ("material-mock" as const) : ("material-ai" as const),
+    sectionIds,
+    units,
+    analysis,
+    now: nowIso(),
+    idFor: () => newId("q"),
   };
 
-  const attempt = async (allowFallback: boolean): Promise<void> => {
+  /** 每輪驗證的品質判定（用於決定是否需要有限次重寫） */
+  let qualityOutcomes: Awaited<ReturnType<typeof validateLlmQuestions>>["qualityOutcomes"] = [];
+
+  const attempt = async (allowFallback: boolean, revisionNotes: string[] = []): Promise<void> => {
     const startedAt = Date.now();
-    try {
-      const outcome = await resolved.provider.generateQuestions(generationInput);
+    const run = async (provider: LlmProvider, origin: QuestionOrigin): Promise<void> => {
+      const outcome = await provider.generateQuestions({
+        ...generationInput,
+        ...(revisionNotes.length > 0 ? { revisionNotes } : {}),
+      });
       logUsage({
-        provider: resolved.provider,
+        provider,
         startedAt,
         success: true,
         usage: outcome.usage,
         errorType: null,
       });
-
-      const result = validateLlmQuestions(outcome.questions, {
-        topicId: topic.id,
-        sectionId: sectionIds[0],
-        questionTypes: request.questionTypes,
-        difficulty: request.difficulty,
-        origin: resolved.provider.name === "mock" ? "material-mock" : "material-ai",
-        sectionIds,
-        units,
-        now: nowIso(),
-        idFor: () => newId("q"),
-      });
-
+      const result = validateLlmQuestions(outcome.questions, { ...validationContext, origin });
       questions = result.accepted;
       discardedReasons = result.discardedReasons;
+      qualityOutcomes = result.qualityOutcomes;
+    };
+
+    try {
+      await run(resolved.provider, resolved.provider.name === "mock" ? "material-mock" : "material-ai");
       if (resolved.notice) warnings.push(resolved.notice);
     } catch (error) {
       logUsage({
@@ -247,25 +274,57 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
 
       const fallback = await resolveMockProvider();
       usedProvider = fallback;
-      const outcome = await fallback.generateQuestions(generationInput);
-      const result = validateLlmQuestions(outcome.questions, {
-        topicId: topic.id,
-        sectionId: sectionIds[0],
-        questionTypes: request.questionTypes,
-        difficulty: request.difficulty,
-        origin: "material-mock",
-        sectionIds,
-        units,
-        now: nowIso(),
-        idFor: () => newId("q"),
-      });
-      questions = result.accepted;
-      discardedReasons = result.discardedReasons;
+      await run(fallback, "material-mock");
     }
   };
 
   const allowFallback = options.allowMockFallback !== false && resolved.provider.name !== "mock";
   await attempt(allowFallback);
+
+  // 有限次重寫（Sprint 8.5）：只在出現「機器可自行修正」的教學品質問題時再問一次。
+  // 成本控制：合共最多 2 次 provider 呼叫；本地示範生成是確定性的，不重試。
+  // 合併方式：保留第一輪沒有問題的題目，只以第二輪補上（同一題幹不重複）。
+  const revisableIds = new Set(
+    qualityOutcomes.filter((entry) => entry.machineRevisable).map((entry) => entry.questionId),
+  );
+  if (revisableIds.size > 0 && resolved.provider.name !== "mock") {
+    const cleanFromFirstRound = questions.filter((question) => !revisableIds.has(question.id));
+    const notes = [
+      ...new Set(
+        qualityOutcomes
+          .filter((entry) => entry.machineRevisable)
+          .flatMap((entry) => entry.notes),
+      ),
+    ].slice(0, 5);
+    warnings.push(
+      `有 ${revisableIds.size} 條題目的教學品質需要改善（例如解釋只是抄錄教材原文），已要求重寫一次。`,
+    );
+    try {
+      await attempt(false, notes);
+      const accepted = [...cleanFromFirstRound];
+      const seenStems = new Set(accepted.map((question) => normalizeForMatch(question.question)));
+      for (const question of questions) {
+        const key = normalizeForMatch(question.question);
+        if (seenStems.has(key)) continue;
+        seenStems.add(key);
+        accepted.push(question);
+      }
+      questions = accepted;
+      // 重寫後仍然有問題的題目：交回教師（品質警告已寫入題目，自動發布已被暫緩）
+      const remaining = qualityOutcomes.filter((entry) => entry.machineRevisable).length;
+      if (remaining > 0) {
+        warnings.push(`重寫後仍有 ${remaining} 條題目未達教學品質要求，已保留為草稿交由教師處理。`);
+      }
+    } catch (error) {
+      // 重寫只是**額外**的一次嘗試：若 provider 在第二次呼叫時出錯，第一輪已通過
+      // 結構與教材依據檢查的題目仍然可用（它們已標記為需要教師確認），
+      // 不應因為這個可選步驟失敗而令教師失去整批題目。
+      warnings.push(
+        `重寫時 provider 再次回報錯誤（${error instanceof Error ? error.message : String(error)}），` +
+          "已保留第一輪的題目，並交由教師確認。",
+      );
+    }
+  }
 
   const usable = questions.length > 0;
   if (!usable) {
@@ -405,7 +464,14 @@ export function autoValidationIsCurrent(question: Question): boolean {
   );
 }
 
-/** 學生可以透過題庫練習這一題嗎（狀態 + 至少一種驗證紀錄） */
+/**
+ * 較嚴格的「學生可否練習」判定：狀態、暫緩標記**及**目前版本的驗證紀錄全部符合。
+ *
+ * **這不是讀取路徑的實際過濾條件**（Sprint 8.8 查明）：學生練習由 practice-service 以
+ * `status = published` 及 `teacher_confirmation_required = 0` 取題，發布關卡只在**發布動作**
+ * 時檢查驗證紀錄，因此歷史上已發布而沒有任何驗證紀錄的題目仍然可見（本機 788 條即屬此類）。
+ * 本函式用在需要「最嚴格」語意的地方（測試及稽核），把兩者統一是產品決定，不可在此靜默更改。
+ */
 export function isStudentPracticeEligible(question: Question): boolean {
   return (
     question.status === "published" &&
@@ -507,15 +573,45 @@ export interface ReviewActor {
  *   3. `rejected`／`returned` 必須提供原因。
  *   4. 重複提交相同決定不會產生重複紀錄（資料庫唯一索引），回傳 `created: false`。
  *   5. 通過覆核即發布（`status = published`）；退回或不可用則回到草稿（不會顯示給學生）。
+ *
+ * Sprint 8.6：**覆核者身分不可留空**。身分只可由伺服器端工作階段提供；空白的電郵或角色
+ * 會被拒絕（400），不會默默寫入一筆沒有覆核者的「已覆核」紀錄。
+ *
+ * Sprint 8.7：**`expectedRevision` 是必填的樂觀鎖**。教師在介面上看到第 N 版並按下覆核，
+ * 若在提交之前題目已被其他人修改（版本變成 N+1），伺服器必須拒絕（409），而不是把
+ * 覆核記到教師**沒有看過**的新版本上。這填補了「同一頁面停留太久或另一位教師同時修改」
+ * 的縫隙。
  */
 export function recordQuestionReview(input: {
   questionId: string;
   decision: QuestionReviewDecision;
   reason?: string | null;
+  /** 教師實際審閱的版本（必須與資料庫目前版本一致） */
+  expectedRevision: number;
   actor: ReviewActor;
 }): { view: TeacherQuestionView; created: boolean } {
   const existing = getQuestion(input.questionId);
   if (!existing) throw new QuestionServiceError("找不到指定的題目", 404);
+
+  const reviewerEmail = input.actor.email.trim();
+  const reviewerRole = input.actor.role.trim();
+  if (reviewerEmail.length === 0 || reviewerRole.length === 0) {
+    throw new QuestionServiceError(
+      "缺少覆核者身分，無法記錄覆核。覆核者只可由伺服器端工作階段提供。",
+      400,
+    );
+  }
+
+  if (!Number.isInteger(input.expectedRevision) || input.expectedRevision <= 0) {
+    throw new QuestionServiceError("缺少要覆核的題目版本（expectedRevision），無法記錄覆核。", 400);
+  }
+  if (input.expectedRevision !== existing.revision) {
+    throw new QuestionServiceError(
+      `題目已被修改（目前第 ${existing.revision} 版，你正在覆核的是第 ${input.expectedRevision} 版），` +
+        "請重新載入題目並確認最新內容後再覆核。這次沒有記錄任何覆核決定。",
+      409,
+    );
+  }
 
   const rawReason = input.reason?.trim() ?? "";
   if (input.decision !== "approved" && rawReason.length === 0) {
@@ -528,8 +624,8 @@ export function recordQuestionReview(input: {
     revision: existing.revision,
     decision: input.decision,
     reason: rawReason.length > 0 ? rawReason : null,
-    reviewerEmail: input.actor.email,
-    reviewerRole: input.actor.role,
+    reviewerEmail,
+    reviewerRole,
     questionFingerprint: questionFingerprint(existing),
     createdAt: nowIso(),
   });
@@ -686,6 +782,14 @@ export function recordAutoValidationAndPublish(questionId: string): Question {
  */
 export function revalidateQuestion(questionId: string): {
   autoValidated: boolean;
+  /**
+   * 機器檢查的結論（Sprint 8.6）：
+   *   - `auto-validated`：機器檢查全部通過，已記錄自動驗證（可經既有發布關卡發布）。
+   *   - `awaiting-teacher-confirmation`：機器檢查通過，但題目仍帶「待教師確認」標記；
+   *     標記只可由教師的人工覆核決定清除，機器動作不會代為解除。
+   *   - `blocked`：教材依據或品質檢查不通過（見 `sourceIssues`／`qualityIssues`）。
+   */
+  decision: "auto-validated" | "awaiting-teacher-confirmation" | "blocked";
   sourceIssues: string[];
   qualityIssues: string[];
   view: TeacherQuestionView;
@@ -731,27 +835,57 @@ export function revalidateQuestion(questionId: string): {
         })),
   );
   const blockingIssues = quality.issues.filter((issue) => issue.severity === "blocking");
-  const uncertainIssues = quality.issues.filter((issue) => issue.severity === "uncertain");
-  const qualityIssues = [...blockingIssues, ...uncertainIssues].map((issue) => issue.message);
+  // 教師看到的問題清單：BLOCKING、未確定，以及**可修正的教學品質問題**
+  // （例如解釋只重複答案）。純提示（例如選項重疊警告）不列入，因為它們不影響判定。
+  const qualityIssues = quality.issues
+    .filter((issue) => issue.severity !== "warning" || isMachineRevisableIssue(issue))
+    .map((issue) => issue.message);
 
   if (sourceIssues.length > 0 || blockingIssues.length > 0) {
     return {
       autoValidated: false,
+      decision: "blocked",
       sourceIssues,
       qualityIssues,
       view: teacherQuestionView(existing),
     };
   }
 
-  // 未確定項目（例如答案只是教材語句的改寫）：即使沒有 blocking 問題，仍不可自動發布。
-  // 標記保留在題目上，三條發布路徑都會查核；教師核對後手動發布即代表疑問已解決。
-  if (uncertainIssues.length > 0) {
+  // 未確定項目（例如答案只是教材語句的改寫）或可修正的教學品質問題（例如解釋只重複答案）：
+  // 即使沒有 BLOCKING 問題，仍不可由**機器檢查**清除暫緩標記。
+  //
+  // Sprint 8.5 修正的繞過路徑：以往這裡只檢查「未確定」項目，於是生成時被判 `revise`
+  // （例如解釋只是重複答案）而暫緩的題目，教師按一次「重新執行品質驗證」就可以被發布——
+  // 同一道閘門在生成時攔下、在同一個動作下放行。現在判定沿用生成流程的同一套規則
+  // （qualityOutcome），`revise` 一律保持暫緩；只有教師的人工覆核決定
+  // （changeQuestionStatus 的 approved 紀錄）可以清除標記。
+  if (qualityOutcome(quality.issues) !== "pass") {
     const held = setTeacherConfirmationRequired(existing.id, true) ?? existing;
     return {
       autoValidated: false,
+      decision: "blocked",
       sourceIssues,
       qualityIssues,
       view: teacherQuestionView(held),
+    };
+  }
+
+  // Sprint 8.6：暫緩標記**只**可以由教師的人工覆核決定清除。
+  //
+  // 「重新執行品質驗證」是機器動作：即使它現在找不到問題，也不能代替人的決定——
+  // 題目之所以暫緩，可能是因為較早版本的閘門判定、教材重新匯入，或某項需要人判斷的
+  // 疑問；那些疑問不會因為機器這次沒有偵測到就消失。這與 README 已記錄的契約一致：
+  // 修改題目內容不會清除標記（fail-closed），必須由教師解決。
+  if (existing.teacherConfirmationRequired) {
+    return {
+      autoValidated: false,
+      decision: "awaiting-teacher-confirmation",
+      sourceIssues,
+      qualityIssues: [
+        ...qualityIssues,
+        "此題仍待教師確認（自動發布暫緩）：機器檢查通過不代表疑問已解決，請由教師覆核後再發布。",
+      ],
+      view: teacherQuestionView(existing),
     };
   }
 
@@ -762,11 +896,13 @@ export function revalidateQuestion(questionId: string): {
     validatedAt: nowIso(),
   });
   if (!validated) throw new QuestionServiceError("自動驗證紀錄寫入失敗", 500);
-  // 重新驗證通過代表先前的未確定疑問已解決，清除暫緩標記
-  const cleared = existing.teacherConfirmationRequired
-    ? (setTeacherConfirmationRequired(existing.id, false) ?? validated)
-    : validated;
-  return { autoValidated: true, sourceIssues: [], qualityIssues: [], view: teacherQuestionView(cleared) };
+  return {
+    autoValidated: true,
+    decision: "auto-validated",
+    sourceIssues: [],
+    qualityIssues: [],
+    view: teacherQuestionView(validated),
+  };
 }
 
 /**

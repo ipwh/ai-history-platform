@@ -1,4 +1,4 @@
-# 歷史科自學網站（香港教育局歷史科課程：中一至中三）
+﻿# 歷史科自學網站（香港教育局歷史科課程：中一至中三）
 
 供香港中學生使用的歷史科自學平台。學生以**學校 Google Workspace 帳戶**登入後，可揀選課題及課題內的多個**主題（分節，可多選）**，由 **AI 即時生成多項選擇題**（亦可改用教師題庫），完成練習後查看答案、解釋、知識點及**教材來源位置**；教師可上載 DOCX／PDF 教材、檢視及修正系統擷取的內容（包括**圖片 OCR 文字辨識**）、生成並查核題目。
 
@@ -55,11 +55,14 @@ npm run dev          # 啟動開發伺服器
 | `npm run typecheck` | TypeScript 型別檢查（先 `next typegen`） |
 | `npm test` | 單元及整合測試（Vitest） |
 | `npm run e2e` | 端對端流程測試（需先啟動伺服器） |
-| `npm run setup` | 重建／更新示範資料（可加 `--ocr` 同時執行 OCR、`--pilot` 只匯入課題5） |
+| `npm run setup` | 重建／更新示範資料（可加 `-- --ocr` 同時執行 OCR、`-- --pilot` 只匯入課題5；**`--` 不可省略**，否則 npm 會把參數吞掉） |
 | `npm run import:materials` | 由命令列匯入 `materials/` 內的教材及校內試題（可加 `--books`、`--questions`、`--topic`、`--ocr`） |
 | `npm run generate:questions` | 為各課題生成題目（`--topic`、`--count`、`--draft-only`） |
 | `npm run publish:drafts` | **擁有者授權**的批次發布草稿題目（預設模擬；`--owner-email`、`--reason`、`--origins`、`--apply`，見第十節） |
 | `npm run open:materials` | **擁有者授權**的批次開放教材給學生（預設模擬；`--owner-email`、`--reason`、`--topics`、`--apply`，見第十節） |
+| `npm run retire:materials` | 退掉被取代的教材文件（`--files "檔名,…"`，預設模擬、要 `--apply`；刪除路徑與管理介面相同） |
+| `npm run remap:references` | 套用版本控制的教材依據重新連結清單（`--manifest`、`--require-open`、預設模擬、要 `--apply`；見第十節） |
+| `npm run apply:question-queue` | 套用題目修正動作清單（改寫／更新用詞／修正教材依據／刪除；`--manifest`、`--require-open`、預設模擬、要 `--apply`；見第十節） |
 | `npm run snapshot:production` | 匯出正式環境用的乾淨資料庫快照（清除教材開放紀錄；只適用於全新正式環境，見第十節） |
 | `docker build -t hk-history-self-study .` | 建立 Cloud Run 用的容器映像檔（見第十節） |
 | `./scripts/deploy-cloud-run.ps1 -Project <專案ID>` | 部署到 Google Cloud Run（預設只顯示指令，加 `-Apply` 才執行） |
@@ -127,7 +130,7 @@ materials/
 | 課題11 20世紀以來的國際合作 | `課題11 20世紀以來的國際合作.docx` | 294 | 50 |
 | 課題12 20世紀香港的成長與蛻變 | `課題12 二十世紀香港的成長與蛻變.docx` | 436 | 60 |
 
-題數為實際匯入題庫的數目（`npm run import:materials`）：共 **794 題**（已發布 793、草稿 1），其中 49 題為示範題庫（課題5）、127 題為課題1 的校內試題，其餘為 AI／示範生成的教材依據題目。校內試題已由擁有者授權批次發布（見第十節「擁有者授權的批次發布」）。**Sprint 7.8 起**，AI 生成的題目改為「通過自動品質驗證即供學生自學」，未通過驗證者留在草稿待教師處理；匯入的校內試題不會經過自動品質驗證（來源是試卷而非教材段落），因此不會被自動發布流程改動。匯入方式見第五節。
+題數為實際匯入題庫的數目（`npm run import:materials`）：共 **789 題**（已發布 788、草稿 1；2026-10-16 按擁有者指示刪除了 5 條新教材已沒有的題目，見第十二節），其中 49 題為示範題庫（課題5）、127 題為課題1 的校內試題，其餘為 AI／示範生成的教材依據題目。校內試題已由擁有者授權批次發布（見第十節「擁有者授權的批次發布」）。**Sprint 7.8 起**，AI 生成的題目改為「通過自動品質驗證即供學生自學」，未通過驗證者留在草稿待教師處理；匯入的校內試題不會經過自動品質驗證（來源是試卷而非教材段落），因此不會被自動發布流程改動。匯入方式見第五節。
 
 > **課題1 考核範圍**：本校只考核「古埃及文明（尼羅河流域）」，新月沃土文明、（黃河、長江流域）中華文明及印度河流域文明**不會**寫入資料庫、不會出現在學生端，亦不會成為題目內容（規則見 [src/server/materials/exclusions.ts](src/server/materials/exclusions.ts)，資料庫遷移 `0008` 會清除舊資料）。
 
@@ -178,7 +181,7 @@ materials/
 - 影響（2026-10-16 更新教材後實測，12 課書本內容）：
   - 學生可用於出題的段落共 3,150 段，閱讀頁顯示 4,298 段；**每個分節都有可用教材**（課題1 的「古文明的誕生」是沒有直接段落的父分節，內容在子分節）；
   - 練習題目及評分參考的字樣只出現在**校內試題檔**（`kind = 'question-bank'`，永不列入學生讀物），12 課教材各只有 1 段被判定為教師專用而不顯示（教材封面的「教師版」標示）；
-  - 更新教材後，66 條題目的原文節錄在新版教材已找不到逐字相符的段落（主要來自舊版教師版的練習題目及 2026-10 改寫的段落用詞），已在教師端標示為「未通過教材依據核對」，學生端依 fail-closed 不顯示這些節錄（見第十二節）。
+  - 更新教材後，66 條題目的原文節錄在新版教材已找不到逐字相符的段落（主要來自舊版教師版的練習題目及 2026-10 改寫的段落用詞），已在教師端標示為「未通過教材依據核對」，學生端依 fail-closed 不顯示這些節錄（見第十二節）。**2026-10-16 後續逐題核對**：其中 30 條在新版教材找到逐字相符的段落並重新連結（課題1 5 條、課題6 1 條、課題9 1 條、課題11 23 條），節錄重新顯示給學生；其餘 36 條按擁有者指示處理（**31 條改寫、5 條刪除**，見 `docs/teacher-review/question-queue-actions-2026-10.json`），另有 23 條已重新連結的題目統一用詞。結果：學生可見節錄由 600 條增至 661 條、引用不存在的段落由 36 條減至 0 條（見第十二節）。校內試題方面，另把 10 條課題1 短答題的節錄改為試卷文件內逐字相等的題幹並連結該段落（`docs/teacher-review/school-paper-evidence-links-2026-10.json`，題目內容不變）；**未通過核對由教材更新後的 71 條減至 25 條**（餘 25 條為課題1 校內試卷題目，節錄由題幹、資料及子題多段文字組成，平台的單一段落核對規則無法涵蓋；見 `docs/teacher-review/school-paper-unverified-2026-10.json`），學生端不受影響（校內試題的節錄一律不顯示）。
 
 - **首頁刻意保持簡潔**：只列出 3 個年級、每級 4 個課題（共 12 個按鈕），避免一次顯示過多資訊。
 - **點選課題後直接進入「練習設定」**：課題編號及名稱只在課題卡片顯示一次；由於練習設定內已有分節及主題可選，學生毋須再經另一個「選擇分節及主題」頁面重複選擇。
@@ -221,7 +224,7 @@ materials/
 
 | 狀態 | 由誰決定 | 系統欄位 |
 | --- | --- | --- |
-| 教材依據成立 | 系統（自動） | `Question.sourceVerified`（節錄必須逐字出自所引用的段落） |
+| 教材依據成立 | 系統（自動） | `Question.sourceVerified`（節錄必須**逐字**出自所引用的段落；節錄短於 8 字時不成立——太短的片段會在無關段落中出現，唯一例外是「作者撰寫的節錄」，見第十一節及 `materials/block-search.ts`） |
 | **完整題目品質**（唯一答案、選項同類、解釋一致、無答案洩露等） | 系統（自動） | [src/server/llm/question-quality.ts](src/server/llm/question-quality.ts)（在生成流程的驗證入口執行） |
 | 通過自動品質驗證 | 系統（自動） | `questions.auto_validated_at`／`auto_validated_revision`／`auto_validated_fingerprint` |
 | **未確定（uncertain）：自動發布暫緩，等待教師確認** | 系統（自動）判定，**須由教師解決** | `questions.teacher_confirmation_required`（migration `0020`） |
@@ -280,6 +283,55 @@ materials/
 > **已知誤報**：人名偵測（`findUnverifiedNames`）用句式推測，對「上述兩項」「另一方面」「洲人因而」這類**句子片段**會產生無意義的「杜撰人物」警告（2026-10-16 試點樣本可見）。這類警告只提示核對，不會丟棄題目，亦**不會**阻礙發布；教師看到時應以內容判斷，不必因為警告文字不符事實而懷疑題目。
 
 > **不要高估這一層**：以上全部是字串與教材比對的確定性規則，**不是內容理解**，也沒有歷史專業判斷。閘門通過只代表「沒有發現機器可判斷的缺陷」。發行前仍必須有教師抽查（見第九節），學生回報則是最後的補救網。
+
+#### 教材語意分析與教學品質閘門（Sprint 8.5）
+
+生成題目之前，系統會先為檢索到的教材段落做一次**結構化語意分析**（[material-analysis.ts](src/server/llm/material-analysis.ts)）：關鍵詞語（引號詞語、《》文件名稱、定義句式）、帶年份的事件及時序、因果／轉變／比較關係、屬交代還是推論的句子，以及**教材沒有交代的面向**（`limitations`）。分析只用字面規則（標記詞、年份、引號、定義句式），**不呼叫 AI、不產生費用**，因此可以逐項寫測試。
+
+同一份分析會**同時**交給提示詞與品質閘門（`generateQuestions` 只計算一次），令模型與閘門看到同一份材料：
+
+| 層 | 作用 | 實作 |
+| --- | --- | --- |
+| 提示詞 | 說明教材實際交代的歷史意義（因果、時序、轉變、比較），並列出**不可考核**的面向 | `materialAnalysisPrompt`（[prompt.ts](src/server/llm/prompt.ts) 的分析段落） |
+| 品質閘門 | 題幹要求的思考面向必須由教材支持（教材只有一件事件，就不可以出比較或排序題） | `dimension-unsupported`（未確定 → 暫緩自動發布） |
+
+閘門的判定收斂為三種結果（`QualityOutcome`），全部對應**既有機制**，沒有新增資料庫狀態：
+
+| 判定 | 意思 | 後續 |
+| --- | --- | --- |
+| `pass` | 沒有 blocking，也沒有需要修訂的項目 | 照既有流程：記錄自動驗證並發布 |
+| `revise` | 可修正的教學品質問題（`excessive-verbatim` 題幹過度抄錄、`mechanical-deletion` 挖空題沒有情境、`explanation-restates-answer` 解釋只重複答案或抄錄節錄、`explanation-off-topic` 解釋與題目無關、`answer-incomplete` 得分要點少於題目要求的項數），或需要人工判斷的未確定項目（`unsupported-causation` 教材只交代先後卻寫成因果、`approximate-date-overprecision` 教材只寫世紀卻要求準確年份、`asserted-inference` 把教材的推測語氣寫成事實、`unsupported-evaluation` 教材並列資料卻斷言哪一項最重要／最早、`dimension-unsupported` 教材沒有相關面向、`answer-not-in-material` 答案只是改寫） | 不自動發布；生成流程會帶同修訂指示**有限次重寫**，仍不合格者保留為草稿交教師確認 |
+| `reject` | 結構性缺陷（答案不唯一、標準答案未見於教材、題幹抄錄教材原文等） | 丟棄該題，其他題目不受影響 |
+
+**成本控制與失敗處理**：只有出現「機器可自行修正」的問題才會重寫，而且**合共最多 2 次 provider 呼叫**（本地示範生成是確定性的，不重試）。第二輪只補上第一輪沒有問題的題目（同一題幹不重複）。若 provider 在第二次呼叫時失敗，第一輪已通過檢查的題目仍然保留（已標記為需要教師確認），不會因為這個可選步驟而整批消失。
+
+**驗收樣本（版本控制、確定性）**：[docs/teacher-review/question-quality-fixtures.v1.json](docs/teacher-review/question-quality-fixtures.v1.json) 收錄 14 個個案（教材樣本、題目、預期判定及所測試的失敗模式），測試見 [tests/question-quality-gate.test.ts](tests/question-quality-gate.test.ts)。全部個案經 `validateLlmQuestions`（生成的唯一入口）驗證，確保測試與正式流程走同一條路徑；重寫與失敗處理則以本地 stub provider 驗證，**不會呼叫任何付費 AI 服務**。**這個檔案不是教師覆核過的黃金題庫**：它只記錄「閘門在合成樣本上應該得出甚麼判定」，不代表任何題目的史實或教學質素已獲批准（教師覆核紀錄另見 `golden-questions.v1.json`，現時仍刻意為空）。
+
+**本地示範生成（`LLM_PROVIDER=mock`）的解釋一併修正**：示範題目的解釋以往就是教材原文（「教材原文：…」），學生讀不到推理，亦會被「解釋只是抄錄教材節錄」的檢查判為需要修訂，令示範模式無法自動發布題目。示範生成現在會引用教材的關鍵片段（設 60 字上限，避免等同重貼原文），再說明答案在該敘述中的角色。
+
+**職責分工（不可混淆）**：語意分析與品質閘門都是**確定性規則**（可測試、可解釋、可回查）；AI 只用於生成；史實與教學判斷仍然只能由歷史科教師負責。
+
+##### 自動準則與教師判斷的分工（Sprint 8.5）
+
+**「通過自動檢查」不等於「已獲教育或史實認可」。** 系統只會說它實際做過的事：
+
+| 系統可以說 | 系統不可以說 |
+| --- | --- |
+| 節錄逐字出自所引用的段落（或答案只是教材語句的改寫 → 暫緩） | 題目在史實上正確 |
+| 標準答案與選項一致、只有一個站得住的答案（就機器可見的字面而言） | 錯誤選項有教學價值、學生真的會被混淆 |
+| 題目要求的思考面向（因果、時序、比較、轉變）在教材中找得到相應內容 | 題目符合課程要求、配合學生程度 |
+| 解釋不是重複答案、不是抄錄節錄、不是答非所問 | 解釋寫得好、能幫學生理解 |
+| 教材沒有交代的年份、名稱、因果、推論斷言沒有被寫成事實 | 教材提到的內容一定正確（教材本身可能有誤或過時） |
+
+具體沒有自動處理、需要教師判斷的例子：解釋的教學質素、錯誤選項的迷惑程度、難度標示是否配合認知要求、課程範圍與學習重點的取捨、教材以世紀寫法交代時怎樣的提問才算合理、教材把說法歸於某人（「學者認為……」）時答案應否保留歸屬、答案措辭與教科書用語的等值判斷、校內試卷題目的來源與版權。
+
+**未確定或有疑問的個案一律走既有的教師確認流程**（`teacher_confirmation_required`）：題目保留在題庫、暫緩自動發布，學生在任何路徑都看不到，直到教師明確覆核。機器動作（包括教師按「重新執行品質驗證」）**不會**留下任何人工覆核紀錄，亦**不會**釋放暫緩標記（Sprint 8.5 修正的繞過路徑）。教材沒有交代的內容不會被系統「補上」——沒有依據就丟棄或暫緩。
+
+訊息中的百分比（例如「與教材用語的文字重疊率 67%」）只是**用字相似程度**，不是答案正確性或教學價值的評分。
+
+**有界的人工覆核樣本**：[docs/teacher-review/generated-question-sample-2026-10.json](docs/teacher-review/generated-question-sample-2026-10.json) 收錄 8 條真實生成題目（來源、題型、難度各異），附完整來源節錄、所引用段落原文（Sprint 8.7 起，每段上限 400 字，讓教師能判斷節錄有沒有被斷章取義）、出處、機器檢查結果（生成時及以現行規則重算）、學習重點及七項審題欄位。**每一項決定都仍待覆核**：平台目前沒有可用的歷史科教師覆核者，因此 `reviewerDecision` 一律為 `pending-review`，覆核者及日期留空；測試會拒絕沒有覆核者的「已覆核」紀錄。套件可用 `npm run review:package -- --write` 以**唯讀**方式重新產生（預設乾跑）。
+
+**如何用教師決定校準閘門**：[docs/teacher-review/quality-gate-calibration-plan.md](docs/teacher-review/quality-gate-calibration-plan.md) 定義了評估類別（假通過、假攔截、一致、只有人能發現的缺陷）及禁止事項（未滿 30 條已覆核題目前不得公布比率、不得據小樣本自動調整門檻或改寫題目）。31 個對照樣本的逐項校準結果見 [docs/teacher-review/fixture-calibration-2026-10.json](docs/teacher-review/fixture-calibration-2026-10.json)；機器判定與教師決定的並列紀錄由 `npm run review:calibration -- --write` 產生（[human-vs-machine-calibration-2026-10.json](docs/teacher-review/human-vs-machine-calibration-2026-10.json)，現時 8 題全部待覆核、0 項分歧，不含任何比率數字）。
 
 ### 教材版權與學生閱讀範圍（P0，需擁有者決定）
 
@@ -470,7 +522,7 @@ src/server/seed/                  教育局課程架構、學習重點（精簡�
 src/app/api/                      REST API（學生端、教師端 /api/teacher/**、管理員端 /api/admin/**）
 src/app/                          頁面（學生端 /、/practice/**、/account；教師端 /teacher/**；管理員端 /admin/**）
 src/components/                   前端元件
-tests/                            Vitest 測試（59 個測試檔）及 tests/fixtures/ 測試樣本
+tests/                            Vitest 測試（73 個測試檔）及 tests/fixtures/ 測試樣本
 scripts/setup.ts                  初始化示範環境
 scripts/import-materials.ts       命令列匯入教材
 scripts/generate-question-bank.ts 命令列批次生成題目
@@ -812,6 +864,8 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
 
 ### 生成流程與驗證（重要）
 
+> **Sprint 8.5 起，流程第 1 步後多了一個確定性的「教材語意分析」步驟**（關鍵詞語、時序、因果、轉變、比較，以及教材沒有交代的面向）。同一份分析會交給提示詞與品質閘門；通過結構與教材依據檢查的題目仍要再過教學品質閘門（`pass`／`revise`／`reject`），可修正者會重寫一次（合共最多 2 次 provider 呼叫）。詳見第三節「教材語意分析與教學品質閘門」。
+
 1. 依學生／教師選擇的分節，只抽取相關教材段落（每段會標示段落 ID 及來源位置）。
 2. 要求 LLM 以 JSON 回應題目。
 3. [src/server/llm/validation.ts](src/server/llm/validation.ts) 逐題驗證：
@@ -822,7 +876,7 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
    - **杜撰警告（人名、條約／文件及著作名稱）**：題目、參考答案、解釋及得分要點中出現的人名及《》內的名稱（或「XX條約／宣言／憲章」等寫法）若未見於教材，會記錄為**品質警告**。人名沒有固定寫法，偵測可能出錯，因此**不會丟棄題目**，而是保留題目並在教師介面標示（題目仍會通過自動品質驗證並供學生練習，教師應抽樣核對，發現問題可下架；見 FAQ「甚麼是品質警告」）
    - 移除題目文字中的「根據教材」等提示語
    - 丟棄重複題目（見 [src/server/llm/question-dedupe.ts](src/server/llm/question-dedupe.ts)）：題幹正規化後相同、同一教材依據已用過相同答案，或**填充題已用過相同答案**（不分教材依據）都屬重複；短答題必須有得分要點
-4. 沒有通過驗證的題目會被丟棄並記錄原因；有品質警告的題目會保留並標示警告。若全部不合規，回報清楚錯誤，並可回退本地示範生成（`LLM_ALLOW_MOCK_FALLBACK=true`）。
+4. 沒有通過驗證的題目會被丟棄並記錄原因；有品質警告的題目會保留並標示警告。若全部不合規，回報清楚錯誤，並可回退本地示範生成（`LLM_ALLOW_MOCK_FALLBACK=true`）。**教學品質判定為 `revise` 的題目**（解釋只重複答案、題幹過度抄錄、挖空題沒有情境、得分要點不足，或需要人工判斷的未確定項目）不會自動發布：生成流程會帶同修訂指示重寫一次，仍不合格者保留為草稿交教師確認；`reject`（答案不唯一、標準答案未見於教材等）則丟棄該題。
 5. 通過驗證的題目寫入題庫，並記錄**自動品質驗證**結果；`AUTO_PUBLISH_VALIDATED_QUESTIONS=true`（預設）時立即發布供學生自學，毋須教師預先批准（教師覆核為事後補救）。學生即時練習使用的題目會凍結在該次練習記錄中。
 6. **學生即時出題（`questionSource: "ai"`）不會寫入題庫**：題目只凍結在該次練習快照內，避免學生每次練習都在題庫留下大量草稿；重溫錯題改為由練習快照取回原題，因此同樣可以重做。
 7. 提示詞要求 `sourceExcerpt` 必須逐字、連續抄自單一段落（見 [src/server/llm/prompt.ts](src/server/llm/prompt.ts)）；無法逐字對應的題目會被丟棄，並由其他分節補足題數，最後在練習頁如實說明實際題數。
@@ -1087,7 +1141,7 @@ STUDENT_ROSTER_FILE=./data/student-roster.csv
 
 ```bash
 npm install
-npm run setup            # 建立資料庫、匯入示範資料（可加 --ocr 一併執行圖片 OCR）
+npm run setup            # 建立資料庫、匯入示範資料（可加 `-- --ocr` 一併執行圖片 OCR）
 npm run dev              # http://localhost:3000
 npm run import:materials                    # 首次建立：匯入 12 個課題的書本內容及校內試題
 npm run generate:questions                # 生成題庫（示範模式＝本地規則式生成）
@@ -1126,6 +1180,8 @@ node scripts/e2e-flow.mjs --start         # 端對端流程（會自行啟動 ne
 5. **OCR 語言資料**：`tesseract.js` 預設在 `OCR_CACHE_PATH`（`data/ocr-cache/`）下載 `chi_tra.traineddata`，容器重建後會遺失。建議把語言資料**打包進映像檔**（例如放到 `/app/tessdata/`）並設定 `OCR_LANG_PATH=/app/tessdata`；或改用 `OCR_PROVIDER=google-vision`。
 6. **工作階段密鑰**：`AUTH_SECRET` 未設定時會在本機 `data/` 產生隨機密鑰；在 Cloud Run（多個執行個體）會令已登入使用者被登出，部署前必須由 Secret Manager 注入固定值。
 7. **健康檢查**：`GET /api/health` 可作為 Cloud Run 的 startup／liveness probe（回傳版本、資料庫狀態、provider，且**不會**洩漏路徑或憑證）。
+   - **它並非唯讀端點**（2026-10-16 稽核確認）：`GET /api/health` 會先 `ensureBootstrap()`（必要時寫入示範資料），再執行 `runMaintenance("ai-operation-retention")`（保留期清理，最多每小時一次；會刪除過期資料列），最後才回報狀態；程式碼見 [src/app/api/health/route.ts](src/app/api/health/route.ts)。這是**刻意設計**（利用探測呼叫令清理有穩定執行機會），但因此**不可**當作「不變更資料」的驗證探針：發佈後的人工煙霧測試請改用下面的唯讀檢查，或只在真正需要探測時使用它，並預期可能發生維護寫入。
+   - **安全的唯讀煙霧測試**（不觸發清理、不呼叫 AI、不改動任何資料）：`GET /api/topics`（課題清單，見 [src/app/api/topics/route.ts](src/app/api/topics/route.ts)）、`GET /api/topics/<topicId>/lesson`（學生閱讀教材，只回傳可用於出題的段落），以及管理員登入後的 `GET /api/admin/system/health`（只回報狀態，不含憑證、完整路徑或學生資料）。若必須確認資料庫完整性，請在快照上以 `PRAGMA integrity_check` 直接檢查，而不是呼叫 `/api/health`。
 8. **IAP（建議）**：可用 Cloud Run + Identity-Aware Proxy 只允許學校 Google Workspace 網域存取，作為應用程式登入以外的第二層保護。
 
 ### 資料持久化（Cloud Run 免費方案）
@@ -1179,9 +1235,66 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 
 - `npm run publish:drafts`：**擁有者授權**的批次發布（見下）。
 - `npm run open:materials`：**擁有者授權**的批次開放教材給學生（見下；同樣預設模擬模式）。
+- `npm run retire:materials`：**退掉被取代的教材文件**（以 `--files` 逐個列出檔名，預設模擬、要 `--apply`）；
+  刪除路徑與管理介面相同，並會回報每個課題的題目修復結果（重新定位／剔除失效引用／標示未通過核對）。
+  離線快照（做法 A）以往只能在管理介面逐份刪除，這一步現在可以直接在快照上完成。
+- `npm run remap:references`：**套用版本控制的教材依據重新連結清單**（`docs/material-remapping/`，
+  預設模擬、要 `--apply`）。每條都先驗證節錄逐字出現在目標段落，再以 `updateQuestion` 更新
+  `sourceExcerpt`／`sourceLocation`／`sourceBlockIds`／`sourceVerified`；重複執行第二次為 no-op。
 - `npm run snapshot:production`：由本機資料庫產生乾淨快照（`VACUUM INTO`），並**清除**當中的教材開放／版權確認欄位與 `distribution_audit`，確保正式環境的教材維持 fail-closed（確認一律由擁有者／管理員在管理端進行）。
 
-##### 擁有者授權的批次發布（`npm run publish:drafts`）
+##### 正式環境同步的完整步驟（做法 A 的五個部分，2026-10-16 教材更新實例）
+
+2026-10 教材更新把五件不同的事情分開，執行時要逐項確認（**全部在離線快照上完成，最後才上載及部署**）：
+
+| # | 部分 | 指令 | 會改動甚麼 | 授權 |
+| --- | --- | --- | --- | --- |
+| 1 | 匯入 12 課新教材 | `APP_DATABASE_PATH=<快照> npm run import:materials -- --books` | 新增／同名取代教材文件及段落；同名取代會自動重新定位引用舊段落的題目 | 教材檔案本身（`materials/`，已在版本外的受控位置） |
+| 2 | 退掉被取代的舊教師版文件 | `APP_DATABASE_PATH=<快照> npm run retire:materials -- --files "HNC1A2E_T2_SN_TE.docx,…" --apply` | 刪除文件及段落（連原始檔案）；引用該文件段落的題目重新定位或標示未通過核對 | 逐個檔名指定（不做模式比對） |
+| 3 | 套用重新連結清單 | `APP_DATABASE_PATH=<快照> npm run remap:references -- --apply` | 只改 30 條題目的 `sourceExcerpt`／`sourceLocation`／`sourceBlockIds`／`sourceVerified`（`revision` +1） | 清單已逐條逐字核對（見下） |
+| 3b | 套用題目修正動作清單（改寫／刪除） | `APP_DATABASE_PATH=<快照> npm run apply:question-queue -- --apply`（及 `-- --manifest docs/material-remapping/2026-10-wording-alignment.json --apply`） | 36 條隊列題目按新教材改寫（31 條）或刪除（5 條），另 23 條統一用詞；改寫會令 `revision` +1 | 擁有者指示「一切以新教材內容為準；新教材沒有相關內容者刪除」；每條逐字驗證證據段落 |
+| 3c | 連結課題1 校內試題的教材依據 | `APP_DATABASE_PATH=<快照> npm run apply:question-queue -- --manifest docs/teacher-review/school-paper-evidence-links-2026-10.json --apply` | 只改 10 條校內試題的 `sourceExcerpt`／`sourceLocation`／`sourceBlockIds`／`sourceVerified`（`revision` +1，題目內容不變） | 清單已逐字核對（節錄＝試卷段落原文）；其餘 25 條維持未通過核對（見下） |
+| 4 | 開放教材給學生 | `APP_DATABASE_PATH=<快照> npm run open:materials -- --owner-email <電郵> --reason "<理由>" --label production-snapshot --apply` | `rights_confirmed_by/at`（教師版另加 `content_reviewed_by`）、`student_distribution`、`distribution_audit`，並寫出 `docs/teacher-review/owner-material-openings.json` | **擁有者授權**（腳本亦會如實標示「未逐段人工核對」） |
+| 5 | 上載快照、部署、覆核 | `gcloud storage cp …` → `gcloud run services update … --image <同一映像檔>` → 重新下載覆核 | bucket 物件及線上執行個體所用的資料庫 | 部署權限（見下） |
+
+- 第 3 步的清單是**版本控制**的檔案：`docs/material-remapping/2026-10-material-refresh.json`（30 條，每條有題目 ID、課題、目標段落、逐字節錄、題目內容指紋及核對理由）。套用時的規則：題目內容指紋不符（教師已改過題目）、狀態與清單記載的套用前狀態不符、節錄不是目標段落的逐字內容、或目標文件未開放（加 `--require-open` 時）→ **該條不套用**；重複執行第二次全部回報「已套用（略過）」。段落 ID 只在產生清單的資料庫有效，在其他資料庫（正式環境快照）改以「檔名 ＋ 來源位置」解析目標段落。
+- **未解決的題目**（2026-10-16 為 36 條）不在清單內：**已按擁有者指示於同日處理完畢**（31 條改寫、5 條刪除，見 `docs/teacher-review/question-queue-actions-2026-10.json`；36 條的處理結果寫回隊列檔的 `resolution`）。刪除的題目全部確認過沒有作答、回報或覆核紀錄；刪除前已備份資料庫。
+- **課題1 校內試題（25 條）不會出現在第 3b 步的報告內**：這批題目不是「教材更新後才失效」，而是匯入時節錄便由題幹、資料引文及子題等多段文字組成（部分資料標題未以文字匯入），平台的核對規則要求**單一段落**包含整個節錄，故無法取得單一段落依據。其中 10 條短答題的節錄只因版面標記（`\n@O`）而從未連結，已由第 3c 步修正；餘 25 條的逐條原因、逐行證據及建議寫在 `docs/teacher-review/school-paper-unverified-2026-10.json`，**不影響學生**（校內試題的節錄一律不顯示）。
+- **前置條件**：`gcloud auth login`（憑證過期時任何 `gcloud` 指令都會失敗；2026-10-16 的後續工作因憑證過期而**未能**核對線上 revision 及 bucket）；bucket 的 `roles/storage.objectAdmin` 已授予執行身分；擁有者對 `open:materials` 的書面指示。
+- **可重現性已實測**（2026-10-16，於 `data/exports/app.db.pre-material-refresh-2026-10-16T1237Z.db` 的副本上，該副本代表「尚未更新的正式環境」形態）：依次執行第 1、2、3、3b、3c 步後，題目 789 條、文件 19 份、段落 7,950 段、覆核紀錄 10 條、學生作答 140 條、題目回報 30 條，**與本機資料庫一致**；逐題比較（789 條）學生可見欄位、原文節錄、來源位置、已核對狀態及題目數：**0 項不同**；引用段落（以檔名＋位置比對）有 **16 條**指向同一文件內的另一個段落（例如同一句子同時出現在清單與正文、或本機為較早的試點匯入），兩邊都符合平台「教材依據」的定義（節錄逐字見於引用段落），學生可見結果相同。版本號不同（本機累積了先前一次性腳本的重複套用），屬預期差異。
+- **第 1 步之後未通過核對的數目與本機的差異（已根治，2026-10-17）**：第一次重現時，7 條課題5 示範題目（`demo-q-*`，節錄只有 4–7 字）在重現副本上維持「未通過核對」，本機資料庫則為「已核對」——同一批資料因走哪一條路徑而得到不同狀態（`repairQuestionsWithMissingBlocks` 套用 8 字下限，`reverifyUnverifiedQuestions`／`reverifyQuestionsForDocument`／示範題庫的 `findAnchorSource` 沒有）。Sprint 8.4 已把最短節錄長度統一為**所有自動連結路徑共用的規則**（見第十二節第 44 項），並明確把「作者撰寫的節錄」（示範題庫、教師手動建立）列為例外（那類節錄本身就是作者提供的來源標註）。修正後重現：兩邊同為 25 條未通過核對（全部為課題1 校內試題），未通過核對的題目集合**完全相同**，不再需要「再匯入一次」才收斂。
+- **學生可見欄位仍有 12 條的來源位置不同（已知、無害）**：同一標籤在課題5 課文出現多次（例如「大學的興起」同時出現在總覽清單與正文單項清單），本機的示範題目指向總覽清單段落、新重現副本指向單項清單段落；兩者都逐字包含節錄，**顯示給學生的節錄完全相同**，只有位置字串不同。成因是「最短相符段落」的取捨在不同歷史路徑下得到不同結果（本機為多日、多次腳本累積的結果），屬既有行為，未在本輪改動。
+- **學生可見節錄在重現副本上只有 7 條**（本機為 661 條）：第 4 步（`open:materials`）之前，新匯入的 12 份文件尚未開放給學生，所有節錄依 fail-closed 政策隱藏——這正是預期的行為，第 4 步之後才會回復（本機已於 2026-10-15／16 開放）。
+- **守門機制（atomic）**：`apply:question-queue` 預設「全部條目通過驗證才寫入」。刪除條目不需要教材證據，若在尚未匯入新教材的資料庫上執行，改寫會全部失敗但刪除仍會生效（題庫半完成）；實測在新教材匯入前執行會回報「已套用 0、失敗 31、將套用 5」，一個字都沒有寫入。
+- 做法 A 的第 4 步之後才會有學生可見的節錄；第 3 步的 `--require-open` 應在第 4 步之後執行，否則會被擋下。
+- **指令寫法（重要，2026-10-16 實測）**：所有帶 `--` 參數的腳本必須寫成 `npm run <腳本> -- <參數>`。若省略 `--`（例如 `npm run apply:question-queue --apply`），npm 會把 `--apply` 當作 npm 自己的選項吞掉，腳本會**以模擬模式執行並在報告中顯示「將套用」**，看起來像成功但實際上一個字都沒有寫入（實測：`npm run apply:question-queue --apply` 回報「將套用 36」，加上 `--` 後回報「已套用 36（其中刪除 5）」）。正式操作前請先確認報告第一行「模式：套用（--apply）」，並以「已套用」而非「將套用」的數字作準。
+
+
+##### 發佈前後檢查清單（做法 A；2026-10-16 稽核補完）
+
+以下步驟要點在**正式快照副本**上完成；`<快照>` 一律以 `APP_DATABASE_PATH` 指定，切勿直接修改 `data/app.db` 或線上資料庫。
+
+1. **取得並凍結備份（先做，不能跳過）**
+   - `gcloud storage cp gs://<專案ID>-history-backup/history/data/app.db data/exports/production-current-<日期>.db`
+   - 立即建立回滾副本並記錄雜湊：`Copy-Item` 一份為 `app.db.pre-<變更名>-<時間>.db`，以 `Get-FileHash -Algorithm SHA256` 記下兩個檔案的 SHA-256 及大小（寫入發佈紀錄）。
+   - 在副本上執行 `PRAGMA integrity_check`（必須回 `ok`）及統計指令（見第 2 點），作為「發佈前基準」。
+2. **記錄發佈前基準數字**（以 `node -e` 或任何 SQLite 用戶端讀取唯讀副本）：文件數、段落數、題目數、已核對／未通過核對數、引用已刪段落的題目數、覆核紀錄數、學生作答數、題目回報數。2026-10-16 本機實例：19 份文件、7,950 段落、789 題、764 已核對／25 未通過核對、0 條引用已刪段落、覆核 10、作答 140、回報 30、學生可見節錄 661 條。
+3. **依序執行第 1、2、3、3b、3c 步**（見上表；每一步完成後可重讀統計數字核對增減）。在快照副本上執行時，請一併設定 `APP_UPLOADS_DIR`（例如 `$env:APP_UPLOADS_DIR="$env:TEMP\<工作目錄>\uploads"`）：匯入會把教材副本寫入上載目錄，未指定時會累積在專案的 `data/uploads`，在暫存資料庫被丟棄後成為孤立檔案（2026-10-16 實測：一次重現流程會留下 12 個副本；同日已清理 72 個、314.6 MB 的孤立副本，`data/uploads` 現有 19 個檔案，與資料庫引用完全一致）。
+4. **套用後驗證**：重複第 2 點的統計，並確認──沒有題目引用不存在的段落、未通過核對的題目全部是已記錄的類別（2026-10-16 為課題1 校內試題 25 條）、所有改寫題目的 `revision` 已遞增、覆核紀錄／作答／回報數字**沒有減少**（亦沒有新增任何人工覆核紀錄）、`PRAGMA integrity_check` 為 `ok`。記錄副本的 SHA-256。
+5. **第 4 步（`open:materials`）**：只在取得擁有者書面授權後執行；執行後確認 `docs/teacher-review/owner-material-openings.json` 已更新，且學生端可見節錄數達到預期（本機實例 661 條）。
+6. **上載與部署**：上載快照 → **立即**部署新 revision（不可省略，見上一段的失效案例）→ 重新下載 bucket 物件核對（檔案雜湊、更新時間、開放份數、`distribution_audit` 筆數）。
+7. **部署後煙霧測試（唯讀，不呼叫 AI、不使用 `/api/health`）**
+   - `GET /api/topics`（課題清單回應正常、題目數非零）
+   - `GET /api/topics/<topicId>/lesson`（學生閱讀教材有內容，且**沒有**校內試題或答案段落）
+   - 管理員登入後 `GET /api/admin/system/health`（版本、資料庫狀態、備份狀態）
+   - 一次真實的學生練習流程：**只開始練習並載入第一題，不提交作答**（提交作答會呼叫 AI 評分／生成，屬付費操作）
+   - 一次教師端 `/teacher/questions` 載入（確認「未通過教材依據核對」清單與預期一致）
+   - **不要**用 `GET /api/health` 當作煙霧測試：它會執行 `ensureBootstrap()` 及保留期清理（會寫入資料）。
+8. **回滾**：若驗證失敗 → 把第 1 點的回滾副本上載回 bucket 的同一個物件路徑 → **立即**重新部署（新執行個體啟動時才還原該快照）→ 重新下載覆核 → 重跑第 2 點的統計，確認與「發佈前基準」一致。**風險**：回滾「資料」而同時部署**較舊的應用程式映像檔**會令兩者版本不一致（舊程式可能不認識新欄位），因此除非有明確理由，回滾時應沿用同一（最新）映像檔，只還原資料。
+9. **停止條件**：`integrity_check` 非 `ok`；發佈後數字與預期不符（尤其是「引用不存在的段落」大於 0、覆核／作答／回報數字減少、未通過核對的題目出現非預期類別）；學生可見節錄數下降；上載後無法立即部署；bucket 物件在上載後被執行個體覆蓋。遇任何一項即停止並回滾，不要在線上環境「再試一次」。
+10. **本節證據的來源界線**：以上數字全部來自**本機資料庫**及**由備份副本建立的隔離快照**；**正式環境快照尚未核對**（2026-10-16 `gcloud` 憑證過期，無法列舉服務／revision／bucket 物件），因此第 1 點的下載與雜湊是發佈時必做的第一件事，不可沿用本節數字當作正式環境的基準。
+
+
 
 平台的發布關卡要求每一題都有對應**目前版本**的人工覆核紀錄；批次發布腳本**刻意繞過**該關卡，只應在擁有者明確指示時使用（例如首次上線前，課本及校內試卷題目已由科組審閱，但未逐題在平台內留下覆核紀錄）：
 
@@ -1450,6 +1563,8 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 
 ### 上線前檢查清單（部署與回滾）
 
+> **七個證據層級不可互相代替**：本機測試完成 ≠ 正式快照已驗證 ≠ 教材版本一致 ≠ 教師已覆核 ≠ 部署後驗證完成。2026-10-17 的實際狀態、P0／P1／P2 阻塞清單及「上載快照後必須立即重新部署」的原因，見 [docs/release-preflight-2026-10.md](docs/release-preflight-2026-10.md)。
+
 以下每一項都應在**實際部署前**逐項完成，並保留證據（指令輸出或截圖）。尚未完成者應標示為「未驗證」，不可假設已通過。
 
 **1. 組態（部署前，只檢查「有沒有設定」而不列印值）**
@@ -1468,7 +1583,7 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 
 **2. 資料庫與備份（部署前）**
 
-- [ ] **先備份**：記下目前備份 bucket 內最新物件的時間戳（`gcloud storage ls gs://<bucket>/<prefix>/data/`），或在本機執行 `npm run backup` 以確認備份流程可用。
+- [ ] **先備份**：記下目前備份 bucket 內最新物件的時間戳（`gcloud storage ls gs://<bucket>/<prefix>/data/`），或在本機於管理員端 `/admin/system` 確認備份狀態為「已啟用」及最近一次成功時間（備份由服務內排程執行；專案**沒有** `npm run backup` 指令，請勿執行不存在的指令）。以唯讀方式核對本機資料庫的 `PRAGMA integrity_check` 及 SHA-256，並記錄下來作對照。
 - [ ] 記下目前的 Cloud Run revision（可回滾的目標）：`gcloud run services describe history-self-study --region=asia-east2 --format "value(status.latestReadyRevisionName)"`。
 - [ ] Migration 前檢視：本次部署包含的 migration ID 清單（見 [src/server/db/migrations.ts](src/server/db/migrations.ts) 的 `MIGRATIONS`）；migration 只有向前版本，**不支援降版**（見回滾說明）。
 - [ ] **`0019`／`0020`（Sprint 7.8／7.9）的具體前置條件與部署順序**：兩個 migration 都只**新增欄位**（`0019` 加入 `questions.auto_validated_*`、`question_reports.*`、`attempts.question_revision`；`0020` 加入 `questions.teacher_confirmation_required INTEGER NOT NULL DEFAULT 0`），不改寫任何既有列，啟動時由 `runMigrations` 自動套用。順序：
@@ -1507,7 +1622,7 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 
 | # | 事項 | 現況 | 需要誰決定 |
 | --- | --- | --- | --- |
-| 1 | **教材發行權**：學校是否有權在平台向學生發布這些課本內容？ | **已決定（2026-10-15，2026-10-16 沿用）**：擁有者授權開放全部課題教材（`npm run open:materials --apply`，紀錄見 [docs/teacher-review/owner-material-openings.json](docs/teacher-review/owner-material-openings.json)）；全部文件預設不可發布（fail-closed），需逐份確認。本機及正式環境的 12 份課本文件均為「課題N …docx」名稱（2026-10 更新版；封面標示「教師版」，段落層過濾會隱藏該行），另有校內試題檔（永不列為學生讀物） | 已由擁有者決定；與出版社確認的正式授權文件仍建議存檔 |
+| 1 | **教材發行權**：學校是否有權在平台向學生發布這些課本內容？ | **已決定（2026-10-15，2026-10-16 沿用）**：擁有者授權開放全部課題教材（`npm run open:materials -- --apply`，紀錄見 [docs/teacher-review/owner-material-openings.json](docs/teacher-review/owner-material-openings.json)）；全部文件預設不可發布（fail-closed），需逐份確認。本機及正式環境的 12 份課本文件均為「課題N …docx」名稱（2026-10 更新版；封面標示「教師版」，段落層過濾會隱藏該行），另有校內試題檔（永不列為學生讀物） | 已由擁有者決定；與出版社確認的正式授權文件仍建議存檔 |
 | 2 | **教師名單／角色政策**：哪些帳戶是教師？ | **已決定（2026-10-15，暫時）**：擁有者授權以 `AUTH_STAFF_ACCESS_POLICY=school-domain`（`AUTH_STAFF_DOMAINS=pochiu.edu.hk`）暫時讓全校校內職員使用教師端；學生帳戶（學號形式）仍是學生。**這是全校授權，不是最小權限**：任何校內非學號形式的帳戶都可讀取全部學生的練習記錄。正式環境的 `AUTH_TEACHER_EMAILS` 現時仍為**空**，並殘留已移除的 `AUTH_IN_DOMAIN_ROLE=teacher`（見第十節「上線前檢查清單」）。建議在名單定案後改回 `allowlist`，只列入歷史科教師（停用方式見第八節） | 已由擁有者決定；收緊時機由科主任確認 |
 | 2b | **校內試題未經逐題覆核即發布**：可否把校內試卷題目直接給學生練習？ | **已決定（2026-10-15）**：擁有者授權只發布校內試卷草稿（正式環境 3,927 題；見第十節「擁有者授權的批次發布」），並**不**建立覆核紀錄，因此教師端一律標示「已發布（未經人工覆核）」。授權紀錄見 [docs/teacher-review/owner-publication-overrides.json](docs/teacher-review/owner-publication-overrides.json)。**2026-10-16（Sprint 7.8）起**，新增題目改為「通過自動品質驗證即可供學生自學」；匯入的校內試題（`sourceBlockIds` 為空）仍不會自動取得學生可見的節錄，教師可用回報面板的「重新執行品質驗證」重新檢查 | 已由擁有者決定；歷史準確性仍建議由歷史科教師抽樣覆核 |
 | 3 | **AI 每月成本上限**：可接受的每月 AI 費用上限是多少？超過時如何處理（停用／只記錄）？ | 現時只有**次數**上限（每學習者每小時及全體上限），**沒有金額上限**，亦沒有 provider 價格表可用於換算費用 | 校方／IT |
@@ -1521,7 +1636,7 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 | 11 | **警示收件人及事故負責人**：超過用量上限、備份失敗或維護清理失敗時通知誰？ | 現時只在管理員端顯示，沒有主動通知 | 科主任／IT |
 | 12 | **教材包存放與版本記錄**（選項 A/B/C，見第五節）：教材檔的受控存放位置、由誰上載及記錄版本、是否接受教材副本存在於 Artifact Registry 映像檔 | 現況＝選項 A（教材在映像檔內，僅本機目錄有檔案）；已加入部署前及執行期缺失警告 | 校方／IT |
 | 13 | **舊狀態文件的處理**：本機資料庫中課題5 的教師版文件（`HNC2A2E_T5_SN_TE.docx`）在 0017 之前已開放，因此**沒有**版權／內容確認紀錄 | **已解決（2026-10-16）**：該文件已隨更新教材被取代及刪除（見第十二節第 40 項），本機現時只剩 2026-10 版本的 12 份課本文件（各有完整的擁有者授權紀錄） | 已完成 |
-| 14 | **更新教材後 66 條題目失去教材依據**：這些題目的原文節錄在新版教材找不到逐字相符的段落（多為舊版用詞改寫或舊教師版的練習題目） | 題目保留在題庫（仍可供學生練習），但學生端依 fail-closed **不顯示節錄及來源位置**，教師端標示「未通過教材依據核對」。系統不會自動改寫題目 | 科主任：在 `/teacher/questions` 決定重新指定依據、改寫或停用 |
+| 14 | **更新教材後 66 條題目失去教材依據**：這些題目的原文節錄在新版教材找不到逐字相符的段落（多為舊版用詞改寫或舊教師版的練習題目） | **已解決（2026-10-16）**：30 條重新連結、31 條按新教材改寫（含更正答案）、5 條因新教材完全沒有相關內容而刪除；另有 23 條統一用詞。全部經逐字比對驗證，沒有改動題目以外的紀錄；另處理 10 條課題1 校內短答題的教材依據連結。未通過核對由 71 條減至 25 條（餘下 25 條為課題1 校內試卷題目，節錄由多段文字組成，平台的單一段落核對規則無法涵蓋） | 已完成（教師如認為改寫後的題目不合用，可另行修改或停用） |
 | 15 | **正式環境是否同步更新教材**：本機的教材更新（2026-10-16）不會自動傳到 Cloud Run | 未執行前，正式環境仍是 2026-10-15 的教材版本（內容為同一系列較舊版本）。更新方式見第十節做法 A 及第十二節第 43 項 | 科主任／IT（決定何時部署） |
 
 > **成本換算的限制（誠實說明）**：目前系統只記錄 AI 呼叫**次數**，`llm_usage` 沒有 provider 回報的實際費用欄位，專案內亦沒有模型價格表。因此**無法**由系統計算每位學生或整體的金額，亦不應在文件中填寫推測價格。若要金額上限，需要另行加入價格表及用量換算（屬新功能，需先評估）。
@@ -1533,9 +1648,9 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 ```bash
 npm run lint        # ESLint：0 error、0 warning
 npm run typecheck   # tsc --noEmit：通過
-npm test            # Vitest：900 項測試全部通過（60 個測試檔）
+npm test            # Vitest：1031 項測試全部通過（73 個測試檔）
 npm run build       # Next.js 生產建置：成功
-node scripts/e2e-flow.mjs --start   # 端對端 136 項檢查全部通過（含閱讀教材、版權閘門、撤回後節錄停止顯示、OCR、教師端、覆核關卡、題目回報、學生名冊、權限、學習記錄分離；2026-10-16 以更新教材後的資料庫副本實測）
+node scripts/e2e-flow.mjs --start   # 端對端 137 項檢查全部通過（含閱讀教材、版權閘門、撤回後節錄停止顯示、OCR、教師端、覆核關卡及覆核版本檢查、題目回報、學生名冊、權限、學習記錄分離；2026-10-17 以更新教材後的資料庫副本實測）
 ```
 
 > **測試資料庫隔離（已修正的實際缺陷）**：各測試檔以 `hist-test-<名稱>-${process.pid}.db`
@@ -1585,7 +1700,11 @@ node scripts/e2e-flow.mjs --start   # 端對端 136 項檢查全部通過（含�
 | `tests/ocr.test.ts` | OCR 文字正規化、可用性判斷、圖片格式支援、PNG 編碼、OCR 雜訊過濾、OCR 文字仍可出題 |
 | `tests/section-mapper.test.ts` | 兩層分節對應（先用頂層分節切段，再對應子分節） |
 | `tests/materials-parsers.test.ts` | 真實 DOCX 解析、PDF 解析（用倉庫內自製樣本 [tests/fixtures/sample-guideline.pdf](tests/fixtures/sample-guideline.pdf)，不依賴版權教材）、分節覆蓋率、示範題目教材依據核對、**重新匯入同名教材會取代舊版本並重新核對題目依據**、不支援格式錯誤訊息 |
-| `tests/material-reverify-provenance.test.ts`（Sprint 7.7，R-1 迴歸） | **重新定位教材依據不得洩漏試題來源標註**：相符但沒有來源位置的段落一律不可作為依據（不連結），題目維持「未通過教材依據核對」，學生端依 fail-closed 政策不顯示節錄及來源位置；全部使用合成教材／試題（含合成 DOCX） |
+| `tests/material-reverify-provenance.test.ts`（Sprint 7.7，R-1 迴歸；8.4 擴充） | **重新定位教材依據不得洩漏試題來源標註**：相符但沒有來源位置的段落一律不可作為依據（不連結），題目維持「未通過教材依據核對」，學生端依 fail-closed 政策不顯示節錄及來源位置。**另驗證最短節錄長度在兩條自動路徑（`reverifyUnverifiedQuestions`／`reverifyQuestionsForDocument`）一致生效**：低於 8 字的節錄即使逐字見於段落亦不連結（維持未通過核對），達 8 字者照常連結，作者撰寫的節錄（示範題庫 `sourceAnchor`）不受限；全部使用合成教材／試題（含合成 DOCX） |
+| `tests/material-reference-repair.test.ts`（2026-10-16；8.4 擴充） | **刪除教材文件後不可留下「已核對」的假象**：引用已被刪除段落的題目，在 `removeDocument` 及匯入後的修復步驟中會按原文節錄重新定位（找到相符段落 → 保持已核對；找不到 → 標示未通過核對）；另覆蓋近似但非逐字的段落（不連結）、節錄短於 8 字（不連結，作者撰寫的示範題庫節錄除外並會重新定位）、多重引用時只剔除失效 ID、重複執行不寫入（版本號不變）、以及不影響有效引用／發行稽核紀錄／既有學生作答 |
+| `tests/material-reference-remapping.test.ts`（Sprint 8.2；8.3 擴充） | **教材依據重新連結清單**：清單檔符合 schema 並覆蓋 30 條；套用器只在節錄逐字相符時連結，題目內容指紋不符（教師改過）、狀態與清單記載不符、目標文件未開放（`--require-open`）時不套用；第二次執行回報「已套用（略過）」且版本號不變；段落 ID 不在此資料庫時以「檔名＋位置字串」定位（跨資料庫重現）；**同一位置對應多個段落（歧義）或完全找不到時一律拒絕**；清單同時把同一段落列為主要及相關段落時不會寫入重複的引用段落；已套用的題目其後由另一份清單更新用詞時，重複執行仍為 no-op；不會建立人工覆核紀錄 |
+| `tests/material-decision-queue.test.ts`（Sprint 8.2） | **36 條待教師決定題目隊列**：隊列覆蓋 36 條且 ID 不重複，每條都有問題描述、現行教材證據、建議行動及影響評估，四類數量為 4／7／11／14，建議行動分佈為更正答案 7／教師決定 3／改寫 16／停用 10；建議改寫者必須附建議題目及答案文字；每條都有處理結果（31 條改寫並附新版本號、5 條刪除），學生端維持 fail-closed 的原始狀態已記錄於 `state` |
+| `tests/material-question-queue-actions.test.ts`（Sprint 8.2 後續；8.3 擴充） | **題目修正動作清單套用器**：36 條隊列清單（31 改寫＋5 刪除）覆蓋隊列全部題目、23 條用詞對齊清單完整、10 條校內試題的教材依據連結清單只改依據；套用器只在節錄逐字相符時改寫、指紋不符（教師改過）不套用、同一段落不會被重複引用（否則學生端會 fail-closed）、證據位置歧義時拒絕套用、`link-evidence` 只改教材依據且題目內容不變、刪除可重複執行且內容已改時拒絕刪除、模擬模式不寫入、`--require-open` 擋下未開放的證據段落，且不建立任何人工覆核紀錄 |
 | `tests/practice-flow.test.ts` | 完整練習流程：組題 → 作答 → 答案回饋 → 成績 → 重做錯題 → 短答自我檢查 → 練習記錄留檔及 CSV 匯出 |
 | `tests/student-journey-audit.test.ts`（2026-10-16） | **學生旅程模擬審計**（真實 route handler ＋真資料庫 ＋ mock provider）：六個 persona（認真高分、一般中三、基礎較弱、照字面理解、會回報問題、回到既有練習）逐項核對題目品質、批改公平性、版本綁定及歷史記錄完整性；**不是**真實瀏覽器旅程 |
 | `tests/practice-ai-mode.test.ts` | AI 即時出題：題數分配、題目只存在於練習快照（不寫入題庫）、不在題庫的題目也可重做錯題、分節可用性（教材段落數、`isSectionPractisable`、主題數計算）、**教材未開放時路由回 `409` 及可行動說明且不建立練習記錄** |
@@ -1691,8 +1810,79 @@ node scripts/e2e-flow.mjs --start   # 端對端 136 項檢查全部通過（含�
 42. **測試程式的隨機抽題假設（2026-10-16 修正）**：`tests/report-revision.test.ts` 的「不可把其他學生的作答連到自己的回報」曾約 20% 隨機失敗（單獨執行 20 次有 4 次失敗，全套 5 次有 1 次）。**根因**：該測試先以 `createPublishedQuestion("授權")` 建立題目，再以 `questionSource: "bank"` 抽 1 題練習，然後斷言「把不相關的作答連到題目」必須被拒；題庫抽題會打亂次序（`practice-service.ts` 的 `shuffle` 使用 `Math.random()`），而先建立的題目同樣符合抽題條件（同課題／分節／題型／難度且已發布），一旦被抽中，「不相關的作答」其實屬於同一條題目，守門條件便正確地不觸發。**修法**：把用作對照的題目改為在作答**之後**才建立（`createPublishedQuestion("不相關")`），令兩者必然不同——沒有放寬斷言，亦沒有加入 retry。驗證：修正後單獨執行 20 次全部通過；全套 4 次執行 896/896 通過；同類以題庫抽題的測試（`tests/self-study-availability.test.ts` 20 次、`tests/validation-freshness.test.ts` 及 `tests/publication-safety.test.ts` 各 15 次）亦全部通過。
 43. **以 2026-10 更新版教材取代平台內容（2026-10-16）**：`materials/` 重整為每課一個檔案（`課題N …docx`），本機資料庫已匯入新版 12 課並刪除被取代的 11 份舊教師版文件（詳見第十二節第 40 項）。三項相關修正：
     - **不考核內容的排除規則**（[exclusions.ts](src/server/materials/exclusions.ts)）：新版教材把所有標題排成同一層級，原本「略過標題及其子樹」的規則會由命中排除詞語的標題一直略過到**文件結尾**，令課題1 絕大部分內容（包括考核範圍的古埃及文明）無法匯入（實測 332 段只剩 95 段）。修正為：同層或更高層的標題即結束略過範圍；若排除標題之後再沒有同層或更高層標題（教材末段的「資料／比較」標題），只略過標題本身，其餘段落交由逐段詞語比對。同時補充只在新版出現、單獨成項的排除詞（「漢模拉比」、「亞述」、「商朝」、「模漢祖達盧」、「階梯井」）。修正後課題1 匯入 292 段（略過 40 段不考核內容），學生可用段落由 0 回復至 210 段，**沒有任何考核內容漏進資料庫**（回歸測試：`tests/material-exclusions.test.ts`）。
-    - **題目教材依據**：更新後 66 條題目的原文節錄在新版教材找不到逐字相符的段落（課題11 佔 35 條，多為舊版用詞「欠發達國家」、「伊波拉病毒」等改寫；其餘為舊教師版的「資料題」練習內容），已標示為「未通過教材依據核對」，學生端依 fail-closed 不顯示節錄，題目本身仍可供練習。**教師需在 `/teacher/questions` 決定重新指定依據、改寫或停用**（系統不會自動改寫題目）。
-    - **正式環境尚未更新**：本機資料庫的更新不會自動傳到 Cloud Run，需按第十節做法 A（下載快照 → 以 `APP_DATABASE_PATH=<快照> npm run import:materials -- --books` 匯入 → `npm run open:materials --apply` 重新開放 → 上載快照 → **立即**重新部署）執行；同名檔案匯入時會自動取代及重新定位題目依據。
+    - **題目教材依據（2026-10-16 後續逐題核對）**：更新後 66 條題目的原文節錄在新版教材找不到逐字相符的段落（課題11 佔 35 條，多為舊版用詞「欠發達國家」、「伊波拉病毒」等改寫；其餘為舊教師版的「資料題」練習內容）。其後逐題把題目**與答案**放回新版學生教材核對（不靠關鍵詞比對）：
+  - **已重新連結 30 條**（課題1 5 條、課題6 1 條、課題9 1 條、課題11 23 條）：新節錄一律由新段落逐字抄錄（寫入前先驗證「節錄必須逐字出現在目標段落或表格列之中」，30/30 通過），並確認新段落支持**目前的答案**；只改寫 `sourceExcerpt`／`sourceLocation`／`sourceBlockIds`／`sourceVerified`，題幹、選項、答案、解釋及得分要點一律不變。學生可見節錄由 600 條增至 630 條。
+  - **維持不顯示 36 條 → 已按擁有者指示處理完畢（2026-10-16）**：擁有者指示「一切以新教材內容為準；新教材沒有相關內容者刪除」。36 條的處理結果記錄在 `docs/teacher-review/question-queue-actions-2026-10.json`（31 條改寫＋5 條刪除），並寫回隊列檔的 `resolution` 欄位：
+    - **改寫 31 條**（逐字節錄重新連結新教材段落）：A 答案／解釋矛盾 4 條（例如《羅傑之書》答案改為「伊德里西」、「勢力範圍」定為「主權名義上屬當地統治者」、「保護國」改為「喪失外交、軍事及部分內政權力」）、B 答案鍵用詞 7 條（臭氧層空洞、發展中國家、第二次世界大戰爆發、國際合作的背景）、C 舊「資料題」標籤 11 條（改寫為四大民系、非物質文化遺產、日本回應、門羅主義等可作答的題目）、D 以新教材內容重寫 9 條（1858 年《安政條約》、二戰後非殖民地化、非殖民地化思想萌芽、最後通牒概要、「兩次世界大戰造成嚴重傷亡與經濟破壞」、八千萬人死亡、發展中國家感染死亡率、財富分布）。
+    - **刪除 5 條**（新教材完全沒有相關內容，搜尋 0 命中）：`q_c6fc8cd15ce64a54`（通過宗主國扶植）、`q_b0579928bff84e53`（通過與宗主國協商）、`q_59a6ec63802c4523`（通過武裝鬥爭）、`q_d893eba3b65b4e49`（施里芬計劃）、`q_44e1838369244a50`（四十八小時最後通牒時限）。刪除前已核對這 5 條的作答紀錄、題目回報及覆核紀錄均為 0，並已建立資料庫備份 `data/exports/app.db.pre-question-queue-2026-10-16T1453Z.db`。
+    - **另有用詞對齊 23 條**（`docs/material-remapping/2026-10-wording-alignment.json`）：30 條已重新連結的題目中仍沿用舊版用詞或事實者（「欠發達國家」→「發展中國家」、「伊波拉」→「埃博拉」、避免衝突升級→避免局勢惡化、大戰再起→第二次世界大戰爆發、二千五百萬人→數千萬人、四十八次→48 項等）。
+    - 執行方式：`npm run apply:question-queue -- --manifest <清單> --apply`（預設模擬；每條驗證題目內容指紋與逐字節錄；重複執行為 no-op；不建立任何覆核紀錄）。
+    - 效果：未通過核對由 71 條減至 **25 條**、引用不存在的段落由 36 條減至 **0 條**、學生可見節錄由 630 條增至 **661 條**；題目總數 794 → **789**。**餘下 25 條**：課題1 校內試卷題目（5 條 MCQ、20 條 DBQ），節錄由題幹、資料引文及子題等多段文字組成（部分資料標題未以文字匯入），平台的核對規則要求單一段落包含整個節錄，因此無法取得單一段落依據；逐條原因及逐行證據見 `docs/teacher-review/school-paper-unverified-2026-10.json`。校內試題的節錄一律不顯示給學生，故不影響學生；教師如要處理，可為題目改用較短的單段節錄或把同組子題拆成獨立題目。同一批題目中另有 10 條短答題的節錄只因版面標記而從未連結，已改為試卷段落原文並連結（`docs/teacher-review/school-paper-evidence-links-2026-10.json`）。
+  - **同時修正的缺陷**：題目引用不存在的段落時，教師端以往仍可能顯示「已核對」（例如引用舊教師版文件、該文件其後被刪除）。新增 `repairQuestionsWithMissingBlocks`（[import-service.ts](src/server/materials/import-service.ts)）：匯入教材後及**刪除教材文件後**（`removeDocument`）均會檢查「引用段落已不存在」的題目並按原文節錄重新定位，找不到相符段落者標示為「未通過教材依據核對」，避免靜默失效。2026-10-16 後續強化：多數引用中只有部分失效時，**只剔除已不存在的 ID**（保留仍逐字支持節錄的段落，令學生再次看到節錄）；節錄短於 8 字時**不可**作為依據（太短的片段會在無關段落中出現）；沒有需要改動的題目時完全不寫入，重複匯入不會令版本號遞增；並確認不影響有效引用、發行稽核紀錄及既有學生作答（回歸測試：`tests/material-reference-repair.test.ts`，9 項）。
+  - **可重複執行的工具**：`npm run remap:references`（版本控制清單 `docs/material-remapping/2026-10-material-refresh.json`，30 條；跨資料庫以「檔名＋位置」定位；第二次執行為 no-op）及 `npm run retire:materials`（離線快照退掉被取代文件）。**已有**：2026-10-16 在「尚未更新的快照副本」上實測第 1–3 步（匯入 12 課 → 退掉 11 份舊文件 → 套用清單）可完整重現本機狀態。
+  - **正式環境仍是 2026-10-15 版本**：本機的重新連結不會自動傳到 Cloud Run。正式環境同步的五個部分
+    （匯入 12 課 → 退掉被取代文件 → 套用重新連結清單 → 擁有者授權開放 → 上載／部署）見 README 第十節
+    「正式環境同步的完整步驟」；2026-10-16 已在「尚未更新的快照副本」上實測第 1–3 步可完整重現本機狀態
+    （未通過核對 71 條、引用已刪段落 36 條、30 條對應的節錄／位置／引用段落全部相同）。
+    - **正式環境尚未更新**：本機資料庫的更新不會自動傳到 Cloud Run，需按第十節做法 A（下載快照 → 以 `APP_DATABASE_PATH=<快照> npm run import:materials -- --books` 匯入 → `npm run open:materials -- --apply` 重新開放 → 上載快照 → **立即**重新部署）執行；同名檔案匯入時會自動取代及重新定位題目依據。
+44. **最短節錄長度統一為所有自動連結路徑共用的規則（2026-10-17 修正）**：平台早已有「節錄太短不足以辨識依據」的規則（`MIN_EXCERPT_LENGTH = 8`，見 [block-search.ts](src/server/materials/block-search.ts)；AI 生成題目時亦會以 `llm/validation.ts` 丟棄過短節錄；`material-units.ts` 的出題單位同樣以 8 字為下限），但只有 `repairQuestionsWithMissingBlocks` 與兩份清單套用器實作，`reverifyQuestionsForDocument` 與 `reverifyUnverifiedQuestions`（以及示範題庫的 `findAnchorSource`）**沒有**。
+    - **實際後果（可重現）**：同一批資料會因「走哪一條路徑」而得到不同的核對狀態。以本機資料庫為例，7 條課題5 示範題目（節錄 4–7 字：`天賦權利`、`革命的成因`、`瓦特改良蒸汽機` 等）被較寬鬆的路徑連結成「已核對」，但在由 2026-10-15 快照重建的副本上，同一批題目被 `repairQuestionsWithMissingBlocks` 攔下而維持「未通過核對」；再匯入一次又會被重新連結——即狀態取決於執行次序與次數。
+    - **修法（最小一致改動）**：把規則集中到 `block-search.ts` 的 `excerptTooShortToLink(excerpt, origin)`，三條自動路徑（重新匯入定位、匯入後重新定位、刪除文件後修復）一律使用它；`llm/validation.ts` 的字面 `8` 亦改用同一常數，避免規則漂移。**唯一的例外是「作者撰寫的節錄」**（`demo`：示範題庫的 `sourceAnchor`；`manual`：教師手動建立）——那類節錄本身就是作者提供的來源標註（例如「天賦權利」），程式只負責把它定位到教材段落，並非從短片段推論依據；名單 `AUTHOR_WRITTEN_EXCERPT_ORIGINS` 與學生端「沒有引用段落時仍可顯示節錄」的判定（[source-visibility.ts](src/server/services/source-visibility.ts)）**共用同一份定義**，避免兩處政策不一致。
+    - **為甚麼不把規則套用到示範題庫**：套用後 7 條示範題目會被降為草稿（`seedDemoQuestionBank` 找不到依據時 `status = draft`），學生會失去 7 條可用的示範練習題；作者撰寫的短標籤是**刻意**的來源標註，不是自動推論的結果。
+    - **效果（實測）**：在 2026-10-15 快照副本上重跑第 1～3c 步，未通過核對由 32 條降為 **25 條**，與本機資料庫的未通過核對題目集合**完全相同**（先前相差 7 條示範題目）。本機資料庫、題目內容、答案、作答、覆核及發布紀錄**均未改動**（本輪只改程式碼與測試）。
+    - **回歸測試**：`tests/material-reverify-provenance.test.ts` 3 項（兩條自動路徑對短節錄的拒絕、達 8 字的對照組、示範題庫例外）＋ `tests/material-reference-repair.test.ts` 1 項（作者撰寫短節錄在文件被取代後仍會重新定位）；已驗證這些測試在還原修正後會失敗（對規則、對例外各自反向測試）。
+45. **部分題目的「解釋」內引用的段號在教材更新後已過時（已知、待決定，2026-10-17 稽核發現）**：解釋文字由生成時的課文寫成，部分帶有「教材第 N 段」的字面段號。2026-10 教材更新後段落重新編號，**7 條題目**（`material-mock` 3 條、`material-ai` 4 條）的解釋段號與目前的來源位置不一致：`q_cc6088757ff240f1`（解釋第 42／75 段，實際第 11 段）、`q_9531dd6d6ad34d4a` 及 `q_b87d77c973a140dc`（第 229 段，實際第 249 段）、`q_367c44de30bc4771`（第 8 段，實際第 45 段）、`q_10e7e20afbf14a17`（第 80 段，實際第 81 段）、`q_55f87a719efa41a2`（第 344 段，實際第 389 段）、`q_2ceed84d0a7a4bc7`（第 344 段，實際第 434 段）。
+    - **影響**：只影響解釋文字內的引用段號；題目、答案、得分要點及教材依據（節錄逐字見於引用段落）**全部正確**，學生端顯示的來源位置取自 `sourceLocation`（正確），因此屬**文字層面的不一致**，不影響作答或評分。
+    - **未自動修正的原因**：修改解釋屬於改動題目內容，必須有明確的指示及可稽核的清單（沿用「動作清單 + 內容指紋 + 逐字驗證」的既有機制）。如需修正，應另備一份清單（例如 `docs/teacher-review/explanation-paragraph-refs-*.json`）並經擁有者確認，而不是由稽核程序靜默改字。
+    - **同時說明**：全部 52 條解釋含段號的題目中，其餘 45 條的段號與來源位置一致，未受影響。
+47. **題目生成／發布入口的閘門審計、時間語意修正及五項語意檢查（Sprint 8.5，2026-10-17）**：
+    - **入口審計（Phase 1）**：逐一檢查所有會把題目帶到學生眼前的入口，確認它們是否套用同一道 `validateLlmQuestions` + 品質閘門：
+      - `questionService.generateQuestions`（正式 AI 生成、本地示範生成、有限次重寫）：套用 ✅（唯一寫入題庫的生成入口）
+      - `generateQuestionBank`（批次補題，[question-bank.ts](src/server/services/question-bank.ts)）：經 `generateQuestions` ✅
+      - 學生即時生成（`practice-service.ts`，`questionSource: "ai"`）：經 `generateQuestions`，並逐題過濾 `teacherConfirmationRequired` ✅
+      - 三條發布路徑（`changeQuestionStatus`／`recordAutoValidationAndPublish`／`publishAutoGeneratedQuestion`）：一律查核「人工覆核」或「自動驗證」紀錄，並拒絕 `teacher_confirmation_required` 的題目 ✅
+      - 擁有者授權的批次發布（[publish-draft-questions.ts](scripts/publish-draft-questions.ts)）：**刻意**繞過逐題覆核（需 `--owner-email` 及寫出授權紀錄），但仍排除 `teacher_confirmation_required` ✅
+      - 示範題庫（[seed/index.ts](src/server/seed/index.ts)，`origin: "demo"`）及校內試卷匯入（`origin: "school-paper"`）：作者／學校提供的人工內容，不經 AI 閘門；示範題只在節錄能對上教材時才發布，校內試卷題目一律草稿且節錄不對學生顯示 ✅
+      - 教材重連／隊列改寫（[reference-remapping.ts](src/server/materials/reference-remapping.ts)、[question-queue-actions.ts](src/server/materials/question-queue-actions.ts)、`repairQuestionsWithMissingBlocks`）：只更新來源欄位並保留 `teacher_confirmation_required`（fail-closed）✅
+    - **修正的繞過路徑（實際缺陷）**：`revalidateQuestion`（教師端「重新執行品質驗證」）以往只檢查 BLOCKING 及「未確定」項目，因此生成時被判 `revise`（例如解釋只是重複答案）而暫緩的題目，教師按一次重新驗證就會被清除標記並可發布——**同一道閘門在生成時攔下、在同一個動作下放行**。現在判定沿用生成流程的同一套規則（`qualityOutcome`），`revise` 一律保持暫緩，只有教師的人工覆核決定可以清除標記。回歸測試見 [tests/question-quality-gate.test.ts](tests/question-quality-gate.test.ts)。
+    - **時間語意（Phase 3）**：`MaterialEvent` 加入 `period`（`kind`／`startYear`／`endYear`／`approximate`／`exact`）；`sortKey` 只作**排序**，並在型別及文件清楚說明它不是已核實的年份——「十八世紀」的 `sortKey` 是 1700，代表「由 1700 年開始的 100 年」，**不是**事件發生在 1700 年。新增 `parseTimeExpression`／`parseTimeRange`（支援「約公元前3,200年」、「十九世紀末」、「十八世紀中葉」、「十四至十七世紀」、「1914至1918年」及中文數字世紀）。時序面向只在教材**真的交代先後**時成立：兩個時間範圍重疊（例如「十九世紀」與「十九世紀末」）即加上 `ambiguous-event-order`，不可出排序題。邊界測試見 [tests/material-chronology.test.ts](tests/material-chronology.test.ts)。
+    - **五項語意檢查（Phase 2／6）**：`unsupported-causation`（教材只交代先後或並列，題目／答案／解釋卻寫成因果；「因此答案是…」的解題語會先被排除）、`approximate-date-overprecision`（教材只寫世紀或約數，題目卻要求準確年份）、`asserted-inference`（教材只以「可能／相信」交代，解釋寫成確定事實）、`unsupported-evaluation`（教材並列資料，題目卻斷言哪一項最重要／最早；「最早／率先」等視為同義）、`explanation-off-topic`（解釋與題目、答案及節錄都無共同用語）。前四項屬**未確定**（暫緩自動發布，交教師確認），最後一項屬可修正問題（觸發一次重寫）。
+    - **對照組樣本（Phase 4）**：[question-quality-fixtures.v1.json](docs/teacher-review/question-quality-fixtures.v1.json) 由 14 個個案擴充至 **28 個**，每組包含 acceptable（pass）與 defective（revise／reject）的對照，並為每個個案標示 `polarity`、`pairWith` 及 `evidence`（引用段落 + 逐字原文，測試會核對原文真的在該段落之內）；覆蓋清單見檔案的 `coverage` 欄位（18 個面向，包括機械式挖空、假因果、時序與因果混淆、比較證據不足、多個站得住的答案、錯誤選項被另一句教材支持、短答不完整、解釋重複答案／抄錄課文／加入未支持內容／把推測寫成事實、只寫世紀卻要求年份、教材並列卻問「最重要」等）。樣本明確標示為**機器測試資料，不是教師覆核過的黃金題庫**。
+    - **人工覆核樣本（Phase 7）**：[generated-question-sample-2026-10.json](docs/teacher-review/generated-question-sample-2026-10.json) 由本機資料庫以**唯讀**方式抽出 8 條真實生成題目（兩種來源、三種題型、不同難度），附出處、機器檢查結果及七項審題欄位；**全部決定保持 `pending-review`**（沒有教師覆核者，程式不會代填），測試見 [tests/generated-question-sample-review.test.ts](tests/generated-question-sample-review.test.ts)。
+    - **明確界限（Phase 5）**：`pass` 只代表自動檢查全部通過，**不代表**史實正確、符合課程要求或具教學價值；解釋質素、錯誤選項的迷惑程度、難度配合、課程取捨、世紀寫法下的提問是否合理、歸屬語氣（「學者認為」）的處理及答案措辭等值判斷仍然必須由教師決定（見第三節「自動準則與教師判斷的分工」）。判定結果只有 `ok`／`issues`／`outcome`，沒有「已認可」一類欄位；[tests/automation-confidence-semantics.test.ts](tests/automation-confidence-semantics.test.ts) 鎖定「機器發布只會標示為未經人工覆核」及「機器驗證不會留下人工紀錄」。
+48. **教師覆核準備、閘門校準與發布前檢查（Sprint 8.6，2026-10-17）**：
+    - **覆核套件（可重現）**：新增 `npm run review:package`（[build-review-package.ts](scripts/build-review-package.ts)）。它以**唯讀**方式開啟資料庫、按既定組合抽樣、為每題附上題幹／選項／答案／得分要點／解釋／**完整逐字節錄**／來源位置、生成時與**以現行規則重算**的閘門結果，以及七項審題欄位；預設乾跑，`--write` 才寫檔。所有決定欄位保持 `pending-review`。檔案在 `docs/`（不在 `public/`），不經任何學生端路由提供。
+    - **修正的繞過路徑（實際缺陷）**：`revalidateQuestion`（教師端「重新執行品質驗證」）原本在機器檢查通過時會**清除**「待教師確認」標記，令暫緩題目可被機器動作解除；現在標記只可由教師的人工覆核決定清除（回傳新的 `decision = awaiting-teacher-confirmation`）。回報補救流程及教師端訊息同步更新為「仍待教師確認」而不是「驗證失敗」（[question-report-service.ts](src/server/services/question-report-service.ts)、[QuestionManager.tsx](src/components/QuestionManager.tsx)）。
+    - **覆核者身分不可留空**：`recordQuestionReview` 拒絕空白電郵或角色（400）；覆核路由在**部署環境**（`K_SERVICE`／`NODE_ENV=production` 且請求不是 loopback）沒有真實工作階段時一律 403，即使設定了 `HISTORY_ALLOW_UNSAFE_DEMO_MODE` 也不會以「（示範模式：未登入）」身分寫入覆核紀錄；本機（127.0.0.1／localhost）的示範及端對端流程仍可運作，但紀錄會如實標示為示範身分（[review/route.ts](src/app/api/teacher/questions/[questionId]/review/route.ts)）。測試見 [tests/teacher-review-workflow-integrity.test.ts](tests/teacher-review-workflow-integrity.test.ts)（亦驗證覆核不會改變教材版權決定、機器驗證不能清除暫緩）。
+    - **以真實題目校準閘門（三項誤報修正）**：對本機 8 條真實生成題目重算閘門後發現並修正：
+      1. 教材以單字「因」交代因果（「德、意因接納了……，國內反政府的聲音高漲」）時，系統誤判「教材沒有交代因果」→ 加入裸「因」的判斷（先剔除原因／因素／基因／因此／因而／因為），並把「因素」「條件」「有利於」視為支持因果題目的教材內容。
+      2. 答案只是題幹中另一個數字的一部分（答案「六十多萬人」在題幹「一百六十多萬人」之內）時誤判為洩露答案 → 改為逐次檢查出現位置前一字是否為數字用字。
+      3. 題幹背景句取自另一段落時，「最重要／最早」被誤判為無依據 → 「排他／評價」用語改為以**整批提供教材**判斷（並把樣本教材拆成「並列因素」與「教材自行排名」兩組，令對照個案仍然成立）。
+      三項都以真實題目為反例加入 [question-quality-fixtures.v1.json](docs/teacher-review/question-quality-fixtures.v1.json)（31 個個案），逐項校準理由見 [fixture-calibration-2026-10.json](docs/teacher-review/fixture-calibration-2026-10.json)（26 個 defensible、3 個 defensible-with-caveat、2 個 heuristic-limitation）。
+    - **7 條「解釋段號過時」的核對（未套用）**：[explanation-reference-corrections-2026-10.json](docs/teacher-review/explanation-reference-corrections-2026-10.json) 逐題對照現行教材：2 條的**解釋其實正確**（過時的是題目儲存的來源位置字串，第 344 段 vs 389／434 段）、4 條段號可復原、1 條屬跨段引述（ambiguous）、0 條失去依據。全部 `applied: false`，未取得授權（測試見 [tests/explanation-reference-corrections.test.ts](tests/explanation-reference-corrections.test.ts)）。與第 45 項原先的假設不同，已在該清單的 `summary` 如實記錄。
+    - **教師回饋校準計劃**：[quality-gate-calibration-plan.md](docs/teacher-review/quality-gate-calibration-plan.md) 定義評估類別（假通過、假攔截、一致、只有人能發現的缺陷）及禁止事項：未滿 30 條已覆核題目前不得公布比率、不得據小樣本自動調整門檻或改寫題目。
+    - **發布前檢查文件缺陷（已修正）**：README 第十節原要求「在本機執行 `npm run backup`」，但專案**沒有**這個指令（備份由服務內排程及管理員端狀態頁管理）；已改為指向實際機制，並新增 [release-preflight-2026-10.md](docs/release-preflight-2026-10.md) 區分七個證據層級及 P0／P1／P2 阻塞。
+46. **出題改為由教材的歷史理解出發，並加入確定的教學品質閘門（Sprint 8.5，2026-10-17）**：以往傳給模型的只有一連串互不相關的段落，模型看不到因果、時序、轉變與比較，令題目傾向把教材句子挖空；閘門亦只能檢查「答案是否見於教材」。本 Sprint 加入**確定性的教材語意分析**（[material-analysis.ts](src/server/llm/material-analysis.ts)，同一份分析同時用於提示詞與閘門）及五項教學品質檢查（`excessive-verbatim`、`mechanical-deletion`、`explanation-restates-answer`、`answer-incomplete`、`dimension-unsupported`），並把判定收斂為 `pass`／`revise`／`reject`（見第三節「教材語意分析與教學品質閘門」）。過程中發現並修正四項**實際缺陷**：
+    - **「教材原文：」前綴令抄錄逃過檢查**：解釋只重複答案或抄錄節錄的檢查以二字片段重疊率 ≥ 95% 判斷，但生成器常在解釋前加上「教材原文：」等標籤，令重疊率略低於門檻（長句尤其明顯）而未被發現。修法：比對前先移除來源標籤前綴（`SOURCE_LABEL_PREFIX`），令判定看實際內容；同一原因亦令本地示範生成（`mock-provider.ts`）的解釋必須改寫成說明推理，否則示範模式全部題目都會被暫緩自動發布（先以 4 個既有測試檔案、14 項測試重現此影響，再修正示範生成的解釋，**沒有**為示範模式豁免檢查）。
+    - **「最早」被誤判為時序考核**：「為甚麼工業革命最早在英國展開？」的「最早」修飾地點而非要求排序，但原本的時序提問用語包含「最早」，令這類題目被當成「教材沒有提供時序內容」而暫緩。修法：時序要求限定為明確要求排序／先後次序的寫法（「先後次序」「排序」「何者較早」等）。
+    - **教材自身的指稱被誤判為杜撰人名**：人名偵測的句式（「X 指出」）會把「教材指出…」的「教材」當成人名（新的解釋規則鼓勵說明教材與答案的關係，令這種寫法更常見）。修法：把「教材」「課文」「資料」「上文」等指向教材本身的詞語加入非人名清單。
+    - **重寫失敗會令整批題目消失**：有限次重寫是**額外**的一次嘗試，但 provider 第二次呼叫失敗時原本會直接拋出錯誤，令第一輪已通過檢查的題目（已標記需要教師確認）全部失去。修法：重寫失敗時保留第一輪題目並如實告知教師。
+    驗證：新增 [tests/question-quality-gate.test.ts](tests/question-quality-gate.test.ts)（14 項，包含版本控制樣本、stub provider 的有限次重寫、重寫失敗、被丟棄題目不寫入題庫、provider 兩次失敗不留半成品，以及未通過來源核對的題目學生仍然拿不到節錄的迴歸測試）；`npm test` 959/959、`npm run typecheck`、`npm run lint`、`npm run build` 全部通過（2026-10-17）。**範圍說明**：本地示範生成與 AI 生成都必須通過同一道閘門；本 Sprint 沒有改動任何既有題目內容、覆核紀錄或學生作答紀錄。
+49. **已發布題目風險、覆核流程加固與發布證據（Sprint 8.7，2026-10-17）**：
+    - **基線修正（Sprint 8.6 報告的兩條「已發布 reject 題目」）**：唯讀查核 `data/app.db` 後確認只有**一條**是已發布——`q_058eda0378394d0f`（課題12 時間線標示 mc，`material-mock`，現行規則判 `stem-answer-type-mismatch`）；另一條 `q_062fdfd516314f3d`（課題5 fill，`material-ai`，判 `answer-in-stem`）狀態是**草稿**，從未對學生顯示。兩題都沒有回報、作答或覆核紀錄。判斷見 [published-question-risk-report-2026-10.json](docs/teacher-review/published-question-risk-report-2026-10.json)：`q_058eda0378394d0f` 屬「需人工覆核後再決定」（題幹要求辨認時間線標示，答案與選項本身沒有事實錯誤），`q_062fdfd516314f3d` 屬「毋須即時處理（草稿）」。**沒有**改動任何題目、狀態或發布設定；報告只記錄既有下架機制（教師回報面板「暫時下架題目」／`PATCH /api/teacher/questions/{id}` `status: disabled`）。
+    - **覆核流程加固（實際缺陷，已修正）**：`POST /api/teacher/questions/{id}/review` 原本只接受 `decision`，教師的頁面若長時間開啟，可對**已被別人修改**的題目送出 `approved`，覆核紀錄便會綁到教師從未看過的版本。現在 `recordQuestionReview` 必須收到 `expectedRevision`（教師看到的版本）：非正整數回 400，與現行 `revision` 不符回 **409** 並要求重新載入（[question-service.ts](src/server/services/question-service.ts)、[review/route.ts](src/app/api/teacher/questions/[questionId]/review/route.ts)、[QuestionManager.tsx](src/components/QuestionManager.tsx)）。回歸測試 +4 項（服務層 409、400、冪等與稽核紀錄、路由層 409／400），完整審核見 [review-workflow-audit-2026-10.json](docs/teacher-review/review-workflow-audit-2026-10.json)（12 項契約逐項附證據，並列出 4 項已知限制，例如覆核紀錄只存版本號與內容指紋、沒有題目全文快照）。
+    - **覆核套件 v3**：每題新增 `provenance.sourceContext`（所引用段落的原文，每段上限 400 字，超出以「…」標示並記錄 `textLength`），令教師能判斷節錄是否被斷章取義；`howToUse` 亦說明提交時會帶同審閱版本、題目被改動會被拒絕。檔案仍在 `docs/`，不經學生端路由提供，學生端是否顯示節錄仍由來源可見性規則決定。
+    - **機器與教師判斷的校準（可重現）**：新增 `npm run review:calibration`（[build-calibration-report.ts](scripts/build-calibration-report.ts)），把覆核套件內的教師決定與機器判定並列，分類為 `machine-pass-teacher-reject`、`machine-revise-teacher-accept`、`machine-reject-teacher-accept` 及五個內容／教學類別。目前輸出 [human-vs-machine-calibration-2026-10.json](docs/teacher-review/human-vs-machine-calibration-2026-10.json) 為 `awaiting-human-review`（8 題全部待覆核、0 項分歧、所有計數為 0），並明文記載樣本只有 8 題、不提供任何準確率；[tests/human-machine-calibration.test.ts](tests/human-machine-calibration.test.ts) 鎖定「沒有教師資料時不得出現比率或已通過字樣」。
+    - **7 條段號修正清單（仍未套用）**：清單升級為 v2，每一項新增 `changes`（`oldValue`／`proposedValue`／`reason`／`confidence`）、`approvalRequired`（擁有者及歷史科教師、`obtained: false`、套用後版本遞增及覆核失效的後果）及 `verifiedNow`（2026-10-17 唯讀重查：7 題仍在、分類不變、`source_verified = 1`）。信心評級：4 條 high、1 條 medium（用字由「發展中國家」改為「這些地區」）、1 條 low（跨段改寫）、2 條 still-accurate 屬來源位置字串修正（high）。**沒有套用任何一項**。
+    - **發布前檢查（第 8 節，全部未執行）**：[release-preflight-2026-10.md](docs/release-preflight-2026-10.md) 新增供獲授權操作員使用的勾選清單：雲端憑證續期、快照身分／完整性／結構版本／教材版本、本機與正式數量差異逐項解釋、備份排程與「上載後必須立即重新部署」的相依、教師授權設定與部署環境拒絕示範身分覆核、25 條校內試卷題目繼續暫緩、擁有者／教師／版權三項批准、回滾與部署後驗證。本 Sprint 沒有執行其中任何一項。
+50. **已發布題目風險收窄、覆核理由與可稽核性設計（Sprint 8.8，2026-10-17）**：
+    - **兩條被重算判 `reject` 的題目，逐項核實**：[published-question-containment-2026-10.json](docs/teacher-review/published-question-containment-2026-10.json) 記錄題幹、選項、答案、解釋、引用段落原文、閘門判定理由、可達性及建議。`q_058eda0378394d0f`（**已發布**，課題12 時間線標示題）確認為**實際缺陷而非誤報**：題幹問「哪一個詞語」，答案卻是時期標示「1970年代起」，四個選項同時混有時期與政策範疇，解釋只是照錄原句；按現行規則判 `stem-answer-type-mismatch`（blocking → reject）。**建議由具名教師／管理員即時下架**，其後改寫並重新覆核。`q_062fdfd516314f3d`（**草稿**，課題5 填充題）確認 `answer-in-stem`（答案「人文主義」出現在題幹），保持草稿、學生接觸風險為零。**本 Sprint 沒有下架或改寫任何題目**；下架屬發布狀態變更，必須由具名教師在平台作出。
+    - **下架機制在資料庫副本上實測（不接觸真實資料）**：`changeQuestionStatus(id,'disabled')` 後題目即時離開學生題庫查詢（`createPractice` 亦不再取得）、教師仍可讀取內容、沒有刪除任何紀錄；重新發布被 409 拒絕（沒有目前版本的驗證紀錄）。同一情境已寫成一致性測試 [tests/published-question-containment.test.ts](tests/published-question-containment.test.ts)（6 項：兩種 `reject` 判定的可重現性、下架即時生效、不可靜默重新發布、教師覆核是唯一復原途徑）。
+    - **兩個系統性發現（如實記錄，未改動）**：①發布關卡只在**發布動作**時檢查驗證紀錄，學生練習的讀取路徑只過濾 `status = published` 及 `teacher_confirmation_required = 0`；本機 788 條已發布題目**全部**沒有自動驗證紀錄，亦沒有對應目前版本的覆核，因此歷史上已發布的題目仍然可見。把讀取路徑收緊會令題庫即時大幅縮減，屬產品決定，已列為 P1 交由擁有者選擇（補記自動驗證、收緊讀取路徑，或明文接受舊資料不追溯）。②`isStudentPracticeEligible` 是較嚴格的輔助判定，**不是**讀取路徑的實際條件，已在 JSDoc 註明，避免日後誤讀。
+    - **覆核通過也可記錄理由**：以往只有退回／不可用必填原因，通過時無法記錄「為甚麼這一版可用」。現在教師按「覆核通過並發布」會先問理由（可留空），理由與決定、版本、覆核者、時間一併寫入不可修改的紀錄，教師端亦會在覆核狀態提示中顯示；測試鎖定「有理由會保存、留空則為 null」。
+    - **校準狀態如實標示**：`npm run review:calibration -- --write` 產生的報告加入 `calibrationStatus`（現時 `unmeasured`）及 `accuracyClaim: null`；沒有真實覆核就沒有可報告的一致率或準確率。
+    - **覆核可稽核性的選項比較（未實作 migration）**：[review-auditability-options-2026-10.md](docs/teacher-review/review-auditability-options-2026-10.md) 比較「覆核時寫入不可變內容快照」、「新增 append-only 題目版本歷史表」及「只強化既有版本＋指紋」三個方案，按資料完整性、migration 與 backfill 風險、私隱與存取控制、儲存影響、與既有覆核兼容、並發及過時批准逐項評估；**建議採用「覆核快照」**（一個 nullable 欄位、無 backfill、與樂觀鎖並存），並列明若獲批准的最小改動範圍。本 Sprint **沒有**新增任何 schema migration。
+    - **證據欄位（第 9 節）**：[release-preflight-2026-10.md](docs/release-preflight-2026-10.md) 新增 E1–E12 證據欄位（快照身分與完整性、教材與結構版本、本機與正式差異、教師授權與覆核流程驗證、已發布題目風險的最終處理、教師覆核證據、批准文件、備份與部署次序、回滾與部署後驗證），全部空白、未執行；並重申「先快照後改動、上載後立即部署、先批准後套用」三個次序約束。
 
 ---
 
@@ -1709,6 +1899,16 @@ node scripts/e2e-flow.mjs --start   # 端對端 136 項檢查全部通過（含�
 
 **Q：為什麼有些課題顯示 0 題可用？**
 表示該課題的分節教材尚不足以產生題目（例如教材尚未匯入，或內容以敘述為主）。先執行 `npm run import:materials` 匯入教材，再執行 `npm run generate:questions` 補足題目。
+
+**Q：`npm run build` 失敗，出現 `EPERM: operation not permitted, unlink '…\.next\standalone\docs\material-remapping'`？**
+這是 Windows + OneDrive 的**本機環境問題**，不是程式缺陷：Next.js 的 standalone 輸出會把 `docs/`（版本控制內的清單）以目錄連結（reparse point）方式放進 `.next/standalone/docs/`，而 Windows 無法以 `unlink` 刪除該連結，令下一次建置在清理階段失敗。處理方式：先確認沒有正在執行的 `next start`（本機伺服器會鎖住 `.next`），再刪除該連結後重新建置：
+
+```powershell
+cmd /c "rmdir /s /q .next\standalone\docs\material-remapping"
+npm run build
+```
+
+（若仍失敗，可整個刪除 `.next/`——它是建置產物，已在 `.gitignore` 內。）2026-10-17 實測：清除連結後建置即通過（exit 0）。
 
 **Q：學生說「未能開始練習：所選主題的教材仍未開放給學生使用」？**
 這是教材版權閘門（fail-closed）按設計運作，不是系統錯誤：學生自行觸發的 AI 出題只可使用**已確認可向學生發布**的教材，未確認的文件對學生完全不顯示（見「教材版權與學生閱讀範圍」）。可行的處理：

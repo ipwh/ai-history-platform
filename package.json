@@ -15,8 +15,13 @@
     "generate:questions": "tsx scripts/generate-question-bank.ts",
     "publish:drafts": "tsx scripts/publish-draft-questions.ts",
     "open:materials": "tsx scripts/open-materials.ts",
+    "remap:references": "tsx scripts/remap-material-references.ts",
+    "apply:question-queue": "tsx scripts/apply-question-queue.ts",
+    "retire:materials": "tsx scripts/retire-materials.ts",
     "snapshot:production": "tsx scripts/export-production-snapshot.ts",
-    "e2e": "node scripts/e2e-flow.mjs"
+    "e2e": "node scripts/e2e-flow.mjs",
+    "review:package": "tsx scripts/build-review-package.ts",
+    "review:calibration": "tsx scripts/build-calibration-report.ts"
   },
   "dependencies": {
     "jszip": "^3.10.2",
