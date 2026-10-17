@@ -107,7 +107,7 @@
       "outstandingConcernCount": 0
     },
     {
-      "questionId": "q_00a5f90be12d4191",
+      "questionId": "q_01e277b206194092",
       "questionType": "fill",
       "origin": "material-ai",
       "difficulty": "advanced",
@@ -153,14 +153,28 @@
       "outstandingConcernCount": 0
     },
     {
-      "questionId": "q_058eda0378394d0f",
+      "questionId": "q_05f3095c0b7a45b8",
       "questionType": "mc",
       "origin": "material-mock",
       "difficulty": "basic",
       "publishedAtReview": true,
-      "machineOutcome": "reject",
+      "machineOutcome": "pass",
+      "machineCodes": [],
+      "machineHeldAtGeneration": false,
+      "humanDecision": "pending-review",
+      "humanCategories": [],
+      "disagreement": null,
+      "outstandingConcernCount": 0
+    },
+    {
+      "questionId": "q_01c5964415ff4812",
+      "questionType": "fill",
+      "origin": "material-mock",
+      "difficulty": "basic",
+      "publishedAtReview": true,
+      "machineOutcome": "revise",
       "machineCodes": [
-        "stem-answer-type-mismatch"
+        "mechanical-deletion"
       ],
       "machineHeldAtGeneration": false,
       "humanDecision": "pending-review",
@@ -169,27 +183,15 @@
       "outstandingConcernCount": 0
     },
     {
-      "questionId": "q_017338c7055d43de",
-      "questionType": "fill",
-      "origin": "material-mock",
-      "difficulty": "basic",
-      "publishedAtReview": true,
-      "machineOutcome": "pass",
-      "machineCodes": [],
-      "machineHeldAtGeneration": false,
-      "humanDecision": "pending-review",
-      "humanCategories": [],
-      "disagreement": null,
-      "outstandingConcernCount": 0
-    },
-    {
-      "questionId": "q_08a00abf1b534c12",
+      "questionId": "q_1893a3b07e2946d1",
       "questionType": "short",
       "origin": "material-mock",
       "difficulty": "basic",
       "publishedAtReview": true,
-      "machineOutcome": "pass",
-      "machineCodes": [],
+      "machineOutcome": "revise",
+      "machineCodes": [
+        "explanation-restates-answer"
+      ],
       "machineHeldAtGeneration": false,
       "humanDecision": "pending-review",
       "humanCategories": [],

@@ -16,7 +16,7 @@
 | 3 | **正式資料庫快照** | 正式環境實際的資料內容（題目、教材、覆核） | ❌ **未驗證** — 雲端憑證已過期（Sprint 8.3 記錄），本 Sprint 沒有嘗試登入或還原 | 需授權後以 `npm run snapshot:production` 取得並核對 SHA-256 |
 | 4 | **教材版本一致** | 正式環境是否已用 2026-10-16 的新版 12 課教材 | ❌ **未同步** — 正式環境仍是 2026-10-15 的教材版本；本機已是 2026-10-16 版本 | README 第 45 項／第十二節第 43 項及擁有者事項第 15 項 |
 | 5 | **版權／擁有者授權** | 是否有權向學生發布這些教材 | ✅ **已決定**（2026-10-15，2026-10-16 沿用）— 12 份課本文件逐份開放 | [owner-material-openings.json](teacher-review/owner-material-openings.json) |
-| 6 | **歷史科教師覆核** | 題目的史實、答案、選項及解釋是否適合學生 | ❌ **未開始** — 沒有具名覆核者；`golden-questions.v1.json` 仍為 `pending-review`、0 條 | [generated-question-sample-2026-10.json](teacher-review/generated-question-sample-2026-10.json)（8 題套件，全部待覆核） |
+| 6 | **歷史科教師覆核** | 題目的史實、答案、選項及解釋是否適合學生 | ⚠️ **部分完成** — 2026-10-17 12:11–12:16（HKT）擁有者 `ipwh@pochiu.edu.hk` 已在平台記錄 **17 筆覆核通過**（各題 rev 3，經登入工作階段驗證）；`golden-questions.v1.json` 仍為 `pending-review`、0 條，8 題覆核套件仍全部待覆核 | [generated-question-sample-2026-10.json](teacher-review/generated-question-sample-2026-10.json)（8 題套件，全部待覆核） |
 | 7 | **部署及部署後驗證** | 正式服務是否真的按預期運作 | ❌ **未執行** — 本 Sprint 沒有部署 | 部署後必須完成的煙霧測試見 README 第十節第 3 項 |
 
 > 本機測試通過（第 1、2 層）**不能**證明第 3–7 層；第 5 層的授權亦**不能**代替第 6 層的教師覆核。
@@ -42,9 +42,9 @@ node scripts/e2e-flow.mjs --start            # 端對端（HTTP）：以**隔離
 | SHA-256 | 教師操作前為 `1711abdb517c6ca4616bc080cceba85375cf9f3d5e85b985cd4a06b49c02cf91`（Sprint 8.2–8.8 測試期間未變）。2026-10-17 教師在平台刪除／停用題目後已改變；由於執行中的開發伺服器持有資料庫，暫未能重新計算（停止伺服器後再記錄即可） |
 | `PRAGMA integrity_check` | `ok` |
 | migration | 20 個，最後為 `0020-teacher-confirmation-required` |
-| 題目 | 778（已發布 776、草稿 1、停用 1；待教師確認 0）。2026-10-17 教師刪除 11 條校內試卷題目、停用 1 條（`q_df1fd4c05d594891`），見 [school-paper-deletions-2026-10-17.json](teacher-review/school-paper-deletions-2026-10-17.json) |
-| 來源已核對（`source_verified = 1`） | 762（其餘 **16** 條為校內試卷題目，節錄由多段文字組成，平台的單一段落規則無法涵蓋 → 節錄不對學生顯示）。2026-10-17 教師在平台刪除 11 條校內試卷題目（刪除前 0 作答／0 回報／0 覆核），未通過核對由 25 條減至 16 條 |
-| 覆核紀錄 | 10（歷史紀錄，未由本 Sprint 建立） |
+| 題目 | 644（已發布 642、草稿 1、停用 1；待教師確認 0）。2026-10-17 教師刪除 11 條校內試卷題目、停用 1 條（`q_df1fd4c05d594891`），其後按擁有者指示清除 101 條機械式「列表標籤」題目（全部 `material-mock`，刪除前 0 作答／0 回報／0 覆核），見 [school-paper-deletions-2026-10-17.json](teacher-review/school-paper-deletions-2026-10-17.json) 及 [label-question-purge-2026-10-17.json](teacher-review/label-question-purge-2026-10-17.json) |
+| 來源已核對（`source_verified = 1`） | 628（其餘 **16** 條為校內試卷題目，節錄由多段文字組成，平台的單一段落規則無法涵蓋 → 節錄不對學生顯示）。2026-10-17 教師在平台刪除 11 條校內試卷題目（刪除前 0 作答／0 回報／0 覆核），未通過核對由 25 條減至 16 條 |
+| 覆核紀錄 | **27**（10 筆為 2026-10-15 的示範紀錄；17 筆為 2026-10-17 由 `ipwh@pochiu.edu.hk` 在平台作出的覆核通過，經登入工作階段驗證） |
 | 題目回報 | 30；作答紀錄 140 |
 | 教材文件 | 19（12 份課本，全部 `student_distribution = 1`；7 份校內試題，永不列為學生讀物） |
 | 教材段落 | 7,950 |
@@ -73,7 +73,7 @@ node scripts/e2e-flow.mjs --start            # 端對端（HTTP）：以**隔離
 | --- | --- | --- | --- |
 | **P0** | 雲端憑證過期 | 無法取得正式快照、無法部署或核對正式狀態（Sprint 8.3 已記錄，本 Sprint 未嘗試恢復） | 由擁有者重新授權並登入；在此之前不可進行任何正式同步 |
 | **P0** | 正式快照未驗證 | 正式環境的實際題目／教材／覆核數目未知；不能假設與本機相同 | 取得快照並核對 SHA-256 及第 3 節的數字 |
-| **P0** | 教師覆核未開始 | 沒有任何題目經歷史科教師確認；`revise` 題目全部暫緩（0 條目前暫緩，但亦沒有已覆核題目） | 具名教師完成至少一批覆核（見 `generated-question-sample-2026-10.json`） |
+| **P1** | 教師覆核覆蓋率不足 | 2026-10-17 已有 17 筆具名覆核（`ipwh@pochiu.edu.hk`），但相對 642 條已發布題目仍屬小樣本；`golden-questions.v1.json` 仍為 `pending-review`、0 條，8 題覆核套件全部待覆核 | 具名教師完成覆核套件及更多題目，並把決定寫入平台（見 `generated-question-sample-2026-10.json`） |
 | **P1** | 教材版本不一致 | 正式環境仍是 2026-10-15 教材；本機已更新，但同步未執行 | 依第 4 節順序執行並驗證 |
 | **P1** | 上載快照後必須立即重新部署 | 否則舊 revision 的定期備份可能覆蓋新快照 | 把「上載後立即部署」寫入執行紀錄並由第二人核對 |
 | **P1** | 歸屬語氣（「學者認為」）等語意判斷未自動化 | 只會暫緩交教師，不會自動判斷 | 由教師在覆核時判斷（見校準計劃第 4 節） |
@@ -124,7 +124,7 @@ node scripts/e2e-flow.mjs --start            # 端對端（HTTP）：以**隔離
 - [ ] 教材文件數、教材段落數、課題數。
 - [ ] `question_reviews`、`question_reports`、`attempts` 筆數（覆核與作答紀錄**只可增加**）。
 - [ ] 任何差異都要逐項寫出原因（例如：正式環境尚未同步 2026-10 教材、尚未套用 36 條題目處理）。
-  本機基準（2026-10-17）：789 題／788 已發布／1 草稿、764 已核對、19 份文件（7,950 段）、12 課題、10 筆覆核、30 筆回報、140 筆作答。
+  本機基準（2026-10-17，清除機械標籤題後）：644 題／642 已發布／1 草稿／1 停用、628 已核對、19 份文件（7,950 段）、12 課題、**27 筆覆核**（其中 17 筆為當日具名教師決定）、30 筆回報、140 筆作答。
 
 ### 8.4 備份排程與部署的相依關係
 
@@ -183,7 +183,7 @@ node scripts/e2e-flow.mjs --start            # 端對端（HTTP）：以**隔離
 | E6 | 教師授權設定 | 登入設定（已設／未設）、教師名單或網域政策、以教師帳戶成功進入 `/teacher/questions` 的截圖或記錄 | 擁有者 | **空白**（未執行） |
 | E7 | 覆核工作流程驗證 | 以未登入瀏覽器 `POST /api/teacher/questions/{id}/review` 的 **HTTP 403** 回應；資料庫內沒有新增示範身分紀錄；以教師帳戶提交一次覆核時介面帶同版本（`expectedRevision`），若題目已被修改則顯示 409 | 獲授權操作員 | **空白**（本機測試已覆蓋，正式未驗證） |
 | E8 | 已發布題目風險的處理 | `q_058eda0378394d0f` 的最終狀態（`disabled`／已改寫並重新覆核／維持 published 並附理由）及作出決定的具名者與時間 | 歷史科教師／擁有者 | **未決定**（風險報告：[published-question-containment-2026-10.json](teacher-review/published-question-containment-2026-10.json)） |
-| E9 | 歷史科教師覆核證據 | 平台內具名覆核紀錄（覆核者、日期、版本、決定、理由）；離線套件的 `reviewerDecision`／`reviewer`／`reviewedAt` 必須與平台紀錄一致 | 歷史科教師 | **0 筆**（[human-vs-machine-calibration-2026-10.json](teacher-review/human-vs-machine-calibration-2026-10.json) 的 `calibrationStatus = unmeasured`） |
+| E9 | 歷史科教師覆核證據 | 平台內具名覆核紀錄（覆核者、日期、版本、決定、理由）；離線套件的 `reviewerDecision`／`reviewer`／`reviewedAt` 必須與平台紀錄一致 | 歷史科教師 | **17 筆**（[human-vs-machine-calibration-2026-10.json](teacher-review/human-vs-machine-calibration-2026-10.json) 的 `calibrationStatus = unmeasured`） |
 | E10 | 批准文件 | 擁有者對教材開放範圍及題目改動的書面批准；版權／授權確認；7 條段號修正與 36 條隊列動作是否包含在批准範圍之內 | 擁有者／科主任 | **未取得**（清單內全部 `applied:false`、`authorisation.obtained:false`） |
 | E11 | 備份與部署次序 | 快照上載時間戳、部署 revision 名稱及時間戳（部署必須晚於上載），以及覆蓋同一備份物件的風險確認 | 獲授權操作員（第二人核對） | **空白**（未執行） |
 | E12 | 回滾與部署後驗證 | 回滾位置（bucket 物件名稱、上一個 revision）、部署後教師／學生／管理員三類帳戶的抽查結果、5xx 檢查結果 | 獲授權操作員 | **空白**（未執行） |

@@ -219,49 +219,49 @@
       "notes": null
     },
     {
-      "questionId": "q_00a5f90be12d4191",
+      "questionId": "q_01e277b206194092",
       "provenance": {
-        "topicId": "topic-12",
-        "topicTitle": "課題12：20世紀香港的成長與蛻變",
-        "sectionId": "topic-12-japanese-occupation",
-        "sectionTitle": "日佔時期（1941-1945年）",
+        "topicId": "topic-9",
+        "topicTitle": "課題9：20世紀的國際紛爭及危機(I)–兩次世界大戰",
+        "sectionId": "topic-9-treaty",
+        "sectionTitle": "巴黎和會的主要決議和缺失",
         "origin": "material-ai",
         "status": "published",
         "difficulty": "advanced",
         "difficultyLabel": "進階",
         "questionType": "fill",
         "revision": 3,
-        "createdAt": "2026-10-13T00:25:27.568Z",
-        "sourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 172 段（清單）",
+        "createdAt": "2026-10-13T00:23:30.601Z",
+        "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx · 第 120 段（段落）",
         "sourceBlockIds": [
-          "blk_0685c65b19f64862"
+          "blk_c4a1c82122fc4e56"
         ],
-        "sourceExcerpt": "日佔期間，約有一百萬人被迫離開香港，全港人口由1941 年約一百六十多萬人銳減至1945年約六十多萬人。",
-        "sourceExcerptLength": 52,
+        "sourceExcerpt": "東歐的新興國家大多國力較弱，缺乏自衛能力，容易成為擴張目標。",
+        "sourceExcerptLength": 30,
         "sourceContext": [
           {
-            "blockId": "blk_0685c65b19f64862",
-            "sourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 172 段（清單）",
-            "type": "list",
-            "textLength": 114,
-            "text": "日佔當局推行強制歸鄉政策，將大量港人遣返內地，以節省資源供軍隊使用。\n日軍亦強擄或誘騙港人到其他佔領地（例如東南亞）勞役。\n日佔期間，約有一百萬人被迫離開香港，全港人口由1941 年約一百六十多萬人銳減至1945年約六十多萬人。"
+            "blockId": "blk_c4a1c82122fc4e56",
+            "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰.docx · 第 120 段（段落）",
+            "type": "paragraph",
+            "textLength": 30,
+            "text": "東歐的新興國家大多國力較弱，缺乏自衛能力，容易成為擴張目標。"
           }
         ],
         "sourceVerified": true
       },
       "learningObjective": {
-        "knowledgePoint": "日佔時期香港人口銳減的情況",
+        "knowledgePoint": "東歐新興國家的弱點",
         "skill": null,
         "intendedDifficulty": "進階",
         "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
       },
       "content": {
-        "question": "日佔當局推行強制歸鄉政策，將大量港人遣返內地，以節省資源供軍隊使用。日佔期間，約有一百萬人被迫離開香港，全港人口由1941年約一百六十多萬人銳減至1945年約多少萬人？",
+        "question": "巴黎和會後，東歐的新興國家大多國力較弱，缺乏自衛能力，容易成為____的目標。",
         "options": [],
-        "correctAnswer": "六十多萬人",
+        "correctAnswer": "擴張",
         "acceptedAnswers": [],
         "gradingPoints": [],
-        "explanation": "日佔當局推行強制歸鄉政策，將大量港人遣返內地，以節省資源供軍隊使用，日軍亦強擄或誘騙港人到其他佔領地勞役。日佔期間約有一百萬人被迫離開香港，全港人口由1941年約一百六十多萬人銳減至1945年約六十多萬人。"
+        "explanation": "教材指出東歐新興國家缺乏自衛能力，容易成為擴張目標。"
       },
       "machineChecks": {
         "gateAtGeneration": {
@@ -273,7 +273,7 @@
           "outcome": "pass",
           "codes": [],
           "notes": [],
-          "materialsChecked": 117
+          "materialsChecked": 43
         },
         "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
       },
@@ -458,54 +458,54 @@
       "notes": null
     },
     {
-      "questionId": "q_058eda0378394d0f",
+      "questionId": "q_05f3095c0b7a45b8",
       "provenance": {
-        "topicId": "topic-12",
-        "topicTitle": "課題12：20世紀香港的成長與蛻變",
-        "sectionId": "topic-12-post-war-economy",
-        "sectionTitle": "戰後香港的蛻變：經濟發展",
+        "topicId": "topic-5",
+        "topicTitle": "課題5：近代歐洲的興起",
+        "sectionId": "topic-5-renaissance-impact",
+        "sectionTitle": "影響",
         "origin": "material-mock",
         "status": "published",
         "difficulty": "basic",
         "difficultyLabel": "基礎",
         "questionType": "mc",
         "revision": 3,
-        "createdAt": "2026-10-10T08:19:44.783Z",
-        "sourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 274 段（清單）",
+        "createdAt": "2026-10-10T08:18:37.369Z",
+        "sourceLocation": "課題5 近代歐洲的興起.docx · 第 118 段（清單）",
         "sourceBlockIds": [
-          "blk_3beeb572d02c4904"
+          "blk_e9eb98628647411d"
         ],
-        "sourceExcerpt": "1970年代起：打擊貪污與公務員本地化",
-        "sourceExcerptLength": 19,
+        "sourceExcerpt": "「日心說」等新發現啟發科學精神，推動新航路的開闢與科學革命的展開。",
+        "sourceExcerptLength": 33,
         "sourceContext": [
           {
-            "blockId": "blk_3beeb572d02c4904",
-            "sourceLocation": "課題12 二十世紀香港的成長與蛻變.docx · 第 20 段（清單）",
+            "blockId": "blk_e9eb98628647411d",
+            "sourceLocation": "課題5 近代歐洲的興起.docx · 第 118 段（清單）",
             "type": "list",
-            "textLength": 158,
-            "text": "經濟發展\n有利的內外因素促進經濟發展\n轉口港→工業中心（1950-1970年代）\n工業中心→國際金融中心（1970年代至今）\n社會發展\n房屋方面：公營房屋的持續發展\n教育方面：免費教育與專上教育的發展\n管治與政制發展\n1960年代起：加強官民溝通\n1970年代起：打擊貪污與公務員本地化\n1980年代起：發展代議政制"
+            "textLength": 115,
+            "text": "文藝復興期間，歐洲人成功破舊立新，激發他們的探索精神，並在隨後數個世紀掀起多重變革：\n傳統權威下降促使他們重新思考與教會及君主的關係，繼而促成宗教改革與啟蒙運動；\n「日心說」等新發現啟發科學精神，推動新航路的開闢與科學革命的展開。"
           }
         ],
         "sourceVerified": true
       },
       "learningObjective": {
-        "knowledgePoint": "戰後香港的蛻變：經濟發展：1970年代起",
+        "knowledgePoint": "影響：日心說",
         "skill": null,
         "intendedDifficulty": "基礎",
         "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
       },
       "content": {
-        "question": "「打擊貪污與公務員本地化」是指以下哪一個詞語？",
+        "question": "「＿＿＿」等新發現啟發科學精神，推動新航路的開闢與科學革命的展開。",
         "options": [
-          "1970年代起",
-          "房屋方面",
-          "教育方面",
-          "1960年代起"
+          "日心說",
+          "工業革命",
+          "機械化",
+          "機器時代"
         ],
-        "correctAnswer": "1970年代起",
+        "correctAnswer": "日心說",
         "acceptedAnswers": [],
         "gradingPoints": [],
-        "explanation": "教材原文：1970年代起：打擊貪污與公務員本地化"
+        "explanation": "教材原文：「日心說」等新發現啟發科學精神，推動新航路的開闢與科學革命的展開。"
       },
       "machineChecks": {
         "gateAtGeneration": {
@@ -514,14 +514,10 @@
           "autoValidatedAt": null
         },
         "gateRecomputedNow": {
-          "outcome": "reject",
-          "codes": [
-            "stem-answer-type-mismatch"
-          ],
-          "notes": [
-            "題幹問「哪一個詞語」，但標準答案「1970年代起」是一個年份；應改寫成明確問年份的題目（或改問對應的歷史詞語）"
-          ],
-          "materialsChecked": 27
+          "outcome": "pass",
+          "codes": [],
+          "notes": [],
+          "materialsChecked": 29
         },
         "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
       },
@@ -542,49 +538,49 @@
       "notes": null
     },
     {
-      "questionId": "q_017338c7055d43de",
+      "questionId": "q_01c5964415ff4812",
       "provenance": {
-        "topicId": "topic-6",
-        "topicTitle": "課題6：歐洲國家的殖民擴張",
-        "sectionId": "topic-6-early-expansion",
-        "sectionTitle": "早期擴張（十六世紀初至十八世紀末）的背景及原因",
+        "topicId": "topic-3",
+        "topicTitle": "課題3：伊斯蘭文明的興起與中古時代歐亞的文化交流",
+        "sectionId": "topic-3-golden-age",
+        "sectionTitle": "促成伊斯蘭文明的興起",
         "origin": "material-mock",
         "status": "published",
         "difficulty": "basic",
         "difficultyLabel": "基礎",
         "questionType": "fill",
         "revision": 3,
-        "createdAt": "2026-10-10T08:18:38.447Z",
-        "sourceLocation": "課題6 歐洲國家的殖民擴張.docx · 第 13 段（清單）",
+        "createdAt": "2026-10-10T08:18:20.236Z",
+        "sourceLocation": "課題3 伊斯蘭文明的興起.docx · 第 141 段（清單）",
         "sourceBlockIds": [
-          "blk_9572f9505cc64cb8"
+          "blk_78cffd6659504fff"
         ],
-        "sourceExcerpt": "社會及文化方面：「白人的負擔」思想與傳教",
-        "sourceExcerptLength": 20,
+        "sourceExcerpt": "「阿拉伯式花紋」是其重要特色。",
+        "sourceExcerptLength": 15,
         "sourceContext": [
           {
-            "blockId": "blk_9572f9505cc64cb8",
-            "sourceLocation": "課題6 歐洲國家的殖民擴張.docx · 第 13 段（清單）",
+            "blockId": "blk_78cffd6659504fff",
+            "sourceLocation": "課題3 伊斯蘭文明的興起.docx · 第 141 段（清單）",
             "type": "list",
-            "textLength": 72,
-            "text": "經濟方面\n資源與市場需求殷切\n亞非人口與資源龐大\n政治方面\n歐洲領土擴展空間有限\n民族主義的盛行與變質\n社會及文化方面：「白人的負擔」思想與傳教"
+            "textLength": 56,
+            "text": "由於伊斯蘭教禁止偶像崇拜，伊斯蘭藝術多以象徵性手法表現，較少描繪人物與動物形象。\n「阿拉伯式花紋」是其重要特色。"
           }
         ],
         "sourceVerified": true
       },
       "learningObjective": {
-        "knowledgePoint": "早期擴張（十六世紀初至十八世紀末）的背景及原因：社會及文化方面",
+        "knowledgePoint": "促成伊斯蘭文明的興起：阿拉伯式花紋",
         "skill": null,
         "intendedDifficulty": "基礎",
         "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
       },
       "content": {
-        "question": "「＿＿＿」是指「白人的負擔」思想與傳教",
+        "question": "「＿＿＿」是其重要特色。",
         "options": [],
-        "correctAnswer": "社會及文化方面",
+        "correctAnswer": "阿拉伯式花紋",
         "acceptedAnswers": [],
         "gradingPoints": [],
-        "explanation": "教材原文：社會及文化方面：「白人的負擔」思想與傳教"
+        "explanation": "教材原文：「阿拉伯式花紋」是其重要特色。"
       },
       "machineChecks": {
         "gateAtGeneration": {
@@ -593,10 +589,14 @@
           "autoValidatedAt": null
         },
         "gateRecomputedNow": {
-          "outcome": "pass",
-          "codes": [],
-          "notes": [],
-          "materialsChecked": 39
+          "outcome": "revise",
+          "codes": [
+            "mechanical-deletion"
+          ],
+          "notes": [
+            "題幹除了空格以外沒有足夠線索，學生無從由教材判斷答案；請把情境寫進題幹"
+          ],
+          "materialsChecked": 42
         },
         "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
       },
@@ -617,52 +617,51 @@
       "notes": null
     },
     {
-      "questionId": "q_08a00abf1b534c12",
+      "questionId": "q_1893a3b07e2946d1",
       "provenance": {
-        "topicId": "topic-1",
-        "topicTitle": "課題1：人類的需要：古與今",
-        "sectionId": "topic-1-periods-neolithic",
-        "sectionTitle": "新石器時代",
+        "topicId": "topic-3",
+        "topicTitle": "課題3：伊斯蘭文明的興起與中古時代歐亞的文化交流",
+        "sectionId": "topic-3-golden-age",
+        "sectionTitle": "促成伊斯蘭文明的興起",
         "origin": "material-mock",
         "status": "published",
         "difficulty": "basic",
         "difficultyLabel": "基礎",
         "questionType": "short",
-        "revision": 4,
-        "createdAt": "2026-10-10T08:17:51.466Z",
-        "sourceLocation": "課題1人類的需要 古與今.docx · 第 20 段（清單）",
+        "revision": 3,
+        "createdAt": "2026-10-10T08:18:20.236Z",
+        "sourceLocation": "課題3 伊斯蘭文明的興起.docx · 第 134 段（清單）",
         "sourceBlockIds": [
-          "blk_09df5a0903044a93"
+          "blk_155944e2dd944e25"
         ],
-        "sourceExcerpt": "技術改良與文化發展：學會打磨石器，令石器變得更鋒利及光滑；學會紡織與製作陶器，並發展出文化藝術及原始宗教",
-        "sourceExcerptLength": 52,
+        "sourceExcerpt": "《列王紀》與《一千零一夜》皆為流傳至今的經典著作，為後世文學創作提供了豐富的靈感與題材。",
+        "sourceExcerptLength": 44,
         "sourceContext": [
           {
-            "blockId": "blk_09df5a0903044a93",
-            "sourceLocation": "課題1人類的需要 古與今.docx · 第 20 段（清單）",
+            "blockId": "blk_155944e2dd944e25",
+            "sourceLocation": "課題3 伊斯蘭文明的興起.docx · 第 134 段（清單）",
             "type": "list",
-            "textLength": 123,
-            "text": "距今約一萬二千年 — 距今約四千年\n糧食的生產：農耕與畜牧的出現，令糧食供應變得較穩定\n定居與建房：村落陸續出現，以村落為基礎的農耕社會形成\n技術改良與文化發展：學會打磨石器，令石器變得更鋒利及光滑；學會紡織與製作陶器，並發展出文化藝術及原始宗教"
+            "textLength": 117,
+            "text": "中古時代的伊斯蘭文學創作題材多樣，不僅限於宗教，亦涵蓋哲學、愛情等主題。\n伊斯蘭文學吸收歐亞各地的歷史、風俗與神話元素，是為多元文化融合的結晶。\n《列王紀》與《一千零一夜》皆為流傳至今的經典著作，為後世文學創作提供了豐富的靈感與題材。"
           }
         ],
         "sourceVerified": true
       },
       "learningObjective": {
-        "knowledgePoint": "新石器時代：技術改良與文化發展",
+        "knowledgePoint": "促成伊斯蘭文明的興起：列王紀",
         "skill": null,
         "intendedDifficulty": "基礎",
         "note": "以上為生成器宣告，未經教師確認；審題時請以課程文件及課本為準。"
       },
       "content": {
-        "question": "試說明「技術改良與文化發展」。",
+        "question": "試說明與「列王紀」相關的內容。",
         "options": [],
-        "correctAnswer": "學會打磨石器，令石器變得更鋒利及光滑；學會紡織與製作陶器，並發展出文化藝術及原始宗教",
+        "correctAnswer": "《列王紀》與《一千零一夜》皆為流傳至今的經典著作，為後世文學創作提供了豐富的靈感與題材。",
         "acceptedAnswers": [],
         "gradingPoints": [
-          "學會打磨石器，令石器變得更鋒利及光滑；",
-          "學會紡織與製作陶器，並發展出文化藝術及原始宗教"
+          "《列王紀》與《一千零一夜》皆為流傳至今的經典著作，為後世文學創作提供了豐富的靈感與題材。"
         ],
-        "explanation": "教材原文：技術改良與文化發展：學會打磨石器，令石器變得更鋒利及光滑；學會紡織與製作陶器，並發展出文化藝術及原始宗教"
+        "explanation": "《列王紀》與《一千零一夜》皆為流傳至今的經典著作，為後世文學創作提供了豐富的靈感與題材。"
       },
       "machineChecks": {
         "gateAtGeneration": {
@@ -671,10 +670,14 @@
           "autoValidatedAt": null
         },
         "gateRecomputedNow": {
-          "outcome": "pass",
-          "codes": [],
-          "notes": [],
-          "materialsChecked": 35
+          "outcome": "revise",
+          "codes": [
+            "explanation-restates-answer"
+          ],
+          "notes": [
+            "解釋只是重複標準答案，沒有說明理由"
+          ],
+          "materialsChecked": 42
         },
         "note": "機器判定只代表已定義的自動檢查結果，不代表史實正確或教學價值；重算結果與生成時不同，可能反映規則更新或教材重新匯入。"
       },

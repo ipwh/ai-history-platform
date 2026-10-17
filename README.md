@@ -266,7 +266,7 @@ materials/
 
 **凍結試卷的政策（既有設計，維持不變）**：學生已開始的練習凍結當時的題目；題目其後被修正、撤回或判定為未確定，都**不會**改寫該次練習的內容。若日後確認已交付的題目有重大錯誤，處置方式是（1）撤回題目，令新練習不再出現、（2）以回報記錄當時版本及學生的答案、（3）必要時由教師在課堂上更正——平台**不**會追溯改寫學生已看到的試卷或已記錄的分數，這個政策由擁有者決定並記錄在 [docs/teacher-review/README.md](docs/teacher-review/README.md) 第 6.5 節。
 
-> **仍未完成的是「人」的部分**：平台目前沒有可用的歷史科教師覆核者，因此 `docs/teacher-review/golden-questions.v1.json` 仍然**沒有任何已覆核題目**。程式只確保「未覆核的題目不會被當作已覆核」，不會代教師判斷史實；自動品質閘門只擋機器可判斷的缺陷（答案不唯一、教材不支持、解釋空洞等），**不代表史實正確**。
+> **「人」的部分已於 2026-10-17 開始（仍屬小樣本）**：擁有者 `ipwh@pochiu.edu.hk` 已在平台以登入工作階段記錄 **17 筆覆核通過**（每筆綁定題目版本 rev 3 及內容指紋）。`docs/teacher-review/golden-questions.v1.json` 是另一套人工黃金題庫，**仍然沒有任何已覆核題目**（平台覆核不會自動填入該檔案）。程式只確保「未覆核的題目不會被當作已覆核」，不會代教師判斷史實；自動品質閘門只擋機器可判斷的缺陷（答案不唯一、教材不支持、解釋空洞等），**不代表史實正確**。
 
 #### 自動品質閘門的能力與限制（必須如實說明）
 
@@ -1886,6 +1886,10 @@ node scripts/e2e-flow.mjs --start   # 端對端 137 項檢查全部通過（含�
 51. **教師在平台完成第一批題目處置（2026-10-17）**：在 Sprint 8.8 的覆核工作階段中，教師／擁有者在平台（`/teacher/questions`）刪除了 **11 條校內試卷題目**（9 條課題1 資料題 `qb-JTH2ndEdDBQ01003`–`01011`、短答 `qb-JTH2ndEdLAQ01002`、mc `qb-JTH2ndEdTFQ01012`）及停用 1 條填充題（`q_df1fd4c05d594891`，答案「枷鎖」）。被刪題目在刪除前均為 **0 作答、0 回報、0 覆核紀錄**，因此沒有學習紀錄或稽核紀錄損失；原始內容仍保存在 `data/exports/app.db.pre-schoolpaper-links-2026-10-16T1520Z.db`。紀錄見 [school-paper-deletions-2026-10-17.json](docs/teacher-review/school-paper-deletions-2026-10-17.json)（測試：[tests/school-paper-deletion-record.test.ts](tests/school-paper-deletion-record.test.ts)）。
     - **文件同步**：未通過教材依據核對的校內試題由 **25 條減至 16 條**；[school-paper-unverified-2026-10.json](docs/teacher-review/school-paper-unverified-2026-10.json) 升級為 v2，保留原 25 條逐行證據並以 `removedOn: 2026-10-17` 標示其中 9 條已由教師刪除；[release-preflight-2026-10.md](docs/release-preflight-2026-10.md) 的資料庫現況、覆蓋清單及 P2 阻塞同步更新；README 相關段落加上更新註記（歷史紀錄不改寫）。
     - **本機現況**：題目 789 → **778**（已發布 788 → **776**、草稿 1、停用 1）、`source_verified = 0` 由 25 → **16**、覆核紀錄仍為 **10 筆（沒有新增）**、回報 30、作答 140、教材文件 19、段落 7,950 — 即**沒有任何覆核決定被記錄**，校準狀態仍為 `unmeasured`。
+52. **清除機械式「列表標籤」題目（2026-10-17，擁有者指示）**：擁有者指出「以下哪一項是「1948年」的說明？」「試說明「1954 年」」「＿＿＿是指…（答案：社會方面）」等題目毫無意義——它們全部是把教材列表／表格的「標籤：內容」一行左右對調，要求學生背回標籤，沒有歷史理解。按指示搜尋同類題目並一併刪除 **101 條**（全部 `material-mock` 示範生成；`answer-is-row-label` 23 條、`stem-quotes-row-label` 78 條；刪除前 0 作答／0 回報／0 覆核）。逐條清單、規則（含排除條件：非列表行來源、作者示範題、校內試卷題目一律不在範圍）、擁有者提供的 6 個例子及可還原快照見 [label-question-purge-2026-10-17.json](docs/teacher-review/label-question-purge-2026-10-17.json)（測試：[tests/label-question-purge-record.test.ts](tests/label-question-purge-record.test.ts)）。
+    - **刪除前已建立一致性快照**：`data/exports/app.db.pre-label-purge-20261017T041644Z.db`（`VACUUM INTO`，5,095,424 bytes）；如要還原，停止服務後以它取代 `data/app.db`。
+    - **沒有附帶損失**：`PRAGMA integrity_check = ok`；孤立作答／回報紀錄在刪除前後同為 75／15（來自早前由教師刪除的題目，並非本次操作造成；相關查詢以 `INNER JOIN questions` 讀取，不會把已刪題目計入統計）；覆核紀錄未變。
+    - **同時記錄教師覆核進度**：同日 12:11–12:16（HKT）擁有者在平台記錄了 **17 筆覆核通過**（`ipwh@pochiu.edu.hk`，經登入工作階段驗證，rev 3）。現時題目 **644** 條（已發布 642、草稿 1、停用 1）、`material-mock` 由 272 降至 **171**、`source_verified = 0` 仍為 16、覆核紀錄 **27 筆**（10 筆為 2026-10-15 示範紀錄）；8 題覆核套件仍全部待覆核，故校準仍為 `unmeasured`。
 
 ---
 
