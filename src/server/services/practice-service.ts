@@ -42,6 +42,7 @@ import { expandSectionIds, getTopic, sectionTitleMap } from "../repositories/top
 import { calculateAccuracy, gradeAnswer, type GradeOutcome } from "./grading";
 import { gradeWithAi } from "./ai-grading";
 import { generateQuestions } from "./question-service";
+import { checkQuestionServable } from "./question-servability";
 import { studentExcerptIsVisible } from "./source-visibility";
 
 export class PracticeServiceError extends Error {
@@ -83,7 +84,6 @@ export function buildFeedback(
   attempt: {
     autoGraded: boolean;
     isCorrect: boolean | null;
-    selfAssessment: "understood" | "needs-review" | null;
     aiGrading?: AiGrading | null;
   } | null,
   sourceFromOcr = false,
@@ -96,7 +96,7 @@ export function buildFeedback(
   return {
     questionId: question.id,
     answer,
-    autoGraded: attempt?.autoGraded ?? question.questionType !== "short",
+    autoGraded: attempt?.autoGraded ?? true,
     isCorrect: attempt?.isCorrect ?? null,
     correctAnswer: question.correctAnswer,
     acceptedAnswers: question.acceptedAnswers,
@@ -109,7 +109,6 @@ export function buildFeedback(
     sourceWithheld: !excerptVisible,
     sourceFromOcr,
     aiGrading: attempt?.aiGrading ?? null,
-    selfAssessment: attempt?.selfAssessment ?? null,
     reviewFlag,
     aiLimitReached,
   };
@@ -151,7 +150,6 @@ function needsAiGrading(question: Question, outcome: GradeOutcome): boolean {
 
 /**
  * 需要時以 AI 按語意批改答案：
- *   - 短答題一律嘗試（原本不會自動評分，只由學生自我檢查）
  *   - 填充題只在逐字比對不合格時嘗試（已答對就毋須再花時間及費用）
  *   - 選擇題不適用
  */
@@ -199,6 +197,8 @@ function collectQuestionsFromWrongAttempts(
     if (!question) continue;
     if (!selectedSectionIds.has(question.sectionId)) continue;
     if (!questionTypes.includes(question.questionType)) continue;
+    // 結構上無法作答的題目（多個空格只有一個答案、選項失效等）不再派給學生
+    if (!checkQuestionServable(question).ok) continue;
     collected.set(question.id, question);
   }
 
@@ -219,6 +219,20 @@ export function distributeQuestionCount(total: number, sectionIds: string[]): Ma
     if (count > 0) allocation.set(sectionId, count);
   });
   return allocation;
+}
+
+/**
+ * 找出「有分配到題目、但最終沒有可用題目」的分節。
+ *
+ * 題目數量少於所選分節時，部分分節本來就不會分配到題目（例如選了 18 個分節、
+ * 只要求 10 題），它們並非教材不足，不應計入「未能出題」的提示。
+ */
+export function countUnproductiveSections(
+  allocation: Map<string, number>,
+  sectionsWithQuestions: Iterable<string>,
+): string[] {
+  const produced = new Set(sectionsWithQuestions);
+  return [...allocation.keys()].filter((sectionId) => !produced.has(sectionId));
 }
 
 interface SectionGenerationOutcome {
@@ -245,6 +259,10 @@ async function generateForSections(options: {
           questionTypes: options.questionTypes,
           difficulty: options.difficulty,
           questionCount: count,
+          // 多要求 1–2 題作備用：真實模型偶爾寫出違規題幹，多出的題目可補上，
+          // 避免「一題不合格」令整節沒有題目（見 GenerateOptions.overGenerate）。
+          // 只要求 1 題時多要 1 題（已是兩倍機會）；要求 2 題以上則多要 2 題。
+          overGenerate: count <= 1 ? 1 : 2,
           persist: false,
           allowBankDuplicates: true,
           requestType: "question-instant",
@@ -275,9 +293,10 @@ async function generatePracticeQuestions(options: {
   difficulty: Difficulty;
   questionCount: number;
 }): Promise<{ questions: Question[]; notices: string[] }> {
+  const allocation = distributeQuestionCount(options.questionCount, options.sectionIds);
   const outcomes = await generateForSections({
     topicId: options.topicId,
-    allocation: distributeQuestionCount(options.questionCount, options.sectionIds),
+    allocation,
     questionTypes: options.questionTypes,
     difficulty: options.difficulty,
   });
@@ -301,7 +320,14 @@ async function generatePracticeQuestions(options: {
         continue;
       }
       usedDemoFallback = usedDemoFallback || outcome.generated.usedDemoFallback;
-      if (outcome.generated.notice !== null) notices.push(outcome.generated.notice);
+      if (outcome.generated.notice !== null) {
+        // 生成服務每次呼叫都會附上「有 N 條題目未確定…」的訊息；這裡移除，
+        // 改由下方以整次練習的總數統一說明，避免同一訊息重複顯示多次。
+        const withoutHeld = outcome.generated.notice
+          .replace(/有 \d+ 條題目的品質檢查有未確定項目[^。]*。\s*/g, "")
+          .trim();
+        if (withoutHeld.length > 0) notices.push(withoutHeld);
+      }
       for (const question of outcome.generated.questions) {
         // 跨分節、跨呼叫的去重（見 question-dedupe.ts）：舊版只比對題幹完全相同的字串，
         // 令「同一教材依據、同一答案、題幹略作改寫」的題目同時出現在一份練習之中；
@@ -326,22 +352,29 @@ async function generatePracticeQuestions(options: {
 
   collect(outcomes);
 
-  // 由已成功出題的分節補足不足的題數（只補一次，避免無限重試）。
-  // 補題時把已用過的答案交給生成器，令模型改出其他史實，而不是把同一題改寫再交一次。
+  // 由已成功出題的分節補足不足的題數。最多補兩輪（有進展才繼續），避免無限重試；
+  // 2026-10-18 由「只補一次」放寬為兩輪：單輪補題常因個別分節無合適題材而不足，
+  // 令學生明明還有可用題材卻只拿到部分題目。
+  //
+  // 補題的第二輪會把「第一輪完全出不到題目」的分節也納入（機會均等），因為單次生成
+  // 失敗往往只是模型寫壞了一題，再試一次多數可以交出題目。
   let missing = options.questionCount - questions.length;
-  if (missing > 0) {
-    const fallbackSections = [...sectionsWithQuestions];
-    if (fallbackSections.length > 0) {
-      const topUp = await generateForSections({
-        topicId: options.topicId,
-        allocation: distributeQuestionCount(missing, fallbackSections),
-        questionTypes: options.questionTypes,
-        difficulty: options.difficulty,
-        avoidAnswers: used.usedAnswers(),
-      });
-      collect(topUp);
-      missing = options.questionCount - questions.length;
-    }
+  const emptySectionIds = countUnproductiveSections(allocation, sectionsWithQuestions);
+  for (let round = 0; round < 2 && missing > 0; round += 1) {
+    const fallbackSections =
+      round === 0 ? [...sectionsWithQuestions] : [...sectionsWithQuestions, ...emptySectionIds];
+    if (fallbackSections.length === 0) break;
+    const before = questions.length;
+    const topUp = await generateForSections({
+      topicId: options.topicId,
+      allocation: distributeQuestionCount(missing, fallbackSections),
+      questionTypes: options.questionTypes,
+      difficulty: options.difficulty,
+      avoidAnswers: used.usedAnswers(),
+    });
+    collect(topUp);
+    missing = options.questionCount - questions.length;
+    if (questions.length === before) break;
   }
 
   if (questions.length === 0) {
@@ -365,12 +398,13 @@ async function generatePracticeQuestions(options: {
       : "這次練習的題目由 AI 按你揀選的主題即時生成，並已核對教材依據。",
   );
 
-  const emptySections = options.sectionIds.filter(
-    (sectionId) => !sectionsWithQuestions.has(sectionId),
-  );
+  // 只列出「有分配到題目、但最終沒有可用題目」的分節；題目數量少於所選分節時，
+  // 沒有分配到題目的分節並非教材不足，不應計入這個提示（否則 18 個分節、10 題時
+  // 會誤報「15 個主題未能出題」）。
+  const emptySections = countUnproductiveSections(allocation, sectionsWithQuestions);
   if (emptySections.length > 0) {
     notices.push(
-      `有 ${emptySections.length} 個主題的教材內容暫時未能出題，這次練習只包含其餘主題的題目。`,
+      `有 ${emptySections.length} 個所選主題未能出題（教材不足或題目未通過檢查），這次練習只包含其餘主題的題目。`,
     );
   }
   if (missing > 0) {
@@ -384,7 +418,7 @@ async function generatePracticeQuestions(options: {
     );
   }
 
-  return { questions, notices };
+  return { questions, notices: [...new Set(notices)] };
 }
 
 /**
@@ -451,7 +485,7 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
       statuses: ["published"],
       // Sprint 7.9：閘門判定未確定、仍待教師確認的題目不會進入學生練習，
       // 即使資料庫中因舊資料或人為操作而仍是 published。
-    }).filter((item) => !item.teacherConfirmationRequired);
+    }).filter((item) => !item.teacherConfirmationRequired && checkQuestionServable(item).ok);
 
     const sameDifficulty = shuffle(bankAll.filter((item) => item.difficulty === parsed.difficulty));
     selected = sameDifficulty.slice(0, parsed.questionCount);
@@ -480,6 +514,7 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
           questionTypes: parsed.questionTypes,
           difficulty: parsed.difficulty,
           questionCount: missing,
+          overGenerate: 2,
           requestType: "question-instant",
           // 學生自行觸發：教材來源只可取用已確認可向學生發布的內容（fail-closed）
           audience: "student",
@@ -664,7 +699,7 @@ export async function submitAnswer(
 
   const outcome = gradeAnswer(question, trimmed);
 
-  // 填充題在逐字比對不合格，以及所有短答題，都會以 AI 按語意再判斷一次，
+  // 填充題在逐字比對不合格時，會以 AI 按語意再判斷一次，
   // 避免因為用字、詞序或補充說明等與答案無關的差異而被判錯。
   //
   // AI 用量上限：只有在真的會呼叫模型時才保留用量（已比對成功的填充題不會，
@@ -720,39 +755,6 @@ export async function submitAnswer(
   };
 }
 
-export function setSelfAssessment(
-  sessionId: string,
-  learnerId: string,
-  questionId: string,
-  selfAssessment: "understood" | "needs-review",
-): QuestionFeedback {
-  const session = getSession(sessionId);
-  if (!session) throw new PracticeServiceError("找不到這次練習記錄", 404);
-  if (session.learnerId !== learnerId) {
-    throw new PracticeServiceError("不能修改其他學習者的練習記錄", 403);
-  }
-
-  const question = getSessionQuestions(sessionId).find((item) => item.id === questionId);
-  if (!question) throw new PracticeServiceError("這條題目不屬於本次練習", 404);
-  if (question.questionType !== "short") {
-    throw new PracticeServiceError("只有短答題需要自我檢查。", 400);
-  }
-
-  const existing = getAttempt(sessionId, questionId);
-  const attempt = saveAttempt({
-    sessionId,
-    questionId,
-    learnerId,
-    answer: existing?.answer ?? "（未輸入答案）",
-    autoGraded: false,
-    isCorrect: null,
-    selfAssessment,
-    questionRevision: question.revision,
-  });
-
-  return buildFeedback(question, attempt.answer, attempt, questionUsesOcr(question));
-}
-
 export function getPracticeResult(sessionId: string, learnerId: string): PracticeResult {
   const session = getSession(sessionId);
   if (!session) throw new PracticeServiceError("找不到這次練習記錄", 404);
@@ -776,9 +778,7 @@ export function getPracticeResult(sessionId: string, learnerId: string): Practic
   const toReview = new Map<string, { knowledgePoint: string; sectionTitle: string; questionIds: string[] }>();
   questions.forEach((question) => {
     const attempt = attemptByQuestion.get(question.id);
-    const needsReview =
-      attempt?.isCorrect === false || attempt?.selfAssessment === "needs-review";
-    if (!needsReview) return;
+    if (attempt?.isCorrect !== false) return;
     const key = question.knowledgePoint;
     const entry = toReview.get(key) ?? {
       knowledgePoint: key,
@@ -789,10 +789,6 @@ export function getPracticeResult(sessionId: string, learnerId: string): Practic
     toReview.set(key, entry);
   });
 
-  const selfReviewKnowledgePoints = feedback
-    .filter((item) => item.selfAssessment === "needs-review")
-    .map((item) => item.knowledgePoint);
-
   return {
     session,
     totalQuestions: questions.length,
@@ -801,7 +797,6 @@ export function getPracticeResult(sessionId: string, learnerId: string): Practic
     correctCount,
     accuracy: calculateAccuracy(correctCount, graded.length),
     knowledgePointsToReview: [...toReview.values()],
-    selfReviewKnowledgePoints: [...new Set(selfReviewKnowledgePoints)],
     feedback,
   };
 }

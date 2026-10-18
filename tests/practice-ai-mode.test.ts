@@ -251,6 +251,19 @@ describe("AI 即時出題模式", () => {
     expect(assembled.questions.every((question) => question.questionType === "fill")).toBe(true);
     expect(assembled.notice ?? "").not.toContain("這次練習包含");
   });
+
+  // 迴歸：18 個分節只要求 10 題時，有 8 個分節本來就分不到題目，
+  // 舊版把它們一併算成「教材內容未能出題」，學生會誤以為教材不足。
+  it("題目數少於所選分節時，未獲分配題目的分節不計入「未能出題」", () => {
+    const sections = ["a", "b", "c", "d", "e"];
+    const allocation = practice.distributeQuestionCount(2, sections);
+    expect([...allocation.keys()]).toEqual(["a", "b"]);
+
+    // a、b 都成功出題 → 沒有「未能出題」的主題（舊版會報 c、d、e 共 3 個）
+    expect(practice.countUnproductiveSections(allocation, ["a", "b"])).toEqual([]);
+    // b 分配到題目但出不到題 → 只報 b，不會把 c、d、e 一併算入
+    expect(practice.countUnproductiveSections(allocation, ["a"])).toEqual(["b"]);
+  });
 });
 
 /**

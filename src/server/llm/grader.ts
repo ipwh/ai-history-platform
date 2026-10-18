@@ -1,8 +1,8 @@
 /**
- * AI 語意批改（填充題及短答題）。
+ * AI 語意批改（填充題）。
  *
  * 目的：避免「逐字比對」造成過嚴的判斷，例如學生答「文藝復興時期」而標準答案是
- * 「文藝復興」，或短答題用不同措辭表達同一概念時被判錯。
+ * 「文藝復興」時被判錯。
  *
  * 設計原則：
  *   1. 模型只判斷「學生的答案在意思上是否達到要求」，不可以改變標準答案。
@@ -17,9 +17,9 @@ import { GRADING_SYSTEM_PROMPT, buildGradingPrompt } from "./prompt";
 
 export interface AnswerGradingInput {
   topicTitle: string;
-  questionType: Extract<QuestionType, "fill" | "short">;
+  questionType: Extract<QuestionType, "fill">;
   question: string;
-  /** 標準答案（填充題為需要填寫的字詞；短答題為參考答案） */
+  /** 標準答案（填充題為需要填寫的字詞） */
   referenceAnswer: string;
   acceptedAnswers: string[];
   gradingPoints: string[];
@@ -112,13 +112,13 @@ export function createGeminiGrader(options: GraderOptions): AnswerGrader {
   };
 }
 
-/** 只有填充題及短答題需要（且可以）進行語意批改 */
+/** 只有填充題需要（且可以）進行語意批改 */
 export function supportsAiGrading(questionType: QuestionType): boolean {
-  return questionType === "fill" || questionType === "short";
+  return questionType === "fill";
 }
 
 export interface GradingParseContext {
-  questionType: Extract<QuestionType, "fill" | "short">;
+  questionType: Extract<QuestionType, "fill">;
   gradingPoints: string[];
 }
 
@@ -130,7 +130,7 @@ export function parseGradingResult(
   raw: LlmAnswerGrading,
   context: GradingParseContext,
 ): AiGrading | null {
-  const points = context.questionType === "short" ? context.gradingPoints : [];
+  const points = context.gradingPoints;
   const hitPoints: string[] = [];
   for (const index of new Set(raw.hitPointIndexes)) {
     const point = points[index];
@@ -139,15 +139,7 @@ export function parseGradingResult(
   const missingPoints = points.filter((point) => !hitPoints.includes(point));
 
   const feedback = raw.feedback.trim();
-  if (feedback.length === 0 && context.questionType === "short") return null;
-
-  // 短答題：以達到要點的比例修正過嚴／過寬的判斷
-  let verdict = raw.verdict;
-  if (context.questionType === "short" && points.length > 0) {
-    if (hitPoints.length === points.length) verdict = "correct";
-    else if (hitPoints.length === 0) verdict = "incorrect";
-    else verdict = "partial";
-  }
+  const verdict = raw.verdict;
 
   return {
     verdict,

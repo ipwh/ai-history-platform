@@ -1,7 +1,5 @@
 /**
- * 自動評分。
- * 只有選擇題及填充題會自動評分；短答題一律由學生按得分要點自我檢查
- * （第一版不會將 AI 評分當作正式 HKDSE 分數）。
+ * 自動評分。選擇題及填充題以逐字比對（正規化後）自動評分。
  */
 import type { Question } from "../../lib/types";
 
@@ -73,10 +71,6 @@ function isNearMiss(normalizedAnswer: string, normalizedAccepted: string): boole
 }
 
 export function gradeAnswer(question: Question, answer: string): GradeOutcome {
-  if (question.questionType === "short") {
-    return { autoGraded: false, isCorrect: null };
-  }
-
   const normalizedAnswer = normalizeAnswer(answer);
   if (normalizedAnswer.length === 0) {
     return { autoGraded: true, isCorrect: false };

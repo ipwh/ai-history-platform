@@ -35,7 +35,6 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<Record<string, QuestionFeedback>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [selfAssessing, setSelfAssessing] = useState(false);
   const [submitError, setSubmitError] = useState<unknown>(null);
   const [completing, setCompleting] = useState(false);
   const [aiGradingAvailable, setAiGradingAvailable] = useState(false);
@@ -111,23 +110,6 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
       setSubmitError(caught);
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function handleSelfAssessment(value: "understood" | "needs-review") {
-    if (!current) return;
-    if (selfAssessing) return;
-    setSelfAssessing(true);
-    try {
-      const result = await api.post<{ feedback: QuestionFeedback }>(
-        `/api/practice/${sessionId}/self-assessment`,
-        { learnerId: getLearnerId(), questionId: current.id, selfAssessment: value },
-      );
-      setFeedback((prev) => ({ ...prev, [current.id]: result.feedback }));
-    } catch (caught) {
-      setSubmitError(caught);
-    } finally {
-      setSelfAssessing(false);
     }
   }
 
@@ -221,12 +203,7 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
         {submitError ? <ErrorNotice error={submitError} /> : null}
 
         {currentFeedback ? (
-          <FeedbackPanel
-            feedback={currentFeedback}
-            aiGradingAvailable={aiGradingAvailable}
-            sessionId={sessionId}
-            onSelfAssessment={(value) => void handleSelfAssessment(value)}
-          />
+          <FeedbackPanel feedback={currentFeedback} sessionId={sessionId} />
         ) : (
           <div className="flex flex-wrap gap-2">
             <button
@@ -245,7 +222,7 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
               {current.questionType === "mc"
                 ? "提交前不會顯示答案，請先自行作答。"
                 : aiGradingAvailable
-                  ? "提交後會由 AI 按語意批改（會核對得分要點），用字不同不會直接判錯。"
+                  ? "提交後會由 AI 按語意批改，用字不同不會直接判錯。"
                   : "提交前不會顯示答案，請先自行作答。"}
             </span>
           </div>
@@ -289,26 +266,18 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
 
 function FeedbackPanel({
   feedback,
-  aiGradingAvailable,
   sessionId,
-  onSelfAssessment,
 }: {
   feedback: QuestionFeedback;
-  aiGradingAvailable: boolean;
   sessionId: string;
-  onSelfAssessment: (value: "understood" | "needs-review") => void;
 }) {
   const aiVerdict = feedback.aiGrading?.verdict ?? null;
-  const verdict = feedback.autoGraded
-    ? feedback.isCorrect
-      ? {
-          text: aiVerdict === "correct" ? "答對了（AI 語意批改）" : "答對了",
-          className: "badge badge-success",
-        }
-      : { text: "答錯了", className: "badge badge-danger" }
-    : aiVerdict !== null
-      ? { text: "AI 批改結果（可覆核）", className: "badge badge-accent" }
-      : { text: "請自我檢查", className: "badge badge-warning" };
+  const verdict = feedback.isCorrect
+    ? {
+        text: aiVerdict === "correct" ? "答對了（AI 語意批改）" : "答對了",
+        className: "badge badge-success",
+      }
+    : { text: "答錯了", className: "badge badge-danger" };
 
   return (
     <section className="flex flex-col gap-3 rounded-xl p-3" style={{ background: "#fafbff" }}>
@@ -361,10 +330,6 @@ function FeedbackPanel({
             </p>
           ) : null}
         </div>
-      ) : !feedback.autoGraded && aiGradingAvailable === false ? (
-        <Notice>
-          現時未啟用 AI 語意批改，短答題請按下面的得分要點自我檢查。
-        </Notice>
       ) : null}
 
       <div className="text-sm">
@@ -421,29 +386,6 @@ function FeedbackPanel({
               </li>
             ))}
           </ul>
-          <div className="flex flex-wrap gap-2 mt-2">
-            <button
-              type="button"
-              className="btn"
-              data-selected={feedback.selfAssessment === "understood"}
-              onClick={() => onSelfAssessment("understood")}
-            >
-              我已掌握
-            </button>
-            <button
-              type="button"
-              className="btn"
-              data-selected={feedback.selfAssessment === "needs-review"}
-              onClick={() => onSelfAssessment("needs-review")}
-            >
-              需要重溫
-            </button>
-            {feedback.selfAssessment ? (
-              <span className="text-xs text-gray-500 self-center">
-                已記錄：{feedback.selfAssessment === "understood" ? "我已掌握" : "需要重溫"}
-              </span>
-            ) : null}
-          </div>
         </div>
       ) : null}
 

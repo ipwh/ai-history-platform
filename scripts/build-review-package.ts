@@ -35,16 +35,14 @@ const DEFAULT_OUTPUT = path.join(
   "generated-question-sample-2026-10.json",
 );
 
-/** 代表性抽樣：兩種來源 × 三種題型 × 不同難度（每組取 id 最小的一題，可重現） */
+/** 代表性抽樣：兩種來源 × 兩種題型 × 不同難度（每組取 id 最小的一題，可重現） */
 const SAMPLE_TARGETS: { origin: string; questionType: QuestionType; difficulty: Difficulty }[] = [
   { origin: "material-ai", questionType: "mc", difficulty: "basic" },
   { origin: "material-ai", questionType: "mc", difficulty: "challenge" },
   { origin: "material-ai", questionType: "fill", difficulty: "advanced" },
   { origin: "material-ai", questionType: "fill", difficulty: "basic" },
-  { origin: "material-ai", questionType: "short", difficulty: "advanced" },
   { origin: "material-mock", questionType: "mc", difficulty: "basic" },
   { origin: "material-mock", questionType: "fill", difficulty: "basic" },
-  { origin: "material-mock", questionType: "short", difficulty: "basic" },
 ];
 
 const REVIEW_CONTEXT_LIMIT = 400;

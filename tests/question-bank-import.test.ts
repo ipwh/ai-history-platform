@@ -241,9 +241,18 @@ describe("試題檔類型判斷", () => {
 
   it("書本內容及一般 PDF 不會被當成試題檔", () => {
     expect(bank.detectQuestionBankType("課題1人類的需要 古與今.docx")).toBeNull();
+    expect(bank.detectQuestionBankType("課題1人類的需要 古與今_課文.docx")).toBeNull();
     expect(bank.detectQuestionBankType("教師筆記.pdf")).toBeNull();
     expect(bank.isQuestionBankFileName("HNC2A2E_QB_T5_1.MCQ.docx")).toBe(true);
     expect(bank.isQuestionBankFileName("課題5 近代歐洲的興起.docx")).toBe(false);
+  });
+
+  it("教師自行命名的試題檔亦能判斷類型（_MCQ／_填充題）", () => {
+    expect(bank.detectQuestionBankType("課題1人類的需要 古與今_MCQ.docx")).toBe("MCQ");
+    expect(bank.detectQuestionBankType("課題1人類的需要 古與今_填充題.docx")).toBe("FBQ");
+    expect(bank.detectQuestionBankType("課題1人類的需要 古與今_是非題.docx")).toBe("TFQ");
+    expect(bank.detectQuestionBankType("課題1人類的需要 古與今_資料題.docx")).toBe("DBQ");
+    expect(bank.parseQuestionBank(MCQ_TEXT, "課題1人類的需要 古與今_MCQ.docx").questions).toHaveLength(2);
   });
 });
 
@@ -286,24 +295,16 @@ describe("試題解析", () => {
     expect(result.questions[1].correctAnswer).toBe("是");
   });
 
-  it("長題目：轉為短答題並依「（N 分）」拆出得分要點", () => {
+  it("長題目：平台不再支援（短答題功能已移除），會略過並記錄原因", () => {
     const result = bank.parseQuestionBank(LAQ_TEXT, "HNC1A2E_QB_T1_6.LAQ.docx");
-    expect(result.questions).toHaveLength(1);
-    const question = result.questions[0];
-    expect(question.questionType).toBe("short");
-    expect(question.question).toContain("文字的發明對歷史的劃分");
-    expect(question.gradingPoints.length).toBeGreaterThanOrEqual(2);
-    expect(question.gradingPoints[0]).toContain("（1分）");
-    expect(question.gradingPoints.join("")).toContain("史前時期");
+    expect(result.questions).toHaveLength(0);
+    expect(result.skipped[0]?.reason).toContain("長題目");
   });
 
-  it("資料題：保留資料文字與題目要求，答案作為得分要點", () => {
+  it("資料題：平台不再支援（短答題功能已移除），會略過並記錄原因", () => {
     const result = bank.parseQuestionBank(DBQ_TEXT, "HNC1A2E_QB_T1_7.DBQ.docx");
-    expect(result.questions).toHaveLength(1);
-    expect(result.questions[0].questionType).toBe("short");
-    expect(result.questions[0].question).toContain("資料I");
-    expect(result.questions[0].question).toContain("順序排列三項資料");
-    expect(result.questions[0].gradingPoints.join("")).toContain("（1分）");
+    expect(result.questions).toHaveLength(0);
+    expect(result.skipped[0]?.reason).toContain("資料題");
   });
 
   it("配對題與時序題不會被硬塞成其他題型，會略過並記錄原因", () => {
@@ -365,19 +366,10 @@ describe("乙式排版（|!|題號|!|）解析", () => {
     expect(result.questions[1].explanation).toContain("(2) 美洲");
   });
 
-  it("資料題：解析難度標示、去除作答線，並就需圖片作答加上品質警告", () => {
+  it("資料題（乙式排版）：平台不再支援，會略過並記錄原因", () => {
     const result = bank.parseQuestionBank(PIPE_DBQ_TEXT, "HNC2A2E_QB_T6_7.DBQ.docx");
-    expect(result.questions).toHaveLength(1);
-    const question = result.questions[0];
-    expect(question.questionType).toBe("short");
-    expect(question.difficulty).toBe("advanced");
-    expect(question.question).toContain("資料I");
-    expect(question.question).not.toContain("難度");
-    // 題目內的填空線（學生作答位置）保留；只有整行都是作答線時才會移除
-    expect(question.question).toContain("____ 為起點");
-    expect(question.gradingPoints.join("")).toContain("（2分）");
-    expect(question.qualityWarnings.join("")).toContain("圖片");
-    expect(result.warnings.join("")).toContain("原檔圖片");
+    expect(result.questions).toHaveLength(0);
+    expect(result.skipped[0]?.reason).toContain("資料題");
   });
 
   it("選項結束符號（私人使用區字元）不會變成選項內容", () => {
@@ -432,6 +424,7 @@ describe("匯入題庫", () => {
       text: MCQ_TEXT,
     });
     expect(result.imported).toBe(2);
+    expect(result.excludedForImage).toBe(0);
     expect(result.bySection.length).toBeGreaterThan(0);
 
     const stored = questions.getQuestion("qb-JTH2ndEdMCQ01001");
@@ -452,6 +445,41 @@ describe("匯入題庫", () => {
       text: MCQ_TEXT,
     });
     expect(questions.listQuestions({ topicId: "topic-1" }).length).toBe(before);
+  });
+
+  it("原檔題號重複時不會丟失題目（重複者以 -2 後綴保存並回報）", () => {
+    const duplicated = `[[DUPTEST0001
+第一題？
+@O
+A. 甲
+B. 乙
+❒
+##
+A
+@@
+t:mc; nil:1
+]]
+[[DUPTEST0001
+第二題？
+@O
+A. 丙
+B. 丁
+❒
+##
+B
+@@
+t:mc; nil:1
+]]`;
+    const result = importService.importQuestionBank({
+      topicId: "topic-3",
+      fileName: "DUPTEST.MCQ.docx",
+      text: duplicated,
+    });
+
+    expect(result.imported).toBe(2);
+    expect(questions.getQuestion("qb-DUPTEST0001")?.question).toContain("第一題");
+    expect(questions.getQuestion("qb-DUPTEST0001-2")?.question).toContain("第二題");
+    expect(result.warnings.some((warning) => warning.includes("題號在原檔重複"))).toBe(true);
   });
 
   it("課題1 不考核範圍（新月沃土／黃河、長江流域／印度河）的題目不會匯入", () => {
@@ -498,28 +526,40 @@ t:mc; nil:1
     expect(questions.getQuestion("qb-JTH2ndEdMCQ01902")).not.toBeNull();
   });
 
-  it("長題目匯入為短答題並帶有得分要點", () => {
-    importService.importQuestionBank({
+  it("長題目不再匯入（短答題功能已移除），會略過並記錄原因", () => {
+    const result = importService.importQuestionBank({
       topicId: "topic-1",
       fileName: "HNC1A2E_QB_T1_6.LAQ.docx",
       text: LAQ_TEXT,
     });
-    const stored = questions.getQuestion("qb-JTH2ndEdLAQ01001");
-    expect(stored?.questionType).toBe("short");
-    expect(stored?.gradingPoints.length).toBeGreaterThan(0);
+    expect(result.imported).toBe(0);
+    expect(result.skipped[0]?.reason).toContain("長題目");
+    expect(questions.getQuestion("qb-JTH2ndEdLAQ01001")).toBeNull();
   });
 
-  it("需圖片作答的題目會以品質警告存入題庫（仍為草稿，待教師核對）", () => {
-    importService.importQuestionBank({
+  it("需原檔圖片才能作答的題目永久排除，不會進入題庫", () => {
+    const imageMcq = `[[JTH2ndEdMCQ01999
+上圖顯示哪一項發明？
+@O
+A. 蒸汽機
+B. 織布機
+C. 蒸汽船
+D. 火車
+❒
+##
+A
+@@
+t:mc; nil:1
+]]`;
+    const result = importService.importQuestionBank({
       topicId: "topic-6",
-      fileName: "HNC2A2E_QB_T6_7.DBQ.docx",
-      text: PIPE_DBQ_TEXT,
+      fileName: "HNC2A2E_QB_T6_8.MCQ.docx",
+      text: imageMcq,
     });
-    const stored = questions.getQuestion("qb-NJCDN0060000001");
-    expect(stored).not.toBeNull();
-    expect(stored?.status).toBe("draft");
-    expect(stored?.difficulty).toBe("advanced");
-    expect(stored?.qualityWarnings.join("")).toContain("圖片");
+    expect(result.excludedForImage).toBe(1);
+    expect(result.imported).toBe(0);
+    expect(questions.getQuestion("qb-JTH2ndEdMCQ01999")).toBeNull();
+    expect(result.warnings.join("")).toContain("永久排除");
   });
 
   it("匯入的試題沒有段落依據，節錄及來源位置對學生一律不顯示（Sprint 7.5）", async () => {
@@ -591,5 +631,104 @@ t:mc; nil:1
     expect(sections).not.toContain("topic-1-four-civilisations-indus");
     expect(sections).not.toContain("topic-1-four-civilisations-yellow");
     expect(sections).toContain("topic-1-four-civilisations-egypt");
+  });
+});
+
+/**
+ * 2026-10-18 由「模擬學生使用」發現的匯入缺陷：
+ *   - 一句有多個空格的填充題，答案區只記錄第一個答案 → 學生見到多個空格卻只有一個輸入框；
+ *   - 原檔以 Word 底線排版，轉成文字後空格消失 → 題目完全沒有空格；
+ *   - 選項在解析後全部變成「.」（原檔以表格／項目符號排版）。
+ * 修復後：可還原的題目改寫成單一空格；不可還原的題目不會匯入，並在匯入報告說明原因。
+ */
+describe("填充題多空格及無效選項的修復", () => {
+  const MULTI_BLANK_FBQ = `填充題
+[[MULTIBLANK0001
+_______________是文字出現前，沒有文字紀錄的時期。_______________是文字出現後，擁有文字紀錄的時期。
+##
+史前時期；信史時期
+@@
+{{}}
+t:fb; nil:2
+]]
+[[MULTIBLANK0002
+甲＿＿＿＿、乙＿＿＿＿及丙＿＿＿＿都是例子。
+##
+只有一個答案
+@@
+{{}}
+t:fb; nil:3
+]]`;
+
+  it("多空格填充題匯入時改寫成單一空格，其餘空格的答案填回題幹", () => {
+    const result = importService.importQuestionBank({
+      topicId: "topic-1",
+      fileName: "MULTIBLANK.FBQ.docx",
+      text: MULTI_BLANK_FBQ,
+    });
+
+    const repaired = questions.getQuestion("qb-MULTIBLANK0001");
+    expect(repaired).not.toBeNull();
+    expect(repaired?.questionType).toBe("fill");
+    expect(repaired?.question.match(/[＿_]{2,}/g)).toHaveLength(1);
+    expect(repaired?.question).toContain("信史時期");
+    expect(repaired?.correctAnswer).toBe("史前時期");
+    expect(repaired?.qualityWarnings.some((warning) => warning.includes("其餘空格的答案"))).toBe(true);
+
+    // 空格數多於答案數的題目無法還原，不會匯入
+    expect(questions.getQuestion("qb-MULTIBLANK0002")).toBeNull();
+    expect(result.skipped.some((entry) => entry.sourceId === "MULTIBLANK0002")).toBe(true);
+    expect(result.skipped.find((entry) => entry.sourceId === "MULTIBLANK0002")?.reason).toContain("空格");
+  });
+
+  it("選項在解析後全部變成「.」的選擇題不會匯入", () => {
+    const degenerate = `選擇題
+[[DEGENERATEMC001
+以下哪個國家於一戰後倡議成立國際聯盟？
+@O
+.
+.
+.
+.
+❒
+##
+A
+@@
+t:mc; nil:1
+]]`;
+    const result = importService.importQuestionBank({
+      topicId: "topic-11",
+      fileName: "DEGENERATE.MCQ.docx",
+      text: degenerate,
+    });
+    expect(result.imported).toBe(0);
+    expect(questions.getQuestion("qb-DEGENERATEMC001")).toBeNull();
+    expect(result.skipped.length).toBeGreaterThan(0);
+  });
+
+  it("選項開頭殘留的項目符號會被移除（原檔寫成「A. . i和ii」）", () => {
+    const bullets = `選擇題
+[[BULLETOPT00001
+以下哪幾項是正確的描述？（i）甲（ii）乙（iii）丙
+@O
+A. . i和ii
+B. . i和iii
+C. . ii和iii
+D. . i、ii和iii
+❒
+##
+B
+@@
+t:mc; nil:1
+]]`;
+    importService.importQuestionBank({
+      topicId: "topic-11",
+      fileName: "BULLET.MCQ.docx",
+      text: bullets,
+    });
+    const stored = questions.getQuestion("qb-BULLETOPT00001");
+    expect(stored).not.toBeNull();
+    expect(stored?.options).toEqual(["i和ii", "i和iii", "ii和iii", "i、ii和iii"]);
+    expect(stored?.correctAnswer).toBe("i和iii");
   });
 });

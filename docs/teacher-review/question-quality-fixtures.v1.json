@@ -264,22 +264,22 @@
       "pairWith": null
     },
     {
-      "id": "partially-supported-answer",
-      "failureMode": "答案只是教材語句的改寫，並非教材原有用語",
+      "id": "answer-unsupported-by-material",
+      "failureMode": "答案與教材無關（連改寫也不是）→ 丟棄",
       "materialSet": "single-statement",
       "request": {
         "questionType": "mc",
         "difficulty": "basic",
         "question": "「重視古典學問並強調人的價值」是哪一種思想的特點？",
         "options": [
-          "人文主義",
+          "主張君主權力由人民授予並可推翻暴君",
           "重商主義",
           "封建制度",
           "君權神授"
         ],
         "correctAnswerIndex": 0,
-        "correctAnswer": "人文主義",
-        "explanation": "教材指出人文主義強調人的價值與理性，並重視古典學問，因此本題答案為人文主義。",
+        "correctAnswer": "主張君主權力由人民授予並可推翻暴君",
+        "explanation": "教材指出人文主義強調人的價值與理性，並重視古典學問；但這個選項講的是社會契約，與教材內容不同。",
         "knowledgePoint": "文藝復興的思想",
         "sourceExcerpt": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。",
         "sourceBlockIds": [
@@ -288,21 +288,20 @@
         "gradingPoints": []
       },
       "expected": {
-        "result": "accepted",
-        "outcome": "pass",
-        "codesInclude": []
+        "result": "discarded",
+        "reasonContains": "未見於提供的教材"
       },
-      "note": "（對照組）答案是教材的關鍵詞語，屬教材原文，因此可自動發布；partial（改寫）個案見下一項。",
+      "note": "答案講的是另一套思想（社會契約），與教材用語幾乎沒有重疊，既非原文亦非改寫：丟棄，不可交學生作答。",
       "evidence": {
         "blockId": "fx-single-1",
         "quote": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。"
       },
-      "polarity": "acceptable",
-      "pairWith": "paraphrased-answer-needs-review"
+      "polarity": "defective",
+      "pairWith": "paraphrase-accepted-with-warning"
     },
     {
-      "id": "paraphrased-answer-needs-review",
-      "failureMode": "答案是一整句改寫而非教材用語 → 未確定，交教師確認",
+      "id": "paraphrase-accepted-with-warning",
+      "failureMode": "答案是一整句改寫而非教材用語 → 記錄警告，照常發布（2026-10-18 放寬）",
       "materialSet": "single-statement",
       "request": {
         "questionType": "mc",
@@ -316,7 +315,7 @@
         ],
         "correctAnswerIndex": 0,
         "correctAnswer": "重視人的價值、理性與古典學問",
-        "explanation": "教材把人文主義說明為強調人的價值與理性、重視古典學問的思想；本題答案以相近的用語表述，須確認與教材一致。",
+        "explanation": "教材把人文主義說明為強調人的價值與理性、重視古典學問的思想；本題答案以相近的用語表述。",
         "knowledgePoint": "文藝復興的思想",
         "sourceExcerpt": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。",
         "sourceBlockIds": [
@@ -326,18 +325,18 @@
       },
       "expected": {
         "result": "accepted",
-        "outcome": "revise",
+        "outcome": "pass",
         "codesInclude": [
           "answer-not-in-material"
         ]
       },
-      "note": "答案以改寫方式表述（並非教材原文），重疊率足以顯示有關連但未達逐字依據：保留題目，暫緩自動發布，交教師核對。",
+      "note": "答案以改寫方式表述（重疊率 67%，並非逐字），只記錄警告交教師覆核，不再暫緩自動發布；與上一項（與教材無關的答案仍然丟棄）互為對照。",
       "evidence": {
         "blockId": "fx-single-1",
         "quote": "人文主義：一種強調人的價值與理性，並重視古典學問的思想。"
       },
-      "polarity": "defective",
-      "pairWith": "partially-supported-answer"
+      "polarity": "acceptable",
+      "pairWith": "answer-unsupported-by-material"
     },
     {
       "id": "insufficient-material-for-comparison",
@@ -1161,13 +1160,13 @@
       },
       "expected": {
         "result": "accepted",
-        "outcome": "revise",
+        "outcome": "pass",
         "codesInclude": [
           "answer-not-in-material"
         ]
       },
-      "note": "教材用單字「因」交代因果，因此**不可**再報 unsupported-causation（Sprint 8.6 修正的誤報）。答案是把教材句子改寫成完整句子，仍須教師確認（這是字面比對的固有限制，不是缺陷）。",
-      "polarity": "defective",
+      "note": "教材用單字「因」交代因果，因此**不可**再報 unsupported-causation（Sprint 8.6 修正的誤報）。答案是把教材句子改寫成完整句子（重疊率 88%）：2026-10-18 放寬後只記錄警告並照常發布。",
+      "polarity": "acceptable",
       "pairWith": null,
       "evidence": {
         "blockId": "fx-chron-2",
@@ -1323,9 +1322,9 @@
       "acceptable": "evaluation-supported-by-material"
     },
     {
-      "aspect": "等值／改寫答案應交教師確認",
-      "defective": "paraphrased-answer-needs-review",
-      "acceptable": "partially-supported-answer"
+      "aspect": "答案改寫只記錄警告；與教材無關的答案仍然丟棄",
+      "defective": "answer-unsupported-by-material",
+      "acceptable": "paraphrase-accepted-with-warning"
     },
     {
       "aspect": "學生短答的等值寫法（平台以 acceptedAnswers 給分，見 practice 測試）",

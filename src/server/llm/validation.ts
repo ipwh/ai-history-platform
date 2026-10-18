@@ -32,12 +32,12 @@ import {
   type QuestionOrigin,
   type QuestionType,
 } from "../../lib/types";
-import { normalizeForMatch, stripMarkdownArtifacts, truncate } from "../materials/text-utils";
+import { normalizeForMatch, splitSentences, stripMarkdownArtifacts, truncate } from "../materials/text-utils";
 import { MIN_EXCERPT_LENGTH } from "../materials/block-search";
 import { checkFillStem, normalizeForStemMatch } from "./fill-question";
 import { checkHistoricalAnswer } from "./historical-answer";
 import { createDuplicateTracker } from "./question-dedupe";
-import { checkQuestionQuality, isMachineRevisable, type QualityOutcome } from "./question-quality";
+import { checkQuestionQuality, isMachineRevisable, answerSupportedByMaterial, type QualityOutcome } from "./question-quality";
 import { analyseMaterial, type MaterialAnalysis } from "./material-analysis";
 import type { MaterialUnit } from "./provider";
 
@@ -161,6 +161,74 @@ function resolveQuestionSectionId(
  * 題目開頭引用教材的引導語。連同其後的標點一併移除，避免留下「所述，…」這類殘句；
  * 其他位置的教材提示語不會被硬刪，而是令整條題目被丟棄（見 MATERIAL_REFERENCE）。
  */
+/**
+ * 兩段文字的二字片段重疊比例（以較短一方為分母）。
+ * 用於判斷模型提供的教材節錄是否在講同一件事（見 recoverExcerpt）。
+ */
+function bigramOverlap(left: string, right: string): number {
+  const gramsOf = (value: string): Set<string> => {
+    const normalized = normalizeForMatch(value);
+    const grams = new Set<string>();
+    for (let index = 0; index + 2 <= normalized.length; index += 1) {
+      grams.add(normalized.slice(index, index + 2));
+    }
+    return grams;
+  };
+  const leftGrams = gramsOf(left);
+  const rightGrams = gramsOf(right);
+  if (leftGrams.size === 0 || rightGrams.size === 0) return 0;
+  const smaller = leftGrams.size <= rightGrams.size ? leftGrams : rightGrams;
+  const larger = smaller === leftGrams ? rightGrams : leftGrams;
+  let shared = 0;
+  for (const gram of smaller) {
+    if (larger.has(gram)) shared += 1;
+  }
+  return shared / smaller.size;
+}
+
+/**
+ * 模型提供的教材節錄不是原文時，改為在所引段落中找回原文句子。
+ *
+ * 真實模型（DeepSeek）常常把教材句子改寫成節錄，令「節錄必須逐字見於所引段落」的
+ * 檢查把整條題目丟棄（2026-10-18 模擬學生使用：某些分節 3 題全部被丟棄，學生拿不到
+ * 任何題目）。這裡不改為放寬檢查，而是在**同一批所引段落**中找回原文句子：
+ *   1. 先找與模型節錄最相近的句子（重疊率 ≥ 0.6）——模型多半只是改寫同一句；
+ *   2. 否則找包含標準答案的句子（重疊率 ≥ 0.35），確保依據真的支持答案。
+ * 找不到就維持原本的丟棄行為（fail-closed）。找回的句子一定是教材原文，因此
+ * 「節錄逐字見於所引段落」的契約不變，並會加上品質警告交教師核對。
+ */
+function recoverExcerpt(
+  units: MaterialUnit[],
+  modelExcerpt: string,
+  correctAnswer: string,
+): { unit: MaterialUnit; excerpt: string } | null {
+  const answerKey = normalizeForMatch(correctAnswer);
+  let bestParaphrase: { unit: MaterialUnit; excerpt: string; score: number } | null = null;
+  let bestAnswerSupport: { unit: MaterialUnit; excerpt: string; score: number } | null = null;
+
+  for (const unit of units) {
+    for (const sentence of splitSentences(unit.text)) {
+      const trimmed = sentence.trim();
+      if (normalizeForMatch(trimmed).length < MIN_EXCERPT_LENGTH) continue;
+      const score = bigramOverlap(trimmed, modelExcerpt);
+      if (score >= 0.6 && (bestParaphrase === null || score > bestParaphrase.score)) {
+        bestParaphrase = { unit, excerpt: trimmed, score };
+      }
+      if (
+        answerKey.length >= 2 &&
+        normalizeForMatch(trimmed).includes(answerKey) &&
+        score >= 0.35 &&
+        (bestAnswerSupport === null || score > bestAnswerSupport.score)
+      ) {
+        bestAnswerSupport = { unit, excerpt: trimmed, score };
+      }
+    }
+  }
+
+  const best = bestParaphrase ?? bestAnswerSupport;
+  return best === null ? null : { unit: best.unit, excerpt: best.excerpt };
+}
+
 const LEADING_MATERIAL_PREFIXES: RegExp[] = [
   /^(試)?(綜合|根據|依據)(上述)?教材([^，,。；：]{0,30})?[，,：:]\s*/,
   /^(試)?(綜合|根據|依據)(上述)?(課本|上文|上載文件)([^，,。；：]{0,30})?[，,：:]\s*/,
@@ -642,12 +710,24 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
     const referenced = context.units.filter((unit) => referencedBlockIds.has(unit.blockId));
     // 節錄必須出自這條題目指明的段落。在其他段落找到相同文字不算依據，否則模型只要
     // 抄錄一段與本題無關的教材，就能通過教材依據檢查（而它引用的段落可能根本沒有這段話）。
-    const groundedUnit = referenced.find((unit) => normalizeForMatch(unit.text).includes(excerptKey));
+    let sourceExcerpt = candidate.sourceExcerpt;
+    let groundedUnit = referenced.find((unit) => normalizeForMatch(unit.text).includes(excerptKey));
+    let excerptRecovered = false;
+    if (!groundedUnit) {
+      // 模型把教材句子改寫成節錄時，改為在同一批所引段落找回原文句子（見 recoverExcerpt），
+      // 令題目不會因為「節錄不是逐字原文」而整條丟棄；找不到原文仍然丟棄。
+      const recovered = recoverExcerpt(referenced, candidate.sourceExcerpt, candidate.correctAnswer);
+      if (recovered !== null) {
+        groundedUnit = recovered.unit;
+        sourceExcerpt = recovered.excerpt;
+        excerptRecovered = true;
+      }
+    }
     if (!groundedUnit) {
       discardedReasons.push(
         `第 ${index + 1} 題的答案沒有教材依據（節錄未能對應指定段落 ${candidate.sourceBlockIds.join(
           "、",
-        )} 的原文）`,
+        )} 的原文，亦在所引段落找不到支持答案的原文句子）`,
       );
       return;
     }
@@ -661,6 +741,11 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
       .filter((point) => point.length > 0);
     // 只提示教師核對、不會丟棄題目的品質警告
     const qualityWarnings: string[] = [];
+    if (excerptRecovered) {
+      qualityWarnings.push(
+        "AI 提供的教材節錄不是原文，系統已改用所引段落的原文句子作依據；請教師核對該句是否真的支持本題答案。",
+      );
+    }
 
     if (candidate.questionType === "mc") {
       if (options.length < 2) {
@@ -767,32 +852,28 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
     const resolvedSkill = resolveSkill(candidate.skill);
     if (resolvedSkill.warning !== null) qualityWarnings.push(resolvedSkill.warning);
 
-    if (candidate.questionType === "short") {
-      if (gradingPoints.length === 0) {
-        discardedReasons.push(`第 ${index + 1} 題是短答題但沒有得分要點`);
-        return;
-      }
-      // 部分模型會把短答題的 correctAnswer 留空，此時以得分要點組成參考答案，
-      // 避免整條題目因為格式問題而被丟棄。
-      if (correctAnswer.length === 0) {
-        correctAnswer = gradingPoints.join("；");
-      }
-    } else if (correctAnswer.length === 0) {
+    if (correctAnswer.length === 0) {
       discardedReasons.push(`第 ${index + 1} 題沒有提供標準答案`);
       return;
     }
 
-    // 填充題的答案必須是具有歷史意義的元素（事件名稱、人物、年份、國家、地點、條約、
+    // 填充題的答案應該是一個歷史元素（事件名稱、人物、年份、國家、地點、條約、
     // 神祇、思想、政治制度，或教材明確交代其歷史意義的發明與器物）。見 historical-answer.ts。
     //
-    // **fail-closed（Sprint 7.4）**：品質警告不能代替這項檢查——未能確認屬歷史元素的
-    // 答案一樣丟棄整條題目。教師端不會看到「答案可能不是歷史元素」的警告題目，
-    // 因為它們根本不會進入題庫（寧可少出一題，也不要出一條無從作答的填充題）。
+    // 2026-10-18 放寬（擁有者指示）：明顯不合格的答案（說明句、形容詞、教材欄位名稱、
+    // 過長或過短）仍然丟棄；但「未能對應歷史元素清單、而答案本身見於教材」的個案
+    // （例如「文字」、「古文明誕生」）只記錄警告交教師覆核，不再整題丟棄——
+    // 這類答案在課文中有明確依據，學生其實可以作答。
     if (candidate.questionType === "fill") {
       const answerCheck = checkHistoricalAnswer(correctAnswer, providedText);
       if (!answerCheck.ok) {
-        discardedReasons.push(`第 ${index + 1} 題：${answerCheck.reason}`);
-        return;
+        if (answerCheck.definite) {
+          discardedReasons.push(`第 ${index + 1} 題：${answerCheck.reason}`);
+          return;
+        }
+        qualityWarnings.push(
+          `第 ${index + 1} 題的${answerCheck.reason}；答案本身見於教材，已保留並交教師覆核。`,
+        );
       }
 
       // 題幹品質：必須剛好一個空格、答案不可在題幹其他位置出現、長度不可超過硬上限。
@@ -803,8 +884,12 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
       }
 
       // 空格必須對應標準答案：答案須見於本次提供的教材（否則學生無從由教材作答，
-      // 空格亦無從對應任何史事）。以整份提供教材比對，避免節錄被截斷時誤判。
-      if (!normalizeForStemMatch(providedText).includes(normalizeForStemMatch(correctAnswer))) {
+      // 空格亦無從對應任何史事）。以整份提供教材比對，避免節錄被截斷時誤判；
+      // 品質閘門已接受的「教材句子改寫」同樣接受，兩者共用同一把尺。
+      if (
+        !normalizeForStemMatch(providedText).includes(normalizeForStemMatch(correctAnswer)) &&
+        !answerSupportedByMaterial(correctAnswer, providedText)
+      ) {
         discardedReasons.push(
           `第 ${index + 1} 題的標準答案「${correctAnswer}」未見於提供的教材，無法確認空格對應答案（學生無從作答）`,
         );
@@ -820,7 +905,7 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
       questionType: candidate.questionType,
       correctAnswer,
       sourceBlockIds: candidate.sourceBlockIds,
-      sourceExcerpt: candidate.sourceExcerpt,
+      sourceExcerpt,
     };
     if (seen.isDuplicate(dedupeCandidate)) {
       discardedReasons.push(
@@ -842,7 +927,7 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
       acceptedAnswers: [],
       explanation: explanationText,
       knowledgePoint: stripMarkdownArtifacts(candidate.knowledgePoint.trim()),
-      sourceExcerpt: candidate.sourceExcerpt.trim(),
+      sourceExcerpt: sourceExcerpt.trim(),
       sourceLocation: groundedUnit.sourceLocation,
       sourceBlockIds: candidate.sourceBlockIds,
       gradingPoints,

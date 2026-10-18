@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 
 import { HISTORY_CONCEPTS, HISTORY_SKILLS } from "@/lib/types";
 import { buildUserPrompt, SYSTEM_PROMPT } from "@/server/llm/prompt";
@@ -8,7 +8,7 @@ import type { QuestionGenerationInput } from "@/server/llm/provider";
 const input: QuestionGenerationInput = {
   topicTitle: "課題5：近代歐洲的興起",
   sectionTitle: "文藝復興 › 主要特點",
-  questionTypes: ["mc", "short"],
+  questionTypes: ["mc", "fill"],
   difficulty: "advanced",
   count: 3,
   materialUnits: [

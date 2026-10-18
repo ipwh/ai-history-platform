@@ -205,12 +205,12 @@ describe("示範模式下的跨學生隔離（已登入時工作階段優先）"
       topics: { attemptedQuestions: number }[];
       skills: { attemptedQuestions: number }[];
       review: { dueItems: unknown[]; dueCount: number; dataIssues: number };
-      recommendations: unknown[];
     };
     expect(payload.topics.length).toBeGreaterThan(0);
     expect(payload.topics.every((topic) => topic.attemptedQuestions === 0)).toBe(true);
     expect(payload.skills.every((skill) => skill.attemptedQuestions === 0)).toBe(true);
     expect(payload.review).toEqual({ dueItems: [], dueCount: 0, dataIssues: 0 });
-    expect(payload.recommendations.length).toBeGreaterThan(0);
+    // 學生端不再提供自動建議（曾以少量作答記錄推斷弱項）
+    expect(payload).not.toHaveProperty("recommendations");
   });
 });

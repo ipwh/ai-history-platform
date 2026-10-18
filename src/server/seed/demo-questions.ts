@@ -61,26 +61,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "文藝復興的主要特點",
     sourceAnchor: "復興古希臘、羅馬文明",
   },
-  {
-    id: "q-renaissance-humanism",
-    sectionId: "topic-5-renaissance-features",
-    questionType: "short",
-    difficulty: "advanced",
-    question: "試說明「人文主義」的兩項主要主張。",
-    correctAnswer:
-      "以人為中心，強調彰顯人性及人類的價值，並肯定人類理解自然的能力；同時否定教會所提倡「苦行即為崇高」的理想，敢於質疑傳統觀念與教會教義。",
-    explanation:
-      "人文主義是文藝復興的核心思想，強調以人為中心，並否定教會所提倡苦行即為崇高的理想。",
-    knowledgePoint: "人文主義的內涵",
-    gradingPoints: [
-      "以人為中心，強調彰顯人性及人類的價值",
-      "肯定人類理解自然的能力",
-      "否定教會所提倡「苦行即為崇高」的理想",
-      "敢於質疑傳統觀念與教會教義（挑戰傳統）",
-    ],
-    sourceAnchor: "以人為中心，強調彰顯人性、人類的價值",
-  },
-
   /* ---------------- 文藝復興：出現原因 ---------------- */
   {
     id: "q-renaissance-causes",
@@ -109,26 +89,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "封建社會瓦解與文藝復興的出現",
     sourceAnchor: "封建社會逐漸瓦解",
   },
-  {
-    id: "q-renaissance-citystate",
-    sectionId: "topic-5-renaissance-causes",
-    questionType: "short",
-    difficulty: "advanced",
-    question: "為甚麼「富有城邦及新興階級的興起」有利於文藝復興的出現？",
-    correctAnswer:
-      "意大利半島的城邦因處於貿易樞紐而迅速發展，不少出身平民的商人與銀行家通過貿易累積財富，形成新興階層；他們重視世俗生活，並樂於資助文藝創作與學術研究，為文藝復興提供資源。",
-    explanation:
-      "富有城邦及新興階級的興起，為文藝復興提供了資金與社會條件。",
-    knowledgePoint: "富有城邦與新興階級對文藝復興的作用",
-    gradingPoints: [
-      "意大利城邦位處十字軍東征補給線／歐亞貿易樞紐而迅速發展",
-      "商人與銀行家通過貿易積累財富，形成新興階層",
-      "新興階層重視世俗生活",
-      "他們樂於資助文藝創作與學術研究",
-    ],
-    sourceAnchor: "成為歐亞貿易的樞紐",
-  },
-
   /* ---------------- 文藝復興：起源與發展 ---------------- */
   {
     id: "q-renaissance-origin-place",
@@ -226,27 +186,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "文藝復興藝術三傑：米開蘭基羅",
     sourceAnchor: "他在西斯汀教堂天花板繪製的《創世紀》場景",
   },
-  {
-    id: "q-renaissance-culture-compare",
-    sectionId: "topic-5-renaissance-culture",
-    questionType: "short",
-    difficulty: "challenge",
-    question: "比較中古時代前期與文藝復興時期在「文學」上的主要分別。",
-    correctAnswer:
-      "中古時代前期的文學大多是聖徒傳、祈禱文、聖詩等宗教文學，以拉丁文寫成，主要由教士及學者創作；文藝復興時期的文學則以世俗人物與現實題材為主，強調人性刻畫，體裁多元化，並使用本土語言創作，使文學更普及。",
-    explanation:
-      "文藝復興的文學由宗教題材轉向世俗題材，並改用本土語言寫作，令文學更普及。",
-    knowledgePoint: "中古與文藝復興文學的比較",
-    gradingPoints: [
-      "中古時代前期以宗教文學為主（聖徒傳、祈禱文、聖詩）",
-      "中古時代前期多以拉丁文寫成，主要由教士及學者創作",
-      "文藝復興時期以世俗人物與現實題材為主，強調人性刻畫",
-      "體裁多元化",
-      "使用本土語言創作，使文學更普及",
-    ],
-    sourceAnchor: "以世俗人物與現實題材為主",
-  },
-
   /* ---------------- 文藝復興：影響 ---------------- */
   {
     id: "q-renaissance-impact",
@@ -266,26 +205,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "文藝復興的影響",
     sourceAnchor: "奠定近代歐洲文明的基礎",
   },
-  {
-    id: "q-renaissance-impact-thinking",
-    sectionId: "topic-5-renaissance-impact",
-    questionType: "short",
-    difficulty: "advanced",
-    question: "文藝復興如何「解放歐洲人的傳統思想」？",
-    correctAnswer:
-      "文藝復興重視人文主義，強調以人為中心、肯定人類的價值，令歐洲人不再凡事以神為本；他們推崇理性思考與探索精神，敢於質疑傳統觀念與教會教義，思想逐漸從傳統權威中得到解放。",
-    explanation:
-      "人文主義與挑戰權威的精神，令歐洲人的思想逐漸擺脫傳統權威的束縛。",
-    knowledgePoint: "文藝復興對思想的影響",
-    gradingPoints: [
-      "重視人文主義，強調以人為中心、肯定人類的價值",
-      "不再凡事以神為本，試圖跳出宗教框架",
-      "推崇理性思考與探索精神",
-      "敢於質疑傳統觀念與教會教義",
-    ],
-    sourceAnchor: "解放歐洲人的傳統思想",
-  },
-
   /* ---------------- 宗教改革：背景 ---------------- */
   {
     id: "q-reformation-nature",
@@ -317,26 +236,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "宗教改革的背景",
     sourceAnchor: "教會積弊日益嚴重",
   },
-  {
-    id: "q-reformation-abuse",
-    sectionId: "topic-5-reformation-background",
-    questionType: "short",
-    difficulty: "advanced",
-    question: "宗教改革前，羅馬天主教會出現了哪些積弊？試舉出兩項。",
-    correctAnswer:
-      "教會內部出現貪污、教士生活腐化等問題，並販售教士職位；教會又出售「贖罪券」，聲稱購買者及其亡者親屬可減輕或免除在煉獄中的刑罰。這些行為激起反感，成為宗教改革的導火線。",
-    explanation:
-      "教會販售教士職位及出售「贖罪券」等行為，令信徒日益不滿，成為宗教改革的導火線。",
-    knowledgePoint: "宗教改革前教會的積弊",
-    gradingPoints: [
-      "教會貪污、教士生活腐化等內部問題",
-      "販售教士職位",
-      "出售「贖罪券」，聲稱可減輕或免除煉獄刑罰",
-      "這些行為激起反感，成為宗教改革的導火線",
-    ],
-    sourceAnchor: "出售「贖罪券」——聲稱購買者及其亡者親屬可減輕或免除在煉獄中的刑罰",
-  },
-
   /* ---------------- 宗教改革：發展 ---------------- */
   {
     id: "q-reformation-95theses",
@@ -399,27 +298,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "新教教會的出現",
     sourceAnchor: "獨立於羅馬天主教會的新宗派",
   },
-  {
-    id: "q-reformation-counter",
-    sectionId: "topic-5-reformation-development",
-    questionType: "short",
-    difficulty: "advanced",
-    question: "羅馬天主教會如何回應宗教改革？",
-    correctAnswer:
-      "羅馬天主教會展開「反宗教改革」，以挽回信徒與聲望。教會進行內部改革，包括禁止販售贖罪券、承認耶穌會等修會的發展；亦容許部分天主教君主擁有較大的宗教自主權。不過教會仍堅持只有它有權詮釋《聖經》，並持續打壓新教勢力。",
-    explanation:
-      "羅馬天主教會以「反宗教改革」回應，一方面進行內部改革，另一方面仍堅持自身詮釋《聖經》的權威。",
-    knowledgePoint: "羅馬天主教會的反宗教改革",
-    gradingPoints: [
-      "展開「反宗教改革」，以挽回信徒與聲望",
-      "進行內部改革，例如禁止販售贖罪券",
-      "承認耶穌會等修會的發展",
-      "容許部分天主教君主擁有較大宗教自主權",
-      "仍堅持只有教會有權詮釋《聖經》，並持續打壓新教勢力",
-    ],
-    sourceAnchor: "教會進行內部改革，包括禁止販售贖罪券",
-  },
-
   /* ---------------- 宗教改革：影響 ---------------- */
   {
     id: "q-reformation-impact-war",
@@ -439,26 +317,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "宗教改革的影響：衝突與戰爭",
     sourceAnchor: "引發衝突與戰爭",
   },
-  {
-    id: "q-reformation-impact-democracy",
-    sectionId: "topic-5-reformation-impact",
-    questionType: "short",
-    difficulty: "challenge",
-    question: "宗教改革如何「孕育自由與民主觀念」？",
-    correctAnswer:
-      "新教教會提倡個人信仰自由，並強調所有信徒在上帝面前一律平等，削弱了神職人員的階級地位與權威；這些理念為近代歐洲的自由與民主思想奠定基礎。",
-    explanation:
-      "新教提倡個人信仰自由及信徒平等，削弱神職人員的權威，為近代自由與民主思想奠定基礎。",
-    knowledgePoint: "宗教改革對自由與民主思想的影響",
-    gradingPoints: [
-      "提倡個人信仰自由",
-      "強調所有信徒在上帝面前一律平等",
-      "削弱神職人員的階級地位與權威",
-      "為近代歐洲的自由與民主思想奠定基礎",
-    ],
-    sourceAnchor: "孕育自由與民主觀念",
-  },
-
   /* ---------------- 科學革命 ---------------- */
   {
     id: "q-science-society",
@@ -474,24 +332,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "科學革命期間科學研究團體的成立",
     sourceAnchor: "倫敦皇家自然知識促進學會",
   },
-  {
-    id: "q-science-impact",
-    sectionId: "topic-5-science",
-    questionType: "short",
-    difficulty: "advanced",
-    question: "科學革命期間成立的科學研究團體有甚麼作用？",
-    correctAnswer:
-      "皇家學會、法國科學院等科學研究團體鼓勵學者進行學術交流，共同推動科學發展，為近代歐洲科技發展奠下基礎。",
-    explanation: "科學研究團體促進了學者之間的學術交流，共同推動科學發展。",
-    knowledgePoint: "科學研究團體的作用",
-    gradingPoints: [
-      "鼓勵學者進行學術交流",
-      "共同推動科學發展",
-      "有助奠定近代歐洲科技發展的基礎",
-    ],
-    sourceAnchor: "鼓勵學者進行學術交流，共同推動科學發展",
-  },
-
   /* ---------------- 啟蒙運動 ---------------- */
   {
     id: "q-enlightenment-social-contract",
@@ -543,27 +383,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "啟蒙思想：權力分立與法律保障",
     sourceAnchor: "以防止權力過度集中",
   },
-  {
-    id: "q-enlightenment-compare",
-    sectionId: "topic-5-enlightenment",
-    questionType: "short",
-    difficulty: "challenge",
-    question: "比較「專制主義」與「啟蒙思想」在「管治權」上的主要分別。",
-    correctAnswer:
-      "專制主義主張君權神授，君主由上帝授權統治人民，按自身意志施政，無須對人民負責，並擁有絕對權力；啟蒙思想則主張社會契約，認為君主權力來自人民授予，君主須依人民意願施政，不得侵犯天賦權利，否則人民有權推翻政府，並以權力分立與憲法防止權力過度集中。",
-    explanation:
-      "專制主義以君權神授為依據，強調君主擁有絕對權力；啟蒙思想則以社會契約說明權力來自人民，並以權力分立及憲法限制君權。",
-    knowledgePoint: "專制主義與啟蒙思想的比較",
-    gradingPoints: [
-      "專制主義：君權神授，君主由上帝授權統治人民",
-      "專制主義：君主按自身意志施政，無須對人民負責，擁有絕對權力",
-      "啟蒙思想：社會契約，君主權力來自人民授予",
-      "啟蒙思想：君主須依人民意願施政，不得侵犯天賦權利，否則人民有權推翻政府",
-      "啟蒙思想：以權力分立與制定憲法防止權力過度集中",
-    ],
-    sourceAnchor: "君權神授：君主由上帝授權統治人民",
-  },
-
   /* ---------------- 工業革命：特點及出現原因 ---------------- */
   {
     id: "q-industrial-mechanisation",
@@ -616,25 +435,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "英國率先展開工業革命的原因",
     sourceAnchor: "英國本土蘊藏大量煤與鐵，它們是重要的工業原料",
   },
-  {
-    id: "q-industrial-enclosure",
-    sectionId: "topic-5-industrial-britain",
-    questionType: "short",
-    difficulty: "advanced",
-    question: "英國的「圈地運動合法化」如何促進工業革命的發展？",
-    correctAnswer:
-      "自十八世紀中葉起，英國通過多項法案使圈地運動合法化，很多英國農民因此失去耕地，紛紛遷往城市工廠就業，為工業發展提供大量勞動力。",
-    explanation: "圈地運動合法化令農民遷往城市工廠就業，為工業發展提供大量勞動力。",
-    knowledgePoint: "圈地運動與工業革命的勞動力供應",
-    gradingPoints: [
-      "英國通過多項法案，使圈地運動合法化",
-      "很多農民失去耕地",
-      "農民遷往城市工廠就業",
-      "為工業發展提供大量勞動力",
-    ],
-    sourceAnchor: "使圈地運動合法化，令很多英國農民失去耕地",
-  },
-
   /* ---------------- 工業革命：主要發展 ---------------- */
   {
     id: "q-industrial-jenny",
@@ -713,26 +513,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "工業革命與社會主義的提出",
     sourceAnchor: "貧富懸殊日益嚴重",
   },
-  {
-    id: "q-industrial-working-class",
-    sectionId: "topic-5-industrial-impact",
-    questionType: "short",
-    difficulty: "challenge",
-    question: "工業革命期間形成的新社會階級中，「工人階級」有甚麼特徵？",
-    correctAnswer:
-      "工人階級是在工廠受僱工作的工人，在工廠制度下受資本家僱用操作機器，工資微薄，不擁有任何生產資源，因此又被稱為「無產階級」。他們長期受資產階級剝削，生活困苦，因此組織工會爭取權益。",
-    explanation:
-      "工人階級受僱於工廠，工資微薄且不擁有生產資源，因此又稱「無產階級」；他們組織工會及發起運動爭取權益。",
-    knowledgePoint: "工業革命與新社會階級",
-    gradingPoints: [
-      "在工廠受僱工作，操作機器",
-      "工資微薄",
-      "不擁有任何生產資源，因此又稱「無產階級」",
-      "生活困苦，組織工會爭取權益（例如1838-1848年憲章運動）",
-    ],
-    sourceAnchor: "在工廠受僱工作的工人，工資微薄，不擁有任何生產資源",
-  },
-
   /* ---------------- 法國大革命：背景與成因 ---------------- */
   {
     id: "q-fr-estates",
@@ -765,26 +545,6 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
     knowledgePoint: "法國大革命的成因",
     sourceAnchor: "革命的成因",
   },
-  {
-    id: "q-fr-finance",
-    sectionId: "topic-5-fr-background",
-    questionType: "short",
-    difficulty: "advanced",
-    question: "為甚麼法國在路易十六統治時期面臨嚴重的財政困境？試舉出兩項原因。",
-    correctAnswer:
-      "法國國庫空虛的原因包括：前任國王路易十四及路易十五曾發動多場戰爭，路易十六又派兵遠赴北美參與美國革命，軍事開支極為龐大；路易十六的宮廷生活奢侈浪費；第一及第二等級享有免稅特權，令政府收入不足。",
-    explanation:
-      "龐大的軍事開支、宮廷奢華生活，加上第一及第二等級的免稅特權，令法國政府陷入嚴重財政困境。",
-    knowledgePoint: "法國大革命前的財政困境",
-    gradingPoints: [
-      "路易十四及路易十五發動多場戰爭，軍事開支龐大",
-      "路易十六派兵參與美國革命，增加軍事開支",
-      "路易十六的宮廷生活奢侈浪費",
-      "第一及第二等級享有免稅特權，政府收入不足",
-    ],
-    sourceAnchor: "路易十六的宮廷生活奢侈浪費",
-  },
-
   /* ---------------- 法國大革命：革命經過 ---------------- */
   {
     id: "q-fr-bastille",
@@ -834,23 +594,4 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
 
   /* ---------------- 法國大革命及拿破崙時代的影響 ---------------- */
-  {
-    id: "q-fr-impact",
-    sectionId: "topic-5-fr-impact",
-    questionType: "short",
-    difficulty: "challenge",
-    question: "法國大革命及拿破崙時代對歐洲及世界帶來了甚麼影響？",
-    correctAnswer:
-      "法國大革命及拿破崙時代推動了自由主義及民族主義的興起與傳播，掀起歐洲的革命浪潮（例如十九世紀歐洲各地的革命）；亦推動美洲的革命浪潮，並促成統一民族國家的形成，例如意大利統一運動及德意志統一運動。",
-    explanation:
-      "法國大革命及拿破崙時代令自由主義及民族主義興起與傳播，推動歐洲及美洲的革命浪潮，並促成統一民族國家的形成。",
-    knowledgePoint: "法國大革命及拿破崙時代的影響",
-    gradingPoints: [
-      "自由主義及民族主義的興起與傳播",
-      "推動歐洲的革命浪潮（十九世紀歐洲各地的革命）",
-      "推動美洲的革命浪潮",
-      "促成統一民族國家的形成（例如意大利、德意志的統一）",
-    ],
-    sourceAnchor: "自由主義及民族主義的興起與傳播",
-  },
-];
+  ];

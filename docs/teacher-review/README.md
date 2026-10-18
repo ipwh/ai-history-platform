@@ -41,7 +41,8 @@
 | --- | --- | --- | --- |
 | 教材依據成立 | 系統（自動） | `sourceExcerpt` 逐字出現在**該題引用的段落**中，且節錄長度達 8 字（太短的片段會在無關段落中出現；作者撰寫的節錄——示範題庫、教師手動建立——不受長度限制，見 `src/server/materials/block-search.ts`） | `Question.sourceVerified` |
 | 完整題目品質（答案唯一、選項同類、解釋一致、無答案洩露等） | 系統（自動） | 見 [src/server/llm/question-quality.ts](../../src/server/llm/question-quality.ts) 及 README「自動品質閘門的能力與限制」 | `questions.auto_validated_at`／`auto_validated_revision`／`auto_validated_fingerprint` |
-| **未確定：自動發布暫緩，等待教師確認** | 系統（自動）判定，**須由教師解決** | 標準答案只是教材語句的改寫（非逐字依據）、短答題參考答案引入教材沒有的具體資料等——題目保留在題庫但學生看不到 | `questions.teacher_confirmation_required`（migration `0020`） |
+| **未確定：項目保留，只記錄警告（2026-10-18 放寬）** | 系統（自動）判定，交教師覆核但**不阻礙發布** | 其他未確定項目（教材只交代先後卻寫成因果等）；答案只是教材語句的改寫、填充題答案未能對應歷史元素清單但見於教材則屬此類 | `questions.quality_warnings`；`teacher_confirmation_required` 只在其餘未確定項目（如 `unsupported-causation`、`dimension-unsupported`、`asserted-inference`）時使用 |
+| **結構上無法作答：暫停派發** | 系統（自動）判定，**學生看不到** | 填充題題幹有多個空格但只有一個答案、題幹沒有空格、答案仍印在題幹、選項全部變成「.」或重複 | `teacher_confirmation_required`（品質警告以「平台自動檢查：」開頭）；以 `npm run repair:questions` 修正原卷問題後會自動清除標記；擁有者確認無法修復時可加 `--delete-unusable` 刪除（2026-10-18 已刪除 29 題） |
 | 需教師核對的疑點 | 系統（自動） | 教材未提及的人名／條約名、選項重複等 | `Question.qualityWarnings` |
 | 已人工覆核 | **歷史科教師** | 史實、用語、選項、答案及解釋均已確認 | `question_reviews` 的紀錄 + `Question.revision` |
 

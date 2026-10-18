@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 未確定（uncertain）題目的**交付路徑**（Sprint 8.0 發行前審計）。
  *
  * 背景：Sprint 7.9 為品質閘門加上第三種結果——「未確定」（`questions.teacher_confirmation_required`）。
@@ -56,9 +56,8 @@ let seed: Seed;
 const TOPIC = "topic-5";
 const LEARNER = "withheld-delivery-learner";
 
-/** 一個「答案含有教材沒有交代的具體資料」的合成短文：閘門必須判定為未確定 */
-const UNCERTAIN_ANSWER = "本題答案指出工人集中於城市，並促成《社會改革法》的訂立。";
-const UNCERTAIN_STEM = "試說明工業化期間城市人口變化的主要原因。";
+/** 一個「解釋只是重複答案」的合成題目：閘門必須判定為需教師確認 */
+const UNCERTAIN_STEM = "工業革命期間城市人口有甚麼變化？";
 
 interface MaterialFact {
   blockId: string;
@@ -73,10 +72,11 @@ interface MaterialFact {
 let sectionId: string;
 let expandedSectionIds: string[] = [];
 let fact: MaterialFact;
+let fact2: MaterialFact;
 
 /**
- * 合成題目：一條乾淨的選擇題（標準答案逐字見於教材）＋一條未確定的短答題
- * （參考答案含有教材沒有交代的具體資料 → 閘門判為「未確定」，暫緩自動發布）。
+ * 合成題目：一條乾淨的選擇題（標準答案逐字見於教材）＋一條未確定的選擇題
+ * （解釋只是重複答案 → 閘門判為需教師確認，暫緩自動發布）。
  */
 function syntheticQuestions() {
   return [
@@ -94,17 +94,17 @@ function syntheticQuestions() {
       gradingPoints: [],
     },
     {
-      questionType: "short",
+      questionType: "mc",
       difficulty: "basic",
       question: UNCERTAIN_STEM,
-      options: [],
-      correctAnswerIndex: null,
-      correctAnswer: UNCERTAIN_ANSWER,
-      explanation: "參考答案整理自課文關於城市化的敘述。",
-      knowledgePoint: "城市化的原因",
-      sourceExcerpt: fact.excerpt,
-      sourceBlockIds: [fact.blockId],
-      gradingPoints: ["指出人口集中的原因", "說明新法例的出現"],
+      options: [fact2.excerpt, "與本題無關的敘述丁", "與本題無關的敘述戊", "與本題無關的敘述己"],
+      correctAnswerIndex: 0,
+      correctAnswer: fact2.excerpt,
+      explanation: fact2.excerpt,
+      knowledgePoint: "工業革命期間的城市變化",
+      sourceExcerpt: fact2.excerpt,
+      sourceBlockIds: [fact2.blockId],
+      gradingPoints: [],
     },
   ];
 }
@@ -124,13 +124,13 @@ function fetchStub(): typeof fetch {
 function setupInput(overrides: {
   questionSource: "ai" | "bank";
   questionCount: number;
-  questionTypes?: ("mc" | "short")[];
+  questionTypes?: ("mc" | "fill")[];
 }) {
   return {
     learnerId: LEARNER,
     topicId: TOPIC,
     sectionIds: [sectionId],
-    questionTypes: overrides.questionTypes ?? (["mc", "short"] as ("mc" | "short")[]),
+    questionTypes: overrides.questionTypes ?? (["mc", "fill"] as ("mc" | "fill")[]),
     difficulty: "basic" as const,
     questionCount: overrides.questionCount,
     mode: "standard" as const,
@@ -170,7 +170,7 @@ beforeAll(async () => {
     if (units.length === 0) continue;
     const published = questionsRepo
       .listQuestions({ topicId: TOPIC, sectionIds: expanded, statuses: ["published"] })
-      .filter((question) => question.questionType === "mc" || question.questionType === "short");
+      .filter((question) => question.questionType === "mc" || question.questionType === "fill");
     if (best === null || published.length < best.count) {
       best = { candidate, expanded, count: published.length, units };
     }
@@ -181,7 +181,11 @@ beforeAll(async () => {
   expandedSectionIds = best.expanded;
   // 節錄必須逐字出自**學生可用**的教材單位（生成時用的正是這一組），
   // 因此直接由 buildMaterialUnits 的輸出取句子，而不是由原始段落文字推測。
+  const facts: MaterialFact[] = [];
   for (const unit of best.units) {
+    // 第二個測試句子必須來自另一個段落，而且該段落沒有明確年份
+    // （用於測試「題目要求準確年份但教材沒有」的未確定判定）。
+    if (facts.length === 1 && (unit.blockId === facts[0]!.blockId || /\d/.test(unit.text))) continue;
     const sentence = textUtils
       .splitSentences(unit.text)
       .map((part) => part.trim())
@@ -189,10 +193,12 @@ beforeAll(async () => {
         (part) => part.length >= 16 && part.length <= 40 && !/\d/.test(part) && !part.includes("＿"),
       );
     if (sentence === undefined) continue;
-    fact = { blockId: unit.blockId, excerpt: sentence };
-    break;
+    facts.push({ blockId: unit.blockId, excerpt: sentence });
+    if (facts.length === 2) break;
   }
-  if (fact === undefined) throw new Error("課題5的學生可用教材找不到合適的測試句子");
+  if (facts.length < 2) throw new Error("課題5的學生可用教材找不到合適的測試句子");
+  fact = facts[0]!;
+  fact2 = facts[1]!;
 });
 
 afterEach(() => {
@@ -206,9 +212,9 @@ describe("學生即時生成（questionSource: ai）", () => {
     const assembled = await practice.createPractice(setupInput({ questionSource: "ai", questionCount: 2 }));
 
     const delivered = practiceRepo.getSessionQuestions(assembled.session.id);
-    // 未確定的短答題被抽起（修復前：第一輪生成即擲出 ReferenceError，整次練習 500）
+    // 未確定的題目被抽起（修復前：第一輪生成即擲出 ReferenceError，整次練習 500）
     expect(delivered.some((question) => question.teacherConfirmationRequired)).toBe(false);
-    expect(delivered.some((question) => question.questionType === "short")).toBe(false);
+    expect(delivered.some((question) => question.question === UNCERTAIN_STEM)).toBe(false);
     // 其他題目不受影響：乾淨的選擇題仍然可以練習
     expect(delivered.some((question) => question.questionType === "mc")).toBe(true);
     // 學生如實得知有題目被抽起並交教師確認
@@ -223,11 +229,11 @@ describe("學生即時生成（questionSource: ai）", () => {
   it("只有未確定題目時：練習如實失敗（502），不會把題目交給學生", async () => {
     vi.stubGlobal("fetch", fetchStub());
 
-    // 只要求短答題：合成的選擇題會在驗證階段被丟棄（題型不在要求之內），
-    // 只剩未確定的短答題 → 必須失敗並如實說明，而不是照樣交付。
+    // 只要求填充題：合成的選擇題會在驗證階段被丟棄（題型不在要求之內），
+    // 結果沒有可用題目 → 必須失敗並如實說明，而不是照樣交付。
     await expect(
       practice.createPractice(
-        setupInput({ questionSource: "ai", questionCount: 1, questionTypes: ["short"] }),
+        setupInput({ questionSource: "ai", questionCount: 1, questionTypes: ["fill"] }),
       ),
     ).rejects.toThrow(/未能為所選主題生成題目/);
   });
@@ -273,7 +279,7 @@ describe("題庫不足時的即時補題（questionSource: bank）", () => {
       .listQuestions({ topicId: TOPIC, sectionIds: expandedSectionIds, statuses: ["published"] })
       .filter(
         (question) =>
-          (question.questionType === "mc" || question.questionType === "short") &&
+          (question.questionType === "mc" || question.questionType === "fill") &&
           !question.teacherConfirmationRequired,
       ).length;
     expect(bankCount).toBeLessThan(30);
@@ -283,8 +289,8 @@ describe("題庫不足時的即時補題（questionSource: bank）", () => {
     );
 
     const delivered = practiceRepo.getSessionQuestions(assembled.session.id);
-    // 修復前：補題直接採用生成結果，未確定的短答題會出現在練習快照並送到學生面前
-    expect(delivered.some((question) => question.questionType === "short")).toBe(false);
+    // 修復前：補題直接採用生成結果，未確定的題目會出現在練習快照並送到學生面前
+    expect(delivered.some((question) => question.question === UNCERTAIN_STEM)).toBe(false);
     expect(delivered.map((question) => question.id)).toContain("q-withheld-bank-clean");
     expect(assembled.notice ?? "").toContain("未確定");
 
@@ -294,6 +300,6 @@ describe("題庫不足時的即時補題（questionSource: bank）", () => {
       .filter((question) => question.teacherConfirmationRequired);
     expect(held.length).toBeGreaterThan(0);
     expect(held.every((question) => question.status === "draft")).toBe(true);
-    expect(held.some((question) => question.correctAnswer === UNCERTAIN_ANSWER)).toBe(true);
+    expect(held.some((question) => question.question === UNCERTAIN_STEM)).toBe(true);
   });
 });

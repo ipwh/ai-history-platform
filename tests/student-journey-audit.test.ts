@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 學生模擬審計（2026-10-16）：以**真實路由處理器**（Next.js route handler + 真資料庫 + mock provider）
  * 走完學生旅程，檢查題目品質、批改公平性及歷史記錄完整性。
  *
@@ -68,7 +68,7 @@ function cookieFor(learnerId: string): string {
 async function startBankPractice(options: {
   learnerId: string;
   questionCount?: number;
-  questionTypes?: ("mc" | "fill" | "short")[];
+  questionTypes?: ("mc" | "fill")[];
   difficulty?: "basic" | "advanced" | "challenge";
 }): Promise<{ sessionId: string; questions: { id: string; questionType: string }[] }> {
   const { POST } = await import("@/app/api/practice/route");
@@ -119,7 +119,7 @@ function feedbackOf(result: { payload: Record<string, unknown> }): Record<string
 async function sessionContaining(
   learnerId: string,
   questionId: string,
-  questionTypes: ("mc" | "fill" | "short")[] = ["mc"],
+  questionTypes: ("mc" | "fill")[] = ["mc"],
 ): Promise<string> {
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const { sessionId } = await startBankPractice({ learnerId, questionCount: 20, questionTypes });
@@ -505,18 +505,17 @@ describe("批改契約（第 6 節）", () => {
     expect(second.payload.recorded).toBe(false);
   });
 
-  it("短答題不會被自動評分（交由學生自我檢查）", async () => {
+  it("填充題會被自動評分（逐字比對）", async () => {
     const learnerId = `school:${STAGE.B}@pochiu.edu.hk`;
     const { sessionId } = await startBankPractice({
       learnerId,
       questionCount: 4,
-      questionTypes: ["short"],
+      questionTypes: ["fill"],
     });
-    const short = practiceRepo.getSessionQuestions(sessionId).find((q) => q.questionType === "short");
-    if (short === undefined) return; // 該分節可能沒有短答題存貨，屬可接受情況
-    const result = await answer(learnerId, sessionId, short.id, "我認為原因是……");
-    expect(feedbackOf(result).autoGraded).toBe(false);
-    expect(feedbackOf(result).isCorrect).toBeNull();
-    expect((feedbackOf(result).gradingPoints as string[]).length).toBeGreaterThan(0);
+    const fill = practiceRepo.getSessionQuestions(sessionId).find((q) => q.questionType === "fill");
+    if (fill === undefined) return; // 該分節可能沒有填充題存貨，屬可接受情況
+    const result = await answer(learnerId, sessionId, fill.id, fill.correctAnswer);
+    expect(feedbackOf(result).autoGraded).toBe(true);
+    expect(feedbackOf(result).isCorrect).toBe(true);
   });
 });

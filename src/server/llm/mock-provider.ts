@@ -2,7 +2,7 @@
  * 本地示範生成（不需要任何 API key）。
  *
  * 以教材原文為素材，用固定規則組成題目：
- * - 定義句（「詞語：說明」）→ 選擇題（詞語 ↔ 說明）、填充題及短答題
+ * - 定義句（「詞語：說明」）→ 選擇題（詞語 ↔ 說明）、填充題
  * - 含「引號詞語」的敘述句 → 填充題及選擇題（把關鍵詞挖空）
  * 每題都附上教材原文節錄及來源位置，方便教師核對，亦符合「必須有教材依據」的要求。
  *
@@ -165,37 +165,27 @@ interface DifficultyPlan {
   mc: McStyle[];
   /** 填充題模板的優先次序 */
   fill: FillStyle[];
-  /** 短答題問法：definition = 解釋指定詞語；quoted = 說明與詞語相關的內容 */
-  short: "definition" | "quoted";
-  /** 短答題得分要點上限（難度越高要求越多要點） */
-  shortPointLimit: number;
 }
 
 /**
  * 三個難度採用不同的出題規則，令示範模式下的「難度選擇」真正影響題目內容：
  *   基礎：直接辨認教材的關鍵詞語（定義句 ↔ 詞語）。
  *   進階：理解詞語的說明及整句意思（以句子挖空為主）。
- *   挑戰：掌握時序（以年份挖空為主），短答題須綜合較多要點。
+ *   挑戰：掌握時序（以年份挖空為主）。
  * 每個模板都附有較寬鬆的後備模板，教材不足以出題時仍可退到下一個模板。
  */
 const DIFFICULTY_PLANS: Record<Difficulty, DifficultyPlan> = {
   basic: {
     mc: ["term", "definition", "quoted", "year"],
     fill: ["definition", "quoted", "year"],
-    short: "definition",
-    shortPointLimit: 2,
   },
   advanced: {
     mc: ["definition", "quoted", "year", "term"],
     fill: ["quoted", "year", "definition"],
-    short: "quoted",
-    shortPointLimit: 4,
   },
   challenge: {
     mc: ["year", "quoted", "definition", "term"],
     fill: ["year", "quoted", "definition"],
-    short: "quoted",
-    shortPointLimit: 5,
   },
 };
 
@@ -486,72 +476,12 @@ export function generateQuestionsFromMaterial(input: QuestionGenerationInput): L
     };
   }
 
-  /** 短答題：依難度決定問法（解釋詞語／說明相關內容）及得分要點數目 */
-  function buildShort(plan: DifficultyPlan): LlmQuestion | null {
-    return plan.short === "definition"
-      ? buildShortFromDefinition(plan) ?? buildShortFromQuoted(plan)
-      : buildShortFromQuoted(plan) ?? buildShortFromDefinition(plan);
-  }
-
-  function buildShortFromDefinition(plan: DifficultyPlan): LlmQuestion | null {
-    const fact = nextUnusedDefinition();
-    if (!fact) return null;
-    const term = fact.definedTerm as string;
-    const points = splitSentences(fact.definitionText as string)
-      .map((point) => truncate(point, 80))
-      .filter((point) => point.length > 0)
-      .slice(0, plan.shortPointLimit);
-    if (points.length === 0) return null;
-    fact.used = true;
-    return {
-      questionType: "short",
-      difficulty,
-      question: `試說明「${term}」。`,
-      options: [],
-      correctAnswerIndex: null,
-      correctAnswer: truncate(fact.definitionText as string, 200),
-      explanation: explainFromMaterial(
-        fact,
-        `教材以這句話交代「${term}」的意思，作答時要寫出其中的要點。`,
-      ),
-      ...baseFields(fact, `${input.sectionTitle}：${term}`),
-      gradingPoints: points,
-    };
-  }
-
-  function buildShortFromQuoted(plan: DifficultyPlan): LlmQuestion | null {
-    const fact = nextUnused((item) => item.quotedTerms.length > 0);
-    if (!fact) return null;
-    const term = fact.quotedTerms[0];
-    const points = (fact.sentences.length > 0 ? fact.sentences : [fact.unit.text])
-      .map((point) => truncate(point, 80))
-      .filter((point) => point.length > 0)
-      .slice(0, plan.shortPointLimit);
-    if (points.length === 0) return null;
-    fact.used = true;
-    return {
-      questionType: "short",
-      difficulty,
-      question: `試說明與「${term}」相關的內容。`,
-      options: [],
-      correctAnswerIndex: null,
-      correctAnswer: truncate(fact.unit.text, 200),
-      explanation: explainFromMaterial(
-        fact,
-        `教材以這句話交代與「${term}」相關的內容，作答時要寫出其中的要點。`,
-      ),
-      ...baseFields(fact, `${input.sectionTitle}：${term}`),
-      gradingPoints: points,
-    };
-  }
-
   // 依照要求輪流產生各題型的題目，教材不足時該題型會少出題而不會產生含糊的題目
   const plan = DIFFICULTY_PLANS[difficulty];
   const maxRounds = Math.max(input.count * 3, 6);
   for (let round = 0; round < maxRounds && results.length < input.count; round += 1) {
     const type = types[round % types.length];
-    const built =
-      type === "mc" ? buildMc(plan) : type === "fill" ? buildFill(plan) : buildShort(plan);
+    const built = type === "mc" ? buildMc(plan) : buildFill(plan);
     if (built) push(built);
   }
 

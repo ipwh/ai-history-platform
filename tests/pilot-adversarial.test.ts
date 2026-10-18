@@ -241,7 +241,7 @@ describe("B 依據不足", () => {
     expect(result.issues.filter((issue) => issue.severity === "blocking")).toHaveLength(1);
   });
 
-  it("B5 保留原意的改寫 → 保留題目但標示未確定，並示範守衛必要性", () => {
+  it("B5 保留原意的改寫 → 保留題目並照常發布，只記錄警告", () => {
     const result = checkQuestionQuality(
       mc({
         correctAnswer: "與會各國同意成立公共衛生局以清理污水",
@@ -250,12 +250,12 @@ describe("B 依據不足", () => {
       UNITS,
     );
     expect(result.issues.filter((issue) => issue.severity === "blocking")).toHaveLength(0);
-    expect(hasUncertainIssue(result.issues)).toBe(true);
-
-    // 守衛必要性（等同移除 uncertain 分類的突變檢查）：若這個項目不存在，
-    // 閘門會回報 ok，題目即會自動發布 → 證明 uncertain 分類是必要的。
-    const legacyIssues = result.issues.filter((issue) => issue.severity !== "uncertain");
-    expect(hasUncertainIssue(legacyIssues)).toBe(false);
+    // 2026-10-18 放寬：改寫答案不再暫緩自動發布，只以警告記錄供教師覆核。
+    expect(result.issues.find((issue) => issue.code === "answer-not-in-material")?.severity).toBe(
+      "warning",
+    );
+    expect(hasUncertainIssue(result.issues)).toBe(false);
+    expect(result.outcome).toBe("pass");
   });
 });
 
@@ -364,15 +364,6 @@ describe("D 批改失敗", () => {
     const outcome = gradeAnswer(question({ correctAnswer: "公共衛生局" }), "公共衛生署");
     expect(outcome.isCorrect).toBe(false);
     expect(outcome.uncertain).toBe(true);
-  });
-
-  it("D5 短答題一律不自動批改（部分正確亦不會被機器判分）", () => {
-    const outcome = gradeAnswer(
-      question({ questionType: "short", correctAnswer: "指出兩項改革" }),
-      "其中一項改革。",
-    );
-    expect(outcome.autoGraded).toBe(false);
-    expect(outcome.isCorrect).toBe(null);
   });
 
   it("D6 空白答案 → 不正確（由路由層另外拒絕提交）", () => {

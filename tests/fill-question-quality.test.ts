@@ -1,9 +1,9 @@
-/**
+﻿/**
  * 填充題品質契約的迴歸測試（Sprint 7.4）。
  *
  * 覆蓋四類要求：
  *   1. 歷史意義：答案必須**正面確認**為歷史元素，未能確認者一律丟棄（fail-closed）。
- *   2. 長度：題幹正規化後以 100 字為硬上限，目標 20–70 字。
+ *   2. 長度：題幹正規化後以 120 字為硬上限，目標 20–70 字。
  *   3. 空格與答案外洩：剛好一個空格，且答案不可在題幹其他位置再次出現。
  *   4. 整合：本地示範生成（mock-provider）只會產生權威驗證器接受的題目。
  *
@@ -37,11 +37,11 @@ const UNITS: MaterialUnit[] = MATERIAL.split("\n").map((text, index) => ({
   text,
 }));
 
-function context(overrides: { questionTypes?: ("mc" | "fill" | "short")[] } = {}) {
+function context(overrides: { questionTypes?: ("mc" | "fill")[] } = {}) {
   return {
     topicId: "topic-5",
     sectionId: "topic-5-reformation",
-    questionTypes: overrides.questionTypes ?? (["fill"] as ("mc" | "fill" | "short")[]),
+    questionTypes: overrides.questionTypes ?? (["fill"] as ("mc" | "fill")[]),
     difficulty: "basic" as const,
     origin: "material-ai" as const,
     units: UNITS,
@@ -140,7 +140,7 @@ describe("填充題的題幹長度", () => {
   });
 
   it(`超過硬上限（${FILL_STEM_HARD_MAX} 字）的題幹一律丟棄，且不會自動截斷`, () => {
-    const longStem = `${"中古時代歐洲的封建制度".repeat(9)}＿＿＿。`;
+    const longStem = `${"中古時代歐洲的封建制度".repeat(12)}＿＿＿。`;
     const check = checkFillStem(longStem, "封建制度");
     expect(check.ok).toBe(false);
     expect(check.reason).toContain(String(FILL_STEM_HARD_MAX));
@@ -157,7 +157,7 @@ describe("填充題的題幹長度", () => {
 
   it("把教材整句抄成題幹（超過上限）會被丟棄", () => {
     // 重複抄錄教材句子令題幹超過硬上限；答案本身不在題幹內，因此只會觸發長度規則
-    const longStem = `${"當時以石刻技術印刷文件。".repeat(8)}這種技術出現於＿＿＿。`;
+    const longStem = `${"當時以石刻技術印刷文件。".repeat(11)}這種技術出現於＿＿＿。`;
     const result = validateLlmQuestions(
       { questions: [fillQuestion({ question: longStem, correctAnswer: "1517年" })] },
       context(),
@@ -267,13 +267,13 @@ describe("本地示範生成與權威驗證器一致", () => {
       topicTitle: "課題5：近代歐洲的興起",
       sectionTitle: "宗教改革",
       difficulty: "basic",
-      questionTypes: ["fill", "mc", "short"],
+      questionTypes: ["fill", "mc"],
       count: 6,
       materialUnits: units,
     });
     return {
       questions,
-      result: validateLlmQuestions({ questions }, context({ questionTypes: ["fill", "mc", "short"] })),
+      result: validateLlmQuestions({ questions }, context({ questionTypes: ["fill", "mc"] })),
     };
   }
 
@@ -329,3 +329,4 @@ describe("本地示範生成與權威驗證器一致", () => {
     expect(checkFillStem(atTarget, "工業革命").ok).toBe(true);
   });
 });
+

@@ -35,6 +35,7 @@
  * 提醒教師審核時確認，避免學生看到無法作答的題目。
  */
 import type { Difficulty, QuestionType } from "../../lib/types";
+import { answerLeaksIntoStem, countBlankMarkers, FILL_BLANK } from "../llm/fill-question";
 
 export type QuestionBankFileType = "MCQ" | "FBQ" | "TFQ" | "MUQ" | "COQ" | "LAQ" | "DBQ";
 
@@ -71,16 +72,43 @@ export interface QuestionBankParseResult {
   warnings: string[];
 }
 
-/** 由檔名判斷試題類型，例如 HNC1A2E_QB_T1_1.MCQ.docx → MCQ */
+const QUESTION_BANK_TYPES = ["MCQ", "FBQ", "TFQ", "MUQ", "COQ", "LAQ", "DBQ"] as const;
+
+/**
+ * 英文類型標記：`HNC1A2E_QB_T1_1.MCQ.docx`（正式題庫檔）或
+ * `課題1人類的需要 古與今_MCQ.docx`（教師自行命名的試題檔，2026-10 新教材）。
+ */
+const ASCII_TYPE_PATTERN = /[._\s-]([A-Za-z]{2,3})\.docx$/;
+
+/** 中文題型後綴（教師自行命名時常用，例如「…_填充題.docx」） */
+const CHINESE_TYPE_SUFFIXES: readonly [RegExp, QuestionBankFileType][] = [
+  [/選擇題$/, "MCQ"],
+  [/填充題$/, "FBQ"],
+  [/是非題$/, "TFQ"],
+  [/配對題$/, "MUQ"],
+  [/時序題$/, "COQ"],
+  [/(?:長答題|短答題|問答題)$/, "LAQ"],
+  [/資料題$/, "DBQ"],
+];
+
+/**
+ * 由檔名判斷試題類型，例如 HNC1A2E_QB_T1_1.MCQ.docx → MCQ、
+ * 課題1人類的需要 古與今_填充題.docx → FBQ。
+ * 只按檔名判斷，因此課本內容（例如「…_課文.docx」）不會被當成試題檔。
+ */
 export function detectQuestionBankType(fileName: string): QuestionBankFileType | null {
-  const match = /\.([A-Z]{2,3})\.docx$/i.exec(fileName);
-  if (!match) return null;
-  const type = match[1].toUpperCase();
-  return (["MCQ", "FBQ", "TFQ", "MUQ", "COQ", "LAQ", "DBQ"] as const).includes(
-    type as QuestionBankFileType,
-  )
-    ? (type as QuestionBankFileType)
-    : null;
+  const base = fileName.split(/[\\/]/).pop() ?? fileName;
+  const ascii = ASCII_TYPE_PATTERN.exec(base);
+  if (ascii) {
+    const type = ascii[1].toUpperCase();
+    if ((QUESTION_BANK_TYPES as readonly string[]).includes(type)) return type as QuestionBankFileType;
+  }
+
+  const stem = base.replace(/\.[^.]+$/, "");
+  for (const [pattern, type] of CHINESE_TYPE_SUFFIXES) {
+    if (pattern.test(stem)) return type;
+  }
+  return null;
 }
 
 /** 是否為校內試題檔（依檔名判斷，供批次匯入及上載時使用） */
@@ -293,13 +321,10 @@ export function resolveQuestionType(
     case "TFQ":
       // 是非題轉為兩個選項的選擇題（是／非）
       return "mc";
-    case "LAQ":
-    case "DBQ":
-      return "short";
     default:
-      // MUQ（配對）、COQ（時序）需要平台尚未支援的互動題型
-        return typeTag === "mc" ? "mc" : null;
-    }
+      // MUQ（配對）、COQ（時序）及 LAQ／DBQ（長題目／資料題）需要平台尚未支援的題型
+      return typeTag === "mc" ? "mc" : null;
+  }
 }
 
 /**
@@ -330,15 +355,20 @@ const DEFAULT_DIFFICULTY: Difficulty = "basic";
 
 /**
  * 需要原檔圖片才能作答的關鍵詞（地圖、漫畫、照片…）。
- * 平台只保存文字，未能顯示原圖，這類題目必須加上品質警告。
+ * 平台只保存文字，未能顯示原圖，這類題目匯入時一律排除。
  */
 const VISUAL_PATTERN = /圖畫|漫畫|油畫|照片|相片|地圖|圖表|圖片|插圖|示意圖|附圖|上圖|下圖|圖一|圖二/;
+
+/** 題目是否必須配合原檔圖片才能作答（平台未能顯示原圖，匯入時不會進入題庫） */
+export function requiresOriginalImage(...texts: string[]): boolean {
+  return VISUAL_PATTERN.test(texts.join(" "));
+}
 
 /** 依題目文字產生品質警告（只供教師端顯示） */
 function buildQualityWarnings(...texts: string[]): string[] {
   const combined = texts.join(" ");
   const warnings: string[] = [];
-  if (VISUAL_PATTERN.test(combined)) {
+  if (requiresOriginalImage(combined)) {
     warnings.push(
       "本題需配合原檔圖片（地圖／漫畫／照片等）作答，平台未能顯示原圖，發布前請確認或補上圖片。",
     );
@@ -392,25 +422,39 @@ function mcqParts(lines: string[]): { questionLines: string[]; optionLines: stri
   return { questionLines: body, optionLines: [] };
 }
 
+/**
+ * 選項文字清理：移除字母標記及原檔遺留的項目符號。
+ *
+ * 部分試題檔的選項寫成「A. . i和ii」（Word 項目符號被轉成「.」），移除字母標記後
+ * 仍會留下一個「. 」，令學生看到「. i和ii」這種無意義的開頭（2026-10-18 模擬學生
+ * 使用時發現 990 題選擇題中有 92 題屬這種情況）。
+ */
+function cleanOptionText(value: string): string {
+  return stripOptionLabel(value)
+    .replace(/^[.．·•‧]\s*/, "")
+    .trim();
+}
+
 function parseMcq(block: RawBlock, unitTitle: string): ParsedBankQuestion | null {
   const { questionLines, optionLines } = mcqParts(block.lines);
   if (optionLines.length === 0) return null;
   const question = questionLines.join(" ").trim();
   if (question.length === 0) return null;
 
-  const options = optionLines.map(stripOptionLabel).filter((option) => option.length > 0);
+  const options = optionLines.map(cleanOptionText).filter((option) => option.length > 0);
   if (options.length < 2) return null;
 
   const answerLines = answerSection(block.lines);
-  const answerRaw = answerLines[0] ?? "";
+  const answerRaw = cleanOptionText(answerLines[0] ?? "");
   if (answerRaw.length === 0) return null;
 
   const labelled = optionLines.map(optionLabel);
   let correctAnswer = "";
+  const answerToken = (answerLines[0] ?? "").trim();
 
   // 1. 答案以字母標示，而且選項本身有字母標記 → 依標記對應
-  const labelledIndex = /^[A-Ha-h]$/.test(answerRaw)
-    ? labelled.indexOf(answerRaw.toUpperCase())
+  const labelledIndex = /^[A-Ha-h]$/.test(answerToken)
+    ? labelled.indexOf(answerToken.toUpperCase())
     : -1;
   if (labelledIndex >= 0) {
     correctAnswer = options[labelledIndex] ?? "";
@@ -438,8 +482,7 @@ function parseMcq(block: RawBlock, unitTitle: string): ParsedBankQuestion | null
   };
 }
 
-function parseFill(block: RawBlock, unitTitle: string): ParsedBankQuestion | null {
-  const { before } = splitAt(block.lines, "##");
+function parseFill(block: RawBlock, unitTitle: string): ParsedBankQuestion | null {  const { before } = splitAt(block.lines, "##");
   const question = before.join(" ").trim();
   const answerLines = answerSection(block.lines);
   const answerRaw = answerLines.join(" ").trim();
@@ -500,29 +543,11 @@ function parseLongAnswer(
   fileType: "LAQ" | "DBQ",
   unitTitle: string,
 ): ParsedBankQuestion | null {
-  const { before } = splitAt(block.lines, "##");
-  // 作答線（底線）不是題目內容，移除；「b」為資料區塊標記，保留文字
-  const questionLines = before
-    .filter((line) => line !== "b" && !/^_{5,}$/.test(line))
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-  const question = questionLines.join("\n").trim();
-  const answer = answerSection(block.lines).join("\n").trim();
-  if (question.length === 0 || answer.length === 0) return null;
-
-  return {
-    sourceId: block.sourceId,
-    fileType,
-    unitTitle,
-    question,
-    questionType: "short",
-    options: [],
-    correctAnswer: "",
-    explanation: answer,
-    gradingPoints: splitGradingPoints(answer),
-    difficulty: block.difficulty ?? DEFAULT_DIFFICULTY,
-    qualityWarnings: buildQualityWarnings(question),
-  };
+  // 短答題功能已移除；長題目及資料題需要平台尚未支援的題型
+  void block;
+  void fileType;
+  void unitTitle;
+  return null;
 }
 
 /**
@@ -589,7 +614,9 @@ export function parseQuestionBank(
           ? "配對題需要平台尚未支援的題型"
           : fileType === "COQ"
             ? "時序題需要平台尚未支援的題型"
-            : "題目或答案格式不完整，無法忠實轉換";
+            : fileType === "LAQ" || fileType === "DBQ"
+              ? "長題目／資料題需要平台尚未支援的題型（短答題功能已移除）"
+              : "題目或答案格式不完整，無法忠實轉換";
       skipped.push({ sourceId: block.sourceId, reason });
       return;
     }
@@ -608,9 +635,84 @@ export function parseQuestionBank(
   const visualCount = questions.filter((question) => question.qualityWarnings.length > 0).length;
   if (visualCount > 0) {
     warnings.push(
-      `有 ${visualCount} 題需要原檔圖片（地圖／漫畫／照片）才能作答，平台未能顯示原圖，已標示品質警告供教師審核。`,
+      `有 ${visualCount} 題需要原檔圖片（地圖／漫畫／照片）才能作答，平台未能顯示原圖，匯入時一律排除（不會進入題庫）。`,
     );
   }
 
   return { fileType, questions, skipped, warnings };
+}
+
+
+/* ------------------------------------------------------------------ */
+/* 多空格填充題：由「答案依空格次序」還原並改寫成單一空格              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 由填充題的補充說明取出所有空格的答案。
+ *
+ * 校內試題檔的填充題可能一句有幾個空格，評卷參考只以一行列出答案，
+ * 解析器把它寫成「填充題答案（依空格次序）：(1) 民族、(2) 殖民」。
+ * 這個函式按次序還原，令平台可以：
+ *   1. 檢查空格數與答案數是否相符；及
+ *   2. 把其餘空格的答案填回題幹，只保留一個空格（見 normaliseMultiBlankFill）。
+ */
+export function blankAnswersFromExplanation(explanation: string): string[] {
+  if (!explanation.includes("依空格次序")) return [];
+  const answers = new Map<number, string>();
+  for (const match of explanation.matchAll(/\((\d+)\)\s*([\s\S]*?)(?=\s*[、,，]\s*\(\d+\)|$)/g)) {
+    const index = Number(match[1]);
+    const answer = match[2].replace(/[、,，。\s]+$/, "").trim();
+    if (index >= 1 && answer.length > 0) answers.set(index, answer);
+  }
+  return [...answers.entries()].sort((left, right) => left[0] - right[0]).map(([, answer]) => answer);
+}
+
+export interface FillNormalisation {
+  /** 改寫後只有一個空格的題幹 */
+  question: string;
+  /** 保留的那個空格的答案 */
+  correctAnswer: string;
+  /** 其餘空格及其答案（供教師核對原卷） */
+  filled: { answer: string; blankIndex: number }[];
+}
+
+/**
+ * 把有多個空格的填充題改寫成**只有一個空格**的題目。
+ *
+ * 為甚麼要改寫而不是保留多個空格：平台的作答介面每題只有一個輸入框，評分亦只
+ * 比對一個標準答案。原卷一句有 3 個空格時，學生見到 3 個空格卻只能填 1 個，
+ * 其餘空格永遠沒有答案可對（2026-10-18 模擬學生使用時發現 923 題填充題中有
+ * 574 題屬這種情況）。
+ *
+ * 做法：把其餘空格的答案直接填回題幹，只保留其中一個空格。保留哪一個空格會
+ * 逐一嘗試，確保被考核的答案**不會**在題幹其他地方出現（否則等於直接給答案）。
+ * 沒有任何空格符合條件時回傳 null（由呼叫端視為無法使用，不派給學生）。
+ */
+export function normaliseMultiBlankFill(question: string, answers: string[]): FillNormalisation | null {
+  const markers = [...question.matchAll(/[＿_]{2,}/g)];
+  if (markers.length <= 1) return null;
+
+  const cleaned = answers.map((answer) => answer.trim());
+  if (cleaned.filter((answer) => answer.length > 0).length < markers.length) return null;
+
+  for (let keep = 0; keep < markers.length; keep += 1) {
+    let rebuilt = "";
+    let cursor = 0;
+    for (const [index, marker] of markers.entries()) {
+      rebuilt += question.slice(cursor, marker.index);
+      rebuilt += index === keep ? FILL_BLANK : cleaned[index];
+      cursor = marker.index + marker[0].length;
+    }
+    rebuilt += question.slice(cursor);
+    if (answerLeaksIntoStem(rebuilt, cleaned[keep])) continue;
+    if (countBlankMarkers(rebuilt) !== 1) continue;
+    return {
+      question: rebuilt,
+      correctAnswer: cleaned[keep],
+      filled: cleaned
+        .map((answer, index) => ({ answer, blankIndex: index + 1 }))
+        .filter((entry) => entry.blankIndex - 1 !== keep),
+    };
+  }
+  return null;
 }

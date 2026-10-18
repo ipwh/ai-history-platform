@@ -67,9 +67,7 @@ export function ResultView({ sessionId }: { sessionId: string }) {
     setRetrying(true);
     setRetryError(null);
     try {
-      const wrongCount = result.feedback.filter(
-        (item) => item.isCorrect === false || item.selfAssessment === "needs-review",
-      ).length;
+      const wrongCount = result.feedback.filter((item) => item.isCorrect === false).length;
       const practice = await api.post<AssembledPractice>("/api/practice", {
         learnerId: getLearnerId(),
         topicId: result.session.topicId,
@@ -90,12 +88,7 @@ export function ResultView({ sessionId }: { sessionId: string }) {
   if (error) return <ErrorNotice error={error} onRetry={() => setReloadToken((t) => t + 1)} />;
   if (!result) return <Loading label="正在載入成績…" />;
 
-  const needsReview = result.feedback.filter(
-    (item) =>
-      item.isCorrect === false ||
-      item.selfAssessment === "needs-review" ||
-      item.aiGrading?.verdict === "incorrect",
-  );
+  const needsReview = result.feedback.filter((item) => item.isCorrect === false);
 
   return (
     <div className="flex flex-col gap-4">
@@ -103,9 +96,6 @@ export function ResultView({ sessionId }: { sessionId: string }) {
         <h1 className="text-xl font-bold">練習結果</h1>
         <p className="text-sm text-gray-600">
           共 {result.totalQuestions} 題，已作答 {result.answeredCount} 題。
-          {result.gradedCount < result.totalQuestions
-            ? `其中 ${result.totalQuestions - result.gradedCount} 題為短答題，需自行對照得分要點。`
-            : ""}
         </p>
       </div>
 
@@ -120,15 +110,12 @@ export function ResultView({ sessionId }: { sessionId: string }) {
       </section>
 
       {result.accuracy === null ? (
-        <Notice>
-          這次練習沒有可自動評分的題目（只有短答題），請按每題的得分要點自我檢查。
-        </Notice>
+        <Notice>這次練習沒有可自動評分的題目。</Notice>
       ) : null}
 
       <section className="card flex flex-col gap-2">
         <h2 className="font-semibold">需要重溫的知識點</h2>
-        {result.knowledgePointsToReview.length === 0 &&
-        result.selfReviewKnowledgePoints.length === 0 ? (
+        {result.knowledgePointsToReview.length === 0 ? (
           result.answeredCount < result.totalQuestions ? (
             <p className="text-sm text-gray-600">
               仍有 {result.totalQuestions - result.answeredCount} 題未作答，完成所有題目後才可更準確了解需要重溫的內容。
@@ -144,12 +131,6 @@ export function ResultView({ sessionId }: { sessionId: string }) {
                 <span className="text-gray-500">
                   （{item.sectionTitle}，{item.questionIds.length} 題）
                 </span>
-              </li>
-            ))}
-            {result.selfReviewKnowledgePoints.map((point) => (
-              <li key={`self-${point}`}>
-                <span className="font-medium">{point}</span>
-                <span className="text-gray-500">（短答題自我檢查：需要重溫）</span>
               </li>
             ))}
           </ul>
@@ -189,27 +170,18 @@ export function ResultView({ sessionId }: { sessionId: string }) {
           const aiVerdict = feedback.aiGrading?.verdict ?? null;
           const verdict = !attempted
             ? { text: "未作答", className: "badge badge-warning" }
-            : feedback.autoGraded
-              ? feedback.isCorrect
-                ? {
-                    text: aiVerdict === "correct" ? "答對（AI 語意批改）" : "答對",
-                    className: "badge badge-success",
-                  }
-                : { text: "答錯", className: "badge badge-danger" }
-              : aiVerdict !== null
-                ? { text: "AI 批改（可覆核）", className: "badge badge-accent" }
-                : { text: "短答題（自我檢查）", className: "badge badge-warning" };
+            : feedback.isCorrect
+              ? {
+                  text: aiVerdict === "correct" ? "答對（AI 語意批改）" : "答對",
+                  className: "badge badge-success",
+                }
+              : { text: "答錯", className: "badge badge-danger" };
 
           return (
             <article key={feedback.questionId} className="card flex flex-col gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">第 {index + 1} 題</span>
                 <span className={verdict.className}>{verdict.text}</span>
-                {feedback.selfAssessment ? (
-                  <span className="badge">
-                    {feedback.selfAssessment === "understood" ? "我已掌握" : "需要重溫"}
-                  </span>
-                ) : null}
               </div>
               <p className="text-sm text-gray-600">
                 你的答案：{feedback.answer || "（未有作答）"}

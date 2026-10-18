@@ -495,8 +495,7 @@ export function PracticeSetupForm() {
         <p className="text-xs text-gray-500">
           AI 會按你選取的題型出題（至少要選一種）；題型可多選，想只練一種題型，請把其他已選的題型再按一下取消
           （例如只想練填充題，請取消「選擇題」）。
-          短答題不會計入正確率；提交後由 AI 按「得分要點」批改（以意思判斷，用字不同不會直接判錯），
-          你仍可按要點自我檢查。
+          填充題提交後會由 AI 按意思批改，用字不同不會直接判錯。
         </p>
       </section>
 
@@ -588,7 +587,7 @@ export function PracticeSetupForm() {
         </div>
         {mode === "wrong-only" ? (
           <Notice>
-            只會抽取你之前答錯，或在短答題自我檢查中標記「需要重溫」的題目。
+            只會抽取你之前答錯的題目。
           </Notice>
         ) : null}
       </section>

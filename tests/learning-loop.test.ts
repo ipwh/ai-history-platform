@@ -547,52 +547,6 @@ describe("重溫排程", () => {
   });
 });
 
-describe("下一步建議", () => {
-  it("沒有任何作答時提供中性建議（不會虛擬弱點或掌握程度）", () => {
-    const recommendations = loop.getRecommendations(LEARNER, { now: NOW });
-    expect(recommendations.length).toBeGreaterThan(0);
-    expect(recommendations[0].kind).toBe("read-lesson");
-    expect(recommendations[0].reason.length).toBeGreaterThan(0);
-
-    // 沒有作答記錄時，不會出現任何「弱項」或「重做錯題」的診斷
-    expect(recommendations.map((item) => item.kind)).not.toContain("practise-skill");
-    expect(recommendations.map((item) => item.kind)).not.toContain("redo-wrong");
-    expect(recommendations.map((item) => item.kind)).not.toContain("review-due");
-    const text = recommendations.map((item) => `${item.title} ${item.reason}`).join(" ");
-    expect(text).not.toContain("弱");
-    // 建議必須說明閱讀不等於掌握（不可暗示已學會）
-    expect(text).toContain("閱讀本身不計算為已掌握");
-  });
-
-  it("有到期題目時優先建議重溫，並提供可追溯的原因", () => {
-    const question = publishedQuestions(1)[0];
-    ensureSession("s1", LEARNER);
-    recordAttempt({
-      learnerId: LEARNER,
-      questionId: question.id,
-      sessionId: "s1",
-      isCorrect: false,
-      answeredAt: new Date(NOW - 3 * DAY).toISOString(),
-    });
-
-    const recommendations = loop.getRecommendations(LEARNER, { now: NOW });
-    expect(recommendations[0].kind).toBe("review-due");
-    expect(recommendations[0].title).toContain("1");
-    expect(recommendations[0].href).toBe("/review");
-  });
-
-  it("建議最多三項", () => {
-    const recommendations = loop.getRecommendations(LEARNER, { now: NOW, limit: 3 });
-    expect(recommendations.length).toBeLessThanOrEqual(3);
-  });
-});
-
-/**
- * Sprint 4 追加：合約完整性測試。
- *
- * 針對書面契約中仍未以測試固定的部分：狀態改變後的排程、時區邊界、
- * 只重複作答同一題時不會虛構廣泛弱點、以及建議不會洩漏其他學生的資料。
- */
 describe("契約完整性（Sprint 4）", () => {
   it("題目被改為草稿後即從重溫佇列移除；改回已發布後再次出現", () => {
     const question = publishedQuestions(1)[0];
@@ -667,7 +621,7 @@ describe("契約完整性（Sprint 4）", () => {
     ).toBe(1);
   });
 
-  it("只重複作答同一題不會虛構「該課題較弱」的建議", () => {
+  it("只重複作答同一題不會虛構該課題較弱的證據", () => {
     const question = publishedQuestions(1)[0];
     ensureSession("s1", LEARNER);
     ensureSession("s2", LEARNER);
@@ -695,7 +649,7 @@ describe("契約完整性（Sprint 4）", () => {
     );
   });
 
-  it("建議只根據該學生自己的記錄，不會引用其他學生的資料", () => {
+  it("進度及重溫排程只根據該學生自己的記錄，不會引用其他學生的資料", () => {
     const questions = publishedQuestions(2);
     ensureSession("s-other", OTHER_LEARNER);
     for (const question of questions) {
@@ -708,13 +662,11 @@ describe("契約完整性（Sprint 4）", () => {
       });
     }
 
-    // 另一位學生有大量錯題，但這位學生沒有任何記錄 → 建議必須是中性的
-    const recommendations = loop.getRecommendations(LEARNER, { now: NOW });
-    expect(recommendations.map((item) => item.kind)).not.toContain("review-due");
-    expect(recommendations.map((item) => item.kind)).not.toContain("redo-wrong");
+    // 另一位學生有大量錯題，但這位學生沒有任何記錄 → 進度為 0、沒有到期題目
+    expect(loop.getTopicProgress(LEARNER, TOPIC, NOW).attemptedQuestions).toBe(0);
     expect(loop.getReviewQueue(LEARNER, { now: NOW }).dueCount).toBe(0);
 
-    // 而該位學生自己的建議才有到期項目
-    expect(loop.getRecommendations(OTHER_LEARNER, { now: NOW })[0].kind).toBe("review-due");
+    // 而該位學生自己的記錄才有到期項目（兩條不同題目）
+    expect(loop.getReviewQueue(OTHER_LEARNER, { now: NOW }).dueCount).toBe(2);
   });
 });

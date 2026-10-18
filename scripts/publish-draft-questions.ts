@@ -25,6 +25,7 @@
  *
  * 其他參數：
  *   --origins school-paper,material-ai   只發布指定來源（預設：全部草稿）
+ *   --topic topic-1                      只發布指定課題的草稿（預設：全部課題）
  *   --label local|production-snapshot    授權紀錄中的目標標籤（預設 local）
  *   --record <path>                      授權紀錄檔位置（多筆決定會依序附加）
  *
@@ -61,6 +62,7 @@ const originFilter = (readArg("--origins") ?? "")
   .split(",")
   .map((value) => value.trim())
   .filter((value) => value.length > 0) as QuestionOrigin[];
+const topicFilter = (readArg("--topic") ?? "").trim() || null;
 
 function fail(message: string): never {
   console.error(`\n無法執行：${message}\n`);
@@ -87,12 +89,16 @@ async function main(): Promise<void> {
   // 未確定（待教師確認）的題目不在候選之列：批次發布只適用於「科組已審閱但未在平台
   // 逐題留下覆核紀錄」的題目，不能代替教師確認品質閘門無法確認的答案依據
   // （Sprint 7.9；規則見 question-service.listOwnerPublicationCandidates）。
-  const { publishable: drafts, held } = listOwnerPublicationCandidates({ origins: originFilter });
+  const { publishable: drafts, held } = listOwnerPublicationCandidates({
+    origins: originFilter,
+    ...(topicFilter ? { topicId: topicFilter } : {}),
+  });
   const byOrigin = new Map<string, number>();
   for (const question of drafts) {
     byOrigin.set(question.origin, (byOrigin.get(question.origin) ?? 0) + 1);
   }
 
+  if (topicFilter) console.log(`課題篩選：${topicFilter}`);
   console.log(`可批次發布的草稿題目：${drafts.length} 題`);
   for (const [origin, count] of byOrigin) {
     const label = QUESTION_ORIGIN_LABELS[origin as QuestionOrigin] ?? origin;
@@ -149,6 +155,7 @@ async function main(): Promise<void> {
     publishedCount: sortedIds.length,
     publishedByOrigin: Object.fromEntries(byOrigin),
     heldAwaitingTeacherConfirmation: held.length,
+    ...(topicFilter ? { topicId: topicFilter } : {}),
     note:
       "這些題目由擁有者授權批次發布，**沒有**逐題人工覆核紀錄，因此教師端會標示為" +
       "「已發布（未經人工覆核）」。`sourceVerified` 只代表節錄與教材段落相符，不代表史實正確；" +

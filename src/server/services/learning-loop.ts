@@ -1,5 +1,5 @@
-/**
- * 學習循環服務：課題進度、技能進度、重溫排程及下一步建議。
+﻿/**
+ * 學習循環服務：課題進度、技能進度及重溫排程。
  *
  * 三個部分都在這裡集中實作，令規則可被單獨測試，不會散落在 React 元件內。
  *
@@ -37,7 +37,6 @@ import {
   LEARNING_STATE_LABELS,
   type HistorySkill,
   type LearningState,
-  type RecommendationKind,
   type ReviewReason,
 } from "../../lib/types";
 import {
@@ -113,14 +112,6 @@ export interface ReviewQueue {
   dueCount: number;
   /** 因時間戳缺失或格式錯誤而無法排程的作答數（不會猜測） */
   dataIssues: number;
-}
-
-export interface Recommendation {
-  kind: RecommendationKind;
-  title: string;
-  /** 依據：必須來自真實的作答記錄 */
-  reason: string;
-  href: string;
 }
 
 /** 預設時鐘（可注入以便測試，見 getReviewQueue 的 now 參數） */
@@ -325,99 +316,6 @@ export function getReviewQueue(
   );
 
   return { dueItems, dueCount: dueItems.length, dataIssues };
-}
-
-/**
- * 下一步建議：最多 3 項，每項都有可追溯的理由。
- * 資料不足時回傳中性的建議，不會憑空診斷學生的弱點。
- */
-export function getRecommendations(
-  learnerId: string,
-  options: { now?: number; limit?: number } = {},
-): Recommendation[] {
-  const now = options.now ?? Date.now();
-  const limit = options.limit ?? 3;
-  const recommendations: Recommendation[] = [];
-
-  const topics = listTopics().filter((topic) => topic.published && topic.level !== 0);
-
-  // 1. 已到期的重溫題目（最優先：有明確證據顯示已遺忘或未掌握）
-  const queue = getReviewQueue(learnerId, { now });
-  if (queue.dueCount > 0) {
-    recommendations.push({
-      kind: "review-due",
-      title: `重溫 ${queue.dueCount} 條到期的題目`,
-      reason:
-        queue.dueItems.some((item) => item.reason === "incorrect" || item.reason === "uncertain")
-          ? `你有 ${queue.dueCount} 條題目已到重溫時間（部分之前答錯或答案未能確定），現在重做效果最好。`
-          : `你有 ${queue.dueCount} 條之前答對的題目已到重溫時間，重做可以鞏固記憶。`,
-      href: "/review",
-    });
-  }
-
-  // 2. 有答錯但未到期的題目 → 建議重做錯題
-  for (const topic of topics) {
-    const progress = getTopicProgress(learnerId, topic.id, now);
-    if (progress.incorrectQuestions + progress.uncertainQuestions > 0) {
-      recommendations.push({
-        kind: "redo-wrong",
-        title: `重做「${topic.title}」的錯題`,
-        reason: `你在這個課題有 ${
-          progress.incorrectQuestions + progress.uncertainQuestions
-        } 條題目未答對（答錯或答案未能確定），重做可以釐清概念。`,
-        href: `/practice/new?topic=${topic.id}`,
-      });
-      break;
-    }
-  }
-
-  // 3. 有足夠證據顯示較弱的技能 → 建議針對該技能練習
-  for (const topic of topics) {
-    const skills = getSkillProgress(learnerId, topic.id, now)
-      .filter((skill) => skill.sufficientEvidence && skill.incorrectQuestions > 0)
-      .sort((left, right) => right.incorrectQuestions - left.incorrectQuestions);
-    const weakest = skills[0];
-    if (weakest !== undefined) {
-      recommendations.push({
-        kind: "practise-skill",
-        title: `練習技能「${weakest.skill}」`,
-        reason: `你在「${topic.title}」的「${weakest.skill}」有 ${weakest.incorrectQuestions} 條題目未答對（已作答 ${weakest.attemptedQuestions} 條）。`,
-        href: `/practice/new?topic=${topic.id}`,
-      });
-      break;
-    }
-  }
-
-  // 4. 完全未開始且可練習的課題 → 建議先閱讀教材再練習
-  const unattempted = topics.find(
-    (topic) => getTopicProgress(learnerId, topic.id, now).attemptedQuestions === 0,
-  );
-  if (unattempted !== undefined) {
-    recommendations.push({
-      kind: "read-lesson",
-      title: `開始「${unattempted.title}」`,
-      reason: "你尚未在這個課題作答。可先閱讀教材，再嘗試練習；閱讀本身不計算為已掌握。",
-      href: `/practice/new?topic=${unattempted.id}`,
-    });
-  } else if (topics.length > 0) {
-    recommendations.push({
-      kind: "try-topic",
-      title: "繼續練習其他課題",
-      reason: "你在已開始的課題都已有記錄，繼續練習其他課題可以擴闊覆蓋範圍。",
-      href: "/",
-    });
-  }
-
-  if (recommendations.length === 0) {
-    recommendations.push({
-      kind: "neutral",
-      title: "選擇一個課題開始練習",
-      reason: "目前沒有足夠的作答記錄可以提出建議，先完成一次練習即可獲得個人化建議。",
-      href: "/",
-    });
-  }
-
-  return recommendations.slice(0, limit);
 }
 
 /** 課題及分節名稱（介面顯示用；只回傳已發布課題） */

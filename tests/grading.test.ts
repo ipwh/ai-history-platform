@@ -58,18 +58,6 @@ describe("自動評分", () => {
     expect(gradeAnswer(question, "   ").isCorrect).toBe(false);
   });
 
-  it("短答題不會自動評分", () => {
-    const question = buildQuestion({
-      questionType: "short",
-      options: [],
-      correctAnswer: "參考答案內容",
-      gradingPoints: ["要點一"],
-    });
-    const outcome = gradeAnswer(question, "任何回答");
-    expect(outcome.autoGraded).toBe(false);
-    expect(outcome.isCorrect).toBeNull();
-  });
-
   it("正確率只計可自動評分的題目", () => {
     expect(calculateAccuracy(3, 5)).toBe(0.6);
     expect(calculateAccuracy(0, 0)).toBeNull();

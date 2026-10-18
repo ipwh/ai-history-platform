@@ -33,6 +33,91 @@ beforeAll(async () => {
   seed.ensureBootstrap();
 });
 
+describe("結構上無法作答的題目不會派給學生", () => {
+  function insertFill(options: {
+    id: string;
+    question: string;
+    correctAnswer: string;
+  }): void {
+    questionsRepo.insertQuestion({
+      id: options.id,
+      topicId: "topic-5",
+      sectionId: SECTION,
+      questionType: "fill",
+      difficulty: "basic",
+      question: options.question,
+      options: [],
+      correctAnswer: options.correctAnswer,
+      acceptedAnswers: [],
+      explanation: "測試用解釋。",
+      knowledgePoint: "測試",
+      sourceExcerpt: options.question,
+      sourceLocation: "測試",
+      sourceBlockIds: [],
+      gradingPoints: [],
+      origin: "school-paper",
+      status: "published",
+      sourceVerified: false,
+      qualityWarnings: [],
+      skill: null,
+      revision: 1,
+      autoValidatedAt: null,
+      autoValidatedRevision: null,
+      autoValidatedFingerprint: null,
+      teacherConfirmationRequired: false,
+      createdAt: "2026-10-18T00:00:00.000Z",
+    });
+  }
+
+  it("題幹有多個空格但只有一個答案的填充題不會派給學生（其餘空格沒有答案可對）", async () => {
+    insertFill({
+      id: "q-test-good-fill",
+      question: "人類歷史中，文字發明以前、沒有文字紀錄的時期稱為＿＿＿。",
+      correctAnswer: "史前時期",
+    });
+    insertFill({
+      id: "q-test-multiblank",
+      question: "＿＿＿＿是第一個空格，＿＿＿＿是第二個空格。",
+      correctAnswer: "甲",
+    });
+
+    const assembled = await practice.createPractice({
+      learnerId: LEARNER,
+      topicId: "topic-5",
+      sectionIds: [SECTION],
+      questionTypes: ["fill"],
+      difficulty: "basic",
+      questionCount: 30,
+      mode: "standard",
+      sourceSessionId: null,
+    });
+
+    expect(assembled.questions.some((question) => question.id === "q-test-multiblank")).toBe(false);
+    expect(assembled.questions.some((question) => question.id === "q-test-good-fill")).toBe(true);
+  });
+
+  it("答案仍出現在題幹其他位置的填充題不會派給學生（可直接抄寫）", async () => {
+    insertFill({
+      id: "q-test-leaking",
+      question: "教士＿＿＿＿的信徒被稱為「聶斯托利派」。",
+      correctAnswer: "聶斯托利",
+    });
+
+    const assembled = await practice.createPractice({
+      learnerId: LEARNER,
+      topicId: "topic-5",
+      sectionIds: [SECTION],
+      questionTypes: ["fill"],
+      difficulty: "basic",
+      questionCount: 30,
+      mode: "standard",
+      sourceSessionId: null,
+    });
+
+    expect(assembled.questions.some((question) => question.id === "q-test-leaking")).toBe(false);
+  });
+});
+
 describe("同時提交（雙擊／重複請求）", () => {
   it("同一題同時提交兩次只會有一筆作答記錄，分數不會重複計算", async () => {
     const assembled = await practice.createPractice({
@@ -156,44 +241,6 @@ describe("學生練習流程（整合測試）", () => {
     expect(result.gradedCount).toBe(2);
     expect(result.correctCount).toBe(1);
     expect(result.accuracy).toBe(0.5);
-    expect(result.knowledgePointsToReview.length).toBe(1);
-  });
-
-  it("短答題不會自動評分，並可標記需要重溫", async () => {
-    const assembled = await practice.createPractice({
-      learnerId: LEARNER,
-      topicId: "topic-5",
-      sectionIds: [SECTION],
-      questionTypes: ["short"],
-      difficulty: "advanced",
-      questionCount: 1,
-      mode: "standard",
-      sourceSessionId: null,
-    });
-
-    const question = assembled.questions[0];
-    const submit = await practice.submitAnswer(
-      assembled.session.id,
-      LEARNER,
-      question.id,
-      "我的答案",
-    );
-    expect(submit.feedback.autoGraded).toBe(false);
-    expect(submit.feedback.isCorrect).toBeNull();
-    expect(submit.feedback.gradingPoints.length).toBeGreaterThan(0);
-    // 本地示範模式沒有 AI，因此不會有語意批改結果
-    expect(submit.feedback.aiGrading).toBeNull();
-
-    const feedback = practice.setSelfAssessment(
-      assembled.session.id,
-      LEARNER,
-      question.id,
-      "needs-review",
-    );
-    expect(feedback.selfAssessment).toBe("needs-review");
-
-    const result = practice.getPracticeResult(assembled.session.id, LEARNER);
-    expect(result.selfReviewKnowledgePoints.length).toBe(1);
     expect(result.knowledgePointsToReview.length).toBe(1);
   });
 

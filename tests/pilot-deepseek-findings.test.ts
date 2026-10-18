@@ -68,16 +68,17 @@ describe("試點缺陷 2：選擇題正確答案是教材改寫時被誤丟", ()
     };
   }
 
-  it("教材語句的改寫會獲保留，但標示為未確定（不得自動發布）", () => {
+  it("教材語句的改寫會獲保留並照常發布，只記錄警告（2026-10-18 放寬）", () => {
     const result = checkQuestionQuality(
       mc({ correctAnswer: "工業革命逐步令城市面貌改變，並設立公共衛生局負責清理污水" }),
       UNITS,
     );
     expect(result.issues.filter((issue) => issue.severity === "blocking")).toHaveLength(0);
     const issue = result.issues.find((issue) => issue.code === "answer-not-in-material");
-    expect(issue?.severity).toBe("uncertain");
+    expect(issue?.severity).toBe("warning");
     expect(issue?.message).toContain("改寫");
-    expect(hasUncertainIssue(result.issues)).toBe(true);
+    expect(hasUncertainIssue(result.issues)).toBe(false);
+    expect(result.outcome).toBe("pass");
   });
 
   it("逐字引用的答案屬確定，不會暫緩自動發布", () => {

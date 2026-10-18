@@ -290,6 +290,181 @@
         }
       ],
       "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。（2026-10-16：以 materials/ 內 2026-10 更新版課本內容取代舊教材，先後重新匯入 12 份書本文件；同日 12:42／12:48／12:55 三次執行本腳本的紀錄已合併為本筆，並列出最終的文件 ID。）"
+    },
+    {
+      "decision": "owner-authorized-student-distribution",
+      "label": "local",
+      "target": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+      "ownerEmail": "ipwh@pochiu.edu.hk",
+      "reason": "擁有者指示：以新課文取代課題1教材，讓學生可依新教材生成練習、答案及參與材料（校方確認課本可在校內平台向學生發布）",
+      "decidedAt": "2026-10-18T07:56:52.052Z",
+      "openedCount": 1,
+      "distributionChanges": 1,
+      "openedDocuments": [
+        {
+          "id": "doc_27ebb78d1ec0491b",
+          "topicId": "topic-1",
+          "fileName": "課題1人類的需要 古與今_課文.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        }
+      ],
+      "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
+    },
+    {
+      "decision": "owner-authorized-student-distribution",
+      "label": "local",
+      "target": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+      "ownerEmail": "ipwh@pochiu.edu.hk",
+      "reason": "擁有者指示：以新筆記取代課題5教材，讓學生可依新教材生成練習、答案及參與材料（校方確認課本可在校內平台向學生發布）",
+      "decidedAt": "2026-10-18T08:11:35.866Z",
+      "openedCount": 1,
+      "distributionChanges": 1,
+      "openedDocuments": [
+        {
+          "id": "doc_d6dc8cee27bd41d9",
+          "topicId": "topic-5",
+          "fileName": "課題5 近代歐洲的興起_筆記.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        }
+      ],
+      "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
+    },
+    {
+      "decision": "owner-authorized-student-distribution",
+      "label": "local",
+      "target": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+      "ownerEmail": "ipwh@pochiu.edu.hk",
+      "reason": "擁有者指示：以新筆記取代課題3教材，讓學生可依新教材生成練習、答案及參與材料（校方確認課本可在校內平台向學生發布）",
+      "decidedAt": "2026-10-18T08:19:31.332Z",
+      "openedCount": 1,
+      "distributionChanges": 1,
+      "openedDocuments": [
+        {
+          "id": "doc_43bdb5c8aa824f80",
+          "topicId": "topic-3",
+          "fileName": "課題3 伊斯蘭文明的興起_筆記.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        }
+      ],
+      "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
+    },
+    {
+      "decision": "owner-authorized-student-distribution",
+      "label": "local",
+      "target": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+      "ownerEmail": "ipwh@pochiu.edu.hk",
+      "reason": "擁有者指示：以新筆記取代課題4教材，讓學生可依新教材生成練習、答案及參與材料（校方確認課本可在校內平台向學生發布）",
+      "decidedAt": "2026-10-18T08:21:49.193Z",
+      "openedCount": 1,
+      "distributionChanges": 1,
+      "openedDocuments": [
+        {
+          "id": "doc_354afa7c7fe74715",
+          "topicId": "topic-4",
+          "fileName": "課題4 早期香港地區的歷史_筆記.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        }
+      ],
+      "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
+    },
+    {
+      "decision": "owner-authorized-student-distribution",
+      "label": "local",
+      "target": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+      "ownerEmail": "ipwh@pochiu.edu.hk",
+      "reason": "擁有者指示：以新筆記取代課題6教材，讓學生可依新教材生成練習、答案及參與材料（校方確認課本可在校內平台向學生發布）",
+      "decidedAt": "2026-10-18T08:25:21.790Z",
+      "openedCount": 1,
+      "distributionChanges": 1,
+      "openedDocuments": [
+        {
+          "id": "doc_3cdae4b6f496434e",
+          "topicId": "topic-6",
+          "fileName": "課題6 歐洲國家的殖民擴張_筆記.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        }
+      ],
+      "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
+    },
+    {
+      "decision": "owner-authorized-student-distribution",
+      "label": "local",
+      "target": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+      "ownerEmail": "ipwh@pochiu.edu.hk",
+      "reason": "擁有者指示：以新筆記取代課題7至10教材，讓學生可依新教材生成練習、答案及參與材料（校方確認課本可在校內平台向學生發布）",
+      "decidedAt": "2026-10-18T08:36:18.722Z",
+      "openedCount": 4,
+      "distributionChanges": 4,
+      "openedDocuments": [
+        {
+          "id": "doc_4df3873d7f4d46ad",
+          "topicId": "topic-10",
+          "fileName": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代筆記.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_1a95ddc9862c4b93",
+          "topicId": "topic-9",
+          "fileName": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_筆記.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_8af69af78b474d8c",
+          "topicId": "topic-8",
+          "fileName": "課題8 直至二十世紀初香港的成長與發展_筆記.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_ab3ed8d6873a4ad4",
+          "topicId": "topic-7",
+          "fileName": "課題7 美國的成立及發展_筆記.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        }
+      ],
+      "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
+    },
+    {
+      "decision": "owner-authorized-student-distribution",
+      "label": "local",
+      "target": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+      "ownerEmail": "ipwh@pochiu.edu.hk",
+      "reason": "擁有者指示：以新筆記取代課題2、11、12教材，讓學生可依新教材生成練習、答案及參與材料（校方確認課本可在校內平台向學生發布）",
+      "decidedAt": "2026-10-18T08:43:10.259Z",
+      "openedCount": 3,
+      "distributionChanges": 3,
+      "openedDocuments": [
+        {
+          "id": "doc_4d8e6695811d4bcc",
+          "topicId": "topic-12",
+          "fileName": "課題12 二十世紀香港的成長與蛻變_筆記.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_29a7b8b701a74371",
+          "topicId": "topic-11",
+          "fileName": "課題11 20世紀以來的國際合作_筆記.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        },
+        {
+          "id": "doc_9b60b2ec65e248bd",
+          "topicId": "topic-2",
+          "fileName": "課題2 歐洲文明的發展_筆記.docx",
+          "teacherEdition": false,
+          "teacherOnlyBlocksHiddenFromStudents": 1
+        }
+      ],
+      "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
     }
   ]
 }

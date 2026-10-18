@@ -10,10 +10,17 @@
 import { questionSchema, type Question, type Section } from "../../lib/types";
 import { nowIso } from "../db/connection";
 import { isExcludedText } from "../materials/exclusions";
-import { parseQuestionBank, type ParsedBankQuestion } from "../materials/question-bank";
+import {
+  blankAnswersFromExplanation,
+  normaliseMultiBlankFill,
+  parseQuestionBank,
+  requiresOriginalImage,
+  type ParsedBankQuestion,
+} from "../materials/question-bank";
 import { normalizeForMatch, truncate } from "../materials/text-utils";
 import { getQuestion, insertQuestion, updateQuestion } from "../repositories/questions";
 import { listSections } from "../repositories/topics";
+import { checkQuestionServable } from "./question-servability";
 
 export interface QuestionBankImportInput {
   topicId: string;
@@ -28,6 +35,8 @@ export interface QuestionBankImportResult {
   imported: number;
   /** 因為不考核範圍而略過的題目數 */
   excluded: number;
+  /** 需要原檔圖片才能作答而永久排除的題目數（平台未能顯示原圖） */
+  excludedForImage: number;
   /** 無法忠實轉換而略過的題目（附原因） */
   skipped: { sourceId: string; reason: string }[];
   /** 各分節的題目數（用於報告） */
@@ -67,28 +76,85 @@ export function matchSection(
   return bestScore > 0 ? best : null;
 }
 
+/** 匯入前的題目整理結果：可用的題目，或不可用的原因 */
+function prepareSourceQuestion(
+  source: ParsedBankQuestion,
+): { prepared: ParsedBankQuestion } | { skipReason: string } {
+  if (source.questionType === "fill") {
+    const answerList = [source.correctAnswer, ...source.gradingPoints]
+      .map((answer) => answer.trim())
+      .filter((answer) => answer.length > 0);
+    const blanks = (source.question.match(/[＿_]{2,}/g) ?? []).length;
+
+    if (blanks > 1) {
+      // 一句有多個空格時，平台的單一輸入框只對應一個答案：把其餘空格的答案填回
+      // 題幹，只保留一個空格（見 materials/question-bank.ts normaliseMultiBlankFill）。
+      const normalised =
+        normaliseMultiBlankFill(source.question, answerList) ??
+        normaliseMultiBlankFill(source.question, blankAnswersFromExplanation(source.explanation));
+      if (normalised === null) {
+        return {
+          skipReason: `填充題有 ${blanks} 個空格，但答案區只有 ${answerList.length} 個答案，未能確認每個空格的答案`,
+        };
+      }
+      return {
+        prepared: {
+          ...source,
+          question: normalised.question,
+          correctAnswer: normalised.correctAnswer,
+          explanation:
+            source.explanation.trim().length > 0
+              ? source.explanation
+              : `原題有 ${blanks} 個空格，平台已把其餘空格的答案填入題幹，只考核第 ${normalised.filled.length + 1} 個空格。`,
+          qualityWarnings: [
+            ...source.qualityWarnings,
+            `原題有 ${blanks} 個空格，平台已把其餘空格的答案（${normalised.filled
+              .map((entry) => entry.answer)
+              .join("、")}）填入題幹，只考核一個空格；請教師核對是否與原卷一致。`,
+          ],
+        },
+      };
+    }
+  }
+
+  const servability = checkQuestionServable({
+    questionType: source.questionType ?? "mc",
+    question: source.question,
+    options: source.options,
+    correctAnswer: source.correctAnswer,
+  });
+  if (!servability.ok) {
+    // 結構上無法作答（題幹沒有空格、選項是空白或重複、答案不在選項內等）：
+    // 沿用單一判斷來源，避免匯入了學生根本答不到的題目。
+    if (source.questionType === "fill" || source.questionType === "mc") {
+      return { skipReason: servability.reason ?? "題目結構不完整" };
+    }
+  }
+
+  return { prepared: source };
+}
+
 function buildQuestion(
   source: ParsedBankQuestion,
   topicId: string,
   sectionId: string,
   fileName: string,
   ordinal: number,
+  questionId: string,
 ): Question {
   const explanationParts = [source.explanation].filter((part) => part.trim().length > 0);
   const explanation =
     explanationParts.length > 0 ? explanationParts.join("\n") : "答案依校內試題檔的評卷參考。";
   const knowledgePoint = source.unitTitle.trim().length > 0 ? source.unitTitle : "校內試題";
-
   return questionSchema.parse({
-    id: `qb-${source.sourceId}`,
+    id: questionId,
     topicId,
     sectionId,
     questionType: source.questionType ?? "mc",
     difficulty: source.difficulty,
     question: source.question,
     options: source.options,
-    correctAnswer:
-      source.questionType === "short" ? "（短答題，由教師按得分要點評分）" : source.correctAnswer,
+    correctAnswer: source.correctAnswer,
     acceptedAnswers: [],
     explanation,
     knowledgePoint,
@@ -97,7 +163,7 @@ function buildQuestion(
       source.unitTitle.length > 0 ? ` · ${source.unitTitle}` : ""
     }`,
     sourceBlockIds: [],
-    gradingPoints: source.questionType === "short" ? source.gradingPoints : [],
+    gradingPoints: [],
     origin: "school-paper",
     // 校內試題由教師核對後才發布；答案直接取自試題檔，並非 AI 生成
     status: "draft",
@@ -115,9 +181,21 @@ export function importQuestionBank(input: QuestionBankImportInput): QuestionBank
   const bySection = new Map<string, number>();
   let imported = 0;
   let excluded = 0;
+  let excludedForImage = 0;
+  let importedWithWarnings = 0;
   const skipped = [...parsed.skipped];
+  /** 同一份檔案的題號出現次數：原卷重複使用題號時，後續題目以「-2」「-3」後綴保存 */
+  const idOccurrences = new Map<string, number>();
+  const duplicateSourceIds: string[] = [];
 
   parsed.questions.forEach((question, index) => {
+    // 需要原檔圖片才能作答的題目永久排除：平台只保存文字，未能顯示原圖，
+    // 學生看到也無法作答（見 materials/question-bank.ts 的 requiresOriginalImage）。
+    if (requiresOriginalImage(question.question)) {
+      excludedForImage += 1;
+      return;
+    }
+
     // 不考核的內容不會進入題庫（例如課題1 的印度河流域文明題目）
     if (isExcludedText(input.topicId, `${question.unitTitle} ${question.question} ${question.explanation}`)) {
       excluded += 1;
@@ -131,33 +209,76 @@ export function importQuestionBank(input: QuestionBankImportInput): QuestionBank
       return;
     }
 
-    const question_ = buildQuestion(question, input.topicId, sectionId, input.fileName, index + 1);
-    if (getQuestion(question_.id)) updateQuestion(question_.id, question_);
-    else insertQuestion(question_);
+    // 題目 ID 仍由來源題號推導（重複匯入會更新同一題），但同一檔案內題號重複時
+    // 不可覆寫前一題（原卷確有不同題目共用同一題號），否則會靜默丟失題目。
+    const occurrence = (idOccurrences.get(question.sourceId) ?? 0) + 1;
+    idOccurrences.set(question.sourceId, occurrence);
+    if (occurrence > 1 && !duplicateSourceIds.includes(question.sourceId)) {
+      duplicateSourceIds.push(question.sourceId);
+    }
+    const questionId =
+      occurrence === 1 ? `qb-${question.sourceId}` : `qb-${question.sourceId}-${occurrence}`;
+
+    const preparation = prepareSourceQuestion(question);
+    if ("skipReason" in preparation) {
+      skipped.push({ sourceId: question.sourceId, reason: preparation.skipReason });
+      return;
+    }
+
+    const built = buildQuestion(
+      preparation.prepared,
+      input.topicId,
+      sectionId,
+      input.fileName,
+      index + 1,
+      questionId,
+    );
+    if (getQuestion(built.id)) updateQuestion(built.id, built);
+    else insertQuestion(built);
     imported += 1;
+    if (built.qualityWarnings.length > 0) importedWithWarnings += 1;
     bySection.set(sectionId, (bySection.get(sectionId) ?? 0) + 1);
   });
 
   const warnings = [...parsed.warnings];
+  if (duplicateSourceIds.length > 0) {
+    warnings.push(
+      `有 ${duplicateSourceIds.length} 個題號在原檔重複出現（${duplicateSourceIds
+        .slice(0, 5)
+        .join("、")}${duplicateSourceIds.length > 5 ? "…" : ""}），重複題目已以「-2」「-3」後綴保存，請教師核對原卷。`,
+    );
+  }
   if (excluded > 0) {
     warnings.push(`有 ${excluded} 題屬不考核範圍（新月沃土／黃河、長江流域／印度河），已略過。`);
   }
+  if (excludedForImage > 0) {
+    warnings.push(
+      `有 ${excludedForImage} 題需要原檔圖片（地圖／漫畫／照片等）才能作答，平台未能顯示原圖，已永久排除（不會進入題庫）。`,
+    );
+  }
   if (skipped.length > 0) {
-    warnings.push(`有 ${skipped.length} 題未能匯入（平台尚未支援該題型或格式不完整）。`);
+    const structural = skipped.filter((entry) => entry.reason.includes("空格") || entry.reason.includes("選項"));
+    warnings.push(
+      `有 ${skipped.length} 題未能匯入（平台尚未支援該題型、格式不完整或題目結構無法作答）` +
+        (structural.length > 0
+          ? `；其中 ${structural.length} 題是題幹空格數與答案數不符，或選項在解析後已失效，需由教師按原卷修正`
+          : "") +
+        "。",
+    );
   }
 
   return {
     fileType: parsed.fileType,
     imported,
     excluded,
+    excludedForImage,
     skipped,
     bySection: [...bySection.entries()].map(([sectionId, count]) => ({
       sectionId,
       title: sections.find((section) => section.id === sectionId)?.title ?? sectionId,
       count,
     })),
-    withQualityWarnings: parsed.questions.filter((question) => question.qualityWarnings.length > 0)
-      .length,
+    withQualityWarnings: importedWithWarnings,
     warnings,
   };
 }

@@ -187,15 +187,18 @@ function sharedBigrams(left: string, right: string): number {
 const SAME_SUBJECT_THRESHOLD = 2;
 
 /**
- * 選擇題答案獲接納為「教材支持的改寫」所需的最低重疊率（與教材共用的二字片段比例）。
+ * 答案獲接納為「教材支持的改寫」所需的最低重疊率（與教材共用的二字片段比例）。
  *
  * 真實模型（DeepSeek 試點）寫選擇題時，正確選項往往是教材語句的改寫而不是原文，
  * 逐字比對會令 9 格選擇題中有 6 格被丟棄。試點量測：合格改寫的重疊率為 0.67–0.95，
  * 杜撰選項（「條約內容使各國經濟繁榮，並促成永久和平」）為 0.41–0.64，故取 0.6。
+ *
+ * 2026-10-18 放寬（擁有者指示）：達門檻的改寫**不再暫緩自動發布**，只記錄警告；
+ * 門檻本身維持 0.6，因為試點量測顯示杜撰選項落在 0.41–0.64，調低會令杜撰答案過關。
  */
-const MC_PARAPHRASE_MIN_COVERAGE = 0.6;
+const PARAPHRASE_MIN_COVERAGE = 0.6;
 /** 只有完整句子的答案才可用改寫方式支持；短答案（詞語）必須逐字見於教材 */
-const MC_PARAPHRASE_MIN_LENGTH = 8;
+const PARAPHRASE_MIN_LENGTH = 8;
 
 /** 文字與教材共用的二字片段比例 */
 function bigramCoverage(text: string, haystack: string): number {
@@ -239,12 +242,14 @@ function unsupportedFactTokens(text: string, materialText: string): string[] {
 }
 
 /**
- * 選擇題答案是否可視為「教材支持的改寫」（非逐字引用）。
+ * 答案是否可視為「教材支持的改寫」（非逐字引用）。
  *
  * 三項條件同時成立才接納，任何一項不成立即維持原本的丟棄行為（fail-closed）：
- *   1. 只有選擇題：短答案仍必須逐字見於教材；
+ *   1. 只有完整句子的答案才適用：短答案（詞語）仍必須逐字見於教材；
  *   2. 答案不可帶有教材沒有的具體事實標記（年份、數字、《》標題）；
- *   3. 與教材的二字片段重疊率達 `MC_PARAPHRASE_MIN_COVERAGE`。
+ *   3. 與教材的二字片段重疊率達 `PARAPHRASE_MIN_COVERAGE`。
+ *
+ * 選擇題與填充題共用同一把尺（填充題的長答案同樣可能是教材句子的改寫）。
  */
 function paraphraseSupport(
   questionType: string,
@@ -253,14 +258,31 @@ function paraphraseSupport(
   materialText: string,
   excerptText: string,
 ): { coverage: number } | null {
-  if (questionType !== "mc") return null;
-  if (normalizedKey.length < MC_PARAPHRASE_MIN_LENGTH) return null;
+  if (questionType !== "mc" && questionType !== "fill") return null;
+  if (normalizedKey.length < PARAPHRASE_MIN_LENGTH) return null;
   if (unsupportedFactTokens(rawKey, materialText).length > 0) return null;
   const coverage = Math.max(
     bigramCoverage(normalizedKey, materialText),
     bigramCoverage(normalizedKey, excerptText),
   );
-  return coverage >= MC_PARAPHRASE_MIN_COVERAGE ? { coverage } : null;
+  return coverage >= PARAPHRASE_MIN_COVERAGE ? { coverage } : null;
+}
+
+/**
+ * 答案是否獲教材支持（逐字或可接受的改寫）。
+ *
+ * 供「填充題的空格必須對應答案」等下游檢查共用同一把尺，避免品質閘門接受改寫、
+ * 而下一步又用逐字比對把它丟棄（兩套標準會令可用的題目白白流失）。
+ */
+export function answerSupportedByMaterial(answer: string, materialText: string): boolean {
+  const key = normalizeForMatch(answer);
+  const material = normalizeForMatch(materialText);
+  if (key.length === 0 || material.length === 0) return false;
+  if (material.includes(key)) return true;
+  return (
+    key.length >= PARAPHRASE_MIN_LENGTH &&
+    bigramCoverage(key, material) >= PARAPHRASE_MIN_COVERAGE
+  );
 }
 
 /** 題幹中引號內的詞語／定義（「…」），沒有引號時退回整條題幹 */
@@ -610,30 +632,6 @@ function explanationRestatesReason(
   return null;
 }
 
-/** 題幹要求多少項答案（「兩項」、「三點」、「各舉一例」…）；沒有明確要求時回 0 */
-function demandedItemCount(question: string): number {
-  const numeric = /([一二兩三四五六七八九十\d]+)\s*(?:項|點|個|例子)/.exec(question);
-  if (numeric) {
-    const token = numeric[1]!;
-    const value = Number(token);
-    if (Number.isFinite(value) && value >= 2) return value;
-    const chinese: Record<string, number> = { 兩: 2, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6 };
-    if (chinese[token] !== undefined) return chinese[token]!;
-  }
-  if (/各舉一(?:項|個)?例|兩者|兩方面|有何異同|有甚麼異同/.test(question)) return 2;
-  return 0;
-}
-
-/** 短答題的得分要點是否足以回應題目要求的項數 */
-function answerCompletenessReason(candidate: QualityCandidate): string | null {
-  if (candidate.questionType !== "short") return null;
-  const demanded = demandedItemCount(candidate.question);
-  if (demanded < 2) return null;
-  const points = (candidate.gradingPoints ?? []).filter((point) => point.trim().length > 0);
-  if (points.length >= demanded) return null;
-  return `題目要求 ${demanded} 項內容，但只有 ${points.length} 個得分要點；答案不足以回應題目的要求`;
-}
-
 /** 題幹明確要求的思考面向（只在教材完全沒有相應內容時才提出） */
 const DIMENSION_DEMANDS: { dimension: MaterialDimension; pattern: RegExp; label: string }[] = [
   {
@@ -929,8 +927,8 @@ export function checkQuestionQuality(
         message:
           `標準答案「${truncateForMessage(key)}」是教材語句的改寫（與教材用語的文字重疊率 ${Math.round(paraphrase.coverage * 100)}%；` +
           "這只是用字相似程度，不是答案正確性的評分），" +
-          "並非教材原文，未能確定答案依據，須由教師核對後才可發布",
-        severity: "uncertain",
+          "並非教材原文；已記錄為警告供教師覆核，不會因此暫緩或丟棄",
+        severity: "warning",
       });
     }
   } else if (!keyMustAppearInMaterial && normalizedKey.length > 0 && materialText.length > 0) {
@@ -1000,9 +998,6 @@ export function checkQuestionQuality(
 
   const restates = explanationRestatesReason(candidate, units);
   if (restates !== null) note("explanation-restates-answer", restates, "warning");
-
-  const incomplete = answerCompletenessReason(candidate);
-  if (incomplete !== null) note("answer-incomplete", incomplete, "uncertain");
 
   const unsupported = unsupportedDimensionReason(candidate, materialAnalysis);
   if (unsupported !== null) note("dimension-unsupported", unsupported, "uncertain");

@@ -15,7 +15,7 @@
  *
  * 會測試：健康檢查（版本／資料庫狀態／不洩漏敏感資料）→ 登入狀態 → 課程結構（12 課題）→
  *        學生完整流程（建立練習 → 逐題作答 → 答案、解釋、教材來源 → 成績 → 重做錯題 →
- *        短答自我檢查）→ 管理員端（教材、OCR、分節及課題設定）及教師端（生成、發布及刪除題目）→
+ *        填充題自動評分）→ 管理員端（教材、OCR、分節及課題設定）及教師端（生成、發布及刪除題目）→
  *        學生回報題目與教師覆核 → 教師以學生身分測試（學習記錄分開）→
  *        後台功能分家（教師端／管理員端）→ 上載格式錯誤的友善訊息 → 教師查閱及下載學生練習記錄。
  */
@@ -475,34 +475,28 @@ async function main() {
       check("沒有錯題時會回報清楚訊息", wrongOnly.status === 409, JSON.stringify(wrongOnly.payload));
     }
 
-    console.log("\n[7] 短答題自我檢查");
-    const shortPractice = await call("POST", "/api/practice", {
+    console.log("\n[7] 填充題自動評分");
+    const fillPractice = await call("POST", "/api/practice", {
       learnerId: LEARNER_ID,
       topicId: topic.id,
       sectionIds: [childSection.id],
-      questionTypes: ["short"],
+      questionTypes: ["fill"],
       difficulty: "basic",
       questionCount: 1,
       mode: "standard",
       sourceSessionId: null,
     });
-    if (shortPractice.status === 201 && shortPractice.payload.questions.length > 0) {
-      const shortQuestion = shortPractice.payload.questions[0];
-      const submitted = await call("POST", `/api/practice/${shortPractice.payload.session.id}/answers`, {
+    if (fillPractice.status === 201 && fillPractice.payload.questions.length > 0) {
+      const fillQuestion = fillPractice.payload.questions[0];
+      const submitted = await call("POST", `/api/practice/${fillPractice.payload.session.id}/answers`, {
         learnerId: LEARNER_ID,
-        questionId: shortQuestion.id,
+        questionId: fillQuestion.id,
         answer: "我的作答內容",
       });
-      check("短答題不會自動評分", submitted.payload?.feedback?.autoGraded === false);
-      check("短答題提供得分要點", (submitted.payload?.feedback?.gradingPoints?.length ?? 0) > 0);
-      const assessed = await call(
-        "POST",
-        `/api/practice/${shortPractice.payload.session.id}/self-assessment`,
-        { learnerId: LEARNER_ID, questionId: shortQuestion.id, selfAssessment: "needs-review" },
-      );
-      check("可以記錄自我檢查結果", assessed.payload?.feedback?.selfAssessment === "needs-review");
+      check("填充題會自動評分", submitted.payload?.feedback?.autoGraded === true);
+      check("填充題不提供得分要點", (submitted.payload?.feedback?.gradingPoints?.length ?? 0) === 0);
     } else {
-      check("此分節有短答題可用", false, JSON.stringify(shortPractice.payload)?.slice(0, 160));
+      check("此分節有填充題可用", false, JSON.stringify(fillPractice.payload)?.slice(0, 160));
     }
 
     console.log("\n[8] 管理員後台：教材及題目");
@@ -537,7 +531,7 @@ async function main() {
       const attempt = await call("POST", "/api/teacher/questions/generate", {
         topicId: topic.id,
         sectionIds: [candidate.id],
-        questionTypes: ["mc", "fill", "short"],
+        questionTypes: ["mc", "fill"],
         difficulty: "basic",
         questionCount: 2,
       });

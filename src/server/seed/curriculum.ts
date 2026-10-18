@@ -46,7 +46,7 @@ const TOPIC_1: TopicSeed = {
   description: "由人類起源、史前時期的生活，到古文明的誕生與特徵，探討人類自古至今基本需要的延續與轉變。",
   order: 1,
   published: true,
-  materialFile: "課題1人類的需要 古與今.docx",
+  materialFile: "課題1人類的需要 古與今/課題1人類的需要 古與今_課文.docx",
   sections: [
     {
       id: "topic-1-origins",
@@ -307,7 +307,7 @@ const TOPIC_5: TopicSeed = {
     "由文藝復興、宗教改革、科學革命與啟蒙運動、工業革命，到法國大革命及拿破崙時代，了解近代歐洲如何在思想、宗教、科學、經濟及政治上逐步興起。",
   order: 5,
   published: true,
-  materialFile: "課題5 近代歐洲的興起.docx",
+  materialFile: "課題5 近代歐洲的興起/課題5 近代歐洲的興起_筆記.docx",
   sections: [
     {
       id: "topic-5-renaissance",

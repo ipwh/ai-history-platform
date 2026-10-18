@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 
 import { checkHistoricalAnswer } from "@/server/llm/historical-answer";
 import { generateQuestionsFromMaterial, isExplanatoryDefinition } from "@/server/llm/mock-provider";
@@ -43,7 +43,7 @@ function baseInput(overrides: Partial<Parameters<typeof generateQuestionsFromMat
   return {
     topicTitle: "課題5：近代歐洲的興起",
     sectionTitle: "工業革命",
-    questionTypes: ["mc", "fill", "short"] as ("mc" | "fill" | "short")[],
+    questionTypes: ["mc", "fill"] as ("mc" | "fill")[],
     difficulty: "basic" as const,
     count: 6,
     materialUnits: UNITS,
@@ -70,15 +70,6 @@ describe("本地示範生成（mock provider）", () => {
     for (const question of mcQuestions) {
       expect(question.options).toContain(question.correctAnswer);
       expect(question.options.length).toBeGreaterThanOrEqual(3);
-    }
-  });
-
-  it("短答題一定附有得分要點", () => {
-    const questions = generateQuestionsFromMaterial(baseInput({ questionTypes: ["short"] }));
-    const shortQuestions = questions.filter((question) => question.questionType === "short");
-    expect(shortQuestions.length).toBeGreaterThan(0);
-    for (const question of shortQuestions) {
-      expect(question.gradingPoints.length).toBeGreaterThan(0);
     }
   });
 
@@ -115,7 +106,7 @@ describe("本地示範生成（mock provider）", () => {
       {
         topicId: "topic-5",
         sectionId: "topic-5-industrial",
-        questionTypes: ["mc", "fill", "short"],
+        questionTypes: ["mc", "fill"],
         difficulty: "basic",
         origin: "material-mock",
         units: UNITS,
@@ -163,7 +154,7 @@ describe("本地示範生成（mock provider）", () => {
 
     const build = (
       difficulty: "basic" | "advanced" | "challenge",
-      questionTypes: ("mc" | "fill" | "short")[],
+      questionTypes: ("mc" | "fill")[],
     ) =>
       generateQuestionsFromMaterial({
         ...baseInput(),
@@ -258,7 +249,7 @@ describe("本地示範生成（mock provider）", () => {
     const questions = generateQuestionsFromMaterial({
       ...baseInput(),
       difficulty: "basic",
-      questionTypes: ["fill", "mc", "short"],
+      questionTypes: ["fill", "mc"],
       count: 3,
       materialUnits: units,
     });

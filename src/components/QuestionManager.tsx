@@ -780,16 +780,6 @@ function QuestionListCard({
             <span className="font-semibold">知識點：</span>
             {question.knowledgePoint}
           </p>
-          {question.gradingPoints.length > 0 ? (
-            <div>
-              <span className="font-semibold">得分要點：</span>
-              <ul className="list-disc pl-5">
-                {question.gradingPoints.map((point) => (
-                  <li key={point}>{point}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
 
           <div className="source-box">
             <div className="text-xs text-gray-600 mb-1">
@@ -899,7 +889,6 @@ function QuestionEditor({
     knowledgePoint: question?.knowledgePoint ?? "",
     sourceExcerpt: question?.sourceExcerpt ?? "",
     sourceLocation: question?.sourceLocation ?? "",
-    gradingPointsText: (question?.gradingPoints ?? []).join("\n"),
     status: question?.status ?? ("draft" as QuestionStatus),
   });
   const [saving, setSaving] = useState(false);
@@ -929,10 +918,6 @@ function QuestionEditor({
         sourceExcerpt: form.sourceExcerpt || "（教師手動建立，未提供教材節錄）",
         sourceLocation: form.sourceLocation || "教師手動建立",
         sourceBlockIds: question?.sourceBlockIds ?? [],
-        gradingPoints: form.gradingPointsText
-          .split("\n")
-          .map((point) => point.trim())
-          .filter((point) => point.length > 0),
         origin: question?.origin ?? "manual",
         status: form.status,
       };
@@ -1024,24 +1009,13 @@ function QuestionEditor({
       ) : null}
 
       <label className="text-sm">
-        {form.questionType === "short" ? "參考答案" : "標準答案"}
+        標準答案
         <input
           type="text"
           value={form.correctAnswer}
           onChange={(event) => setForm({ ...form, correctAnswer: event.target.value })}
         />
       </label>
-
-      {form.questionType === "short" ? (
-        <label className="text-sm">
-          得分要點（每行一點，供學生自我檢查）
-          <textarea
-            rows={3}
-            value={form.gradingPointsText}
-            onChange={(event) => setForm({ ...form, gradingPointsText: event.target.value })}
-          />
-        </label>
-      ) : null}
 
       <label className="text-sm">
         解釋

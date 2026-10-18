@@ -435,7 +435,6 @@ const PUBLIC_API_ROUTES = new Set([
   "POST /api/practice/[sessionId]/answers",
   "POST /api/practice/[sessionId]/complete",
   "GET /api/practice/[sessionId]/result",
-  "POST /api/practice/[sessionId]/self-assessment",
   "POST /api/reports",
   // 學生自己的學習進度、重溫佇列及建議（學習者身分由工作階段推導，不接受偽造）
   "GET /api/progress",
@@ -567,24 +566,6 @@ describe("練習資源的擁有權（跨學生）", () => {
               method: "POST",
               headers: { cookie: otherCookie, "content-type": "application/json" },
               body: JSON.stringify({ learnerId: "attacker-supplied", questionId, answer: "人文主義" }),
-            }),
-            { params },
-          );
-        },
-      },
-      {
-        label: "POST /api/practice/[sessionId]/self-assessment",
-        run: async () => {
-          const { POST } = await import("@/app/api/practice/[sessionId]/self-assessment/route");
-          return POST(
-            new Request(`http://localhost:3000/api/practice/${sessionId}/self-assessment`, {
-              method: "POST",
-              headers: { cookie: otherCookie, "content-type": "application/json" },
-              body: JSON.stringify({
-                learnerId: "attacker-supplied",
-                questionId,
-                selfAssessment: "understood",
-              }),
             }),
             { params },
           );

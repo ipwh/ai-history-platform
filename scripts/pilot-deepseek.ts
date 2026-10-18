@@ -34,7 +34,7 @@ process.env.LLM_PROVIDER = "deepseek";
 process.env.LLM_ALLOW_MOCK_FALLBACK = "false";
 
 const TOPIC_IDS = ["topic-2", "topic-5", "topic-9"] as const;
-const TYPES = ["mc", "fill", "short"] as const;
+const TYPES = ["mc", "fill"] as const;
 const DIFFICULTIES = ["basic", "advanced", "challenge"] as const;
 /** 成本控制：PILOT_LIMIT 可只跑前 N 格（煙霧測試用）；PILOT_JOURNEY=no 可略過學生旅程。 */
 const CELL_LIMIT = Number.parseInt(process.env.PILOT_LIMIT ?? "", 10) > 0 ? Number.parseInt(process.env.PILOT_LIMIT as string, 10) : 27;

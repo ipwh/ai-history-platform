@@ -70,6 +70,7 @@ export async function GET(request: Request) {
       questionImport: {
         imported: number;
         excluded: number;
+        excludedForImage: number;
         skipped: number;
         withQualityWarnings: number;
       } | null;
@@ -104,6 +105,7 @@ export async function GET(request: Request) {
           ? {
               imported: imported.questionImport.imported,
               excluded: imported.questionImport.excluded,
+              excludedForImage: imported.questionImport.excludedForImage,
               skipped: imported.questionImport.skipped.length,
               withQualityWarnings: imported.questionImport.withQualityWarnings,
             }

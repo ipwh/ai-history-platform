@@ -23,8 +23,7 @@ import { ErrorNotice, Loading, Notice } from "@/components/ui";
  * 首頁：只顯示三個年級、每個年級四個課題（共 12 個按鈕）。
  * 點選課題後直接進入練習設定頁揀選分節及主題，不再經中間的課題頁。
  *
- * 另顯示由 `/api/progress` 計算的「下一步建議」及課題學習狀態：建議一律附上
- * 可追溯的理由，沒有足夠作答記錄時只會提示先開始練習，不會虛擬弱點。
+ * 另顯示由 `/api/progress` 計算的學習狀態、到期重溫通知及課題進度。
  */
 export function HomeView() {
   const [topics, setTopics] = useState<TopicOverview[] | null>(null);
@@ -48,7 +47,7 @@ export function HomeView() {
       .catch((caught: unknown) => {
         if (!cancelled) setError(caught);
       });
-    // 學習進度及建議：失敗時不會影響課題列表（首頁仍可正常使用）
+    // 學習進度及到期重溫通知：失敗時不會影響課題列表（首頁仍可正常使用）
     api
       .get<LearningProgressPayload>(`/api/progress?learnerId=${id}`)
       .then((data) => {
@@ -101,25 +100,6 @@ export function HomeView() {
             前往重溫 ›
           </Link>
         </Notice>
-      ) : null}
-
-      {progress && progress.recommendations.length > 0 ? (
-        <section className="card flex flex-col gap-2">
-          <h2 className="font-bold">下一步建議</h2>
-          <p className="text-xs text-gray-500">
-            以下建議依你的作答記錄產生，每項都說明原因；記錄不足時不會推測你的強弱項。
-          </p>
-          <ul className="flex flex-col gap-2">
-            {progress.recommendations.map((item) => (
-              <li key={`${item.kind}-${item.href}`} className="flex flex-col gap-0.5">
-                <Link href={item.href} className="font-medium" style={{ color: "var(--accent)" }}>
-                  {item.title} ›
-                </Link>
-                <span className="text-sm text-gray-700">{item.reason}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
       ) : null}
 
       {started.length > 0 ? (

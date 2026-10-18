@@ -2,7 +2,6 @@ import { handleRoute, jsonOk } from "@/server/http";
 import { resolveOptionalLearnerId } from "@/server/auth/guards";
 import { getTopic } from "@/server/repositories/topics";
 import {
-  getRecommendations,
   getReviewQueue,
   getSkillProgress,
   getTopicProgress,
@@ -13,7 +12,7 @@ import {
 export const runtime = "nodejs";
 
 /**
- * 學習進度、重溫佇列及下一步建議（學生端，單次請求回傳）。
+ * 學習進度及重溫佇列（學生端，單次請求回傳）。
  *
  * 學習者身分一律由伺服器端的工作階段推導（`resolveOptionalLearnerId` 會忽略前端傳來的值），
  * 因此不存在讀取其他學生進度的途徑；回傳內容只有該學生自己的統計數字，
@@ -30,7 +29,6 @@ export async function GET(request: Request) {
         topics: [],
         skills: [],
         review: { dueItems: [], dueCount: 0, dataIssues: 0 },
-        recommendations: [],
       });
     }
 
@@ -70,7 +68,6 @@ export async function GET(request: Request) {
       topics: topicSummaries,
       skills,
       review: { dueItems, dueCount: queue.dueCount, dataIssues: queue.dataIssues },
-      recommendations: getRecommendations(learnerId),
     });
   });
 }

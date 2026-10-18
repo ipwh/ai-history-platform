@@ -9,14 +9,13 @@ import { z } from "zod";
 /* 共用列舉                                                            */
 /* ------------------------------------------------------------------ */
 
-export const QUESTION_TYPES = ["mc", "fill", "short"] as const;
+export const QUESTION_TYPES = ["mc", "fill"] as const;
 export const questionTypeSchema = z.enum(QUESTION_TYPES);
 export type QuestionType = z.infer<typeof questionTypeSchema>;
 
 export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   mc: "選擇題",
   fill: "填充題",
-  short: "短答題",
 };
 
 export const DIFFICULTIES = ["basic", "advanced", "challenge"] as const;
@@ -194,17 +193,6 @@ export const REVIEW_REASON_LABELS: Record<ReviewReason, string> = {
   due: "已到鞏固時間",
 };
 
-/** 下一步建議的類別（每一項都必須能追溯至真實的作答記錄） */
-export const recommendationKindSchema = z.enum([
-  "review-due",
-  "redo-wrong",
-  "practise-skill",
-  "read-lesson",
-  "try-topic",
-  "neutral",
-]);
-export type RecommendationKind = z.infer<typeof recommendationKindSchema>;
-
 /** 課題層面的學習進度（學生自己的記錄） */
 export interface TopicProgressSummary {
   topicId: string;
@@ -246,14 +234,6 @@ export interface ReviewQueueItemSummary {
   lastAnsweredAt: string;
 }
 
-export interface LearningRecommendation {
-  kind: RecommendationKind;
-  title: string;
-  /** 依據：必須來自真實的作答記錄 */
-  reason: string;
-  href: string;
-}
-
 /** GET /api/progress 的回傳內容 */
 export interface LearningProgressPayload {
   topics: TopicProgressSummary[];
@@ -266,7 +246,6 @@ export interface LearningProgressPayload {
     /** 因時間戳缺失或格式錯誤而無法排程的作答數 */
     dataIssues: number;
   };
-  recommendations: LearningRecommendation[];
 }
 
 /**
@@ -517,7 +496,7 @@ export const questionBaseSchema = z.object({
   sourceLocation: z.string().min(1),
   /** 對應的教材段落 ID，供教師點擊查看 */
   sourceBlockIds: z.array(z.string()).default([]),
-  /** 短答題得分要點（供學生自我檢查，非正式 HKDSE 評分） */
+  /** 得分要點（已停用：短答題功能已移除，只保留欄位以兼容舊資料，新題目一律為空陣列） */
   gradingPoints: z.array(z.string()).default([]),
   origin: questionOriginSchema,
   status: questionStatusSchema,
@@ -532,7 +511,7 @@ export const questionBaseSchema = z.object({
    * 這條題目主要考核的歷史技能（取自教育局《歷史科課程指引》的 HISTORY_SKILLS）。
    * 用於技能層面的進度統計；教師手動建立或未標示時為 null。
    *
-   * 注意：現有題型（選擇題、填充題、短答題）只能考核部分技能；
+   * 注意：現有題型（選擇題、填充題）只能考核部分技能；
    * 需要展示史料並要求學生推論的技能**不在此平台範圍**，因此未標示為已涵蓋。
    */
   skill: historySkillSchema.nullable().default(null),
@@ -589,13 +568,6 @@ export const questionSchema = questionBaseSchema.superRefine((value, ctx) => {
         path: ["correctAnswer"],
       });
     }
-  }
-  if (value.questionType === "short" && value.gradingPoints.length === 0) {
-    ctx.addIssue({
-      code: "custom",
-      message: "短答題必須提供得分要點，方便學生自我檢查",
-      path: ["gradingPoints"],
-    });
   }
 });
 export type Question = z.infer<typeof questionBaseSchema>;
@@ -778,14 +750,14 @@ export type QuestionReviewStatus = z.infer<typeof questionReviewStatusSchema>;
 /**
  * AI 語意批改結果。
  *
- * 用途：填充題與短答題不以「逐字比對」為唯一準則（例如「文藝復興」與
+ * 用途：填充題不以「逐字比對」為唯一準則（例如「文藝復興」與
  * 「文藝復興時期」意思相同），改由 AI 判斷學生的答案在意思上是否達到要求。
  * 這不是正式 HKDSE 評分，介面必須明確說明。
  */
 export const aiGradingSchema = z.object({
   /** correct = 意思等同標準答案；partial = 部分達到；incorrect = 未達到 */
   verdict: z.enum(["correct", "partial", "incorrect"]),
-  /** 已達到的得分要點（短答題；逐字取自題目的 gradingPoints） */
+  /** 已達到的得分要點（已停用：短答題功能已移除，只保留欄位以兼容舊資料） */
   hitPoints: z.array(z.string()).default([]),
   /** 未達到的得分要點 */
   missingPoints: z.array(z.string()).default([]),
@@ -844,7 +816,7 @@ export const questionFeedbackSchema = z.object({
   questionId: z.string(),
   /** 學生答案（選擇題為選項文字，其他為輸入文字） */
   answer: z.string(),
-  /** 是否可自動評分（短答題不可自動評分） */
+  /** 是否可自動評分（選擇題及填充題一律為 true） */
   autoGraded: z.boolean(),
   isCorrect: z.boolean().nullable(),
   correctAnswer: z.string(),
@@ -864,10 +836,8 @@ export const questionFeedbackSchema = z.object({
   sourceWithheld: z.boolean().default(false),
   /** 教材依據是否包含 OCR 辨識文字（需教師核對） */
   sourceFromOcr: z.boolean().default(false),
-  /** AI 語意批改結果（填充題／短答題；未使用 AI 時為 null） */
+  /** AI 語意批改結果（填充題；未使用 AI 時為 null） */
   aiGrading: aiGradingSchema.nullable().default(null),
-  /** 學生自我檢查結果（短答題） */
-  selfAssessment: z.enum(["understood", "needs-review"]).nullable().default(null),
   /**
    * 需要教師覆核的評分情況（評分本身仍然照常記錄，不會因此改變分數）：
    *   uncertain-answer = 學生的答案與標準答案極為接近但並非逐字相同（可能是錯別字或
@@ -921,8 +891,6 @@ export const practiceResultSchema = z.object({
       questionIds: z.array(z.string()),
     }),
   ),
-  /** 短答題自我檢查中標記「需要重溫」的知識點 */
-  selfReviewKnowledgePoints: z.array(z.string()),
   feedback: z.array(questionFeedbackSchema),
 });
 export type PracticeResult = z.infer<typeof practiceResultSchema>;
@@ -940,7 +908,7 @@ export interface PracticeRecordQuestion {
   sectionTitle: string;
   studentAnswer: string;
   correctAnswer: string;
-  /** 已作答且可自動評分時為 true／false；未作答或短答自我檢查時為 null */
+  /** 已作答且可自動評分時為 true／false；未作答時為 null（舊資料可能有短答自我檢查的 null） */
   isCorrect: boolean | null;
   selfAssessment: "understood" | "needs-review" | null;
   aiVerdict: "correct" | "partial" | "incorrect" | null;
@@ -1089,8 +1057,8 @@ export const llmQuestionSchema = z.object({
   options: z.array(z.string().min(1)).default([]),
   correctAnswerIndex: z.number().int().nullable().default(null),
   /**
-   * 標準答案／參考答案。
-   * 短答題容許模型留空（部分模型會這樣做），驗證時會以得分要點組出參考答案。
+   * 標準答案。
+   * 選擇題必須是其中一個選項；填充題為需要填寫的字詞。
    */
   correctAnswer: z.string().default(""),
   explanation: z.string().min(1),
@@ -1133,7 +1101,7 @@ export type GeneratedQuestionPreview = z.infer<typeof generatedQuestionPreviewSc
 /** AI 語意批改時，模型必須返回的格式（之後會驗證並轉成 AiGrading） */
 export const llmGradingSchema = z.object({
   verdict: z.enum(["correct", "partial", "incorrect"]),
-  /** 已達到的得分要點索引（0 起計），只在短答題使用 */
+  /** 已達到的得分要點索引（0 起計；短答題功能已移除，只保留欄位兼容舊資料） */
   hitPointIndexes: z.array(z.number().int()).default([]),
   /** 給學生的簡短中文回饋 */
   feedback: z.string().default(""),
@@ -1246,7 +1214,7 @@ export const healthSchema = z.object({
   llmProviderLabel: z.string(),
   llmConfigured: z.boolean(),
   demoMode: z.boolean(),
-  /** 是否可使用 AI 語意批改（填充題／短答題） */
+  /** 是否可使用 AI 語意批改（填充題） */
   aiGrading: z.boolean().default(false),
   /** OCR provider（none = 已停用） */
   ocrProvider: z.string().default("none"),

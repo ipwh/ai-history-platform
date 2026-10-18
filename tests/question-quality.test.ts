@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 完整題目品質閘門測試（Sprint 7.8）。
  *
  * 背景：學生自學不再等待教師逐題預先批准，因此「機器可以判斷的品質問題」必須在生成階段
@@ -134,7 +134,7 @@ describe("生成流程真的會套用品質閘門", () => {
     const context = {
       topicId: "topic-5",
       sectionId: "topic-5-renaissance-impact",
-      questionTypes: ["mc"] as ("mc" | "fill" | "short")[],
+      questionTypes: ["mc"] as ("mc" | "fill")[],
       difficulty: "basic" as const,
       origin: "material-ai" as const,
       units: MEDIEVAL_UNITS,
@@ -207,24 +207,6 @@ describe("題目品質閘門：教材依據與解釋", () => {
     expect(result.issues.map((issue) => issue.code)).toContain("answer-not-in-material");
   });
 
-  it("短答題的參考答案未見於教材時只提出提示（不丟棄）", () => {
-    const result = checkQuestionQuality(
-      candidate({
-        questionType: "short",
-        question: "試說明文藝復興的意義。",
-        options: [],
-        correctAnswer: "復興古希臘及羅馬文明，並強調人的價值。",
-        explanation: "教材指出文藝復興帶有復興及再生的意思。",
-        sourceExcerpt: "中古時代前期（以神為本） | 文藝復興期間（以人為本）",
-      }),
-      MEDIEVAL_UNITS,
-    );
-
-    expect(result.ok).toBe(true);
-    const warnings = result.issues.filter((issue) => issue.severity === "warning");
-    expect(warnings.map((issue) => issue.code)).toContain("answer-not-in-material");
-  });
-
   it("沒有解釋或解釋只是重複題幹時會被丟棄", () => {
     const empty = checkQuestionQuality(candidate({ explanation: "   " }), MEDIEVAL_UNITS);
     expect(empty.ok).toBe(false);
@@ -240,9 +222,9 @@ describe("題目品質閘門：教材依據與解釋", () => {
   it("非挖空題幹整句抄錄教材時會被丟棄", () => {
     const result = checkQuestionQuality(
       candidate({
-        questionType: "short",
+        questionType: "mc",
         question: "公元1453年歐洲的中古時代結束進入近代",
-        options: [],
+        options: ["中古時代結束", "文藝復興", "工業革命", "宗教改革"],
         correctAnswer: "中古時代結束",
         explanation: "教材原文：公元1453年：歐洲的中古時代結束，進入近代。",
         sourceExcerpt: "公元1453年：歐洲的中古時代結束，進入近代",

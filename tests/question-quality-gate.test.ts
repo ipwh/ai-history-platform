@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 教學品質閘門（Sprint 8.5）：以**版本控制、確定性**的樣本驗收語意檢查。
  *
  * 兩部分：
@@ -46,7 +46,7 @@ let validation: ValidationModule;
 let visibility: VisibilityModule;
 
 interface FixtureRequest {
-  questionType: "mc" | "fill" | "short";
+  questionType: "mc" | "fill";
   difficulty: "basic" | "advanced" | "challenge";
   question: string;
   options: string[];
@@ -103,7 +103,7 @@ function contextFor(fixtureCase: FixtureCase) {
     topicId: "topic-5",
     sectionId: "fx-section",
     sectionIds: ["fx-section"],
-    questionTypes: ["mc", "fill", "short"] as ("mc" | "fill" | "short")[],
+    questionTypes: ["mc", "fill"] as ("mc" | "fill")[],
     difficulty: "basic" as const,
     origin: "material-ai" as const,
     units: fixtures.materialSets[fixtureCase.materialSet]!.map((unit) => ({ ...unit })),
@@ -185,6 +185,8 @@ describe("版本控制的教學品質樣本（docs/teacher-review/question-quali
 
   it("每個樣本個案都得出預期結果（與生成流程走同一條驗證路徑）", () => {
     for (const fixtureCase of fixtures.cases) {
+      // 短答題功能已移除：樣本中的短答題個案只保留作歷史記錄，不再走驗證路徑。
+      if ((fixtureCase.request as { questionType?: string }).questionType === "short") continue;
       const context = contextFor(fixtureCase);
       const result = validation.validateLlmQuestions(
         { questions: [fixtureCase.request] },
@@ -316,11 +318,16 @@ describe("語意檢查：因果、約數、推論與解釋（Sprint 8.5，確定
   it("教材只交代先後，題目卻寫成因果 → 未確定（交教師確認）", async () => {
     const result = await quality(
       {
-        questionType: "short",
-        question: "為甚麼英國的棉織品產量大幅增加？",
-        options: [],
-        correctAnswer: "因為鐵路網建成，所以棉織品可以大量外銷。",
-        explanation: "教材先說棉織品產量增加，其後才說鐵路網建成。",
+        questionType: "mc",
+        question: "為甚麼英國的棉織品大量增產？",
+        options: [
+          "棉織品產量大幅增加",
+          "棉織品產量大幅減少",
+          "棉織品完全停止生產",
+          "棉織品只供本地使用",
+        ],
+        correctAnswer: "棉織品產量大幅增加",
+        explanation: "鐵路網建成，因此棉織品可以大量外銷。",
         sourceExcerpt: "十八世紀中葉，英國的棉織品產量大幅增加。",
         sourceBlockIds: ["fx-chron-1"],
       },
@@ -336,10 +343,15 @@ describe("語意檢查：因果、約數、推論與解釋（Sprint 8.5，確定
   it("教材真的有因果交代時，因果題目不會被質疑", async () => {
     const result = await quality(
       {
-        questionType: "short",
+        questionType: "mc",
         question: "為甚麼英國能夠大量生產棉織品？",
-        options: [],
-        correctAnswer: "英國擁有豐富的煤鐵資源與海外市場，因此能夠大量生產棉織品。",
+        options: [
+          "英國擁有豐富的煤鐵資源與海外市場",
+          "英國缺乏煤鐵資源",
+          "英國沒有海外市場",
+          "英國禁止使用機器生產",
+        ],
+        correctAnswer: "英國擁有豐富的煤鐵資源與海外市場",
         explanation: "教材指出英國的煤鐵資源與海外市場，令它可以大量生產並外銷棉織品。",
         sourceExcerpt: "由於英國擁有豐富的煤鐵資源與海外市場，因此能夠大量生產並外銷棉織品。",
         sourceBlockIds: ["fx-cause-1"],
@@ -453,10 +465,10 @@ describe("語意檢查：因果、約數、推論與解釋（Sprint 8.5，確定
   it("教材只以推測語氣交代時，解釋不可寫成確定史實", async () => {
     const result = await quality(
       {
-        questionType: "short",
+        questionType: "mc",
         question: "這座城市的人口有多少？",
-        options: [],
-        correctAnswer: "這座城市的人口曾經超過五萬人。",
+        options: ["超過五萬人", "少於一千人", "完全沒有居民", "超過一百萬人"],
+        correctAnswer: "超過五萬人",
         explanation: "這座城市的人口超過五萬人，是當時區內最大的城市。",
         sourceExcerpt: "學者相信，這座城市的人口可能曾經超過五萬人。",
         sourceBlockIds: ["fx-hedge-1"],
@@ -535,10 +547,10 @@ describe("教學品質閘門：抄錄與解釋（確定性檢查）", () => {
     const { checkQuestionQuality } = await import("@/server/llm/question-quality");
     const result = checkQuestionQuality(
       {
-        questionType: "short",
+        questionType: "mc",
         // 教材句子的近句照抄（只是少了開頭的時間），沒有加上任何提問框架
         question: "工業革命率先在英國的紡織業展開。",
-        options: [],
+        options: ["十八世紀中葉", "十七世紀初", "十九世紀末", "二十世紀初"],
         correctAnswer: "十八世紀中葉",
         explanation: "教材把工業革命的開展放在十八世紀中葉的英國紡織業，說明它是一個有時序的歷史事件。",
         sourceExcerpt: "十八世紀中葉，工業革命率先在英國的紡織業展開。",
@@ -556,10 +568,10 @@ describe("教學品質閘門：抄錄與解釋（確定性檢查）", () => {
     const { checkQuestionQuality } = await import("@/server/llm/question-quality");
     const result = checkQuestionQuality(
       {
-        questionType: "short",
+        questionType: "mc",
         question: "試比較家庭手工業與工廠制度的生產方式。",
-        options: [],
-        correctAnswer: "家庭手工業在家中生產，工廠制度則集中生產。",
+        options: ["家中生產與集中生產", "兩者完全相同", "兩者都沒有分工", "兩者都在農田生產"],
+        correctAnswer: "家中生產與集中生產",
         explanation: "教材指出工廠制度取代家庭手工業，生產方式由家中轉為工廠集中生產。",
         sourceExcerpt: "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。",
         sourceBlockIds: ["fx-cause-2"],
@@ -570,25 +582,6 @@ describe("教學品質閘門：抄錄與解釋（確定性檢查）", () => {
     expect(result.issues.map((issue) => issue.code)).not.toContain("excessive-verbatim");
   });
 
-  it("短答題要求的項數多於得分要點時屬「答案不足」（未確定）", async () => {
-    const { checkQuestionQuality } = await import("@/server/llm/question-quality");
-    const result = checkQuestionQuality(
-      {
-        questionType: "short",
-        question: "工廠制度對工人造成哪兩項影響？",
-        options: [],
-        correctAnswer: "工匠生計受到衝擊，工人組織工會爭取改善待遇。",
-        explanation: "教材指出工匠生計受衝擊，而工人其後組織工會爭取改善待遇。",
-        sourceExcerpt: "工廠制度其後取代家庭手工業，導致工匠生計受到衝擊，工人於是組織工會爭取改善待遇。",
-        sourceBlockIds: ["fx-cause-2"],
-        gradingPoints: ["指出工匠生計受到衝擊"],
-      },
-      units,
-    );
-
-    expect(result.issues.map((issue) => issue.code)).toContain("answer-incomplete");
-    expect(result.outcome).toBe("revise");
-  });
 });
 
 /**

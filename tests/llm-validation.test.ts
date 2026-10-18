@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 
 import { normalizeForMatch } from "@/server/materials/text-utils";
 import { findUnverifiedNames, validateLlmQuestions } from "@/server/llm/validation";
@@ -14,7 +14,7 @@ const UNITS: MaterialUnit[] = [
   {
     blockId: "blk_2",
     sourceLocation: "教材 DOCX · 第 2 段（清單）",
-    text: "社會契約：君主權力來自人民授予，雙方訂立契約以界定權責。",
+    text: "啟蒙運動的思想家提出社會契約：君主權力來自人民授予，雙方訂立契約以界定權責。",
   },
 ];
 
@@ -22,7 +22,7 @@ function context() {
   return {
     topicId: "topic-5",
     sectionId: "topic-5-reformation",
-    questionTypes: ["mc", "fill", "short"] as ("mc" | "fill" | "short")[],
+    questionTypes: ["mc", "fill"] as ("mc" | "fill")[],
     difficulty: "basic" as const,
     origin: "material-ai" as const,
     units: UNITS,
@@ -141,16 +141,16 @@ describe("LLM 輸出驗證", () => {
         questions: [
           { questionType: "mc" },
           {
-            questionType: "short",
+            questionType: "fill",
             difficulty: "advanced",
-            question: "試說明社會契約的內容。",
+            question: "＿＿＿主張君主權力來自人民授予，雙方訂立契約以界定權責。",
             options: [],
-            correctAnswer: "君主權力來自人民授予，雙方訂立契約以界定權責。",
+            correctAnswer: "啟蒙運動",
             explanation: "解釋",
             knowledgePoint: "啟蒙思想：社會契約",
-            sourceExcerpt: "社會契約：君主權力來自人民授予",
+            sourceExcerpt: "社會契約：君主權力來自人民授予，雙方訂立契約以界定權責。",
             sourceBlockIds: ["blk_2"],
-            gradingPoints: ["君主權力來自人民授予"],
+            gradingPoints: [],
           },
         ],
       },
@@ -192,16 +192,16 @@ describe("LLM 輸出驗證", () => {
       {
         questions: [
           {
-            questionType: "short",
+            questionType: "fill",
             difficulty: "challenge",
-            question: "綜合教材所述，社會契約如何界定君主與人民的權責？",
+            question: "綜合教材所述，＿＿＿如何界定君主與人民的權責？",
             options: [],
-            correctAnswer: "君主權力來自人民授予，雙方訂立契約以界定權責。",
+            correctAnswer: "啟蒙運動",
             explanation: "解釋",
             knowledgePoint: "社會契約",
             sourceExcerpt: "社會契約：君主權力來自人民授予，雙方訂立契約以界定權責。",
             sourceBlockIds: ["blk_2"],
-            gradingPoints: ["君主權力來自人民授予"],
+            gradingPoints: [],
           },
         ],
       },
@@ -209,7 +209,7 @@ describe("LLM 輸出驗證", () => {
     );
 
     expect(result.accepted).toHaveLength(1);
-    expect(result.accepted[0].question).toBe("社會契約如何界定君主與人民的權責？");
+    expect(result.accepted[0].question).toBe("＿＿＿如何界定君主與人民的權責？");
   });
 
   it("丟棄要求學生參考教材／標題的題目（學生作答時不會看到教材）", () => {
@@ -290,57 +290,6 @@ describe("LLM 輸出驗證", () => {
 
     expect(result.accepted).toHaveLength(0);
     expect(result.discardedReasons[0]).toContain("選項");
-  });
-
-  it("丟棄短答題沒有得分要點的題目", () => {
-    const result = validateLlmQuestions(
-      {
-        questions: [
-          {
-            questionType: "short",
-            difficulty: "advanced",
-            question: "試說明社會契約的內容。",
-            options: [],
-            correctAnswer: "君主權力來自人民授予。",
-            explanation: "解釋",
-            knowledgePoint: "啟蒙思想",
-            sourceExcerpt: "社會契約：君主權力來自人民授予",
-            sourceBlockIds: ["blk_2"],
-            gradingPoints: [],
-          },
-        ],
-      },
-      context(),
-    );
-
-    expect(result.accepted).toHaveLength(0);
-    expect(result.discardedReasons[0]).toContain("得分要點");
-  });
-
-  it("短答題的 correctAnswer 留空時，以得分要點組成參考答案而不丟棄題目", () => {
-    const result = validateLlmQuestions(
-      {
-        questions: [
-          {
-            questionType: "short",
-            difficulty: "advanced",
-            question: "試說明社會契約的內容。",
-            options: [],
-            correctAnswer: "",
-            explanation: "解釋",
-            knowledgePoint: "啟蒙思想",
-            sourceExcerpt: "社會契約：君主權力來自人民授予",
-            sourceBlockIds: ["blk_2"],
-            gradingPoints: ["君主權力來自人民授予", "雙方訂立契約界定權責"],
-          },
-        ],
-      },
-      context(),
-    );
-
-    expect(result.accepted).toHaveLength(1);
-    expect(result.accepted[0].correctAnswer).toContain("君主權力來自人民授予");
-    expect(result.accepted[0].gradingPoints).toHaveLength(2);
   });
 
   it("移除題目、選項、解釋及得分要點中的標題／Markdown 符號", () => {
@@ -458,16 +407,16 @@ describe("LLM 輸出驗證", () => {
       {
         questions: [
           {
-            questionType: "short",
+            questionType: "fill",
             difficulty: "advanced",
-            question: "試說明《九十五條論證》的內容。",
+            question: "＿＿＿發表《九十五條論證》，批評教會濫用贖罪券。",
             options: [],
-            correctAnswer: "馬丁路德批評教會濫用贖罪券。",
+            correctAnswer: "馬丁路德",
             explanation: "他在1521年發表這份文件。",
             knowledgePoint: "宗教改革的展開",
             sourceExcerpt: "德意志神學家馬丁路德發表《九十五條論證》",
             sourceBlockIds: ["blk_1"],
-            gradingPoints: ["批評教會濫用贖罪券"],
+            gradingPoints: [],
           },
         ],
       },
@@ -476,61 +425,6 @@ describe("LLM 輸出驗證", () => {
 
     expect(result.accepted).toHaveLength(0);
     expect(result.discardedReasons[0]).toContain("1521年");
-  });
-
-  it("丟棄得分要點出現教材沒有交代的年份的題目", () => {
-    const result = validateLlmQuestions(
-      {
-        questions: [
-          {
-            questionType: "short",
-            difficulty: "advanced",
-            question: "試說明「社會契約」的內容。",
-            options: [],
-            correctAnswer: "君主權力來自人民授予，雙方訂立契約以界定權責。",
-            explanation: "社會契約論述君主與人民的權責。",
-            knowledgePoint: "啟蒙思想：社會契約",
-            sourceExcerpt: "社會契約：君主權力來自人民授予，雙方訂立契約以界定權責。",
-            sourceBlockIds: ["blk_2"],
-            gradingPoints: ["1688年後君主權力來自人民授予"],
-          },
-        ],
-      },
-      context(),
-    );
-
-    expect(result.accepted).toHaveLength(0);
-    expect(result.discardedReasons[0]).toContain("1688年");
-  });
-
-  it("人名及條約名未見於教材時只記錄品質警告，題目仍會保留", () => {
-    const result = validateLlmQuestions(
-      {
-        questions: [
-          {
-            questionType: "short",
-            difficulty: "basic",
-            question: "喀爾文提出甚麼主張？",
-            options: [],
-            correctAnswerIndex: null,
-            correctAnswer: "喀爾文提出以《基督教要義》闡述其主張。",
-            explanation: "喀爾文在日內瓦推行宗教改革。",
-            knowledgePoint: "宗教改革的發展",
-            sourceExcerpt: "德意志神學家馬丁路德發表《九十五條論證》",
-            sourceBlockIds: ["blk_1"],
-            gradingPoints: ["提出以《基督教要義》闡述主張", "在日內瓦推行宗教改革"],
-          },
-        ],
-      },
-      { ...context(), questionTypes: ["short"] },
-    );
-
-    expect(result.accepted).toHaveLength(1);
-    expect(result.discardedReasons).toEqual([]);
-    const warnings = result.accepted[0].qualityWarnings.join(" ");
-    expect(warnings).toContain("喀爾文");
-    expect(warnings).toContain("《基督教要義》");
-    expect(warnings).toContain("請核對教材後才發布");
   });
 
   it("人名及條約名見於教材時不會產生品質警告", () => {
@@ -623,14 +517,32 @@ describe("填充題答案的歷史元素要求", () => {
     }
   });
 
-  it("未能確認屬歷史元素的答案一律丟棄（fill 採 fail-closed）", () => {
+  it("未能確認屬歷史元素的答案會保留並記錄警告（答案見於教材時）", () => {
     const result = validateLlmQuestions(
       {
         questions: [
           {
-            ...fillQuestion("石刻"),
-            question: "當時以＿＿＿技術印刷文件。",
-            explanation: "當時以石刻技術印刷文件。",
+            ...fillQuestion("贖罪券", "宗教改革期間，馬丁路德批評教會濫用＿＿＿。"),
+            explanation: "馬丁路德批評教會濫用贖罪券。",
+          },
+        ],
+      },
+      { ...context(), questionTypes: ["fill"] },
+    );
+
+    // 2026-10-18 放寬：答案本身見於教材時不再整題丟棄，只記錄警告交教師覆核。
+    expect(result.accepted).toHaveLength(1);
+    expect(result.accepted[0].qualityWarnings.join(" ")).toContain("未見歷史元素標記");
+  });
+
+  it("明顯不合格的填充題答案（說明句、欄位名稱）仍然丟棄", () => {
+    const result = validateLlmQuestions(
+      {
+        questions: [
+          {
+            ...fillQuestion("生活方式"),
+            question: "當時人們的＿＿＿逐漸改變。",
+            explanation: "教材記載當時人們的生活方式逐漸改變。",
           },
         ],
       },
@@ -638,29 +550,34 @@ describe("填充題答案的歷史元素要求", () => {
     );
 
     expect(result.accepted).toHaveLength(0);
-    expect(result.discardedReasons.join(" ")).toContain("未見歷史元素標記");
+    expect(result.discardedReasons.join(" ")).toContain("歷史元素");
   });
 
-  it("選擇題及短答題不受填充題答案要求影響", () => {
+  it("選擇題不受填充題答案要求影響", () => {
     const result = validateLlmQuestions(
       {
         questions: [
           {
-            questionType: "short",
+            questionType: "mc",
             difficulty: "basic",
-            question: "試說明「社會契約」。",
-            options: [],
-            correctAnswerIndex: null,
-            correctAnswer: "君主權力來自人民授予，雙方訂立契約以界定權責。",
+            question: "「社會契約」是指甚麼？",
+            options: [
+              "君主權力來自人民授予，雙方訂立契約以界定權責",
+              "君主權力不受任何限制",
+              "人民沒有訂立契約的權利",
+              "契約只適用於外國人",
+            ],
+            correctAnswerIndex: 0,
+            correctAnswer: "君主權力來自人民授予，雙方訂立契約以界定權責",
             explanation: "社會契約指君主權力來自人民授予。",
             knowledgePoint: "啟蒙思想",
             sourceExcerpt: "社會契約：君主權力來自人民授予，雙方訂立契約以界定權責。",
             sourceBlockIds: ["blk_2"],
-            gradingPoints: ["君主權力來自人民授予", "雙方訂立契約以界定權責"],
+            gradingPoints: [],
           },
         ],
       },
-      { ...context(), questionTypes: ["short"] },
+      { ...context(), questionTypes: ["mc"] },
     );
 
     expect(result.accepted).toHaveLength(1);
@@ -825,7 +742,7 @@ describe("教材依據的範圍", () => {
       topicId: "topic-5",
       sectionId: "topic-5-industrial",
       sectionIds: ["topic-5-industrial", "topic-5-renaissance"],
-      questionTypes: ["mc", "fill", "short"],
+      questionTypes: ["mc", "fill"],
       difficulty: "basic",
       origin: "material-ai",
       units: MULTI_UNIT,
@@ -1018,5 +935,57 @@ describe("選擇題答案一致性", () => {
 
     expect(result.accepted).toHaveLength(0);
     expect(result.discardedReasons[0]).toContain("選項重複");
+  });
+});
+
+/**
+ * 2026-10-18：真實模型（DeepSeek）常把教材句子改寫成節錄，令題目因「節錄不是逐字原文」
+ * 被整條丟棄（模擬學生使用時，個別分節 3 題全部被丟棄，學生拿不到任何題目）。
+ * 現在會在同一批所引段落中找回原文句子，仍然找不到就直接丟棄（fail-closed）。
+ */
+describe("教材節錄被模型改寫時的處理", () => {
+  function mcQuestion(overrides: Record<string, unknown>) {
+    return {
+      questionType: "mc",
+      difficulty: "basic",
+      question: "誰在1517年發表《九十五條論證》？",
+      options: ["馬丁路德", "加爾文", "亨利八世", "但丁"],
+      correctAnswerIndex: 0,
+      correctAnswer: "馬丁路德",
+      explanation: "馬丁路德於1517年發表《九十五條論證》，批評教會濫用贖罪券。",
+      knowledgePoint: "宗教改革的展開",
+      sourceExcerpt: "馬丁路德批評教會濫用贖罪券並發表《九十五條論證》",
+      sourceBlockIds: ["blk_1"],
+      gradingPoints: [],
+      ...overrides,
+    };
+  }
+
+  it("節錄被改寫時改用所引段落的原文句子，並加上教師核對警告", () => {
+    const result = validateLlmQuestions(
+      { questions: [mcQuestion({})] },
+      { ...context(), questionTypes: ["mc"] },
+    );
+
+    expect(result.accepted).toHaveLength(1);
+    expect(result.accepted[0].sourceExcerpt).toContain("1517年10月");
+    expect(result.accepted[0].qualityWarnings.join(" ")).toContain("不是原文");
+    expect(result.accepted[0].sourceBlockIds).toEqual(["blk_1"]);
+  });
+
+  it("所引段落沒有相關原文時仍然丟棄（不會借用其他段落的文字）", () => {
+    const result = validateLlmQuestions(
+      {
+        questions: [
+          mcQuestion({
+            sourceExcerpt: "工業革命令城市人口急速增加，工廠成為主要的生產場所",
+          }),
+        ],
+      },
+      { ...context(), questionTypes: ["mc"] },
+    );
+
+    expect(result.accepted).toHaveLength(0);
+    expect(result.discardedReasons.join(" ")).toContain("教材依據");
   });
 });

@@ -106,6 +106,7 @@ async function main() {
   let importedQuestions = 0;
   let skippedQuestions = 0;
   let excludedQuestions = 0;
+  let excludedImageQuestions = 0;
   let warnedQuestions = 0;
   let skippedFiles = 0;
 
@@ -169,13 +170,14 @@ async function main() {
       importedQuestions += result.imported;
       skippedQuestions += result.skipped.length;
       excludedQuestions += result.excluded;
+      excludedImageQuestions += result.excludedForImage;
       warnedQuestions += result.withQualityWarnings;
       console.log(
         `✓ ${fileName}（${result.fileType}）：匯入 ${result.imported} 題（草稿）、略過 ${
           result.skipped.length
         } 題${result.excluded > 0 ? `、不考核範圍 ${result.excluded} 題` : ""}${
-          result.withQualityWarnings > 0 ? `、需圖片核對 ${result.withQualityWarnings} 題` : ""
-        }`,
+          result.excludedForImage > 0 ? `、需原檔圖片排除 ${result.excludedForImage} 題` : ""
+        }${result.withQualityWarnings > 0 ? `、需教師核對 ${result.withQualityWarnings} 題` : ""}`,
       );
       for (const reason of new Set(result.skipped.map((item) => item.reason))) {
         const count = result.skipped.filter((item) => item.reason === reason).length;
@@ -208,8 +210,8 @@ async function main() {
   if (importQuestions) {
     console.log(
       `✓ 校內試題：新增／更新 ${importedQuestions} 題（草稿，待教師審核）` +
-        `；不考核範圍略過 ${excludedQuestions} 題；格式未支援 ${skippedQuestions} 題` +
-        `${warnedQuestions > 0 ? `；需教師核對圖片 ${warnedQuestions} 題` : ""}`,
+        `；不考核範圍略過 ${excludedQuestions} 題；需原檔圖片排除 ${excludedImageQuestions} 題；格式未支援 ${skippedQuestions} 題` +
+        `${warnedQuestions > 0 ? `；需教師核對 ${warnedQuestions} 題` : ""}`,
     );
   }
   if (skippedFiles > 0) console.log(`！有 ${skippedFiles} 個檔案未能匯入（詳見上方訊息）`);

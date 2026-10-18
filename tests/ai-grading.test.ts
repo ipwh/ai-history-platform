@@ -19,7 +19,7 @@ let grader: GraderModule;
 let seed: Seed;
 
 const LEARNER = "ai-grading-learner";
-/** 示範題庫中有填充題及短答題的分節（各一題） */
+/** 示範題庫中有填充題的分節 */
 const SECTION = "topic-5-reformation-development";
 /** 示範題庫中有選擇題的分節 */
 const MC_SECTION = "topic-5-renaissance-features";
@@ -44,32 +44,6 @@ afterEach(() => {
 });
 
 describe("AI 語意批改結果的驗證", () => {
-  it("短答題以達到要點的比例決定判斷，並列出未達到的要點", () => {
-    const result = grader.parseGradingResult(
-      { verdict: "incorrect", hitPointIndexes: [0, 5], feedback: "已提到人文主義。" },
-      { questionType: "short", gradingPoints: ["重視人文主義", "復興古典文化", "重視理性"] },
-    );
-    expect(result).not.toBeNull();
-    expect(result!.hitPoints).toEqual(["重視人文主義"]);
-    // 達 1 / 3 個要點 → 部分達到（即使模型原本判為 incorrect）
-    expect(result!.verdict).toBe("partial");
-    expect(result!.missingPoints).toEqual(["復興古典文化", "重視理性"]);
-  });
-
-  it("全部要點達到即當作正確，全部未達到即當作未達到", () => {
-    const all = grader.parseGradingResult(
-      { verdict: "partial", hitPointIndexes: [0, 1], feedback: "很好。" },
-      { questionType: "short", gradingPoints: ["甲", "乙"] },
-    );
-    expect(all!.verdict).toBe("correct");
-
-    const none = grader.parseGradingResult(
-      { verdict: "partial", hitPointIndexes: [], feedback: "未達到。" },
-      { questionType: "short", gradingPoints: ["甲", "乙"] },
-    );
-    expect(none!.verdict).toBe("incorrect");
-  });
-
   it("越界的要點索引不會出錯，填充題不會回傳要點", () => {
     const result = grader.parseGradingResult(
       { verdict: "correct", hitPointIndexes: [7, -1], feedback: "意思相同。" },
@@ -78,15 +52,6 @@ describe("AI 語意批改結果的驗證", () => {
     expect(result!.hitPoints).toEqual([]);
     expect(result!.missingPoints).toEqual([]);
     expect(result!.verdict).toBe("correct");
-  });
-
-  it("短答題沒有回饋文字時視為不可用", () => {
-    expect(
-      grader.parseGradingResult(
-        { verdict: "correct", hitPointIndexes: [], feedback: "   " },
-        { questionType: "short", gradingPoints: ["甲"] },
-      ),
-    ).toBeNull();
   });
 
   it("填充題的判斷不會被要點影響，並提供預設回饋", () => {
@@ -148,51 +113,6 @@ describe("提交答案時的 AI 語意批改", () => {
     // 重新讀取時仍然有 AI 批改結果（已寫入作答記錄）
     const view = practice.getPracticeView(assembled.session.id, LEARNER);
     expect(view.feedback[0].aiGrading?.verdict).toBe("correct");
-  });
-
-  it("短答題不會自動評分，但會附上 AI 依得分要點的批改", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() =>
-        Promise.resolve(
-          gradingResponse({
-            verdict: "correct",
-            hitPointIndexes: [0],
-            feedback: "你提到人文主義，方向正確。",
-          }),
-        ),
-      ),
-    );
-
-    const assembled = await practice.createPractice({
-      learnerId: LEARNER,
-      topicId: "topic-5",
-      sectionIds: [SECTION],
-      questionTypes: ["short"],
-      difficulty: "advanced",
-      questionCount: 1,
-      mode: "standard",
-      sourceSessionId: null,
-    });
-
-    const question = assembled.questions[0];
-    const submit = await practice.submitAnswer(
-      assembled.session.id,
-      LEARNER,
-      question.id,
-      "文藝復興重視人的價值。",
-    );
-
-    expect(submit.feedback.autoGraded).toBe(false);
-    expect(submit.feedback.isCorrect).toBeNull();
-    expect(submit.feedback.aiGrading).not.toBeNull();
-    expect(submit.feedback.aiGrading!.hitPoints.length).toBeGreaterThan(0);
-    expect(submit.feedback.aiGrading!.missingPoints.length).toBeGreaterThan(0);
-
-    // 正確率不受短答題影響（只有 1 題短答題 → 沒有可自動評分的題目）
-    const result = practice.getPracticeResult(assembled.session.id, LEARNER);
-    expect(result.gradedCount).toBe(0);
-    expect(result.accuracy).toBeNull();
   });
 
   it("批改失敗時不會影響提交，並提示只提供參考答案", async () => {

@@ -136,7 +136,7 @@ export async function generateQuestionBank(
           generated = await generateQuestions({
             topicId: topic.id,
             sectionIds: [section.id],
-            questionTypes: ["mc", "fill", "short"],
+            questionTypes: ["mc", "fill"],
             difficulty,
             questionCount: target - existing,
           });

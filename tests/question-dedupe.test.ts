@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 題目重複判定的迴歸測試（2026-10-16 學生回報）。
  *
  * 實際回報（本機練習 sess_c1c25eb90c2c4f86）：5 條填充題當中有兩組「答案相同、
@@ -50,7 +50,7 @@ function context() {
   return {
     topicId: "topic-5",
     sectionId: "topic-5-industrial-development",
-    questionTypes: ["fill"] as ("mc" | "fill" | "short")[],
+    questionTypes: ["fill"] as ("mc" | "fill")[],
     difficulty: "basic" as const,
     origin: "material-ai" as const,
     units: UNITS,

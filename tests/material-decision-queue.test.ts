@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 「36 條待教師決定題目隊列」的檔案檢查（Sprint 8.2）。
  *
  * 只讀取檔案（不連接資料庫）：確認隊列仍然覆蓋那 36 條、每條都有問題描述、現行教材證據、
@@ -245,7 +245,7 @@ describe("課題1 校內試題：仍未能核對教材依據的紀錄（原 25 �
     for (const entry of record.entries) {
       expect(entry.questionId.startsWith("qb-JTH2ndEd")).toBe(true);
       expect(entry.topicId).toBe("topic-1");
-      expect(["mc", "short"]).toContain(entry.questionType);
+      expect(["mc", "fill", "short"]).toContain(entry.questionType);
       expect(entry.paperFileName.endsWith(".docx")).toBe(true);
       // 關鍵保護：不得聲稱已有單一段落依據（否則應改為連結，而不是列在這裡）
       expect(entry.singleBlockEvidence).toBe(false);
