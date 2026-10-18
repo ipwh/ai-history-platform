@@ -1196,6 +1196,10 @@ node scripts/e2e-flow.mjs --start         # 端對端流程（會自行啟動 ne
 ```
 
 - 本機建議以「匿名示範模式」測試後台（不需要登入）：不設定 `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`。
+- **頁面不停重新載入（2026-10-18 實際故障）**：Next.js 16 預設只准 `localhost` 存取開發專用資源（包括 HMR WebSocket）。以 `127.0.0.1`、區網 IP 或舊分頁開啟時，開發伺服器會記錄
+  `⚠ Blocked cross-origin request to Next.js dev resource /_next/hmr`，用戶端連不上 HMR 便會反覆重載頁面。
+  [next.config.ts](next.config.ts) 的 `allowedDevOrigins` 已自動加入本機所有 IPv4 位址（`127.0.0.1` 及區網 IP），令任何本機開啟方式都可正常使用；只影響開發模式。
+  若仍出現不停重載，請**清除瀏覽器的硬快取**（Ctrl+Shift+R）或關閉舊分頁後重開；必要時停止伺服器、刪除 `.next` 再執行 `npm run dev`，以清除舊的 HMR 用戶端。
 - 若要測試**教師身分**的權限（403／401、教師測試模式橫幅），請設定 Google 憑證，並把測試者電郵加入 `AUTH_TEACHER_EMAILS`；要測試**管理員身分**（教材管理、系統狀態），請把電郵加入 `AUTH_ADMIN_EMAILS`。
 - **端對端測試需要匿名示範模式**：它會以未登入身分走完學生端及後台功能，因此若 `.env.local` 已設定 Google 憑證，必須在執行時覆寫（PowerShell 的空字串不會覆寫 `.env.local`，請用一個空白）：
 

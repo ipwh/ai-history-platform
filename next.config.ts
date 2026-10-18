@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 import type { NextConfig } from "next";
@@ -22,7 +23,30 @@ function tesseractDependencyGlobs(): string[] {
   }
 }
 
+/**
+ * 開發模式允許的本機來源（`allowedDevOrigins`）。
+ *
+ * Next.js 16 預設只准 `localhost` 存取開發專用資源（包括 HMR WebSocket）。
+ * 以 `127.0.0.1` 或區網 IP 開啟時，HMR 會被攔截：
+ *
+ *   ⚠ Blocked cross-origin request to Next.js dev resource /_next/hmr from "127.0.0.1"
+ *
+ * 其後果不是錯誤訊息，而是**頁面不停重新載入**（HMR 連不上 → 用戶端反覆重試／重載），
+ * 2026-10-18 實際發生。這裡自動加入所有本機 IPv4 位址（含 127.0.0.1、區網 IP），
+ * 令任何本機開啟方式都可以正常使用；只影響開發模式，正式建置不會讀取這項設定。
+ */
+function localDevOrigins(): string[] {
+  const origins = new Set<string>(["127.0.0.1"]);
+  for (const addresses of Object.values(os.networkInterfaces())) {
+    for (const address of addresses ?? []) {
+      if (address.family === "IPv4" && !address.internal) origins.add(address.address);
+    }
+  }
+  return [...origins];
+}
+
 const nextConfig: NextConfig = {
+  allowedDevOrigins: localDevOrigins(),
   /**
    * 本網站的頁面及 API 每次請求都會讀取本機 SQLite 資料庫，屬於「完全動態」的應用，
    * 因此關閉 Cache Components（`cacheComponents`）。
