@@ -499,3 +499,164 @@ describe("migration 0020：教師確認旗標（Sprint 7.9）", () => {
     expect(row.status).toBe("draft");
   });
 });
+
+/**
+ * Migration 0022：Golden fixture 裁決（Sprint 12）。
+ *
+ * Golden fixture 的核准紀錄與題目發布覆核刻意分開；這個測試確認：
+ *   1. 由 0021 升級會建立新表及索引，既有覆核紀錄不受影響；
+ *   2. 重複套用 migration 是冪等的（容器重啟不會出錯）；
+ *   3. 舊資料庫沒有這張表時，任何讀取都要當成「沒有裁決」（fail-closed），
+ *      不能當成「已通過」。
+ */
+describe("migration 0022：Golden fixture 裁決（Sprint 12）", () => {
+  const upgradePath = freshTestDatabasePath("migration-0022");
+  const MIGRATION_0022 = "0022-golden-fixture-reviews";
+  const QUESTION_ID = "q-migration-0022";
+  let upgradeDb: DatabaseSync;
+
+  function tableExists(name: string): boolean {
+    return (
+      upgradeDb
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+        .get(name) !== undefined
+    );
+  }
+
+  function indexExists(name: string): boolean {
+    return (
+      upgradeDb
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?")
+        .get(name) !== undefined
+    );
+  }
+
+  beforeAll(() => {
+    for (const suffix of ["", "-wal", "-shm"]) {
+      fs.rmSync(`${upgradePath}${suffix}`, { force: true });
+    }
+    upgradeDb = connection.createDatabase(upgradePath);
+
+    // 模擬「尚未套用 0022」的資料庫：移除新表、索引及套用紀錄
+    upgradeDb.exec("DROP INDEX IF EXISTS idx_golden_fixture_reviews_question");
+    upgradeDb.exec("DROP TABLE IF EXISTS golden_fixture_reviews");
+    upgradeDb.prepare("DELETE FROM schema_migrations WHERE id = ?").run(MIGRATION_0022);
+
+    upgradeDb
+      .prepare(
+        `INSERT INTO topics (id, title, description, published, sort_order, created_at, updated_at)
+         VALUES ('topic-migration', '升級測試課題', '', 1, 0, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+      )
+      .run();
+    upgradeDb
+      .prepare(
+        `INSERT INTO sections
+           (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+         VALUES ('section-migration', 'topic-migration', NULL, '升級測試分節', '', '[]', 0,
+                 '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+      )
+      .run();
+    upgradeDb
+      .prepare(
+        `INSERT INTO questions
+           (id, topic_id, section_id, question_type, difficulty, question, correct_answer,
+            explanation, knowledge_point, source_excerpt, source_location, origin, status, created_at)
+         VALUES (?, 'topic-migration', 'section-migration', 'mc', 'basic', '舊版題目', '答案',
+                 '舊版解釋', '舊版知識點', '舊版節錄', '舊版位置', 'manual', 'published',
+                 '2026-01-01T00:00:00.000Z')`,
+      )
+      .run(QUESTION_ID);
+    upgradeDb
+      .prepare(
+        `INSERT INTO question_reviews
+           (id, question_id, revision, decision, reason, reviewer_email, reviewer_role,
+            question_fingerprint, created_at)
+         VALUES ('qrev-legacy', ?, 1, 'approved', NULL, 'legacy@example.com', 'admin',
+                 'legacy-fingerprint', '2026-01-02T00:00:00.000Z')`,
+      )
+      .run(QUESTION_ID);
+  });
+
+  afterAll(() => {
+    upgradeDb.close();
+  });
+
+  it("由 0021 升級：建立新表及索引，既有覆核紀錄保留", () => {
+    expect(tableExists("golden_fixture_reviews")).toBe(false);
+    expect(indexExists("idx_golden_fixture_reviews_question")).toBe(false);
+
+    migrations.runMigrations(upgradeDb);
+
+    expect(tableExists("golden_fixture_reviews")).toBe(true);
+    expect(indexExists("idx_golden_fixture_reviews_question")).toBe(true);
+    expect(
+      upgradeDb.prepare("SELECT id FROM schema_migrations WHERE id = ?").get(MIGRATION_0022),
+    ).toBeDefined();
+
+    const columns = (
+      upgradeDb.prepare("PRAGMA table_info(golden_fixture_reviews)").all() as unknown as {
+        name: string;
+      }[]
+    ).map((row) => row.name);
+    for (const column of [
+      "id",
+      "question_id",
+      "revision",
+      "question_fingerprint",
+      "decision",
+      "reason",
+      "reviewer_email",
+      "reviewer_role",
+      "created_at",
+      "payload_json",
+    ]) {
+      expect(columns, column).toContain(column);
+    }
+
+    // 既有題目覆核紀錄不受影響（Golden 裁決表與 question_reviews 分開）
+    const review = upgradeDb
+      .prepare("SELECT id, question_id, decision FROM question_reviews WHERE id = 'qrev-legacy'")
+      .get() as unknown as { id: string; question_id: string; decision: string };
+    expect(review.question_id).toBe(QUESTION_ID);
+    expect(review.decision).toBe("approved");
+  });
+
+  it("重複套用為冪等，且裁決紀錄只新增不覆蓋", () => {
+    migrations.runMigrations(upgradeDb);
+    migrations.runMigrations(upgradeDb);
+
+    upgradeDb
+      .prepare(
+        `INSERT INTO golden_fixture_reviews
+           (id, question_id, revision, question_fingerprint, decision, reason,
+            reviewer_email, reviewer_role, created_at, payload_json)
+         VALUES ('golden-1', ?, 1, 'fp-1', 'rejected', '來源不足', 'teacher@example.com',
+                 'teacher', '2026-01-03T00:00:00.000Z', NULL)`,
+      )
+      .run(QUESTION_ID);
+
+    const rows = upgradeDb
+      .prepare("SELECT id, decision FROM golden_fixture_reviews WHERE question_id = ?")
+      .all(QUESTION_ID) as unknown as { id: string; decision: string }[];
+    expect(rows).toHaveLength(1);
+    expect(rows[0].decision).toBe("rejected");
+
+    // 主鍵重複寫入會失敗（不會靜默覆蓋既有裁決）
+    expect(() =>
+      upgradeDb
+        .prepare(
+          `INSERT INTO golden_fixture_reviews
+             (id, question_id, revision, question_fingerprint, decision, reason,
+              reviewer_email, reviewer_role, created_at, payload_json)
+           VALUES ('golden-1', ?, 2, 'fp-2', 'approved', '重複 ID', 'other@example.com',
+                   'admin', '2026-01-04T00:00:00.000Z', NULL)`,
+        )
+        .run(QUESTION_ID),
+    ).toThrow();
+
+    const migrationRows = upgradeDb
+      .prepare("SELECT id, COUNT(*) AS total FROM schema_migrations GROUP BY id")
+      .all() as unknown as { id: string; total: number }[];
+    expect(migrationRows.every((row) => row.total === 1)).toBe(true);
+  });
+});

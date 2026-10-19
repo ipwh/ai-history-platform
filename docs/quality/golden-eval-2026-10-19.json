@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-10-19T07:44:08.616Z",
+  "notice": "唯讀評估：沒有修改題目、審核或發布狀態；未核准 fixture 不會被當作正式結果。",
+  "dataset": "docs/teacher-review/golden-questions.v2.json",
+  "datasetVersion": "2026-10-19.1",
+  "totals": {
+    "fixtures": 0,
+    "approved": 0,
+    "pending": 0,
+    "rejected": 0,
+    "superseded": 0,
+    "draft": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0
+  },
+  "evidenceSufficient": false,
+  "status": "INSUFFICIENT_EVIDENCE",
+  "results": []
+}

@@ -15,9 +15,51 @@ import { runMigrations } from "./migrations";
 interface DbGlobal {
   __historyPlatformDb?: DatabaseSync;
   __historyPlatformDbPath?: string;
+  __historyPlatformReadOnlyDb?: DatabaseSync;
+  __historyPlatformReadOnlyDbPath?: string;
 }
 
 const globalRef = globalThis as unknown as DbGlobal;
+
+let readOnlyMode = false;
+
+/**
+ * 切換為唯讀模式（Sprint 13）。
+ *
+ * 唯讀模式下 `getDb()`：
+ *   - **不建立**資料庫檔案或目錄（檔案不存在即報錯）；
+ *   - **不執行 migration**（缺表時查詢會失敗，由呼叫端如實回報）；
+ *   - 以 `readOnly: true` 開啟，任何寫入都會被 SQLite 拒絕。
+ *
+ * 只供 audit／export／evaluation 等承諾唯讀的 CLI 在匯入服務模組**之前**呼叫。
+ * 正常應用程式啟動不會呼叫它，migration 行為不變。
+ */
+export function enableReadOnlyDatabaseMode(): void {
+  readOnlyMode = true;
+}
+
+export function isReadOnlyDatabaseMode(): boolean {
+  return readOnlyMode;
+}
+
+export class ReadOnlyDatabaseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ReadOnlyDatabaseError";
+  }
+}
+
+/** 以唯讀方式開啟既有資料庫（不會建立檔案、不會執行 migration） */
+export function openReadOnlyDatabase(databasePath: string): DatabaseSync {
+  if (!fs.existsSync(databasePath)) {
+    throw new ReadOnlyDatabaseError(
+      `找不到資料庫檔案：${databasePath}。唯讀模式不會建立新資料庫，也不會執行 migration。`,
+    );
+  }
+  const db = new DatabaseSync(databasePath, { readOnly: true });
+  db.exec("PRAGMA busy_timeout = 5000;");
+  return db;
+}
 
 function openDatabase(databasePath: string): DatabaseSync {
   fs.mkdirSync(path.dirname(databasePath), { recursive: true });
@@ -34,6 +76,18 @@ function openDatabase(databasePath: string): DatabaseSync {
 /** 取得（並在首次呼叫時建立）資料庫連線 */
 export function getDb(): DatabaseSync {
   const { databasePath } = getServerConfig();
+  if (readOnlyMode) {
+    if (
+      globalRef.__historyPlatformReadOnlyDb &&
+      globalRef.__historyPlatformReadOnlyDbPath === databasePath
+    ) {
+      return globalRef.__historyPlatformReadOnlyDb;
+    }
+    const db = openReadOnlyDatabase(databasePath);
+    globalRef.__historyPlatformReadOnlyDb = db;
+    globalRef.__historyPlatformReadOnlyDbPath = databasePath;
+    return db;
+  }
   if (globalRef.__historyPlatformDb && globalRef.__historyPlatformDbPath === databasePath) {
     return globalRef.__historyPlatformDb;
   }
@@ -75,6 +129,9 @@ export function closeDefaultDatabase(): void {
   globalRef.__historyPlatformDb?.close();
   globalRef.__historyPlatformDb = undefined;
   globalRef.__historyPlatformDbPath = undefined;
+  globalRef.__historyPlatformReadOnlyDb?.close();
+  globalRef.__historyPlatformReadOnlyDb = undefined;
+  globalRef.__historyPlatformReadOnlyDbPath = undefined;
 }
 
 /** node:sqlite 只接受 number / bigint / string / Uint8Array / null */

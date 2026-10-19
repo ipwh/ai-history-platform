@@ -60,3 +60,18 @@ next-env.d*.ts
 .env.local
 .env*.local
 !.env.example
+
+# Playwright 產生的測試輸出
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# 內含完整題幹／答案／原文段落的產生檔：屬第三方版權內容，不入公開倉庫（與 materials/ 政策一致）
+/docs/teacher-review/adjudication-packet-*.csv
+/docs/teacher-review/adjudication-packet-*.html
+/docs/teacher-review/roman-label-dry-run-*.json
+/docs/teacher-review/roman-label-dry-run-*.md
+/docs/teacher-review/golden-candidates-*.json
+/docs/teacher-review/golden-candidates-*.md
+/docs/teacher-review/golden-questions.v2.json

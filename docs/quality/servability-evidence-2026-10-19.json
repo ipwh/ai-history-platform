@@ -1,0 +1,2532 @@
+{
+  "generatedAt": "2026-10-19T08:42:30.785Z",
+  "notice": "唯讀證據核對：沒有修改題目；`labels_present_in_source` 只代表原文有標示，仍需教師核准。",
+  "totals": {
+    "checked": 95,
+    "scope": "MCQ_ROMAN_LABEL_MISSING（不可作答）",
+    "labelsPresent": 0,
+    "labelsOnlyCandidates": 0,
+    "labelsMissing": 84,
+    "sourceMissing": 0,
+    "blockNotFound": 0,
+    "countMismatch": 11
+  },
+  "byStatus": {
+    "labels_missing_in_source": 84,
+    "statement_count_mismatch": 11
+  },
+  "items": [
+    {
+      "id": "qb-JTH2ndEdMCQ01023",
+      "questionType": "mc",
+      "sourceLocation": "課題1人類的需要 古與今_MCQ.docx · 第 23 題 · A. 石器時代的演進",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "日記",
+        "錄像",
+        "事件發生時的報章報道",
+        "學術論文"
+      ],
+      "statementLines": [
+        "日記",
+        "錄像",
+        "事件發生時的報章報道",
+        "學術論文"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05129",
+      "questionType": "mc",
+      "sourceLocation": "課題5 近代歐洲的興起_MCQ.docx · 第 129 題 · A. 國家W",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "農村的租金較高",
+        "人們在城市較容易找到工作",
+        "人們可在城市賺取更高的收入",
+        "農村較城市擠逼"
+      ],
+      "statementLines": [
+        "農村的租金較高",
+        "人們在城市較容易找到工作",
+        "人們可在城市賺取更高的收入",
+        "農村較城市擠逼"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05173",
+      "questionType": "mc",
+      "sourceLocation": "課題5 近代歐洲的興起_MCQ.docx · 第 173 題 · A. 國家W",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "i.\t他頒布《法蘭西共和國法典》。",
+        "ii.\t他曾自立為法國皇帝。",
+        "iii.\t他引發「拿破崙戰爭」。",
+        "他死於愛爾巴島。"
+      ],
+      "statementLines": [
+        "i.\t他頒布《法蘭西共和國法典》。",
+        "ii.\t他曾自立為法國皇帝。",
+        "iii.\t他引發「拿破崙戰爭」。",
+        "他死於愛爾巴島。"
+      ],
+      "proposedStem": null,
+      "note": "原文標示數量與選項引用不一致；需教師裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ08026",
+      "questionType": "mc",
+      "sourceLocation": "課題8 直至二十世紀初香港的成長與發展_MCQ.docx · 第 26 題 · B. 經濟與社會民生狀況",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "乾泰隆",
+        "和興號",
+        "怡和洋行",
+        "太古洋行"
+      ],
+      "statementLines": [
+        "乾泰隆",
+        "和興號",
+        "怡和洋行",
+        "太古洋行"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ08031",
+      "questionType": "mc",
+      "sourceLocation": "課題8 直至二十世紀初香港的成長與發展_MCQ.docx · 第 31 題 · B. 經濟與社會民生狀況",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "大規模貸款",
+        "現金存提",
+        "黃金交易",
+        "小額融資"
+      ],
+      "statementLines": [
+        "大規模貸款",
+        "現金存提",
+        "黃金交易",
+        "小額融資"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ08032",
+      "questionType": "mc",
+      "sourceLocation": "課題8 直至二十世紀初香港的成長與發展_MCQ.docx · 第 32 題 · B. 經濟與社會民生狀況",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "肥皂",
+        "煙草",
+        "火柴",
+        "電器"
+      ],
+      "statementLines": [
+        "肥皂",
+        "煙草",
+        "火柴",
+        "電器"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ08037",
+      "questionType": "mc",
+      "sourceLocation": "課題8 直至二十世紀初香港的成長與發展_MCQ.docx · 第 37 題 · B. 經濟與社會民生狀況",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "成立香港警隊",
+        "向本地華人實行宵禁",
+        "允許華人成立團防局",
+        "強制鼠疫患者接受隔離治療"
+      ],
+      "statementLines": [
+        "成立香港警隊",
+        "向本地華人實行宵禁",
+        "允許華人成立團防局",
+        "強制鼠疫患者接受隔離治療"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ08046",
+      "questionType": "mc",
+      "sourceLocation": "課題8 直至二十世紀初香港的成長與發展_MCQ.docx · 第 46 題 · B. 經濟與社會民生狀況",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "把所有中式私塾改為官立學校",
+        "改組教育諮詢委員會",
+        "資助辦學團體興辦學校",
+        "下令所有官立學校只以中文授課"
+      ],
+      "statementLines": [
+        "把所有中式私塾改為官立學校",
+        "改組教育諮詢委員會",
+        "資助辦學團體興辦學校",
+        "下令所有官立學校只以中文授課"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09017",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 15 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "引入徵兵制",
+        "研發新武器",
+        "建造無畏艦",
+        "建立軍事學校"
+      ],
+      "statementLines": [
+        "引入徵兵制",
+        "研發新武器",
+        "建造無畏艦",
+        "建立軍事學校"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09021",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 17 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "英國",
+        "意大利",
+        "德國",
+        "奧匈"
+      ],
+      "statementLines": [
+        "英國",
+        "意大利",
+        "德國",
+        "奧匈"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09022",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 18 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "英國",
+        "法國",
+        "意大利",
+        "俄國"
+      ],
+      "statementLines": [
+        "英國",
+        "法國",
+        "意大利",
+        "俄國"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09024",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 20 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "它於十九世紀初在歐洲興起。",
+        "它促成泛日耳曼主義的出現。",
+        "它觸發了巴爾幹半島上的多次危機。",
+        "它加劇了俄國與塞爾維亞之間的矛盾。"
+      ],
+      "statementLines": [
+        "它於十九世紀初在歐洲興起。",
+        "它促成泛日耳曼主義的出現。",
+        "它觸發了巴爾幹半島上的多次危機。",
+        "它加劇了俄國與塞爾維亞之間的矛盾。"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09028",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 22 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "德國：建立「大日耳曼帝國」",
+        "法國：向德國報復",
+        "奧匈：鼓吹泛斯拉夫主義",
+        "俄國：鼓吹大塞爾維亞運動"
+      ],
+      "statementLines": [
+        "德國：建立「大日耳曼帝國」",
+        "法國：向德國報復",
+        "奧匈：鼓吹泛斯拉夫主義",
+        "俄國：鼓吹大塞爾維亞運動"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09050",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 23 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "法、德兩國交惡",
+        "英、德兩國爭相建造無畏艦",
+        "德、奧、意組成「三國同盟」",
+        "美國積極介入歐洲衝突"
+      ],
+      "statementLines": [
+        "法、德兩國交惡",
+        "英、德兩國爭相建造無畏艦",
+        "德、奧、意組成「三國同盟」",
+        "美國積極介入歐洲衝突"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09058",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 25 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "戰敗國派出德國作為代表出席會議。",
+        "威爾遜是會議的主要決策者之一。",
+        "和會的決議促使獨立民族國家的成立。",
+        "所有戰勝國都滿意和會的決議。"
+      ],
+      "statementLines": [
+        "戰敗國派出德國作為代表出席會議。",
+        "威爾遜是會議的主要決策者之一。",
+        "和會的決議促使獨立民族國家的成立。",
+        "所有戰勝國都滿意和會的決議。"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09059",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 26 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "statement_count_mismatch",
+      "evidence": [
+        "英國",
+        "法國",
+        "俄國",
+        "美國",
+        "德國"
+      ],
+      "statementLines": [
+        "英國",
+        "法國",
+        "俄國",
+        "美國",
+        "德國"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09066",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 33 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "根據條約，德國須承擔引發一戰的全部責任",
+        "根據條約，德國必須裁軍",
+        "德國人認為條約過於苛刻",
+        "條約促使極權主義於德國興起"
+      ],
+      "statementLines": [
+        "根據條約，德國須承擔引發一戰的全部責任",
+        "根據條約，德國必須裁軍",
+        "德國人認為條約過於苛刻",
+        "條約促使極權主義於德國興起"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09068",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 35 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "英國",
+        "日本",
+        "德國",
+        "意大利"
+      ],
+      "statementLines": [
+        "英國",
+        "日本",
+        "德國",
+        "意大利"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09070",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 37 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "芬蘭",
+        "波蘭",
+        "愛沙尼亞",
+        "捷克斯洛伐克"
+      ],
+      "statementLines": [
+        "芬蘭",
+        "波蘭",
+        "愛沙尼亞",
+        "捷克斯洛伐克"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09078",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 45 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "助長了極權主義的興起",
+        "促使列強召開巴黎和會",
+        "促使美國進一步貫徹一戰後的孤立主義",
+        "促使國際聯盟廢除《凡爾賽條約》"
+      ],
+      "statementLines": [
+        "助長了極權主義的興起",
+        "促使列強召開巴黎和會",
+        "促使美國進一步貫徹一戰後的孤立主義",
+        "促使國際聯盟廢除《凡爾賽條約》"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09083",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 50 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "威瑪共和政府無力解決一戰遺留的問題",
+        "德國人受到日本軍國主義的影響",
+        "希特拉承諾推翻《凡爾賽條約》",
+        "猶太人企圖將德國人趕離德國"
+      ],
+      "statementLines": [
+        "威瑪共和政府無力解決一戰遺留的問題",
+        "德國人受到日本軍國主義的影響",
+        "希特拉承諾推翻《凡爾賽條約》",
+        "猶太人企圖將德國人趕離德國"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09086",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 53 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "他加入了極端民族主義政黨",
+        "他曾於一戰加入協約國參戰",
+        "他在獄中寫成《我的奮鬥》",
+        "他發動了進軍羅馬"
+      ],
+      "statementLines": [
+        "他加入了極端民族主義政黨",
+        "他曾於一戰加入協約國參戰",
+        "他在獄中寫成《我的奮鬥》",
+        "他發動了進軍羅馬"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09088",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 55 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "領袖崇拜",
+        "極權高壓統治",
+        "加強軍力",
+        "反猶太主義"
+      ],
+      "statementLines": [
+        "領袖崇拜",
+        "極權高壓統治",
+        "加強軍力",
+        "反猶太主義"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09094",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 61 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "派兵進駐萊茵河區",
+        "佔領捷克西北部的蘇台德區",
+        "與奧地利合併",
+        "與日本及意大利組成軍事聯盟"
+      ],
+      "statementLines": [
+        "派兵進駐萊茵河區",
+        "佔領捷克西北部的蘇台德區",
+        "與奧地利合併",
+        "與日本及意大利組成軍事聯盟"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09099",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 66 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii"
+      ],
+      "status": "statement_count_mismatch",
+      "evidence": [
+        "日本",
+        "意大利",
+        "德國",
+        "俄國"
+      ],
+      "statementLines": [
+        "日本",
+        "意大利",
+        "德國",
+        "俄國"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09100",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 67 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "iii",
+        "iv"
+      ],
+      "status": "statement_count_mismatch",
+      "evidence": [
+        "日本",
+        "中國",
+        "意大利",
+        "德國",
+        "蘇聯"
+      ],
+      "statementLines": [
+        "日本",
+        "中國",
+        "意大利",
+        "德國",
+        "蘇聯"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09107",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 74 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "英國",
+        "美國",
+        "法國",
+        "蘇聯"
+      ],
+      "statementLines": [
+        "英國",
+        "美國",
+        "法國",
+        "蘇聯"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09108",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 75 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "在該政策下，英、法兩國協議將部分阿比西尼亞領土劃予意大利。",
+        "該政策成功阻止日本在佔領中國東北後進一步向中國擴張。",
+        "英、法兩國在德國派兵吞併整個捷克後改變該政策。",
+        "在該政策下，英、法兩國容許德國佔領整個捷克。"
+      ],
+      "statementLines": [
+        "在該政策下，英、法兩國協議將部分阿比西尼亞領土劃予意大利。",
+        "該政策成功阻止日本在佔領中國東北後進一步向中國擴張。",
+        "英、法兩國在德國派兵吞併整個捷克後改變該政策。",
+        "在該政策下，英、法兩國容許德國佔領整個捷克。"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09110",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 77 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "德國獲得萊茵河區",
+        "蘇聯與英、法兩國關係進一步疏遠",
+        "標誌德國開始違反《凡爾賽條約》",
+        "間接鼓勵德國繼續對外擴張"
+      ],
+      "statementLines": [
+        "德國獲得萊茵河區",
+        "蘇聯與英、法兩國關係進一步疏遠",
+        "標誌德國開始違反《凡爾賽條約》",
+        "間接鼓勵德國繼續對外擴張"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09111",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 78 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "阿比西尼亞",
+        "阿爾巴尼亞",
+        "捷克",
+        "波蘭"
+      ],
+      "statementLines": [
+        "阿比西尼亞",
+        "阿爾巴尼亞",
+        "捷克",
+        "波蘭"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09115",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 82 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "史太林不獲邀請參加1938年的慕尼黑會議。",
+        "史太林懷疑英、法兩國利用德國對付蘇聯。",
+        "史太林想利用德國轉移國內對他的不滿。",
+        "史太林認為俄國欠缺對抗德國的力量。"
+      ],
+      "statementLines": [
+        "史太林不獲邀請參加1938年的慕尼黑會議。",
+        "史太林懷疑英、法兩國利用德國對付蘇聯。",
+        "史太林想利用德國轉移國內對他的不滿。",
+        "史太林認為俄國欠缺對抗德國的力量。"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09124",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 91 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "商討對軸心國的作戰策略",
+        "決定德國投降後的佔領安排",
+        "確認對日本的戰後民主改革",
+        "簽署《凡爾賽條約》"
+      ],
+      "statementLines": [
+        "商討對軸心國的作戰策略",
+        "決定德國投降後的佔領安排",
+        "確認對日本的戰後民主改革",
+        "簽署《凡爾賽條約》"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09125",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 92 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "將德國劃分為四個佔領區",
+        "嚴懲德國以仿傚《凡爾賽條約》",
+        "在日本推行民主改革",
+        "邀請日本參加會議"
+      ],
+      "statementLines": [
+        "將德國劃分為四個佔領區",
+        "嚴懲德國以仿傚《凡爾賽條約》",
+        "在日本推行民主改革",
+        "邀請日本參加會議"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09126",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 93 題 · B. 兩次世界大戰前的國際關係與衝突的原因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "德國被一分為四，國力大幅下降",
+        "美國及蘇聯研發原子彈，成為超級大國",
+        "英國與法國失去亞洲和非洲的殖民地",
+        "蘇聯獲得巨額賠款及領土"
+      ],
+      "statementLines": [
+        "德國被一分為四，國力大幅下降",
+        "美國及蘇聯研發原子彈，成為超級大國",
+        "英國與法國失去亞洲和非洲的殖民地",
+        "蘇聯獲得巨額賠款及領土"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09186",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 100 題 · C. 戰後的非殖民地化（民族民主運動）與「第三世界」的冒起",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "解僱猶太人公務員",
+        "禁止猶太人擔任法官",
+        "破壞猶太人的教堂",
+        "遣送猶太人返回原居地"
+      ],
+      "statementLines": [
+        "解僱猶太人公務員",
+        "禁止猶太人擔任法官",
+        "破壞猶太人的教堂",
+        "遣送猶太人返回原居地"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09189",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 103 題 · C. 戰後的非殖民地化（民族民主運動）與「第三世界」的冒起",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "頒布《紐倫堡法令》",
+        "發動水晶之夜",
+        "建立猶太人集中營",
+        "實行「最後解決」方案"
+      ],
+      "statementLines": [
+        "頒布《紐倫堡法令》",
+        "發動水晶之夜",
+        "建立猶太人集中營",
+        "實行「最後解決」方案"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09192",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 106 題 · C. 戰後的非殖民地化（民族民主運動）與「第三世界」的冒起",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "法國",
+        "波蘭",
+        "匈牙利",
+        "奧地利"
+      ],
+      "statementLines": [
+        "法國",
+        "波蘭",
+        "匈牙利",
+        "奧地利"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09196",
+      "questionType": "mc",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_MCQ.docx · 第 110 題 · C. 戰後的非殖民地化（民族民主運動）與「第三世界」的冒起",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "安排學生參觀集中營遺址",
+        "重申學校教育不應掩飾或美化納粹罪行",
+        "於教科書列明納粹德國迫害與屠殺猶太人",
+        "舉辦學生訪問外國學校的活動"
+      ],
+      "statementLines": [
+        "安排學生參觀集中營遺址",
+        "重申學校教育不應掩飾或美化納粹罪行",
+        "於教科書列明納粹德國迫害與屠殺猶太人",
+        "舉辦學生訪問外國學校的活動"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10008",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 8 題 · A. 冷戰的背景與成因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "出現人口過剩",
+        "基建遭受摧毀",
+        "嚴重通貨膨脹",
+        "出口貿易額下降"
+      ],
+      "statementLines": [
+        "出現人口過剩",
+        "基建遭受摧毀",
+        "嚴重通貨膨脹",
+        "出口貿易額下降"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10010",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 10 題 · A. 冷戰的背景與成因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "美國本土在兩次世界大戰期間並未成為主要戰場。",
+        "美國是世界上第一個擁有原子彈的國家。",
+        "美元於二戰後成為主要的國際貨幣。",
+        "美國於一戰後成為全球主要的經濟大國之一。"
+      ],
+      "statementLines": [
+        "美國本土在兩次世界大戰期間並未成為主要戰場。",
+        "美國是世界上第一個擁有原子彈的國家。",
+        "美元於二戰後成為主要的國際貨幣。",
+        "美國於一戰後成為全球主要的經濟大國之一。"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10013",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 13 題 · A. 冷戰的背景與成因",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "推行私有制",
+        "主張民主集中制",
+        "提倡集體主義",
+        "奉行市場經濟"
+      ],
+      "statementLines": [
+        "推行私有制",
+        "主張民主集中制",
+        "提倡集體主義",
+        "奉行市場經濟"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10033",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 33 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "蘇聯對東歐國家的控制加強",
+        "美國對東歐國家的控制加強",
+        "美國與蘇聯的對立加劇",
+        "歐洲分裂為兩個軍事集團"
+      ],
+      "statementLines": [
+        "蘇聯對東歐國家的控制加強",
+        "美國對東歐國家的控制加強",
+        "美國與蘇聯的對立加劇",
+        "歐洲分裂為兩個軍事集團"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10041",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 41 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "西方國家以飛機空運物資予東柏林",
+        "它促成北大西洋公約組織的成立",
+        "它促使德國分裂為東、西德",
+        "它促使蘇聯推出莫洛托夫計劃"
+      ],
+      "statementLines": [
+        "西方國家以飛機空運物資予東柏林",
+        "它促成北大西洋公約組織的成立",
+        "它促使德國分裂為東、西德",
+        "它促使蘇聯推出莫洛托夫計劃"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10048",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 48 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "蘇聯支持中國的國民黨",
+        "中國共產黨擊敗國民黨，建立中華人民共和國",
+        "中國於1950年與蘇聯簽訂互助條約",
+        "中國的全面內戰於1946年結束"
+      ],
+      "statementLines": [
+        "蘇聯支持中國的國民黨",
+        "中國共產黨擊敗國民黨，建立中華人民共和國",
+        "中國於1950年與蘇聯簽訂互助條約",
+        "中國的全面內戰於1946年結束"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10054",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 54 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "蘇聯派遣部隊援助朝鮮",
+        "以美軍為主的「聯合國軍」援助韓國",
+        "美國於戰後繼續在韓國駐軍",
+        "停戰協議於1950年達成"
+      ],
+      "statementLines": [
+        "蘇聯派遣部隊援助朝鮮",
+        "以美軍為主的「聯合國軍」援助韓國",
+        "美國於戰後繼續在韓國駐軍",
+        "停戰協議於1950年達成"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10068",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 68 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "statement_count_mismatch",
+      "evidence": [
+        "美國",
+        "法國",
+        "英國",
+        "蘇聯",
+        "日本",
+        "西德"
+      ],
+      "statementLines": [
+        "美國",
+        "法國",
+        "英國",
+        "蘇聯",
+        "日本",
+        "西德"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10070",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 70 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "statement_count_mismatch",
+      "evidence": [
+        "乒乓外交",
+        "日內瓦峰會召開",
+        "尼克遜訪問蘇聯",
+        "《赫爾辛基協定》簽訂",
+        "美軍撤出越南"
+      ],
+      "statementLines": [
+        "乒乓外交",
+        "日內瓦峰會召開",
+        "尼克遜訪問蘇聯",
+        "《赫爾辛基協定》簽訂",
+        "美軍撤出越南"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10071",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 71 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "英國",
+        "美國",
+        "法國",
+        "以色列"
+      ],
+      "statementLines": [
+        "英國",
+        "美國",
+        "法國",
+        "以色列"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10072",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 72 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "事後，英國在中東的影響力進一步衰落",
+        "事後，美國加強對阿拉伯國家的軍事援助",
+        "事後，美、蘇在中東的競爭加劇",
+        "事後，蘇聯取代法國在中東的控制權"
+      ],
+      "statementLines": [
+        "事後，英國在中東的影響力進一步衰落",
+        "事後，美國加強對阿拉伯國家的軍事援助",
+        "事後，美、蘇在中東的競爭加劇",
+        "事後，蘇聯取代法國在中東的控制權"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10076",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 76 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "事件導致巴黎高峰會告吹",
+        "史太林要求美國道歉",
+        "艾森豪威爾拒絕停止偵察活動",
+        "蘇聯擊落美國偵察機"
+      ],
+      "statementLines": [
+        "事件導致巴黎高峰會告吹",
+        "史太林要求美國道歉",
+        "艾森豪威爾拒絕停止偵察活動",
+        "蘇聯擊落美國偵察機"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10084",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 84 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "古巴於1959年成立新政府。",
+        "美國反對古巴流亡分子推翻卡斯特羅。",
+        "美國發現古巴的導彈基地後，向古巴實施禁運。",
+        "卡斯特羅於1961年宣布古巴成為社會主義國家。"
+      ],
+      "statementLines": [
+        "古巴於1959年成立新政府。",
+        "美國反對古巴流亡分子推翻卡斯特羅。",
+        "美國發現古巴的導彈基地後，向古巴實施禁運。",
+        "卡斯特羅於1961年宣布古巴成為社會主義國家。"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10091",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 91 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "美、蘇兩國領袖間建立了「熱線」。",
+        "美、蘇兩國間的核武競賽得以緩和。",
+        "美、蘇兩國領導人互訪以緩和緊張局勢。",
+        "美、蘇兩國合作發展核武器。"
+      ],
+      "statementLines": [
+        "美、蘇兩國領袖間建立了「熱線」。",
+        "美、蘇兩國間的核武競賽得以緩和。",
+        "美、蘇兩國領導人互訪以緩和緊張局勢。",
+        "美、蘇兩國合作發展核武器。"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10095",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 95 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "蘇聯",
+        "中國",
+        "北越",
+        "朝鮮"
+      ],
+      "statementLines": [
+        "蘇聯",
+        "中國",
+        "北越",
+        "朝鮮"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10099",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 99 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "美國一度擊潰北越及越共",
+        "美國基於「越南化」政策正式派兵越南",
+        "北越於1975年擊敗南越，統一越南",
+        "越共在南越發動游擊戰"
+      ],
+      "statementLines": [
+        "美國一度擊潰北越及越共",
+        "美國基於「越南化」政策正式派兵越南",
+        "北越於1975年擊敗南越，統一越南",
+        "越共在南越發動游擊戰"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10100",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 100 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "朝鮮戰爭",
+        "越南戰爭",
+        "八月政變",
+        "盧旺達內戰"
+      ],
+      "statementLines": [
+        "朝鮮戰爭",
+        "越南戰爭",
+        "八月政變",
+        "盧旺達內戰"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10102",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 102 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "展開太空競賽",
+        "派兵參加越南戰爭",
+        "過分投入軍工業發展",
+        "提供經濟援助予古巴"
+      ],
+      "statementLines": [
+        "展開太空競賽",
+        "派兵參加越南戰爭",
+        "過分投入軍工業發展",
+        "提供經濟援助予古巴"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10104",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 104 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "蘇聯撤回對中國的援助",
+        "蘇聯積極改善與美國的關係",
+        "中、蘇邊境地區爆發武裝衝突",
+        "蘇聯增加軍事開支及海外駐兵"
+      ],
+      "statementLines": [
+        "蘇聯撤回對中國的援助",
+        "蘇聯積極改善與美國的關係",
+        "中、蘇邊境地區爆發武裝衝突",
+        "蘇聯增加軍事開支及海外駐兵"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10123",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 123 題 · B. 冷戰的主要發展",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "statement_count_mismatch",
+      "evidence": [
+        "蘇聯推出莫洛托夫計劃",
+        "越南戰爭",
+        "柏林危機",
+        "《赫爾辛基協定》簽訂",
+        "東歐劇變"
+      ],
+      "statementLines": [
+        "蘇聯推出莫洛托夫計劃",
+        "越南戰爭",
+        "柏林危機",
+        "《赫爾辛基協定》簽訂",
+        "東歐劇變"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10127",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 127 題 · C. 冷戰的結束",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "長期派兵駐守西歐",
+        "派兵參與阿富汗戰爭",
+        "與美國進行軍備競賽",
+        "補貼農工業生產"
+      ],
+      "statementLines": [
+        "長期派兵駐守西歐",
+        "派兵參與阿富汗戰爭",
+        "與美國進行軍備競賽",
+        "補貼農工業生產"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10128",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 128 題 · C. 冷戰的結束",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "准許國有企業自訂價格及工資",
+        "實行自由選舉",
+        "啟動「戰略防禦計劃」",
+        "在多個東歐國家部署新型導彈"
+      ],
+      "statementLines": [
+        "准許國有企業自訂價格及工資",
+        "實行自由選舉",
+        "啟動「戰略防禦計劃」",
+        "在多個東歐國家部署新型導彈"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10132",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 132 題 · C. 冷戰的結束",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "尼克遜",
+        "卡特",
+        "列根",
+        "布殊"
+      ],
+      "statementLines": [
+        "尼克遜",
+        "卡特",
+        "列根",
+        "布殊"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10144",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 144 題 · C. 冷戰的結束",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "statement_count_mismatch",
+      "evidence": [],
+      "statementLines": [],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10152",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 152 題 · D. 後冷戰時期的國際局勢",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "朝鮮戰爭",
+        "古巴導彈危機",
+        "越南戰爭",
+        "阿富汗戰爭"
+      ],
+      "statementLines": [
+        "朝鮮戰爭",
+        "古巴導彈危機",
+        "越南戰爭",
+        "阿富汗戰爭"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10153",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 153 題 · D. 後冷戰時期的國際局勢",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "繼續發展社會主義市場經濟",
+        "生產力位居世界前列",
+        "推動「全方位外交」",
+        "參與聯合國維和行動"
+      ],
+      "statementLines": [
+        "繼續發展社會主義市場經濟",
+        "生產力位居世界前列",
+        "推動「全方位外交」",
+        "參與聯合國維和行動"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10159",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 159 題 · D. 後冷戰時期的國際局勢",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "萬隆會議",
+        "不結盟運動",
+        "朝鮮核危機",
+        "非殖民地化運動"
+      ],
+      "statementLines": [
+        "萬隆會議",
+        "不結盟運動",
+        "朝鮮核危機",
+        "非殖民地化運動"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10165",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 165 題 · D. 後冷戰時期的國際局勢",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "斯洛文尼亞",
+        "克羅地亞",
+        "塞爾維亞",
+        "馬其頓"
+      ],
+      "statementLines": [
+        "斯洛文尼亞",
+        "克羅地亞",
+        "塞爾維亞",
+        "馬其頓"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10168",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 168 題 · D. 後冷戰時期的國際局勢",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "種族清洗於衝突期間發生",
+        "1998年，塞爾維亞爭取獨立",
+        "南斯拉夫內戰長達近十年",
+        "北約介入衝突"
+      ],
+      "statementLines": [
+        "種族清洗於衝突期間發生",
+        "1998年，塞爾維亞爭取獨立",
+        "南斯拉夫內戰長達近十年",
+        "北約介入衝突"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10169",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 169 題 · D. 後冷戰時期的國際局勢",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "克羅地亞",
+        "塞爾維亞",
+        "斯洛文尼亞",
+        "馬其頓"
+      ],
+      "statementLines": [
+        "克羅地亞",
+        "塞爾維亞",
+        "斯洛文尼亞",
+        "馬其頓"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10178",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 178 題 · D. 後冷戰時期的國際局勢",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "在阿以衝突中支持以色列",
+        "干預伊拉克入侵科威特",
+        "介入斡旋南斯拉夫內戰",
+        "譴責種族清洗的發生"
+      ],
+      "statementLines": [
+        "在阿以衝突中支持以色列",
+        "干預伊拉克入侵科威特",
+        "介入斡旋南斯拉夫內戰",
+        "譴責種族清洗的發生"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10181",
+      "questionType": "mc",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 181 題 · D. 後冷戰時期的國際局勢",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "聯合國成員國凍結恐怖組織的資產",
+        "各國加強情報搜集與共享",
+        "各國制定更嚴密的機場安全檢查法規",
+        "各國派出維和部隊消滅恐怖組織"
+      ],
+      "statementLines": [
+        "聯合國成員國凍結恐怖組織的資產",
+        "各國加強情報搜集與共享",
+        "各國制定更嚴密的機場安全檢查法規",
+        "各國派出維和部隊消滅恐怖組織"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0020000004",
+      "questionType": "mc",
+      "sourceLocation": "課題2 歐洲文明的發展_MCQ.docx · 第 6 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "古希臘各地社會發展存在差異，出現不同的管治方式。",
+        "古希臘人被大海或高山分隔，促使他們自成一角。",
+        "古希臘人由不同的部族組成，文化各異。",
+        "古希臘人擁有不同宗教，各自成立城邦。",
+        "i及iii",
+        "ii及iv",
+        "i、ii及iii",
+        "全部皆是",
+        "□"
+      ],
+      "statementLines": [
+        "古希臘各地社會發展存在差異，出現不同的管治方式。",
+        "古希臘人被大海或高山分隔，促使他們自成一角。",
+        "古希臘人由不同的部族組成，文化各異。",
+        "古希臘人擁有不同宗教，各自成立城邦。",
+        "i及iii",
+        "ii及iv",
+        "i、ii及iii",
+        "全部皆是",
+        "□"
+      ],
+      "proposedStem": null,
+      "note": "原文標示數量與選項引用不一致；需教師裁決"
+    },
+    {
+      "id": "qb-NJCMN0020000011",
+      "questionType": "mc",
+      "sourceLocation": "課題2 歐洲文明的發展_MCQ.docx · 第 18 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "國王仍然存在。",
+        "長老院掌握最高決策權。",
+        "長老由少數貴族出任，經由公民大會選出。",
+        "公民大會有權討論長老院制定的議案。",
+        "i及ii",
+        "ii及iv",
+        "i、ii及iii",
+        "全部皆是",
+        "□"
+      ],
+      "statementLines": [
+        "國王仍然存在。",
+        "長老院掌握最高決策權。",
+        "長老由少數貴族出任，經由公民大會選出。",
+        "公民大會有權討論長老院制定的議案。",
+        "i及ii",
+        "ii及iv",
+        "i、ii及iii",
+        "全部皆是",
+        "□"
+      ],
+      "proposedStem": null,
+      "note": "原文標示數量與選項引用不一致；需教師裁決"
+    },
+    {
+      "id": "qb-NJCMN0020000013",
+      "questionType": "mc",
+      "sourceLocation": "課題2 歐洲文明的發展_MCQ.docx · 第 21 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "法治觀念",
+        "陪審團制度",
+        "公眾參與制度",
+        "不記名投票",
+        "i及ii",
+        "ii及iv",
+        "i、ii及iii",
+        "全部皆是",
+        "□"
+      ],
+      "statementLines": [
+        "法治觀念",
+        "陪審團制度",
+        "公眾參與制度",
+        "不記名投票",
+        "i及ii",
+        "ii及iv",
+        "i、ii及iii",
+        "全部皆是",
+        "□"
+      ],
+      "proposedStem": null,
+      "note": "原文標示數量與選項引用不一致；需教師裁決"
+    },
+    {
+      "id": "qb-NJCMN0020000023",
+      "questionType": "mc",
+      "sourceLocation": "課題2 歐洲文明的發展_MCQ.docx · 第 35 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "騎士是經正規軍事訓練的騎兵。",
+        "騎士需要遵守騎士精神。",
+        "騎士從國王與大貴族獲得封地。",
+        "騎士從國王與大貴族獲得武器。",
+        "i及ii",
+        "ii及iv",
+        "i、ii及iii",
+        "全部皆是",
+        "□"
+      ],
+      "statementLines": [
+        "騎士是經正規軍事訓練的騎兵。",
+        "騎士需要遵守騎士精神。",
+        "騎士從國王與大貴族獲得封地。",
+        "騎士從國王與大貴族獲得武器。",
+        "i及ii",
+        "ii及iv",
+        "i、ii及iii",
+        "全部皆是",
+        "□"
+      ],
+      "proposedStem": null,
+      "note": "原文標示數量與選項引用不一致；需教師裁決"
+    },
+    {
+      "id": "qb-NJCMN0020000024",
+      "questionType": "mc",
+      "sourceLocation": "課題2 歐洲文明的發展_MCQ.docx · 第 38 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "法國貴族迫使國王簽署《大憲章》。",
+        "《大憲章》貫徹契約精神。",
+        "《大憲章》被視為現代憲法的先聲。",
+        "《德國憲法》的部分內容是參考《大憲章》而制定的。",
+        "i及ii",
+        "ii及iii",
+        "i、ii及iii",
+        "全部皆是",
+        "□"
+      ],
+      "statementLines": [
+        "法國貴族迫使國王簽署《大憲章》。",
+        "《大憲章》貫徹契約精神。",
+        "《大憲章》被視為現代憲法的先聲。",
+        "《德國憲法》的部分內容是參考《大憲章》而制定的。",
+        "i及ii",
+        "ii及iii",
+        "i、ii及iii",
+        "全部皆是",
+        "□"
+      ],
+      "proposedStem": null,
+      "note": "原文標示數量與選項引用不一致；需教師裁決"
+    },
+    {
+      "id": "qb-NJCMN0060000037",
+      "questionType": "mc",
+      "sourceLocation": "課題6 歐洲國家的殖民擴張_MCQ.docx · 第 39 題 · C. 歐洲殖民擴張的方式及影響",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "歐洲國家會以佔領地的種植園為基地，向內陸拓展勢力。",
+        "(ii)\t歐洲國家會在殖民地實行貿易壟斷政策。",
+        "(iii)\t歐洲國家積極於殖民地傳播基督宗教。",
+        "(iv)\t歐洲國家會委任特許公司的總督管治保護國。"
+      ],
+      "statementLines": [
+        "歐洲國家會以佔領地的種植園為基地，向內陸拓展勢力。",
+        "(ii)\t歐洲國家會在殖民地實行貿易壟斷政策。",
+        "(iii)\t歐洲國家積極於殖民地傳播基督宗教。",
+        "(iv)\t歐洲國家會委任特許公司的總督管治保護國。"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0060000039",
+      "questionType": "mc",
+      "sourceLocation": "課題6 歐洲國家的殖民擴張_MCQ.docx · 第 42 題 · C. 歐洲殖民擴張的方式及影響",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "statement_count_mismatch",
+      "evidence": [
+        "促進歐洲本土的經濟發展",
+        "國際局勢日益緊張",
+        "以歐洲為中心的世界經濟體系逐漸形成",
+        "殖民地對歐洲國家的工業造成競爭",
+        ""
+      ],
+      "statementLines": [
+        "促進歐洲本土的經濟發展",
+        "國際局勢日益緊張",
+        "以歐洲為中心的世界經濟體系逐漸形成",
+        "殖民地對歐洲國家的工業造成競爭",
+        ""
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0060000042",
+      "questionType": "mc",
+      "sourceLocation": "課題6 歐洲國家的殖民擴張_MCQ.docx · 第 45 題 · C. 歐洲殖民擴張的方式及影響",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "歐洲國家成功推動殖民地的工業發展。",
+        "(ii)\t宗主國破壞了殖民地的自給自足經濟。",
+        "(iii)\t黑奴貿易使非洲損失大量勞動力。",
+        "(iv)\t殖民地取得獨立後，摒棄了歐洲人帶來的基礎建設。"
+      ],
+      "statementLines": [
+        "歐洲國家成功推動殖民地的工業發展。",
+        "(ii)\t宗主國破壞了殖民地的自給自足經濟。",
+        "(iii)\t黑奴貿易使非洲損失大量勞動力。",
+        "(iv)\t殖民地取得獨立後，摒棄了歐洲人帶來的基礎建設。"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0060000045",
+      "questionType": "mc",
+      "sourceLocation": "課題6 歐洲國家的殖民擴張_MCQ.docx · 第 48 題 · C. 歐洲殖民擴張的方式及影響",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "(i)\t工業革命的出現促使歐洲國家加緊向外擴張。",
+        "(ii)\t文化因素不是歐洲國家向外擴張的主因。",
+        "(iii)\t早期擴張比後期擴張成功。",
+        "(iv)\t美洲因素改變歐洲國家殖民擴張的方向。"
+      ],
+      "statementLines": [
+        "(i)\t工業革命的出現促使歐洲國家加緊向外擴張。",
+        "(ii)\t文化因素不是歐洲國家向外擴張的主因。",
+        "(iii)\t早期擴張比後期擴張成功。",
+        "(iv)\t美洲因素改變歐洲國家殖民擴張的方向。"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0110000006",
+      "questionType": "mc",
+      "sourceLocation": "課題11 20世紀以來的國際合作_MCQ.docx · 第 6 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "過度捕撈破壞自然生態",
+        "南極洲上空出現「臭氧層洞」",
+        "全球暖化令海平面上升",
+        "有害廢料污染水產"
+      ],
+      "statementLines": [
+        "過度捕撈破壞自然生態",
+        "南極洲上空出現「臭氧層洞」",
+        "全球暖化令海平面上升",
+        "有害廢料污染水產"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0110000015",
+      "questionType": "mc",
+      "sourceLocation": "課題11 20世紀以來的國際合作_MCQ.docx · 第 15 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "通過國際合作維持世界和平",
+        "提倡尊重人權與自由",
+        "制止侵略行為",
+        "促進文化方面的國際合作"
+      ],
+      "statementLines": [
+        "通過國際合作維持世界和平",
+        "提倡尊重人權與自由",
+        "制止侵略行為",
+        "促進文化方面的國際合作"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0110000020",
+      "questionType": "mc",
+      "sourceLocation": "課題11 20世紀以來的國際合作_MCQ.docx · 第 20 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "statement_count_mismatch",
+      "evidence": [
+        "審議並通過預算案",
+        "委任秘書長",
+        "就維持和平的事項提供意見",
+        "監督並執行聯合國各個機關的決議",
+        "組織國際會議"
+      ],
+      "statementLines": [
+        "審議並通過預算案",
+        "委任秘書長",
+        "就維持和平的事項提供意見",
+        "監督並執行聯合國各個機關的決議",
+        "組織國際會議"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0110000026",
+      "questionType": "mc",
+      "sourceLocation": "課題11 20世紀以來的國際合作_MCQ.docx · 第 26 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "推動農業的可持續發展",
+        "改善農民的生活水平",
+        "監察全球的衛生情況"
+      ],
+      "statementLines": [
+        "推動農業的可持續發展",
+        "改善農民的生活水平",
+        "監察全球的衛生情況"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0110000031",
+      "questionType": "mc",
+      "sourceLocation": "課題11 20世紀以來的國際合作_MCQ.docx · 第 31 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "它的工作令多國成立推動可持續發展的部門",
+        "聯合國人類環境會議會每隔十年召開大會",
+        "它會處分違反國際環保協議的簽署國",
+        "《京都議定書》規定欠發達國家必須削減二氧化碳的排放量"
+      ],
+      "statementLines": [
+        "它的工作令多國成立推動可持續發展的部門",
+        "聯合國人類環境會議會每隔十年召開大會",
+        "它會處分違反國際環保協議的簽署國",
+        "《京都議定書》規定欠發達國家必須削減二氧化碳的排放量"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0110000033",
+      "questionType": "mc",
+      "sourceLocation": "課題11 20世紀以來的國際合作_MCQ.docx · 第 33 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "《京都議定書》",
+        "《聯合國氣候變化框架公約》",
+        "《里約宣言》",
+        "《聯合國宣言》"
+      ],
+      "statementLines": [
+        "《京都議定書》",
+        "《聯合國氣候變化框架公約》",
+        "《里約宣言》",
+        "《聯合國宣言》"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0120000013",
+      "questionType": "mc",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 27 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "處理新界的民事及刑事案件",
+        "協助處理與土地、風俗及村務相關的爭議",
+        "代表村民向政府反映意見",
+        "提供職業介紹服務"
+      ],
+      "statementLines": [
+        "處理新界的民事及刑事案件",
+        "協助處理與土地、風俗及村務相關的爭議",
+        "代表村民向政府反映意見",
+        "提供職業介紹服務"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0120000021",
+      "questionType": "mc",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 40 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "兩華會委員",
+        "區所長",
+        "總督"
+      ],
+      "statementLines": [
+        "兩華會委員",
+        "區所長",
+        "總督"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0120000024",
+      "questionType": "mc",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 43 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iv"
+      ],
+      "status": "statement_count_mismatch",
+      "evidence": [
+        "糧食配給",
+        "強制歸鄉政策",
+        "分區制度",
+        "日化政策"
+      ],
+      "statementLines": [
+        "糧食配給",
+        "強制歸鄉政策",
+        "分區制度",
+        "日化政策"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0120000027",
+      "questionType": "mc",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 46 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "導致香港人口銳減",
+        "引發嚴重通貨膨脹",
+        "帶動香港轉口貿易的發展",
+        "促進香港工業的興起"
+      ],
+      "statementLines": [
+        "導致香港人口銳減",
+        "引發嚴重通貨膨脹",
+        "帶動香港轉口貿易的發展",
+        "促進香港工業的興起"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0120000030",
+      "questionType": "mc",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 49 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "statement_count_mismatch",
+      "evidence": [
+        "歐美國家將勞動力密集式工業外移",
+        "中國內地實施改革開放",
+        "香港的地理優勢",
+        "《關稅及貿易總協定》的簽訂",
+        "東南亞的非殖民地化運動"
+      ],
+      "statementLines": [
+        "歐美國家將勞動力密集式工業外移",
+        "中國內地實施改革開放",
+        "香港的地理優勢",
+        "《關稅及貿易總協定》的簽訂",
+        "東南亞的非殖民地化運動"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0120000033",
+      "questionType": "mc",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 55 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "內地商人將生產線遷移到香港",
+        "帶動香港的轉口貿易復興",
+        "推動香港的金融業發展"
+      ],
+      "statementLines": [
+        "內地商人將生產線遷移到香港",
+        "帶動香港的轉口貿易復興",
+        "推動香港的金融業發展"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0120000047",
+      "questionType": "mc",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 70 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "十年建屋計劃",
+        "廉租屋計劃",
+        "居者有其屋計劃",
+        "租者置其屋計劃"
+      ],
+      "statementLines": [
+        "十年建屋計劃",
+        "廉租屋計劃",
+        "居者有其屋計劃",
+        "租者置其屋計劃"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0120000048",
+      "questionType": "mc",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 71 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "推行六年免費強迫教育",
+        "推行九年免費強迫教育",
+        "擴展專上教育"
+      ],
+      "statementLines": [
+        "推行六年免費強迫教育",
+        "推行九年免費強迫教育",
+        "擴展專上教育"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0120000052",
+      "questionType": "mc",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 75 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "加強官民溝通",
+        "加強監察政府工作",
+        "調查貪污案件",
+        "領導政務總署"
+      ],
+      "statementLines": [
+        "加強官民溝通",
+        "加強監察政府工作",
+        "調查貪污案件",
+        "領導政務總署"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    },
+    {
+      "id": "qb-NJCMN0120000056",
+      "questionType": "mc",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 79 題",
+      "referencedLabels": [
+        "i",
+        "ii",
+        "iii",
+        "iv"
+      ],
+      "status": "labels_missing_in_source",
+      "evidence": [
+        "監察政府",
+        "統籌及執行政策",
+        "政策諮詢",
+        "就不同事務徵集個別行業的意見"
+      ],
+      "statementLines": [
+        "監察政府",
+        "統籌及執行政策",
+        "政策諮詢",
+        "就不同事務徵集個別行業的意見"
+      ],
+      "proposedStem": null,
+      "note": "原文的陳述沒有 i／ii／iii／iv 標示；不能由選項推測順序，需教師對照原卷裁決"
+    }
+  ]
+}

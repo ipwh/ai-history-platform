@@ -43,6 +43,7 @@ function auditFixture(overrides: Partial<ContentAuditPayload> = {}): ContentAudi
       },
       reviewedButLowQuality: 0,
       automationApprovalsRecordedAsHuman: 0,
+      unknownReviewOrigin: 0,
       byTopic: {},
     },
     metadata: {
@@ -76,13 +77,29 @@ function inputFixture(overrides: Partial<ReleaseGateInput> = {}): ReleaseGateInp
     audit: auditFixture(),
     answerProvenance: { affected: 18, unresolved: 0, reportFound: true },
     teacherDecisions: { pendingCurrentRevision: 0, openReports: 0 },
+    reviewProvenance: {
+      teacherAdjudicated: 0,
+      ownerBatchOnly: 0,
+      automationOnly: 0,
+      noEvidence: 0,
+    },
+    servabilityIssues: {},
+    servabilityAdjudication: {
+      unservable: 0,
+      originalEvidenceChecked: 0,
+      labelsOnlyRepairCandidates: 0,
+      teacherDecisions: 0,
+      awaitingTeacherDecision: 0,
+    },
+    provenanceRisk: { reportFound: true, p0: 0, p1: 0, p2: 0, p3: 0 },
+    goldenApproval: { approved: 5, pending: 0, stale: 0 },
     copyright: {
       documents: 10,
       distributable: 10,
       rightsRecorded: 10,
       ownerAttestation: true,
     },
-    golden: { questions: 5, reviewed: 5 },
+    golden: { questions: 5, reviewed: 5, datasetVersion: "fixture" },
     tests: { evidenceProvided: true, failures: 0, skipped: 0, commands: ["npm test"] },
     deployment: { evidenceProvided: true, notes: [] },
     previous: null,
@@ -141,6 +158,12 @@ describe("發布閘門判定", () => {
             explanation: {} as never,
             metadata: {} as never,
             policy: {} as never,
+            reviewEvidence: {
+              human: false,
+              teacher: false,
+              ownerBatch: false,
+              automation: false,
+            },
           },
         ],
       }),
@@ -161,6 +184,7 @@ describe("發布閘門判定", () => {
           },
           reviewedButLowQuality: 10,
           automationApprovalsRecordedAsHuman: 0,
+          unknownReviewOrigin: 0,
           byTopic: {},
         },
       }),
@@ -237,6 +261,48 @@ describe("發布閘門判定", () => {
     expect(evaluateReleaseGates(input).verdict).toBe("READY WITH LIMITATIONS");
   });
 
+  it("審核證據：只有自動修復 → POLICY_PENDING；完全沒有 → FAIL；只有批次 → WARN", () => {
+    expect(
+      gateStatus(
+        inputFixture({
+          reviewProvenance: {
+            teacherAdjudicated: 0,
+            ownerBatchOnly: 0,
+            automationOnly: 10,
+            noEvidence: 0,
+          },
+        }),
+        "review-provenance",
+      ),
+    ).toBe("POLICY_PENDING");
+    expect(
+      gateStatus(
+        inputFixture({
+          reviewProvenance: {
+            teacherAdjudicated: 0,
+            ownerBatchOnly: 0,
+            automationOnly: 0,
+            noEvidence: 10,
+          },
+        }),
+        "review-provenance",
+      ),
+    ).toBe("FAIL");
+    expect(
+      gateStatus(
+        inputFixture({
+          reviewProvenance: {
+            teacherAdjudicated: 0,
+            ownerBatchOnly: 10,
+            automationOnly: 0,
+            noEvidence: 0,
+          },
+        }),
+        "review-provenance",
+      ),
+    ).toBe("WARN");
+  });
+
   it("與上次報告比較會列出數量變化", () => {
     const report = evaluateReleaseGates(
       inputFixture({
@@ -255,5 +321,77 @@ describe("發布閘門判定", () => {
         expect.objectContaining({ metric: "來源無法追溯", previous: 2, current: 0, change: -2 }),
       ]),
     );
+  });
+});
+
+describe("Sprint 11????provenance ??? Golden ??", () => {
+  it("????????????? ? POLICY_PENDING", () => {
+    const input = inputFixture({
+      servabilityAdjudication: {
+        unservable: 97,
+        originalEvidenceChecked: 96,
+        labelsOnlyRepairCandidates: 0,
+        teacherDecisions: 0,
+        awaitingTeacherDecision: 97,
+      },
+    });
+    expect(gateStatus(input, "servability-adjudication")).toBe("POLICY_PENDING");
+    expect(evaluateReleaseGates(input).verdict).toBe("NOT READY");
+  });
+
+  it("???????????? ? PASS????????", () => {
+    const input = inputFixture({
+      servabilityAdjudication: {
+        unservable: 97,
+        originalEvidenceChecked: 96,
+        labelsOnlyRepairCandidates: 0,
+        teacherDecisions: 97,
+        awaitingTeacherDecision: 0,
+      },
+    });
+    expect(gateStatus(input, "servability-adjudication")).toBe("PASS");
+  });
+
+  it("?? provenance ???? ? INSUFFICIENT_EVIDENCE", () => {
+    const input = inputFixture({
+      provenanceRisk: { reportFound: false, p0: 0, p1: 0, p2: 0, p3: 0 },
+    });
+    expect(gateStatus(input, "provenance-risk")).toBe("INSUFFICIENT_EVIDENCE");
+  });
+
+  it("P0?P1?P2 ???? ? POLICY_PENDING?P3 ???? ? PASS", () => {
+    expect(
+      gateStatus(
+        inputFixture({ provenanceRisk: { reportFound: true, p0: 1, p1: 0, p2: 0, p3: 0 } }),
+        "provenance-risk",
+      ),
+    ).toBe("POLICY_PENDING");
+    expect(
+      gateStatus(
+        inputFixture({ provenanceRisk: { reportFound: true, p0: 0, p1: 530, p2: 0, p3: 93 } }),
+        "provenance-risk",
+      ),
+    ).toBe("POLICY_PENDING");
+    expect(
+      gateStatus(
+        inputFixture({ provenanceRisk: { reportFound: true, p0: 0, p1: 0, p2: 0, p3: 93 } }),
+        "provenance-risk",
+      ),
+    ).toBe("PASS");
+  });
+
+  it("Golden ?????? fixture ? INSUFFICIENT_EVIDENCE????? ? FAIL", () => {
+    expect(
+      gateStatus(
+        inputFixture({ goldenApproval: { approved: 0, pending: 42, stale: 0 } }),
+        "golden-approval",
+      ),
+    ).toBe("INSUFFICIENT_EVIDENCE");
+    expect(
+      gateStatus(
+        inputFixture({ goldenApproval: { approved: 2, pending: 40, stale: 1 } }),
+        "golden-approval",
+      ),
+    ).toBe("FAIL");
   });
 });

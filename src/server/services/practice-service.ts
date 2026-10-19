@@ -710,8 +710,7 @@ export async function submitAnswer(
   if (!question) throw new PracticeServiceError("這條題目不屬於本次練習", 404);
 
   const existing = getAttempt(sessionId, questionId);
-  if (existing) {
-    // 已提交過的題目不會再改變分數，避免看到答案後重覆作答影響成績。
+  if (existing) {    // 已提交過的題目不會再改變分數，避免看到答案後重覆作答影響成績。
     // 重新整理頁面時亦要顯示相同的覆核標示，因此重新計算一次（純字串比對，成本極低）。
     const storedOutcome = gradeAnswer(question, existing.answer);
     const storedNearMiss =
@@ -730,6 +729,17 @@ export async function submitAnswer(
       answeredCount: listAttempts(sessionId).length,
       totalQuestions: questions.length,
     };
+  }
+
+  // Sprint 12：練習快照可以保留「已作答」的歷史回饋（上面已處理），但**未作答**的
+  // 題目若在題庫中已被隔離（待教師確認）或結構上不可作答，就不再接受新作答——
+  // 否則舊練習快照會成為繞過當前發布規則的入口。學生的既有作答記錄不受影響。
+  const bank = getQuestion(question.id);
+  if (bank && (bank.teacherConfirmationRequired || !checkQuestionServable(bank).ok)) {
+    throw new PracticeServiceError(
+      "這條題目正在教師覆核中，暫時不能作答。你之前的作答記錄不受影響，可以繼續其他題目。",
+      409,
+    );
   }
 
   const trimmed = answer.trim();

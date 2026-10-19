@@ -1,43 +1,149 @@
 {
-  "generatedAt": "2026-10-19T03:50:00.000Z",
+  "generatedAt": "2026-10-19T12:30:00.000Z",
   "environment": "Windows 11 / PowerShell / Node.js 24 / 本機開發資料庫 data/app.db（唯讀）",
-  "scope": "Sprint 9 驗證；沒有接觸正式資料庫、沒有部署、沒有呼叫付費 AI。",
+  "scope": "Sprint 9–13 驗證；沒有接觸正式資料庫、沒有部署、沒有 commit／push、沒有呼叫付費 AI。",
   "commands": [
     {
       "command": "npm test",
       "exitCode": 0,
-      "testFiles": 82,
-      "passed": 1131,
+      "testFiles": 91,
+      "passed": 1229,
       "skipped": 4,
-      "failed": 0
+      "failed": 0,
+      "note": "Sprint 16 ?? tests/review-queue.test.ts?????????97?623?42 ?????????? authz ???"
     },
-    { "command": "npm run typecheck", "exitCode": 0 },
-    { "command": "npm run lint", "exitCode": 0 },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0
+    },
     {
       "command": "npm run build",
       "exitCode": 0,
-      "note": "首次執行因 OneDrive 檔案鎖定 .next 而 EPERM；清除 .next 後重跑成功（環境限制，不是程式錯誤）"
+      "note": "先清除 .next 再建置，避免 OneDrive 檔案鎖定造成 EPERM（環境限制，不是程式錯誤）"
     },
     {
       "command": "npm run audit:repair-provenance",
       "exitCode": 0,
-      "note": "裁決後重跑：877 語意不變、987 純格式、14 考核答案仍與重建原卷不同（2 題已刪除、2 題已按教師指示改回考核原空格；其餘 14 題已由教師逐題核准）"
+      "note": "877 語意不變、987 純格式、14 考核答案仍與重建原卷不同（2 題已刪除、2 題已按教師指示改回考核原空格；其餘 14 題已由教師逐題核准）"
     },
-    { "command": "npm run audit:content", "exitCode": 0 },
-    { "command": "npm run release:gate", "exitCode": 0, "verdict": "NOT READY" },
     {
-      "command": "node scripts/e2e-flow.mjs --start（暫存資料庫、空上載目錄）",
+      "command": "npm run audit:content",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run audit:servability",
+      "exitCode": 0,
+      "result": "97 題不可作答（96 MCQ_ROMAN_LABEL_MISSING、1 FILL_ANSWER_LEAKS）"
+    },
+    {
+      "command": "npm run audit:servability-evidence",
+      "exitCode": 0,
+      "result": "96 題已核對原文：0 題可直接由原文補標示；81 題原文標示不齊全（80 完全無編號、1 題只有 i–iii）、10 題陳述數與選項不符、4 題原始檔缺失、1 題找不到對應段落"
+    },
+    {
+      "command": "npm run audit:review-provenance",
+      "exitCode": 0,
+      "result": "teacher 16、owner-batch 1241、automation-only 623"
+    },
+    {
+      "command": "npm run audit:provenance-risk",
+      "exitCode": 0,
+      "result": "P0 0、P1 530、P2 0、P3 93（623 題全部有可比較的原始內容）"
+    },
+    {
+      "command": "npm run audit:adjudication-worklist",
+      "exitCode": 0,
+      "result": "97 題工作清單：Roman 96（81 原文可核對／10 陳述不一致／1 無法定位／4 缺檔）、答案外洩 1；0 題可自動修復"
+    },
+    {
+      "command": "npm run audit:source-crosswalk",
+      "exitCode": 0,
+      "result": "623 provenance／1,003 來源待核實，重疊 124（P1 31、P3 93）；31 題需先補來源"
+    },
+    {
+      "command": "npm run audit:golden-readiness",
+      "exitCode": 0,
+      "result": "42 候選、0 approved、42 待教師審核；HISTORY_REVIEWER_EMAILS 未設定"
+    },
+    {
+      "command": "npm run golden:candidates",
+      "exitCode": 0,
+      "result": "42 個 pending-review 候選"
+    },
+    {
+      "command": "npm run golden:export -- --check",
+      "exitCode": 0,
+      "result": "0 approved fixture；schema 可用；唯讀（檔案雜湊不變）",
+      "note": "Sprint 13：--check 不執行 migration、不寫 DB、不寫檔案；缺 DB／缺 0022 時 exit 2（INSUFFICIENT_EVIDENCE）。"
+    },
+    {
+      "command": "npm run db:migrate（未執行；只驗證缺 --database 時 exit 1 的契約）",
+      "exitCode": null,
+      "result": "UNVERIFIED（未對任何資料庫執行 migration）",
+      "note": "Sprint 13 新增獨立命令；本 Sprint 沒有執行，以免改動任何資料庫。"
+    },
+    {
+      "command": "npm run golden:eval",
+      "exitCode": 0,
+      "result": "INSUFFICIENT_EVIDENCE"
+    },
+    {
+      "command": "npm run release:gate",
+      "exitCode": 0,
+      "verdict": "NOT READY",
+      "note": "15 項閘門；加 --fail-on-not-ready 時 exit 1（Sprint 13 實測）。"
+    },
+    {
+      "command": "npm run audit:review-manifest",
+      "exitCode": 0,
+      "result": "623 題唯一、重複列 0；P1 530／P3 93；與來源待核實重疊 124；目前不可作答 21；教師裁決 0"
+    },
+    {
+      "command": "node scripts/e2e-flow.mjs --start（Sprint 15：暫存資料庫 + 複製 data/uploads）",
+      "exitCode": 0,
+      "passed": 128,
+      "failed": 0,
+      "note": "Sprint 15 本次實測（不是沿用 Sprint 14）。"
+    },
+    {
+      "command": "node scripts/e2e-flow.mjs --start（Sprint 14：暫存資料庫 + 複製 data/uploads）",
+      "exitCode": 0,
+      "passed": 128,
+      "failed": 0,
+      "note": "Sprint 14 歷史實測。"
+    },
+    {
+      "command": "node scripts/e2e-flow.mjs --start（暫存資料庫、空上載目錄、匿名示範模式）",
       "exitCode": 1,
-      "passed": 121,
-      "failed": 5,
-      "note": "5 項為既有環境限制：2 項練習抽到沒有教材節錄的校內試卷題、1 項該分節在該難度沒有可用填充題、2 項 OCR 因快照沒有上載原檔而失敗；與本次修改無關，已在報告逐項列明"
+      "passed": 126,
+      "failed": 2,
+      "note": "Sprint 12 歷史結果：兩項 OCR 失敗的唯一原因是缺少原始上載檔案。"
+    },
+    {
+      "command": "node scripts/e2e-flow.mjs --start（同一暫存資料庫，data/uploads 複製到暫存上載目錄）",
+      "exitCode": 0,
+      "passed": 128,
+      "failed": 0,
+      "note": "證明 2 項 OCR 失敗的唯一原因是缺少原始上載檔案；提供原檔後 OCR 完成並寫入標示來源的段落。"
+    },
+    {
+      "command": "node scripts/e2e-flow.mjs --start?Sprint 16?????? + ?? data/uploads?",
+      "exitCode": 0,
+      "passed": 128,
+      "failed": 0,
+      "note": "Sprint 16 ?????"
     }
   ],
   "failures": 0,
   "skipped": 4,
-  "knownEnvironmentFailures": 5,
+  "knownEnvironmentFailures": 0,
   "notes": [
-    "failures 只計回歸測試（單元／整合／型別／lint／build）；E2E 的 5 項已知環境限制另行記錄，沒有當作通過或程式缺陷。",
-    "沒有執行：正式環境部署驗證、Cloud Run 併發、備份還原演練（需要授權及正式環境）。"
+    "failures 只計回歸測試（單元／整合／型別／lint／build）；E2E 在空上載目錄下的 2 項 OCR 失敗已證實為夾具環境（缺少原始上載檔案），提供原檔後 128 項全部通過。",
+    "沒有執行：正式環境部署驗證、Cloud Run 併發、備份還原演練（需要授權及正式環境）。",
+    "Sprint 12 新增 TOCTOU 條件式狀態更新、批次候選可作答性過濾、舊快照未作答題目攔截、歷史科學科授權名單、無題目資料時 fail-closed 的閘門，以及 migration 0022 測試。"
   ]
 }

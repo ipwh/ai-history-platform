@@ -1,0 +1,114 @@
+{
+ "generatedAt": "2026-10-19T07:44:03.731Z",
+ "notice": "唯讀交叉分析：只讀取既有報告，不連接資料庫、不改題目或審核紀錄。分類沿用各報告的定義。",
+ "inputs": {
+  "provenanceRisk": "docs/quality/provenance-risk-2026-10-19.json",
+  "contentAudit": "docs/quality/content-audit-2026-10-19.json",
+  "reviewProvenance": "docs/quality/review-provenance-2026-10-19.json",
+  "generatedAt": {
+   "provenanceRisk": "2026-10-19T07:44:02.138Z",
+   "contentAudit": "2026-10-19T05:10:17.752Z",
+   "reviewProvenance": "2026-10-19T05:10:16.574Z"
+  }
+ },
+ "totals": {
+  "provenanceQuestions": 623,
+  "provenanceUniqueQuestions": 623,
+  "provenanceDuplicateRows": 0,
+  "sourcePendingQuestions": 1003,
+  "sourceTraceableQuestions": 877,
+  "overlapProvenanceAndSourcePending": 124,
+  "overlapByTier": {
+   "P1": 31,
+   "P3": 93
+  },
+  "automationOnlyWithinProvenance": 623,
+  "teacherAdjudicatedWithinProvenance": 0,
+  "humanEvidenceWithinProvenance": 0,
+  "hasDiffButNoTraceableSource": 31,
+  "noPreRepairSnapshot": 0,
+  "needsSourceFirst": 31
+ },
+ "matrixBySourceStatusAndTier": {
+  "traceable": {
+   "P1": 499
+  },
+  "pending_verification": {
+   "P1": 31,
+   "P3": 93
+  }
+ },
+ "sampleIds": {
+  "overlap": [
+   "qb-JTH2ndEdFBQ10121",
+   "qb-JTH2ndEdMCQ01012",
+   "qb-JTH2ndEdMCQ01017",
+   "qb-JTH2ndEdMCQ01018",
+   "qb-JTH2ndEdMCQ01023",
+   "qb-JTH2ndEdMCQ01026",
+   "qb-JTH2ndEdMCQ05006",
+   "qb-JTH2ndEdMCQ05009",
+   "qb-JTH2ndEdMCQ05021",
+   "qb-JTH2ndEdMCQ05025",
+   "qb-JTH2ndEdMCQ05034",
+   "qb-JTH2ndEdMCQ05035",
+   "qb-JTH2ndEdMCQ05036",
+   "qb-JTH2ndEdMCQ05050",
+   "qb-JTH2ndEdMCQ05058",
+   "qb-JTH2ndEdMCQ05064",
+   "qb-JTH2ndEdMCQ05066",
+   "qb-JTH2ndEdMCQ05067",
+   "qb-JTH2ndEdMCQ05070",
+   "qb-JTH2ndEdMCQ05072"
+  ],
+  "hasDiffButNoTraceableSource": [
+   "qb-JTH2ndEdFBQ10121",
+   "qb-NJCFN0020000020",
+   "qb-NJCFN0040000016",
+   "qb-NJCFN0060000002",
+   "qb-NJCFN0060000005",
+   "qb-NJCFN0060000006",
+   "qb-NJCFN0060000015",
+   "qb-NJCFN0060000023",
+   "qb-NJCFN0060000024",
+   "qb-NJCFN0060000025",
+   "qb-NJCFN0060000027",
+   "qb-NJCFN0060000028",
+   "qb-NJCFN0060000029",
+   "qb-NJCFN0060000031",
+   "qb-NJCFN0060000033",
+   "qb-NJCFN0060000038",
+   "qb-NJCFN0060000041",
+   "qb-NJCFN0060000044",
+   "qb-NJCFN0060000045",
+   "qb-NJCFN0060000050"
+  ],
+  "needsSourceFirst": [
+   "qb-JTH2ndEdFBQ10121",
+   "qb-NJCFN0020000020",
+   "qb-NJCFN0040000016",
+   "qb-NJCFN0060000002",
+   "qb-NJCFN0060000005",
+   "qb-NJCFN0060000006",
+   "qb-NJCFN0060000015",
+   "qb-NJCFN0060000023",
+   "qb-NJCFN0060000024",
+   "qb-NJCFN0060000025",
+   "qb-NJCFN0060000027",
+   "qb-NJCFN0060000028",
+   "qb-NJCFN0060000029",
+   "qb-NJCFN0060000031",
+   "qb-NJCFN0060000033",
+   "qb-NJCFN0060000038",
+   "qb-NJCFN0060000041",
+   "qb-NJCFN0060000044",
+   "qb-NJCFN0060000045",
+   "qb-NJCFN0060000050"
+  ]
+ },
+ "notes": [
+  "「重疊」＝同一題同時屬於 provenance 風險清單與來源待核實清單；兩份清單定義不同，重疊不代表同一種缺陷。",
+  "automationOnly 由 review provenance 報告判定（目前版本只有自動修復證據）。",
+  "「有修復差異但來源不可追溯」＝P0／P1 且 sourceStatus ≠ traceable；這些題目需要先補來源才可能有有效覆核。"
+ ]
+}

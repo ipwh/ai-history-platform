@@ -12,6 +12,7 @@ import { SIGN_IN_ROLE_LABELS, type AuthStatus, type Health } from "@/lib/types";
 const TEACHER_NAV_ITEMS = [
   { href: "/teacher", label: "教師端", exact: true },
   { href: "/teacher/questions", label: "題目管理", exact: false },
+  { href: "/teacher/review", label: "教師審核", exact: false },
   { href: "/teacher/records", label: "學習記錄", exact: false },
 ];
 

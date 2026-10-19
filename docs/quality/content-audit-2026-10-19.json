@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T03:43:14.137Z",
+  "generatedAt": "2026-10-19T05:10:17.752Z",
   "notice": "唯讀稽核：只讀取資料庫，沒有修改題目、覆核或發布狀態；輸出不含學生資料或秘密。",
   "scope": {
     "database": "data/app.db"
@@ -42,8 +42,9 @@
       "potentially_inconsistent": 0,
       "not_assessed": 0
     },
-    "reviewedButLowQuality": 1244,
-    "automationApprovalsRecordedAsHuman": 1279,
+    "reviewedButLowQuality": 1257,
+    "automationApprovalsRecordedAsHuman": 1266,
+    "unknownReviewOrigin": 0,
     "byTopic": {
       "topic-1": {
         "placeholder": 63,
@@ -152,12 +153,12 @@
   "policy": {
     "byCategory": {
       "hard_block": 97,
-      "teacher_review": 3834,
+      "teacher_review": 3847,
       "warning": 1880,
       "policy_pending": 1880
     },
     "questionsWithHardBlock": 97,
-    "questionsWithTeacherReview": 1736,
+    "questionsWithTeacherReview": 1738,
     "questionsReleasable": 0
   },
   "questions": [
@@ -6051,7 +6052,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -6070,6 +6072,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -8315,7 +8322,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -8344,6 +8352,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -9184,7 +9197,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -9213,6 +9227,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -9900,7 +9919,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -9929,6 +9949,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -17655,7 +17680,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -17674,6 +17700,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -20659,7 +20690,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -20688,6 +20720,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -22434,7 +22471,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -22463,6 +22501,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -23056,7 +23099,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -23085,6 +23129,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -23827,7 +23876,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -23856,6 +23906,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -24623,7 +24678,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -24652,6 +24708,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -70276,7 +70337,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -70310,6 +70372,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -72460,7 +72527,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -72489,6 +72557,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,
@@ -74118,7 +74191,8 @@
       ],
       "explanationClass": "answer_only",
       "explanationCodes": [
-        "EXPLANATION_ANSWER_ONLY"
+        "EXPLANATION_ANSWER_ONLY",
+        "EXPLANATION_REVIEWED_BUT_LOW_QUALITY"
       ],
       "metadataIssues": [
         {
@@ -74147,6 +74221,11 @@
           "category": "policy_pending",
           "code": "EXPLANATION_ANSWER_ONLY_POLICY",
           "message": "解釋只列出答案；改善標準及是否暫緩派發屬產品政策"
+        },
+        {
+          "category": "teacher_review",
+          "code": "EXPLANATION_REVIEWED_BUT_LOW_QUALITY",
+          "message": "此題有人工覆核紀錄，但解釋仍被分類為需改善"
         }
       ],
       "canServe": true,

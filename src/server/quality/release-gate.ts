@@ -33,6 +33,9 @@ export interface ReleaseGateRun {
     golden: string | null;
     provenance: string | null;
     contentQueue: string | null;
+    servabilityEvidence: string | null;
+    provenanceRisk: string | null;
+    goldenCandidates: string | null;
   };
 }
 
@@ -54,7 +57,20 @@ export function runReleaseGate(options: ReleaseGateOptions): ReleaseGateRun {
     options.deploymentEvidencePath ??
     path.join(repoRoot, "docs", "deployment-evidence-2026-10-19.json");
   const goldenPath =
-    options.goldenPath ?? path.join(repoRoot, "docs", "teacher-review", "golden-questions.v1.json");
+    options.goldenPath ??
+    path.join(repoRoot, "docs", "teacher-review", "golden-questions.v2.json");
+  const goldenV1Path = path.join(
+    repoRoot,
+    "docs",
+    "teacher-review",
+    "golden-questions.v1.json",
+  );
+  const servabilityPath = path.join(
+    repoRoot,
+    "docs",
+    "quality",
+    "servability-remediation-2026-10-19.json",
+  );
   const provenancePath =
     options.provenancePath ??
     path.join(repoRoot, "docs", "teacher-review", "repair-provenance-2026-10-19.json");
@@ -76,13 +92,50 @@ export function runReleaseGate(options: ReleaseGateOptions): ReleaseGateRun {
     return question !== undefined && question.teacherConfirmationRequired;
   }).length;
 
-  const golden = readJson<{
-    questions?: { reviewerDecision?: string }[];
+  const goldenV2 = readJson<{
+    datasetVersion?: string;
+    questions?: { reviewStatus?: string }[];
   }>(goldenPath);
-  const goldenQuestions = golden?.questions ?? [];
-  const goldenReviewed = goldenQuestions.filter((item) =>
-    ["approved", "rejected"].includes(item.reviewerDecision ?? ""),
-  ).length;
+  const goldenV1 = goldenV2
+    ? null
+    : readJson<{
+        questions?: { reviewerDecision?: string }[];
+      }>(goldenV1Path);
+  const goldenQuestions = goldenV2?.questions ?? goldenV1?.questions ?? [];
+  const goldenReviewed = goldenV2
+    ? (goldenV2.questions ?? []).filter((item) => item.reviewStatus === "approved").length
+    : (goldenV1?.questions ?? []).filter((item) =>
+        ["approved", "rejected"].includes(item.reviewerDecision ?? ""),
+      ).length;
+
+  const servability = readJson<{ byIssueCode?: Record<string, number> }>(servabilityPath);
+  const servabilityEvidencePath = path.join(
+    repoRoot,
+    "docs",
+    "quality",
+    "servability-evidence-2026-10-19.json",
+  );
+  const servabilityEvidence = readJson<{
+    totals?: { checked?: number; labelsOnlyCandidates?: number; labelsPresent?: number };
+  }>(servabilityEvidencePath);
+  const provenanceRiskPath = path.join(
+    repoRoot,
+    "docs",
+    "quality",
+    "provenance-risk-2026-10-19.json",
+  );
+  const provenanceRisk = readJson<{
+    byTier?: { P0?: number; P1?: number; P2?: number; P3?: number };
+  }>(provenanceRiskPath);
+  const goldenCandidatesPath = path.join(
+    repoRoot,
+    "docs",
+    "teacher-review",
+    "golden-candidates-2026-10-19.json",
+  );
+  const goldenCandidates = readJson<{ groups?: { items?: unknown[] }[] }>(goldenCandidatesPath);
+  const goldenCandidateCount =
+    goldenCandidates?.groups?.reduce((sum, group) => sum + (group.items?.length ?? 0), 0) ?? 0;
 
   const testsEvidence = readJson<{
     failures?: number;
@@ -103,6 +156,10 @@ export function runReleaseGate(options: ReleaseGateOptions): ReleaseGateRun {
   let documents = 0;
   let distributable = 0;
   let rightsRecorded = 0;
+  let servabilityTeacherDecisions = 0;
+  let goldenApprovedDecisions = 0;
+  let goldenStaleApprovals = 0;
+  let goldenDecidedCurrent = 0;
   try {
     openReports = (
       db.prepare("SELECT COUNT(*) AS c FROM question_reports WHERE status = 'open'").get() as {
@@ -130,6 +187,49 @@ export function runReleaseGate(options: ReleaseGateOptions): ReleaseGateRun {
     documents = documentRows.length;
     distributable = documentRows.filter((row) => row.student_distribution === 1).length;
     rightsRecorded = documentRows.filter((row) => row.rights_confirmed_at !== null).length;
+
+    // Sprint 11：結構不可作答題目中，已有「結構裁決」紀錄且對應目前版本者
+    servabilityTeacherDecisions = (
+      db
+        .prepare(
+          `SELECT COUNT(DISTINCT q.id) AS c
+           FROM questions q
+           JOIN question_reviews r
+             ON r.question_id = q.id AND r.revision = q.revision
+           WHERE r.reason LIKE '結構裁決%'`,
+        )
+        .get() as { c: number }
+    ).c;
+
+    // Sprint 11：Golden fixture 裁決（只計最新一筆；版本不同即視為失效）
+    // 舊資料庫可能尚未套用 0022 migration；此時視為沒有裁決，不偽造證據。
+    let goldenRows: {
+      question_id: string;
+      decision: string;
+      revision: number;
+      current_revision: number;
+    }[] = [];
+    try {
+      goldenRows = db
+        .prepare(
+          `SELECT g.question_id AS question_id, g.decision AS decision, g.revision AS revision,
+                  q.revision AS current_revision
+           FROM golden_fixture_reviews g
+           JOIN questions q ON q.id = g.question_id
+           ORDER BY g.created_at ASC, g.rowid ASC`,
+        )
+        .all() as typeof goldenRows;
+    } catch {
+      goldenRows = [];
+    }
+    const latestGolden = new Map<string, (typeof goldenRows)[number]>();
+    for (const row of goldenRows) latestGolden.set(row.question_id, row);
+    for (const row of latestGolden.values()) {
+      if (row.revision === row.current_revision) goldenDecidedCurrent += 1;
+      if (row.decision !== "approved") continue;
+      if (row.revision === row.current_revision) goldenApprovedDecisions += 1;
+      else goldenStaleApprovals += 1;
+    }
   } finally {
     db.close();
   }
@@ -137,9 +237,51 @@ export function runReleaseGate(options: ReleaseGateOptions): ReleaseGateRun {
   const report = evaluateReleaseGates({
     audit,
     answerProvenance: { affected: affectedIds.length, unresolved, reportFound: provenance !== null },
-    teacherDecisions: { pendingCurrentRevision, openReports },
+    teacherDecisions: { pendingCurrentRevision, openReports },    reviewProvenance: {
+      teacherAdjudicated: audit.questions.filter((question) => question.reviewEvidence.teacher)
+        .length,
+      ownerBatchOnly: audit.questions.filter(
+        (question) => question.reviewEvidence.human && !question.reviewEvidence.teacher,
+      ).length,
+      automationOnly: audit.questions.filter(
+        (question) => !question.reviewEvidence.human && question.reviewEvidence.automation,
+      ).length,
+      noEvidence: audit.questions.filter(
+        (question) => !question.reviewEvidence.human && !question.reviewEvidence.automation,
+      ).length,
+    },
+    servabilityIssues: servability?.byIssueCode ?? {},
+    servabilityAdjudication: {
+      unservable: audit.questions.filter(
+        (question) => question.status === "published" && !question.servable,
+      ).length,
+      originalEvidenceChecked: servabilityEvidence?.totals?.checked ?? 0,
+      labelsOnlyRepairCandidates: servabilityEvidence?.totals?.labelsOnlyCandidates ?? 0,
+      teacherDecisions: servabilityTeacherDecisions,
+      awaitingTeacherDecision: Math.max(
+        0,
+        audit.questions.filter((question) => question.status === "published" && !question.servable)
+          .length - servabilityTeacherDecisions,
+      ),
+    },
+    provenanceRisk: {
+      reportFound: provenanceRisk !== null,
+      p0: provenanceRisk?.byTier?.P0 ?? 0,
+      p1: provenanceRisk?.byTier?.P1 ?? 0,
+      p2: provenanceRisk?.byTier?.P2 ?? 0,
+      p3: provenanceRisk?.byTier?.P3 ?? 0,
+    },
+    goldenApproval: {
+      approved: goldenApprovedDecisions,
+      pending: Math.max(0, goldenCandidateCount - goldenDecidedCurrent),
+      stale: goldenStaleApprovals,
+    },
     copyright: { documents, distributable, rightsRecorded, ownerAttestation: true },
-    golden: { questions: goldenQuestions.length, reviewed: goldenReviewed },
+    golden: {
+      questions: goldenQuestions.length,
+      reviewed: goldenReviewed,
+      datasetVersion: goldenV2?.datasetVersion ?? null,
+    },
     tests: {
       evidenceProvided: testsEvidence !== null,
       failures: testsEvidence?.failures ?? 0,
@@ -170,9 +312,12 @@ export function runReleaseGate(options: ReleaseGateOptions): ReleaseGateRun {
       database: databasePath,
       testsEvidence: testsEvidence ? testsEvidencePath : null,
       deploymentEvidence: deploymentEvidence ? deploymentEvidencePath : null,
-      golden: golden ? goldenPath : null,
+      golden: goldenV2 || goldenV1 ? goldenPath : null,
       provenance: provenance ? provenancePath : null,
       contentQueue: contentQueue ? contentQueuePath : null,
+      servabilityEvidence: servabilityEvidence ? servabilityEvidencePath : null,
+      provenanceRisk: provenanceRisk ? provenanceRiskPath : null,
+      goldenCandidates: goldenCandidates ? goldenCandidatesPath : null,
     },
   };
 }

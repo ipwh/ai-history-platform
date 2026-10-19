@@ -3,7 +3,9 @@ import { z } from "zod";
 import { ApiRouteError, handleRoute, jsonOk, parseJsonBody } from "@/server/http";
 import { questionReviewDecisionSchema } from "@/lib/types";
 import { getQuestion } from "@/server/repositories/questions";
+import { listQuestionReviews } from "@/server/repositories/questions";
 import { recordQuestionReview, teacherQuestionView } from "@/server/services/question-service";
+import { checkQuestionServable } from "@/server/services/question-servability";
 import { requireTeacher } from "@/server/auth/guards";
 import { isProductionRuntime } from "@/server/config";
 
@@ -27,7 +29,13 @@ export async function GET(request: Request, context: { params: Promise<{ questio
     const { questionId } = await context.params;
     const question = getQuestion(questionId);
     if (!question) throw new ApiRouteError("找不到指定的題目", 404);
-    return jsonOk({ view: teacherQuestionView(question) });
+    // 審核工作台需要可作答性判定及既有覆核歷史；兩者都取自伺服器端，
+    // 前端不得自行推測題目是否可派發。
+    return jsonOk({
+      view: teacherQuestionView(question),
+      servability: checkQuestionServable(question),
+      reviews: listQuestionReviews(question.id, 20),
+    });
   });
 }
 

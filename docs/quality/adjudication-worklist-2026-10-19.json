@@ -1,0 +1,14 @@
+{
+ "generatedAt": "2026-10-19T08:57:42.256Z",
+ "notice": "唯讀工作清單：不含裁決、不改變題目狀態。所有題目維持不可派發，直至教師按原卷作出決定。",
+ "totals": {
+  "questions": 0,
+  "romanLabelMissing": 0,
+  "answerLeak": 0,
+  "autoRepairCandidates": 0,
+  "mustStayQuarantined": 0
+ },
+ "byEvidenceCategory": {},
+ "romanByEvidenceCategory": {},
+ "items": []
+}

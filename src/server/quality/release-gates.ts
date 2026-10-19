@@ -36,13 +36,38 @@ export interface ReleaseGateInput {
   audit: ContentAuditPayload;
   answerProvenance: { affected: number; unresolved: number; reportFound: boolean };
   teacherDecisions: { pendingCurrentRevision: number; openReports: number };
+  reviewProvenance: {
+    teacherAdjudicated: number;
+    ownerBatchOnly: number;
+    automationOnly: number;
+    noEvidence: number;
+  };
+  servabilityIssues: Record<string, number>;
+  /** Sprint 11：結構不可作答題目的原始證據核對及教師裁決進度 */
+  servabilityAdjudication: {
+    unservable: number;
+    originalEvidenceChecked: number;
+    labelsOnlyRepairCandidates: number;
+    teacherDecisions: number;
+    awaitingTeacherDecision: number;
+  };
+  /** Sprint 11：只有自動化修復證據的題目風險分布 */
+  provenanceRisk: {
+    reportFound: boolean;
+    p0: number;
+    p1: number;
+    p2: number;
+    p3: number;
+  };
+  /** Sprint 11：Golden Dataset 人工核准進度 */
+  goldenApproval: { approved: number; pending: number; stale: number };
   copyright: {
     documents: number;
     distributable: number;
     rightsRecorded: number;
     ownerAttestation: boolean;
   };
-  golden: { questions: number; reviewed: number };
+  golden: { questions: number; reviewed: number; datasetVersion?: string | null };
   tests: {
     evidenceProvided: boolean;
     failures: number;
@@ -103,7 +128,9 @@ export function evaluateReleaseGates(input: ReleaseGateInput): ReleaseGateReport
       summary:
         publishedNotServable === 0
           ? "所有已發布題目均可作答"
-          : `${publishedNotServable} 題已發布但結構上不可作答（派發層會攔下，學生不會收到；仍需修正或改回草稿）`,
+          : `${publishedNotServable} 題已發布但結構上不可作答（派發層會攔下，學生不會收到；仍需修正或改回草稿）${Object.keys(input.servabilityIssues).length > 0 ? `：${Object.entries(input.servabilityIssues)
+              .map(([code, count]) => `${code} ${count}`)
+              .join("、")}` : ""}`,
       numerator: publishedNotServable,
       denominator: audit.totals.published,
       evidence: ["checkQuestionServable()"],
@@ -205,6 +232,27 @@ export function evaluateReleaseGates(input: ReleaseGateInput): ReleaseGateReport
       recommendations: ["完成覆核或回報處理"],
     },
     {
+      id: "review-provenance",
+      title: "審核證據來源",
+      status:
+        input.reviewProvenance.noEvidence > 0
+          ? "FAIL"
+          : input.reviewProvenance.automationOnly > 0
+            ? "POLICY_PENDING"
+            : input.reviewProvenance.ownerBatchOnly > 0
+              ? "WARN"
+              : "PASS",
+      summary: `教師逐題裁決 ${input.reviewProvenance.teacherAdjudicated}；只有擁有者批次 ${input.reviewProvenance.ownerBatchOnly}；只有自動修復 ${input.reviewProvenance.automationOnly}；完全沒有證據 ${input.reviewProvenance.noEvidence}`,
+      numerator: input.reviewProvenance.automationOnly,
+      denominator: audit.totals.questions,
+      evidence: ["docs/quality/review-provenance-2026-10-19.json", "question_reviews"],
+      recommendations: [
+        "由負責人決定：內容不變的自動修復紀錄是否足以支持目前版本，或需教師逐題確認",
+        "不得把 admin 角色或批次授權當成逐題教師審核",
+        "保留原始紀錄，不重新標記歷史",
+      ],
+    },
+    {
       id: "copyright",
       title: "版權與教材發行權",
       status: !input.copyright.ownerAttestation
@@ -235,11 +283,76 @@ export function evaluateReleaseGates(input: ReleaseGateInput): ReleaseGateReport
       summary:
         input.golden.questions === 0
           ? "資料集為空：評估證據不足（不是零錯誤）"
-          : `已覆核 ${input.golden.reviewed}／${input.golden.questions}`,
+          : `已覆核 ${input.golden.reviewed}／${input.golden.questions}（${input.golden.datasetVersion ?? "未標示版本"}）`,
       numerator: input.golden.reviewed,
       denominator: input.golden.questions,
       evidence: ["docs/teacher-review/golden-questions.v1.json"],
       recommendations: ["由歷史科教師建立至少一組已覆核樣本"],
+    },
+    {
+      id: "servability-adjudication",
+      title: "結構不可作答題目的處置",
+      status:
+        input.servabilityAdjudication.unservable === 0 ||
+        input.servabilityAdjudication.awaitingTeacherDecision === 0
+          ? "PASS"
+          : "POLICY_PENDING",
+      summary: `不可作答 ${input.servabilityAdjudication.unservable} 題；已核對原始證據 ${input.servabilityAdjudication.originalEvidenceChecked} 題；可直接由原文補標示的修復候選 ${input.servabilityAdjudication.labelsOnlyRepairCandidates} 題；已有教師裁決 ${input.servabilityAdjudication.teacherDecisions} 題；仍待教師裁決 ${input.servabilityAdjudication.awaitingTeacherDecision} 題`,
+      numerator: input.servabilityAdjudication.awaitingTeacherDecision,
+      denominator: input.servabilityAdjudication.unservable,
+      evidence: [
+        "docs/quality/servability-remediation-2026-10-19.json",
+        "docs/quality/servability-evidence-2026-10-19.json",
+        "POST /api/teacher/questions/[questionId]/servability",
+      ],
+      recommendations: [
+        "逐題由歷史科教師裁決：依原文修復、退回草稿、保留隔離或不可用",
+        "原文沒有 i／ii／iii 標示時，不得由程式按選項順序補上",
+        "不可作答題目即使被核准，`recordQuestionReview` 仍會拒絕發布",
+      ],
+    },
+    {
+      id: "provenance-risk",
+      title: "自動修復證據的風險分布",
+      status: !input.provenanceRisk.reportFound
+        ? "INSUFFICIENT_EVIDENCE"
+        : input.provenanceRisk.p0 + input.provenanceRisk.p1 + input.provenanceRisk.p2 === 0
+          ? "PASS"
+          : "POLICY_PENDING",
+      summary: `P0（可能改變答案／評分）${input.provenanceRisk.p0}；P1（題幹改變但考核答案不變）${input.provenanceRisk.p1}；P2（原始證據不足）${input.provenanceRisk.p2}；P3（純格式／內容相同）${input.provenanceRisk.p3}`,
+      numerator: input.provenanceRisk.p0 + input.provenanceRisk.p1 + input.provenanceRisk.p2,
+      denominator:
+        input.provenanceRisk.p0 +
+        input.provenanceRisk.p1 +
+        input.provenanceRisk.p2 +
+        input.provenanceRisk.p3,
+      evidence: ["docs/quality/provenance-risk-2026-10-19.json", "audit:repair-provenance"],
+      recommendations: [
+        "由負責人決定：這些題目是否需教師逐題確認，或現有自動修復證據足以支持目前版本",
+        "P0 優先；P3 只代表覆核次序較後，不代表已核准",
+      ],
+    },
+    {
+      id: "golden-approval",
+      title: "Golden Dataset 人工核准",
+      status:
+        input.goldenApproval.approved > 0
+          ? input.goldenApproval.stale > 0
+            ? "FAIL"
+            : "PASS"
+          : "INSUFFICIENT_EVIDENCE",
+      summary: `已核准 fixture ${input.goldenApproval.approved}；待教師核准候選 ${input.goldenApproval.pending}；裁決因題目改動而失效 ${input.goldenApproval.stale}`,
+      numerator: input.goldenApproval.approved,
+      denominator: input.goldenApproval.approved + input.goldenApproval.pending,
+      evidence: [
+        "golden_fixture_reviews",
+        "POST /api/teacher/golden/[questionId]",
+        "docs/teacher-review/golden-questions.v2.json",
+      ],
+      recommendations: [
+        "由歷史科教師逐題核准，並提供 category、reasoning 及預期 grading",
+        "題目內容改變後必須重新核准；不得把 pending 當成 approved",
+      ],
     },
     {
       id: "tests",
@@ -273,13 +386,40 @@ export function evaluateReleaseGates(input: ReleaseGateInput): ReleaseGateReport
     },
   ];
 
-  const hasBlocker = gates.some(
+    // Sprint 12：沒有題目資料時不得當作「沒有問題」。若資料庫讀取失敗、指向空資料庫或
+    // schema 不匹配，`audit.totals.questions` 會是 0；此時所有內容閘門必須是
+    // INSUFFICIENT_EVIDENCE，而不是因為「0 題不可作答」而 PASS。
+    if (audit.totals.questions === 0) {
+      const contentGateIds = new Set([
+        "question-isolation",
+        "question-servability",
+        "answer-provenance",
+        "source-traceability",
+        "explanation-quality",
+        "metadata",
+        "teacher-decisions",
+        "review-provenance",
+      ]);
+      for (const gate of gates) {
+        if (!contentGateIds.has(gate.id)) continue;
+        gate.status = "INSUFFICIENT_EVIDENCE";
+        gate.summary = `沒有讀到任何題目資料（0 題），無法判斷：${gate.summary}`;
+        gate.numerator = null;
+        gate.denominator = null;
+        gate.recommendations = [
+          "確認 --database 指向正確的題目資料庫，且 migration 已套用",
+          "在沒有題目資料的情況下，發布檢查一律視為證據不足",
+          ...gate.recommendations,
+        ];
+      }
+    }
+
+    const hasBlocker = gates.some(
     (gate) =>
       gate.status === "FAIL" ||
       gate.status === "POLICY_PENDING" ||
       gate.status === "INSUFFICIENT_EVIDENCE",
-  );
-  const hasWarning = gates.some((gate) => gate.status === "WARN");
+  );  const hasWarning = gates.some((gate) => gate.status === "WARN");
   const verdict: ReleaseVerdict = hasBlocker
     ? "NOT READY"
     : hasWarning

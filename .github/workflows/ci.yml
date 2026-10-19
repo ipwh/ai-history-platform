@@ -1,0 +1,101 @@
+name: CI
+
+# Sprint 19：把既有的工程驗證（測試、型別、lint、build）固定成可重複的 CI，
+# 並定義瀏覽器測試（Playwright）的執行方式。
+#
+# 重要限制（如實記錄，不假裝已解決）：
+#   `data/` 及 `materials/` 依版權政策不納入版本控制，因此 GitHub 託管的 runner
+#   沒有內容資料庫可用。瀏覽器測試需要真實（或經核准的）內容快照，
+#   故只在 self-hosted runner（或已備妥內容快照的環境）執行；
+#   在沒有內容資料庫時不會以空資料庫代替，也不會削弱授權或隔離設定。
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      run_ui_tests:
+        description: "執行 Playwright 瀏覽器測試（需要 self-hosted runner 已備妥內容資料庫）"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  verify:
+    name: Test, typecheck, lint, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies (lockfile)
+        run: npm ci
+
+      - name: Unit and integration tests
+        run: npm test
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  ui-tests:
+    name: Playwright browser tests (requires content database)
+    # 只有明確要求、且 runner 具備內容資料庫時才執行；見檔頭說明。
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_ui_tests }}
+    runs-on: [self-hosted, content-database]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies (lockfile)
+        run: npm ci
+
+      - name: Verify content database is present (fail closed)
+        run: |
+          if [ ! -f data/app.db ]; then
+            echo "::error::找不到 data/app.db。瀏覽器測試需要內容快照；不會以空資料庫代替。"
+            exit 1
+          fi
+
+      - name: Install Chromium and OS dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      - name: Browser tests (isolated temp DB + uploads)
+        run: npm run test:ui
+
+      - name: Upload Playwright artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

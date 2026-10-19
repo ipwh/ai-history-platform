@@ -595,6 +595,28 @@ export const MIGRATIONS: Migration[] = [
       `DROP INDEX IF EXISTS idx_question_reviews_unique`,
     ],
   },
+  {
+    id: "0022-golden-fixture-reviews",
+    statements: [
+      // Golden Dataset 的人工核准紀錄（Sprint 11）。
+      // 與 `question_reviews`（題目是否可對學生發布）刻意分開：Golden fixture 是
+      // **評估基準**，核准與否不改變題目的發布狀態，兩者的證據不可互相取代。
+      `CREATE TABLE IF NOT EXISTS golden_fixture_reviews (
+        id TEXT PRIMARY KEY,
+        question_id TEXT NOT NULL,
+        revision INTEGER NOT NULL,
+        question_fingerprint TEXT NOT NULL,
+        decision TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        reviewer_email TEXT NOT NULL,
+        reviewer_role TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        payload_json TEXT
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_golden_fixture_reviews_question
+        ON golden_fixture_reviews (question_id, created_at)`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

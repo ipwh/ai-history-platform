@@ -1,10 +1,16 @@
 # 內容質量待辦佇列（與發布批准分開）
 
-> **2026-10-19 更新（Sprint 9）**：本檔是當時（1,882 題）的分類快照，保留作歷史紀錄。其後新增唯讀
+> **2026-10-19 更新（Sprint 9／10）**：本檔是當時（1,882 題）的分類快照，保留作歷史紀錄。其後新增唯讀
 > `npm run audit:content`（來源／解釋／元數據逐題分類）及 `npm run release:gate`；
 > 最新數字以 [../quality/content-audit-2026-10-19.md](../quality/content-audit-2026-10-19.md)
 > 及 [../release-gate-2026-10-19.md](../release-gate-2026-10-19.md) 為準（現為 1,880 題：
-> 佔位解釋 1,334、只列答案 546、技能空白 1,880）。
+> 佔位解釋 1,334、只列答案 546、技能空白 1,880）。Sprint 10 另新增
+> [servability 報告](../quality/servability-remediation-2026-10-19.md)、
+> [審核來源報告](../quality/review-provenance-2026-10-19.md) 及
+> [golden 候選清單](./golden-candidates-2026-10-19.md)。Sprint 11 再新增
+> [原文證據核對](../quality/servability-evidence-2026-10-19.md)、
+> [provenance 風險分級](../quality/provenance-risk-2026-10-19.md)，以及教師裁決／Golden 核准 API；
+> 97 題不可作答題目仍**全部待教師裁決**（96 題經核對原文後 0 題可自動補標示）。
 
 - 產生時間：2026-10-19T01:53:59.704Z
 - 資料庫（唯讀）：data/app.db

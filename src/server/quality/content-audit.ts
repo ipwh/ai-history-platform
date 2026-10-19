@@ -29,6 +29,7 @@ import {
   POLICY_CATEGORIES,
   type PolicyCategory,
 } from "./question-policy";
+import { classifyReviewKind } from "./review-provenance";
 import {
   classifySourceTraceability,
   SOURCE_TRACEABILITY_STATUSES,
@@ -88,6 +89,12 @@ export interface AuditedQuestion {
   explanation: ExplanationQualityResult;
   metadata: MetadataQualityResult;
   policy: ReturnType<typeof evaluateQuestionPolicy>;
+  reviewEvidence: {
+    human: boolean;
+    teacher: boolean;
+    ownerBatch: boolean;
+    automation: boolean;
+  };
 }
 
 export interface ContentAuditPayload {
@@ -114,6 +121,7 @@ export interface ContentAuditPayload {
     counts: Record<ExplanationClass, number>;
     reviewedButLowQuality: number;
     automationApprovalsRecordedAsHuman: number;
+    unknownReviewOrigin: number;
     byTopic: Record<string, Record<ExplanationClass, number>>;
   };
   metadata: {
@@ -210,20 +218,26 @@ export function loadContentAudit(databasePath: string): ContentAuditPayload {
     }
 
     const humanReviewKeys = new Set<string>();
+    const reviewKindsByKey = new Map<string, Set<"teacher_adjudication" | "owner_batch" | "automation_repair">>();
     let automationRecordedAsHuman = 0;
-    const seenAutomationAsHuman = new Set<string>();
+    let unknownReviewOrigin = 0;
     for (const review of reviews) {
-      if (review.decision !== "approved") continue;
       const key = `${review.question_id}#${review.revision}#${review.question_fingerprint}`;
-      // 歷史紀錄問題：早期自動修復以 admin 角色寫入，理由含「自動修復」。
-      // 角色欄不能單獨證明是人類覆核，因此同時以理由辨識（不改寫歷史）。
-      const looksAutomated =
-        review.reviewer_role === "automation" || /自動修復|平台自動檢查/.test(review.reason ?? "");
-      if (!looksAutomated) {
+      const kind = classifyReviewKind(review.reviewer_role, review.reason);
+      if (kind !== "unknown") {
+        const kinds = reviewKindsByKey.get(key) ?? new Set();
+        kinds.add(kind);
+        reviewKindsByKey.set(key, kinds);
+      }
+      if (review.decision !== "approved") continue;
+      if (kind === "automation_repair") {
+        if (review.reviewer_role !== "automation") automationRecordedAsHuman += 1;
+      } else if (kind === "unknown") {
+        unknownReviewOrigin += 1;
+      } else {
+        // 教師裁決（teacher_adjudication）及擁有者批次（owner_batch）都屬人類紀錄；
+        // 批次授權不是逐題教師覆核，但仍是人類決定，兩者以 kind 另行區分。
         humanReviewKeys.add(key);
-      } else if (review.reviewer_role !== "automation" && !seenAutomationAsHuman.has(key)) {
-        seenAutomationAsHuman.add(key);
-        automationRecordedAsHuman += 1;
       }
     }
 
@@ -305,6 +319,15 @@ export function loadContentAudit(databasePath: string): ContentAuditPayload {
         explanation,
         metadata,
       });
+      const reviewKinds = reviewKindsByKey.get(`${row.id}#${row.revision}#${fingerprint}`);
+      const reviewEvidence = {
+        human:
+          (reviewKinds?.has("teacher_adjudication") ?? false) ||
+          (reviewKinds?.has("owner_batch") ?? false),
+        teacher: reviewKinds?.has("teacher_adjudication") ?? false,
+        ownerBatch: reviewKinds?.has("owner_batch") ?? false,
+        automation: reviewKinds?.has("automation_repair") ?? false,
+      };
 
       questions.push({
         id: row.id,
@@ -319,6 +342,7 @@ export function loadContentAudit(databasePath: string): ContentAuditPayload {
         explanation,
         metadata,
         policy,
+        reviewEvidence,
       });
 
       sourceCounts[source.status] += 1;
@@ -391,6 +415,7 @@ export function loadContentAudit(databasePath: string): ContentAuditPayload {
         counts: explanationCounts,
         reviewedButLowQuality,
         automationApprovalsRecordedAsHuman: automationRecordedAsHuman,
+        unknownReviewOrigin,
         byTopic: explanationByTopic,
       },
       metadata: {

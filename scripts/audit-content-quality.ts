@@ -135,7 +135,7 @@ function main(): void {
   }
   lines.push("");
   lines.push(
-    `有人工覆核但仍屬低品質：${audit.explanation.reviewedButLowQuality}；以非 automation 角色寫入的自動修復紀錄：${audit.explanation.automationApprovalsRecordedAsHuman}`,
+    `有人工覆核但仍屬低品質：${audit.explanation.reviewedButLowQuality}；以非 automation 角色寫入的自動修復紀錄：${audit.explanation.automationApprovalsRecordedAsHuman}；來源不明的審核紀錄：${audit.explanation.unknownReviewOrigin}`,
   );
   lines.push("");
   lines.push("## 元數據");

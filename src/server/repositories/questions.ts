@@ -312,6 +312,25 @@ export function setQuestionStatus(questionId: string, status: QuestionStatus): Q
 }
 
 /**
+ * 條件式狀態更新（Sprint 12，TOCTOU 防護）。
+ *
+ * 只有當題目目前仍是 `expectedRevision` 時才更新狀態。若另一個請求在「讀取題目 →
+ * 檢查覆核／可作答性 → 更新狀態」之間修改了題目，這次更新不會生效，呼叫端必須回報
+ * 衝突而不是把舊版本的核准套用到新版本上。
+ */
+export function setQuestionStatusIfRevision(
+  questionId: string,
+  status: QuestionStatus,
+  expectedRevision: number,
+): Question | null {
+  const result = getDb()
+    .prepare("UPDATE questions SET status = ? WHERE id = ? AND revision = ?")
+    .run(status, questionId, expectedRevision);
+  if (Number(result.changes) === 0) return null;
+  return getQuestion(questionId);
+}
+
+/**
  * 設定／清除「自動發布暫緩，等待教師確認」標記（Sprint 7.9）。
  *
  * 由自動品質閘門的未確定結果設定；教師確認（人工覆核或重新驗證通過）後清除。

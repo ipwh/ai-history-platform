@@ -589,6 +589,166 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 
 **結果：NOT READY。** 沒有因本次新增工具而改變任何題目、答案、覆核或發布狀態；也沒有把未定義標準當成通過。
 
+### 7.8 可作答性、審核來源與 Golden 基準（Sprint 10，2026-10-19）
+
+#### 7.8.1 97 題結構不可作答（唯讀盤點，未修改）
+
+`npm run audit:servability`（[報告](quality/servability-remediation-2026-10-19.md)）：
+
+| 問題代碼 | 題數 | 說明 |
+| --- | --- | --- |
+| `MCQ_ROMAN_LABEL_MISSING` | **96** | 選項以羅馬數字指涉題幹，但題幹沒有 i／ii 標示 |
+| `FILL_ANSWER_LEAKS` | **1** | `qb-JTH2ndEdFBQ09015`：教師在 Sprint 9 選擇保留「研發軍備」原文，答案「軍備」在題幹再次出現；裁決紀錄保留，但 servability 仍會攔下 |
+
+全部 97 題均為已發布、**0 次作答、0 個練習快照**；建議一律 `teacher_review_required`（沒有符合「來源確定、不改變答案／評分」的自動修復）。**沒有修改、退回或隔離任何題目**。
+
+#### 7.8.2 審核紀錄來源：修正 1,279 筆的說法
+
+`npm run audit:review-provenance`（[報告](quality/review-provenance-2026-10-19.md)）：
+
+| 來源 | 數量 |
+| --- | --- |
+| 擁有者批次 | 1,882 |
+| 自動修復 | **1,266** |
+| 教師裁決 | 20 |
+
+全部 3,168 筆 `reviewer_role` 都是 `admin`。Sprint 9 的 1,279 = 1,266 筆自動修復 + **13 筆**被字串規則誤判的教師裁決（理由含「自動修復改變考核答案」）。目前版本：16 題有教師裁決、1,241 題只有擁有者批次、623 題只有自動修復證據、0 題完全沒有證據。原始紀錄全部保留，沒有改寫。
+
+#### 7.8.3 Golden evaluation v2
+
+[golden-questions.v2.json](teacher-review/golden-questions.v2.json) 已建立 schema（`draft`／`pending-review`／`approved`／`rejected`／`superseded`）、版本及 runner；[候選清單](teacher-review/golden-candidates-2026-10-19.md) 42 個 `pending-review` 候選。**approved fixture 仍為 0，評估結果 `INSUFFICIENT_EVIDENCE`**，沒有教師確認前不會建立 approved fixture。
+
+#### 7.8.4 發布閘門更新
+
+| 閘門 | 狀態 | 證據 |
+| --- | --- | --- |
+| 隔離 | PASS | 0 題 |
+| 可作答性 | **FAIL** | 97 題（96 羅馬數字、1 答案外洩；派發層攔下） |
+| 答案改寫來源 | PASS | 18 題已裁決 |
+| 來源可追溯性 | POLICY_PENDING | 877／1,880 |
+| 解釋品質 | POLICY_PENDING | 1,334 ＋ 546 |
+| 元數據 | POLICY_PENDING | 1,587 項需覆核 |
+| 教師裁決 | PASS | 0 |
+| **審核證據來源** | **POLICY_PENDING** | 623 題只有自動修復證據 |
+| 版權 | WARN | 擁有者確認；逐份 12／36 |
+| Golden dataset | INSUFFICIENT_EVIDENCE | 0 approved |
+| 測試／建置 | PASS | 見 §9 |
+| 部署 | INSUFFICIENT_EVIDENCE | 未部署 |
+
+**整體：NOT READY。**
+
+---
+
+### 7.9 教師裁決流程、修復證據與 Golden 核准（Sprint 11，2026-10-19）
+
+完整報告：[sprint-11-report-2026-10-19.md](sprint-11-report-2026-10-19.md)。
+
+#### 7.9.1 96 題羅馬數字題目：0 題可由原文確定修復
+
+`npm run audit:servability-evidence`（唯讀，[報告](quality/servability-evidence-2026-10-19.md)）在 `materials/` 找回原始 DOCX 並逐題比對：
+
+| 結果 | 題數 |
+| --- | --- |
+| 原文標示不齊全（80 題完全無編號、1 題只有 i–iii） | **81** |
+| 原文陳述數與選項指涉不符 | **10** |
+| 原始檔缺失 | **4** |
+| 找不到題幹段落 | **1** |
+| 原文有標示、可直接補上 | **0** |
+
+原文本身已失去編號（表格／分欄在轉存時被拆散），按選項順序補上 i／ii／iii 屬推測，Sprint 明確禁止。因此 **96 題全部需要教師裁決**，沒有一題可以自動修復。
+
+#### 7.9.2 教師裁決 API 與「核准不能繞過可作答性」
+
+- `POST /api/teacher/questions/[questionId]/servability`：`return_to_draft`／`keep_quarantined`／`request_more_evidence`／`reject`；需要真實教師或管理員工作階段（未登入 401、學生 403）；裁決綁定版本＋指紋，衝突回 409。
+- `recordQuestionReview(approved)` 現在會先執行 `checkQuestionServable()`；結構不可作答時回 409，**不會**因為有人按下「通過」而重新派發。`changeQuestionStatus(published)` 亦有同樣檢查（舊核准紀錄不能令不可作答的題目變成已發布）。這是 Sprint 11 修正的兩條繞過途徑。
+- Sprint 9 對 `qb-JTH2ndEdFBQ09015`（「研發軍備」保留原文）的裁決紀錄不變；該題仍然被閘門攔下，不能派發。
+
+#### 7.9.3 623 題只有自動修復證據的風險分布
+
+`npm run audit:provenance-risk`（[報告](quality/provenance-risk-2026-10-19.md)）：
+
+| 等級 | 題數 | 判準 |
+| --- | --- | --- |
+| P0 | 0 | 答案映射或題目含義改變 |
+| P1 | **530** | 多空格填充題補回其餘空格；考核空格及答案不變 |
+| P2 | 0 | 無可比較原始內容 |
+| P3 | **93** | 只移除選項殘留項目符號 |
+
+P3 只代表覆核次序較後，不是已核准。
+
+#### 7.9.4 Golden Dataset v2 人工核准
+
+`GET /api/teacher/golden`、`POST /api/teacher/golden/[questionId]`、`npm run golden:export`。核准必須附上教師評估內容（category、reasoning、預期 grading、distractorNotes）；裁決寫入 `golden_fixture_reviews`（migration 0022，只新增），綁定版本＋指紋，題目改動即失效。**approved fixture 仍為 0**，`golden:eval` 為 `INSUFFICIENT_EVIDENCE`。
+
+#### 7.9.5 發布閘門（15 項）
+
+新增 `servability-adjudication`（POLICY_PENDING，97 題待裁決）、`provenance-risk`（POLICY_PENDING，P1 530）、`golden-approval`（INSUFFICIENT_EVIDENCE，0 approved）。其餘閘門與 §7.8.4 相同，`question-servability` 仍為 FAIL。**整體：NOT READY。**
+
+---
+
+### 7.10 發布控制加固與學科授權（Sprint 12，2026-10-19）
+
+完整報告：[sprint-12-report-2026-10-19.md](sprint-12-report-2026-10-19.md)。
+
+本次以程式碼建立寫入／核准／發布／派發路徑矩陣（35 個 route 檔、45 個方法），並修正以下有證據支持的問題：
+
+| 問題 | 影響 | 修正 |
+| --- | --- | --- |
+| 狀態更新是先讀後寫（TOCTOU） | 理論上舊核准可發布已被修改的新版本 | `setQuestionStatusIfRevision()`：`UPDATE ... WHERE revision = ?`，不符回 409 |
+| 舊練習快照可為被隔離題目提交新作答 | 隔離題目仍可被作答 | `submitAnswer()` 檢查題庫題目的隔離／可作答性（已作答者仍可看歷史回饋） |
+| 批次發布／批次覆核候選未過濾不可作答題目 | 批次腳本會被 409 中斷，或把不可作答題目列入候選 | `listOwnerPublicationCandidates()`／`listOwnerApprovalCandidates()` 排除並列入 held |
+| admin 可核准 Golden fixture 及「已修復並核准」 | 平台角色被當成學科資格 | 新增 `HISTORY_REVIEWER_EMAILS` 名單，未設定即 fail-closed（403） |
+| 0 題資料時內容閘門 PASS | 空資料庫／錯 DB 會被當成「沒有問題」 | `evaluateReleaseGates()` 覆寫為 `INSUFFICIENT_EVIDENCE` |
+
+**重新核實的數字**（與 Sprint 11 一致）：97 題不可作答（96 羅馬數字、1 答案外洩）、96 題原文核對 **0 題可自動補標示**、623 題 provenance（P0 0／P1 530／P2 0／P3 93）、Golden 0 approved／42 候選、來源 877／1,003／0／0、解釋 1,334＋546、技能空白 1,880、覆核紀錄 3,168（16 教師裁決／1,241 擁有者批次／623 只有自動修復）。
+
+**E2E 5 項失敗已逐項定位**：2 項為與 fail-closed 政策矛盾的過時斷言（已改為驗證政策）、1 項為 E2E 選中只有選擇題的分節（改用父分節，實際驗證填充題評分）、2 項為暫存上載目錄缺少原始檔案（複製 `data/uploads` 後 128 項全部通過）。
+
+---
+
+### 7.11 唯讀稽核完整性與 migration 責任（Sprint 13，2026-10-19）
+
+完整報告：[sprint-13-report-2026-10-19.md](sprint-13-report-2026-10-19.md)；CLI 契約：[audit-cli-contract-2026-10-19.md](audit-cli-contract-2026-10-19.md)。
+
+| 問題 | 影響 | 修正 |
+| --- | --- | --- |
+| `golden:export -- --check` 經 `getDb()` 自動執行 migration | 一個「檢查」動作會改 schema（Sprint 11 曾對開發資料庫套用 0022） | `enableReadOnlyDatabaseMode()`／`openReadOnlyDatabase()`；CLI 在匯入 service 前啟用；缺 DB／缺 0022 → exit 2 |
+| migration 與一般資料讀取混在一起 | 無法保證 audit 唯讀 | 獨立命令 `db:migrate -- --database <path>`（沒有預設值） |
+| audit CLI 從 `question-service` 匯入指紋 | 模組圖含 repositories，難以靜態證明唯讀 | 抽出純函式 `quality/question-fingerprint.ts` |
+| 退出碼與內容狀態混用 | CI 可能把「工具成功」當成「內容合格」 | 契約：audit exit 0＝報告已產生；`release:gate --fail-on-not-ready` 才以 exit 1 阻擋 |
+
+驗證：`tests/read-only-cli.test.ts` 以 SHA-256 檔案雜湊證明 7 種情境下主資料庫不變；`golden:export --check` 在 `data/app.db` 複本上實測雜湊不變。已知限制：WAL sidecar 檔案可能被建立（內容不變）。
+
+---
+
+### 7.12 裁決工作分流、交叉分析與 Golden 準備度（Sprint 14，2026-10-19）
+
+完整報告：[sprint-14-report-2026-10-19.md](sprint-14-report-2026-10-19.md)。
+
+| 產出 | 內容 |
+| --- | --- |
+| `audit:adjudication-worklist` | 97 題逐題工作清單：Roman 96 題分為原卷可核對但標示不齊全 **81**、陳述不一致 **10**、原卷缺失 **4**、段落無法定位 **1**；答案外洩 1；**0 題可自動補標示**；全部維持隔離 |
+| `audit:source-crosswalk` | 623 題 provenance 與 1,003 題來源待核實**重疊 124**（P1 31、P3 93）；**31 題有修復差異但來源不可追溯**；重複列 0 |
+| `audit:golden-readiness` | 42 候選全部版本／指紋一致、有來源及答案；仍缺教師提供的預期 grading／理由／錯誤選項說明；`HISTORY_REVIEWER_EMAILS` 未設定 → 0 approved |
+| WAL sidecar | 只宣稱政策 A（內容唯讀，允許 `-wal`／`-shm`）；政策 B（檔案系統唯讀）未實作，待負責人決定 |
+
+以上工具全部唯讀（`openReadOnlyDatabase()`），並由 `tests/read-only-sidecar.test.ts` 以主檔雜湊、`sqlite_master`、`schema_migrations` 及資料列比對驗證。
+
+---
+
+### 7.13 覆核優先次序 manifest 與決策包（Sprint 15，2026-10-19）
+
+完整報告：[sprint-15-report-2026-10-19.md](sprint-15-report-2026-10-19.md)。
+
+| 產出 | 內容 |
+| --- | --- |
+| `audit:review-manifest` | 623 題逐題證據契約（revision／fingerprint、修復分類、來源狀態、需核對欄位、必要決定、可作答狀態）；P1 530／P3 93；重疊 124（不另計）；重複列 0 |
+| Golden 冪等 | 同版本／指紋／決定／理由的重複提交回 `created:false`，不新增裁決列 |
+| 決策包 | 13 項一頁總覽（角色多為 `UNASSIGNED`、影響閘門、安全預設、完成證據） |
+| 裁決 UI | **尚未實作**：servability 與 Golden 目前只有 API／CLI，教師端 UI 只有一般覆核；報告如實標示，不視為流程完成 |
+
+全部 manifest 產出由 `tests/read-only-sidecar.test.ts` 驗證：623 唯一、重疊 124、資料庫雜湊與 schema 不變。
+
 ---
 
 ## 8. 已實施修正
@@ -634,6 +794,30 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 | `npm run audit:content`（唯讀） | 0 | 來源 877／1,003／0／0；解釋 1,334／546；技能空白 1,880；政策 hard 97、teacher 3,834、warning 1,880、pending 1,880 |
 | `npm run release:gate`（唯讀，含 evidence 檔） | 0 | **NOT READY**（PASS 4、FAIL 1、POLICY_PENDING 3、WARN 1、INSUFFICIENT 2） |
 | `node scripts/e2e-flow.mjs --start`（暫存 DB） | 1 | 121 通過／5 失敗（與上次相同的環境限制） |
+| `npm test`（Sprint 10：新增 21 個可作答性／來源／golden 測試） | 0 | 84 檔通過；**1,152 通過、4 略過（1,156）** |
+| `npm run audit:servability`（唯讀） | 0 | 97 題不可作答（96 羅馬數字、1 答案外洩）；0 次作答、0 個快照 |
+| `npm run audit:review-provenance`（唯讀） | 0 | 1,882 批次、**1,266 自動修復**、20 教師裁決；1,279 為 1,266＋13 誤判 |
+| `npm run golden:candidates`／`golden:eval`（唯讀） | 0 | 42 個候選；0 approved → `INSUFFICIENT_EVIDENCE` |
+| `npm run release:gate`（Sprint 10 更新） | 0 | **NOT READY**（12 個閘門） |
+| `npm test`（Sprint 11：新增 22 個裁決／風險／Golden 測試） | 0 | 87 檔通過；**1,193 通過、4 略過（1,197）** |
+| `npm run audit:servability-evidence`（唯讀） | 0 | 96 題核對：81 題原文標示不齊全（80 完全無編號、1 只有 i–iii）、10 題陳述數不符、4 缺檔、1 找不到段落、**0 題可直接補標示** |
+| `npm run audit:provenance-risk`（唯讀） | 0 | 623 題：P0 0、P1 530、P2 0、P3 93 |
+| `npm run golden:export -- --check`（唯讀） | 0 | 0 approved fixture（尚無教師裁決） |
+| `npm run release:gate`（Sprint 11 更新） | 0 | **NOT READY**（15 個閘門） |
+| `npm test`（Sprint 12：新增 4 組發布控制測試 + 學科授權／migration 0022） | 0 | 88 檔通過；**1,203 通過、4 略過（1,207）** |
+| `npm run typecheck`／`lint`／`build`（Sprint 12） | 0 | 全部通過 |
+| `node scripts/e2e-flow.mjs --start`（Sprint 12，空上載目錄） | 1 | 126 通過／2 失敗（只餘 OCR 缺原檔） |
+| `node scripts/e2e-flow.mjs --start`（Sprint 12，複製 `data/uploads`） | 0 | **128 通過／0 失敗** |
+| `npm run release:gate`（Sprint 12 更新） | 0 | **NOT READY**（15 個閘門；0 題資料時內容閘門為 INSUFFICIENT_EVIDENCE） |
+| `npm test`（Sprint 13：新增 7 項唯讀 CLI 契約測試） | 0 | 89 檔通過；**1,210 通過、4 略過（1,214）** |
+| `npx tsx scripts/export-golden-fixtures.ts --check`（Sprint 13） | 0 | schema 可用、0 approved；不寫 DB、不寫檔（主檔 SHA-256 不變） |
+| `npx tsx scripts/release-gate.ts --fail-on-not-ready`（Sprint 13） | **1** | `NOT READY` 正確阻擋 |
+| `npm run db:migrate` | — | **未執行**（只以程式碼確認缺 `--database` 時 exit 1） |
+| `npm test`（Sprint 14：新增 5 項 sidecar／唯讀報告測試） | 0 | 90 檔通過；**1,215 通過、4 略過（1,219）** |
+| `npm run audit:adjudication-worklist`（Sprint 14） | 0 | 97 題；Roman 81／10／1／4；0 可自動補標示 |
+| `npm run audit:source-crosswalk`（Sprint 14） | 0 | 重疊 124（P1 31、P3 93）；需先補來源 31；重複列 0 |
+| `npm run audit:golden-readiness`（Sprint 14） | 0 | 42 候選、0 approved、42 待教師審核 |
+| `node scripts/e2e-flow.mjs --start`（Sprint 14，暫存 DB + 複製 `data/uploads`） | 0 | **128 通過／0 失敗** |
 | `npm run audit:repair-provenance` | 0 | 1,882 題全部可與來源比對；877 語意不變、987 純格式、18 考核答案改變 |
 | `repair:questions --quarantine`（暫存資料庫副本） | 0 | 18 題隔離；0 題可派發、0 題洩漏；覆核紀錄維持 3,148 筆（沒有新增） |
 | `repair:questions --apply`（同一副本，連續兩次） | 0 | 兩次結果相同（idempotent）；沒有為被阻擋的題目補記覆核 |
@@ -656,7 +840,7 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 
 ### 10.1 本機證據（已完成）
 
-- [x] `npm test` 全綠（1,131 通過）
+- [x] `npm test` 全綠（1,152 通過）
 - [x] `npm run typecheck`、`npm run lint`、`npm run build` 通過
 - [x] 修復來源稽核（1,882 題全部可比對；18 題考核答案改變已列明）
 - [x] 隔離指令實測（本機 `data/app.db`：18 題隔離、0 題可派發、覆核數目不變）
@@ -671,6 +855,9 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 - [x] 內容稽核（唯讀）：來源 877 可定位／1,003 待核實；解釋 1,334 佔位／546 只列答案；元數據及政策分類（§7.7）
 - [x] 發布閘門（唯讀）：`NOT READY`，11 個閘門的狀態及證據見 §7.7.4
 - [x] 版權：擁有者確認紀錄（[copyright-owner-attestation-2026-10-19.md](teacher-review/copyright-owner-attestation-2026-10-19.md)）
+- [x] 不可作答題目逐題盤點（97 題，唯讀；[報告](quality/servability-remediation-2026-10-19.md)）
+- [x] 審核紀錄來源逐筆分類（3,168 筆；[報告](quality/review-provenance-2026-10-19.md)）
+- [x] Golden dataset v2 schema、候選清單及 runner（approved 0 → `INSUFFICIENT_EVIDENCE`）
 
 ### 10.2 需要正式環境證據（**未完成**）
 
@@ -735,7 +922,36 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 5. **知識點／難度／技能重新標示**：可由 `scripts/apply-question-queue.ts` 的 manifest 流程處理，但需教師提供正確值（殘留值 122 題、通用標籤「校內試題」587 題、待確認對應 878 題；技能空白 1,880 題）。
 6. **版權與教材發行權**：擁有者已於 2026-10-19 確認版權（[紀錄](teacher-review/copyright-owner-attestation-2026-10-19.md)）；逐份權利紀錄仍為 12／36，未有批次回填。12 份可向學生發布、24 份不可。
 7. **來源文件紀錄（schema／工具）**：1,003 題校內試題只有「檔名 · 第 N 題」文字位置；建議新增文件紀錄（檔名、題號、SHA-256）及匯入批次，令來源可由系統核實。平台現時沒有匯入批次表。
-8. **97 題已發布但結構上不可作答**：派發層會攔下（學生不會收到），但仍應修正或改回草稿，令 `release:gate` 的 `question-servability` 不再 FAIL。
+8. **97 題已發布但結構上不可作答**：已完成唯讀逐題盤點（96 題羅馬數字標示缺失、1 題答案外洩；全部 0 次作答、0 個快照），但**未修改**。派發層會攔下（學生不會收到），仍需教師逐題修正或授權改回草稿，令 `question-servability` 不再 FAIL。
+9. **623 題只有自動修復審核證據**：需要負責人決定「內容不變的自動修復」是否足以支持目前版本，或需教師逐題確認；未決定前 `review-provenance` 維持 `POLICY_PENDING`。
+10. **Golden evaluation**：v2 schema、runner 及 42 個候選已建立，但 approved fixture 為 0；需歷史科教師逐題核准並填寫 reviewer／reviewedAt／版本／指紋／來源證據。
+
+### Sprint 11 更新（2026-10-19）
+
+- 第 8 項：已建立教師裁決 API（`POST /api/teacher/questions/[questionId]/servability`），但 **97 題仍待裁決**；96 題已核對原文，**0 題可由原文確定補上 i／ii／iii**。同時修正繞過：`recordQuestionReview(approved)` 現在會拒絕結構不可作答的題目。
+- 第 9 項：623 題已按可核實 diff 分級（P0 0、P1 530、P2 0、P3 93），仍需負責人決定是否需教師逐題確認。
+- 第 10 項：Golden 核准 API、版本／指紋檢查及匯出已建立；approved fixture 仍為 0，必須由真實歷史科教師逐題核准（不能用 admin 代替）。
+
+### Sprint 12 更新（2026-10-19）
+
+- 上述第 8–10 項狀態不變（97 題仍待裁決、623 題仍待政策、Golden 仍 0 approved）。
+- 新增阻塞：**歷史科學科授權名單 `HISTORY_REVIEWER_EMAILS` 未設定**，因此 Golden 核准及「已修復並核准」目前沒有人可以執行（fail-closed）。需要科組指定人選（見 [policy-decisions-2026-10-19.md](teacher-review/policy-decisions-2026-10-19.md) 第 9 項）。
+- 已修正：TOCTOU 條件式更新、舊快照未作答題目攔截、批次候選過濾、0 題資料時閘門 fail-closed（§7.10）。
+- 十項待決政策已整理成負責人可用清單：[docs/teacher-review/policy-decisions-2026-10-19.md](teacher-review/policy-decisions-2026-10-19.md)。
+
+### Sprint 13 更新（2026-10-19）
+
+- `golden:export -- --check` 已改為真正唯讀（不 migration、不寫 DB、不寫檔）；migration 改為獨立命令 `npm run db:migrate -- --database <path>`。
+- 已驗證所有 audit／export／evaluation CLI 的副作用契約（[audit-cli-contract-2026-10-19.md](audit-cli-contract-2026-10-19.md)）；`export-production-snapshot` 及 `pilot-deepseek` 仍為 `UNVERIFIED`。
+- 97 題、623 題、Golden（42／0／0）與 reviewer 授權狀態**不變**；`HISTORY_REVIEWER_EMAILS` 仍未設定（學科授權阻塞）。
+- 退出碼契約：audit exit 0 只代表報告已產生；`release:gate --fail-on-not-ready` 實測 exit 1（NOT READY）。
+
+### Sprint 14 更新（2026-10-19）
+
+- 新增三份唯讀證據報告：97 題裁決工作清單、provenance × 來源交叉分析（重疊 124、需先補來源 31）、Golden 準備度（42 候選、0 approved）。
+- WAL sidecar 政策：只宣稱 A（內容唯讀）；B（檔案系統唯讀）未實作，列為待決（政策第 12 項）。
+- `golden:export --check`、三個新報告工具及 `release:gate` 的唯讀副作用均有執行期測試（主檔雜湊、schema、`schema_migrations`、資料列）。
+- 97 題、623 題、42 候選、`HISTORY_REVIEWER_EMAILS` 狀態**不變**；gate 仍 `NOT READY`。
 7. **CI**：新增 GitHub Actions（`npm ci` → `typecheck` → `lint` → `test` → `build`）。
 8. **正式環境併發**：確認 Cloud Run 執行個體數與 SQLite 的關係；如需多執行個體，應改用 Cloud SQL／Postgres。
 9. **安全加固（非阻塞）**：CSP with nonce、`/api/health` 精簡、發送速率限制。
@@ -781,3 +997,5 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 | qb-NJCFN0020000038 | 答案「尤利烏斯․ 凱撒」含 U+2024 排版字元；題幹稱「公元前60年成功控制羅馬」。 | 史實表述（前三頭同盟 vs 獨裁官）需確認；排版字元已由評分正規化處理。 |
 
 另：15 條答案為「以上皆是／全部皆是」的題目屬有效題型，但其中 13 條同時被附錄 A 攔下（題幹缺少標示），其餘 2 條的陳述是否全部成立，需教師確認。
+
+

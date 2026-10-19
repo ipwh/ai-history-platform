@@ -424,3 +424,231 @@
 [copyright-owner-attestation-2026-10-19.md](./copyright-owner-attestation-2026-10-19.md)。
 此紀錄是擁有者聲明，不是逐份出版社授權；`material_documents` 的逐份權利紀錄仍為 12／36，
 未有批次回填。版權許可與來源可追溯性、歷史準確性必須分開判斷。
+
+## 10. 可作答性、審核來源與 Golden 基準（Sprint 10，2026-10-19）
+
+### 10.1 結構不可作答的 97 題
+
+`npm run audit:servability`（[報告](../quality/servability-remediation-2026-10-19.md)）逐題列出：
+
+- 96 題：選項以羅馬數字指涉題幹，但題幹沒有 i／ii 標示（`MCQ_ROMAN_LABEL_MISSING`）；
+- 1 題：填充題答案仍出現在題幹（`FILL_ANSWER_LEAKS`）；
+- 全部 0 次作答、0 個練習快照；建議一律 `teacher_review_required`；
+- **沒有修改任何題目**——要退回草稿或隔離，需要另行授權及逐題處理。
+
+### 10.2 審核紀錄來源（修正 Sprint 9 的 1,279 筆）
+
+`npm run audit:review-provenance`（[報告](../quality/review-provenance-2026-10-19.md)）：
+
+| 類別 | 數量 | 說明 |
+| --- | --- | --- |
+| 擁有者批次 | 1,882 | 人類決定，但不是逐題教師覆核 |
+| 自動修復 | **1,266** | 理由為「模擬學生使用後自動修復」或「自動修復多空格填充題」；角色仍是 `admin` |
+| 教師裁決 | 20 | 2026-10-19 的逐題裁決 |
+| 來源不明 | 0 | — |
+
+Sprint 9 的 1,279 = 1,266 筆自動修復 + 13 筆被字串規則誤判的教師裁決（理由含「自動修復」）。
+目前版本：16 題有教師裁決、1,241 題只有擁有者批次、623 題只有自動修復證據。
+**原始紀錄全部保留**，沒有改寫角色、時間或指紋。
+
+### 10.3 Golden evaluation dataset v2
+
+- [golden-questions.v2.json](./golden-questions.v2.json)：schema、狀態（`draft`／`pending-review`／`approved`／`rejected`／`superseded`）及備註；**approved fixture 仍為 0**。
+- [golden-candidates-2026-10-19.json](./golden-candidates-2026-10-19.json)：42 個 `pending-review` 候選（教師裁決過的題目、答案映射曾改變、不可作答、可接受答案、有教材依據的 MC／填充），**不是** fixture，也沒有 reviewer。
+- `npm run golden:eval`：approved fixture 為 0 → `INSUFFICIENT_EVIDENCE`（不是零錯誤）。
+- 教師要建立 approved fixture，必須逐題填寫 reviewer、reviewedAt、題目版本／內容指紋及來源證據；題目內容一改即失效。
+
+---
+
+## 11. 教師裁決流程與 Golden 核准（Sprint 11，2026-10-19）
+
+完整報告：[sprint-11-report-2026-10-19.md](../sprint-11-report-2026-10-19.md)。
+
+### 11.1 逐題裁決 97 題不可作答題目
+
+`POST /api/teacher/questions/[questionId]/servability`
+
+```json
+{ "decision": "keep_quarantined", "reason": "原文缺少 i、ii、iii 標示，需教師核對原卷", "expectedRevision": 8 }
+```
+
+- `decision`：`return_to_draft`／`keep_quarantined`／`request_more_evidence`／`reject`／`approve_after_verified_repair`（後者只在題目已修復至結構可作答時成功，否則 409）。
+- `reason` 至少 5 個字；`expectedRevision` 是教師實際看到的版本，題目已改動時回 **409** 且不記錄任何裁決。
+- 裁決寫入 `question_reviews`（理由前綴 `結構裁決（ISSUE_CODE）：…`），綁定版本及內容指紋；覆核者與時間只取自伺服器端工作階段。
+- `keep_quarantined` 會設定 `teacher_confirmation_required = 1`；題目留在草稿。
+- **核准不能繞過可作答性**：`recordQuestionReview(approved)` 遇到結構不可作答的題目回 409。要核准必須先修正內容（版本遞增），再經覆核 API。
+- **發布狀態也不能繞過**：`changeQuestionStatus(published)` 同樣檢查 `checkQuestionServable()`；即使題目仍有舊核准紀錄，直接改狀態一樣回 409。
+- 需要真實教師／管理員工作階段；未登入 401、學生 403、示範模式身分不可記錄裁決。
+
+### 11.2 96 題羅馬數字題目的原文證據
+
+`npm run audit:servability-evidence`（[報告](../quality/servability-evidence-2026-10-19.md)）：
+
+| 結果 | 題數 |
+| --- | --- |
+| 原文標示不齊全（80 題完全無編號、1 題只有 i–iii、缺 iv） | 81 |
+| 原文陳述數與選項指涉不符 | 10 |
+| 原始檔缺失 | 4 |
+| 找不到題幹段落 | 1 |
+| **可由原文直接補上標示** | **0** |
+
+原文本身已失去編號（表格／分欄轉存時被拆散）。按選項順序補 i／ii／iii 屬推測，因此 **96 題全部需要教師裁決**，或由科組提供原卷掃描。
+
+### 11.3 Golden fixture 逐題核准
+
+`GET /api/teacher/golden` 檢視候選；`POST /api/teacher/golden/[questionId]`：
+
+```json
+{
+  "decision": "approved",
+  "reason": "教師核對課本第 12 頁後核准",
+  "expectedRevision": 3,
+  "fixture": {
+    "category": "chronology",
+    "reasoning": "教師核對課本第 12 頁後確認此題考核文藝復興的核心思想。",
+    "grading": [{ "answer": "人文主義", "correct": true }],
+    "distractorNotes": [
+      { "option": "重商主義", "why": "重商主義屬近代經濟政策，不是文藝復興核心思想" },
+      { "option": "軍國主義", "why": "軍國主義與文藝復興的人文精神無關" },
+      { "option": "封建主義", "why": "封建主義屬中古制度，非文藝復興核心思想" }
+    ],
+    "knownEdgeCases": [],
+    "reference": "課本第 12 頁",
+    "level": 1
+  }
+}
+```
+
+- **核准必須附上 `fixture`**：沒有 category、reasoning 及預期 grading 就不能只記「核准」（400）。
+- 裁決寫入 `golden_fixture_reviews`（migration 0022，只新增），綁定版本＋指紋；題目改動後裁決自動失效（候選狀態 `stale`）。
+- `npm run golden:export` 只匯出仍有效並通過 `goldenFixtureSchema` 的 approved fixture；`-- --check` 只檢查。
+- 核准 Golden fixture **不會**改變題目發布狀態；Golden 裁決也不能代替發布覆核。
+- 目前 **0 approved**：本 Sprint 沒有真實歷史科教師完成核准，`golden:eval` 維持 `INSUFFICIENT_EVIDENCE`。
+
+### 11.4 仍未決定（需要科組／負責人）
+
+1. 96 題羅馬數字題目：提供原卷逐一補標示、退回草稿重寫，或永久不派發。
+2. `qb-JTH2ndEdFBQ09015`：維持原文但不派發（現狀）、改寫題幹，或退回課程設計者。
+3. 623 題（P1 530、P3 93）：現有自動修復證據是否足以支持目前版本。
+4. 1,334 題佔位解釋、1,880 題空白技能標籤的發布政策。
+5. 由哪位歷史科教師負責 Golden 逐題核准（需要真實身分，不能用 admin 代替）。
+
+---
+
+## 12. 學科授權與發布控制（Sprint 12，2026-10-19）
+
+完整報告：[sprint-12-report-2026-10-19.md](../sprint-12-report-2026-10-19.md)；決策清單：[policy-decisions-2026-10-19.md](./policy-decisions-2026-10-19.md)。
+
+### 12.1 學科授權邊界（`HISTORY_REVIEWER_EMAILS`）
+
+- `teacher`／`admin` 是**平台角色**，不是歷史科學科資格。以下兩個動作需要名單內的帳戶：
+  1. `POST /api/teacher/golden/[questionId]` 的任何裁決（Golden fixture 是標準答案的背書）；
+  2. `POST /api/teacher/questions/[questionId]/servability` 的 `approve_after_verified_repair`。
+- 名單未設定 → **fail-closed**：admin 及教師都不能核准（403），但仍可退回、保留隔離、要求補充證據、標示不可用。
+- 名單只做完整電郵比對；不會由 `AUTH_TEACHER_EMAILS`、網域或角色推斷。人選需科組正式指定。
+
+### 12.2 併發與快照的防護
+
+| 情境 | 行為 |
+| --- | --- |
+| 題目在覆核與更新之間被修改 | 條件式更新 `WHERE revision = ?` → 0 rows → 409，不記錄決定 |
+| 批次發布／批次覆核遇到不可作答題目 | 候選清單排除（列入 held），不會中斷整批 |
+| 舊練習快照中未作答的題目在題庫被隔離 | 作答回 409；已作答題目仍顯示原本回饋 |
+| 資料庫沒有題目資料 | 內容閘門一律 `INSUFFICIENT_EVIDENCE`，整體 `NOT READY` |
+
+### 12.3 仍需決定
+
+見 [policy-decisions-2026-10-19.md](./policy-decisions-2026-10-19.md) 第 9 項：**誰加入 `HISTORY_REVIEWER_EMAILS`**，以及是否需要把科目級角色寫入資料表。在決定前 Golden 核准維持 0。
+
+---
+
+## 13. 唯讀 CLI 與 migration 責任（Sprint 13，2026-10-19）
+
+完整報告：[sprint-13-report-2026-10-19.md](../sprint-13-report-2026-10-19.md)；契約矩陣：[audit-cli-contract-2026-10-19.md](../audit-cli-contract-2026-10-19.md)。
+
+| 指令 | 會否執行 migration | 會否寫 DB | 會否寫檔 |
+| --- | --- | --- | --- |
+| `audit:*`（content／servability／servability-evidence／review-provenance／repair-provenance／provenance-risk） | 否（`readOnly: true`） | 否 | 報告檔 |
+| `golden:candidates`、`golden:eval` | 否 | 否 | 報告檔 |
+| `golden:export -- --check` | **否（已修正）** | 否 | **否** |
+| `golden:export`（一般） | 否 | 否 | 只寫 `--out` |
+| `release:gate` | 否 | 否 | JSON＋MD |
+| `db:migrate -- --database <path>` | 是（用途） | 是（只 schema） | 否 |
+
+- 退出碼：audit 工具 0 只代表「報告已產生」；`golden:export` 0／2（INSUFFICIENT_EVIDENCE）／1；`release:gate` 加 `--fail-on-not-ready` 時非 READY → 1。
+- 教師端流程（覆核、裁決、Golden）與 Sprint 12 相同；Golden 核准仍需 `HISTORY_REVIEWER_EMAILS`。
+- 已知限制：唯讀開啟 WAL 資料庫可能建立 `-shm`／`-wal` sidecar 檔，主資料庫內容不變（測試以雜湊驗證）。
+
+---
+
+## 14. 待裁決工作分流與 Golden 準備度（Sprint 14，2026-10-19）
+
+完整報告：[sprint-14-report-2026-10-19.md](../sprint-14-report-2026-10-19.md)。
+
+### 14.1 97 題工作清單
+
+`npm run audit:adjudication-worklist` → [adjudication-worklist-2026-10-19.md](../quality/adjudication-worklist-2026-10-19.md)
+
+| 分類 | 題數 |
+| --- | --- |
+| Roman 題：原卷可核對但 i／ii／iii 標示不齊全 | 81 |
+| Roman 題：原卷存在但題目／選項陳述不一致 | 10 |
+| Roman 題：原卷缺失 | 4 |
+| Roman 題：原文段落無法定位 | 1 |
+| 答案外洩（`qb-JTH2ndEdFBQ09015`） | 1 |
+| **可自動補標示** | **0** |
+
+每題列出：revision／fingerprint、issue code、答案與評分方式、原文位置、缺甚麼證據、既有 review、建議下一步，並標示**必須維持隔離**。清單不是裁決。
+
+### 14.2 Golden 準備度
+
+`npm run audit:golden-readiness` → [golden-readiness-2026-10-19.md](./golden-readiness-2026-10-19.md)
+
+42 個候選的版本／指紋全部與題庫一致、有來源證據及完整答案，但每一題仍缺：**預期 grading、審核理由／類別、錯誤選項說明**（須由歷史科教師提供）。`HISTORY_REVIEWER_EMAILS` 未設定 → 核准維持 0，任何嘗試回 403。
+
+### 14.3 WAL sidecar 政策
+
+只宣稱 **A. Database-content read-only**（schema／資料不變，允許 `-wal`／`-shm`）；**B. Filesystem read-only 未實作**。需負責人決定（政策清單第 12 項）。
+
+---
+
+## 15. 人類覆核流程與覆核 manifest（Sprint 15，2026-10-19）
+
+完整報告：[sprint-15-report-2026-10-19.md](../sprint-15-report-2026-10-19.md)。
+
+### 15.1 623 題覆核 manifest
+
+`npm run audit:review-manifest` → [review-priority-manifest-2026-10-19.md](../quality/review-priority-manifest-2026-10-19.md)
+
+| 指標 | 數量 |
+| --- | --- |
+| 題目（唯一）／重複列 | 623／0 |
+| P1／P3 | 530／93 |
+| 與來源待核實重疊 | 124（P1 31、P3 93；不另計為獨立組別） |
+| 目前不可作答 | 21 |
+| 已有教師逐題裁決 | 0 |
+
+每題附：revision／fingerprint、修復分類及依據、來源狀態與缺失證據、需要核對的答案／可接受答案／空格位置／grading points／grading 語義、必要角色與決定、目前可作答狀態。
+P1 與 P3 各有核對清單；**P3 只代表排序較後，不代表核准**；抽樣不等於逐題覆核。
+
+### 15.2 教師裁決流程現況（如實）
+
+- 已有且經測試：`POST /api/teacher/questions/[id]/servability`（退回／保留隔離／要求補充證據／不可用／已修復並核准）、版本＋指紋綁定、409、學科名單 fail-closed、歷史只新增。
+- **未完成**：教師端 UI 沒有 servability 裁決介面，也沒有 Golden 核准表單。現階段必須以 API／CLI 操作，並由教師本人以授權電郵登入。這是明確的待辦，不應描述為「流程已完成」。
+- Golden 重複提交已改為冪等（同版本／指紋／決定／理由回 `created: false`）。
+
+---
+
+## 16. 教師審核工作台（Sprint 16，2026-10-19）
+
+完整報告：[sprint-16-report-2026-10-19.md](../sprint-16-report-2026-10-19.md)。
+
+### 16.1 新頁面 `/teacher/review`
+
+- 三個分批佇列：不可作答（97）、修復 provenance（623，P1 530／P3 93，只作排序）、Golden 候選（42，全部 pending）。
+- 佇列由 `GET /api/teacher/review-queue` 提供（教師／管理員可讀、唯讀、每頁 ≤ 25、報告缺失時如實顯示 `available:false`）。
+- 單題顯示：ID、版本、指紋、題幹／選項、標準答案、可接受答案、評分方式、評分要點、來源位置及段落、解釋、既有覆核歷史（唯讀）、不可作答原因。
+- 裁決表單：五個既有決定（含後果說明）、理由 ≥ 5 字、提交前必須勾選確認；409 會提示重新載入；不預設核准。
+- Golden 表單：核准必須提供類別、審核理由、預期 grading、每個錯誤選項說明、權威來源及級別；只有 `approved` 才要求這些欄位；重申裁決不改題目發布狀態。
+- **未完成／限制**：沒有自動化 UI 測試；provenance 佇列只顯示證據契約，沒有逐題裁決 API（需按 manifest 進行後再以覆核／servability 記錄）。
+

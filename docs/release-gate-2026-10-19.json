@@ -1,55 +1,58 @@
 {
-  "generatedAt": "2026-10-19T03:43:39.689Z",
+  "generatedAt": "2026-10-19T09:01:51.963Z",
   "notice": "唯讀發布閘門：沒有修改題目、覆核或發布狀態。未定義標準或沒有證據的項目不會當作通過。",
   "verdict": "NOT READY",
   "scope": {
     "database": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
     "testsEvidence": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\release-evidence-2026-10-19.json",
     "deploymentEvidence": null,
-    "golden": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\golden-questions.v1.json",
+    "golden": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\golden-questions.v2.json",
     "provenance": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\repair-provenance-2026-10-19.json",
-    "contentQueue": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\content-quality-queue-2026-10-19.json"
+    "contentQueue": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\content-quality-queue-2026-10-19.json",
+    "servabilityEvidence": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\quality\\servability-evidence-2026-10-19.json",
+    "provenanceRisk": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\quality\\provenance-risk-2026-10-19.json",
+    "goldenCandidates": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\golden-candidates-2026-10-19.json"
   },
   "auditSummary": {
-    "questions": 1880,
-    "published": 1880,
+    "questions": 1875,
+    "published": 1875,
     "teacherConfirmationRequired": 0,
     "source": {
       "traceable": 877,
       "partial": 0,
       "unknown": 0,
-      "pending_verification": 1003
+      "pending_verification": 998
     },
     "explanation": {
-      "placeholder": 1334,
+      "placeholder": 1329,
       "answer_only": 546,
       "insufficient": 0,
       "potentially_inconsistent": 0,
       "not_assessed": 0
     },
     "metadata": {
-      "skillMissing": 1880,
+      "skillMissing": 1875,
       "bySeverity": {
         "blocking": 0,
-        "needs_review": 1587,
-        "warning": 1880
+        "needs_review": 1583,
+        "warning": 1875
       },
       "difficulty": {
-        "basic": 1880
+        "basic": 1875
       }
     },
     "policy": {
       "byCategory": {
-        "hard_block": 97,
-        "teacher_review": 3834,
-        "warning": 1880,
-        "policy_pending": 1880
+        "hard_block": 0,
+        "teacher_review": 3762,
+        "warning": 1875,
+        "policy_pending": 1875
       },
-      "questionsWithHardBlock": 97,
-      "questionsWithTeacherReview": 1736,
+      "questionsWithHardBlock": 0,
+      "questionsWithTeacherReview": 1733,
       "questionsReleasable": 0
     },
-    "inputFingerprint": "3e92788a38fdbe96a968824b69eee6486cbd155fa48d01ee59c68605f8ad9555"
+    "inputFingerprint": "b59c9dadfce62d97bb8c4d44358080c49f939d278264574ee24ca1f644a94fda"
   },
   "gates": [
     {
@@ -58,7 +61,7 @@
       "status": "PASS",
       "summary": "沒有題目帶待教師確認標記",
       "numerator": 0,
-      "denominator": 1880,
+      "denominator": 1875,
       "evidence": [
         "questions.teacher_confirmation_required"
       ],
@@ -69,10 +72,10 @@
     {
       "id": "question-servability",
       "title": "題目結構可作答",
-      "status": "FAIL",
-      "summary": "97 題已發布但結構上不可作答（派發層會攔下，學生不會收到；仍需修正或改回草稿）",
-      "numerator": 97,
-      "denominator": 1880,
+      "status": "PASS",
+      "summary": "所有已發布題目均可作答",
+      "numerator": 0,
+      "denominator": 1875,
       "evidence": [
         "checkQuestionServable()"
       ],
@@ -99,9 +102,9 @@
       "id": "source-traceability",
       "title": "來源可追溯性",
       "status": "POLICY_PENDING",
-      "summary": "可定位 877／1880；待核實 1003；無法追溯 0",
+      "summary": "可定位 877／1875；待核實 998；無法追溯 0",
       "numerator": 877,
-      "denominator": 1880,
+      "denominator": 1875,
       "evidence": [
         "source_location",
         "source_block_ids",
@@ -116,9 +119,9 @@
       "id": "explanation-quality",
       "title": "解釋品質",
       "status": "POLICY_PENDING",
-      "summary": "佔位 1334、只列答案 546、疑似矛盾 0",
-      "numerator": 1880,
-      "denominator": 1880,
+      "summary": "佔位 1329、只列答案 546、疑似矛盾 0",
+      "numerator": 1875,
+      "denominator": 1875,
       "evidence": [
         "explanation 分類（placeholder／answer_only／potentially_inconsistent）"
       ],
@@ -131,9 +134,9 @@
       "id": "metadata",
       "title": "元數據完整性",
       "status": "POLICY_PENDING",
-      "summary": "技能空白 1880；難度值 basic；阻擋級關聯錯誤 0",
-      "numerator": 1880,
-      "denominator": 1880,
+      "summary": "技能空白 1875；難度值 basic；阻擋級關聯錯誤 0",
+      "numerator": 1875,
+      "denominator": 1875,
       "evidence": [
         "skill",
         "difficulty",
@@ -159,6 +162,23 @@
       ],
       "recommendations": [
         "完成覆核或回報處理"
+      ]
+    },
+    {
+      "id": "review-provenance",
+      "title": "審核證據來源",
+      "status": "FAIL",
+      "summary": "教師逐題裁決 15；只有擁有者批次 1166；只有自動修復 602；完全沒有證據 92",
+      "numerator": 602,
+      "denominator": 1875,
+      "evidence": [
+        "docs/quality/review-provenance-2026-10-19.json",
+        "question_reviews"
+      ],
+      "recommendations": [
+        "由負責人決定：內容不變的自動修復紀錄是否足以支持目前版本，或需教師逐題確認",
+        "不得把 admin 角色或批次授權當成逐題教師審核",
+        "保留原始紀錄，不重新標記歷史"
       ]
     },
     {
@@ -191,20 +211,72 @@
       ]
     },
     {
+      "id": "servability-adjudication",
+      "title": "結構不可作答題目的處置",
+      "status": "PASS",
+      "summary": "不可作答 0 題；已核對原始證據 95 題；可直接由原文補標示的修復候選 0 題；已有教師裁決 0 題；仍待教師裁決 0 題",
+      "numerator": 0,
+      "denominator": 0,
+      "evidence": [
+        "docs/quality/servability-remediation-2026-10-19.json",
+        "docs/quality/servability-evidence-2026-10-19.json",
+        "POST /api/teacher/questions/[questionId]/servability"
+      ],
+      "recommendations": [
+        "逐題由歷史科教師裁決：依原文修復、退回草稿、保留隔離或不可用",
+        "原文沒有 i／ii／iii 標示時，不得由程式按選項順序補上",
+        "不可作答題目即使被核准，`recordQuestionReview` 仍會拒絕發布"
+      ]
+    },
+    {
+      "id": "provenance-risk",
+      "title": "自動修復證據的風險分布",
+      "status": "POLICY_PENDING",
+      "summary": "P0（可能改變答案／評分）0；P1（題幹改變但考核答案不變）530；P2（原始證據不足）0；P3（純格式／內容相同）93",
+      "numerator": 530,
+      "denominator": 623,
+      "evidence": [
+        "docs/quality/provenance-risk-2026-10-19.json",
+        "audit:repair-provenance"
+      ],
+      "recommendations": [
+        "由負責人決定：這些題目是否需教師逐題確認，或現有自動修復證據足以支持目前版本",
+        "P0 優先；P3 只代表覆核次序較後，不代表已核准"
+      ]
+    },
+    {
+      "id": "golden-approval",
+      "title": "Golden Dataset 人工核准",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "summary": "已核准 fixture 0；待教師核准候選 42；裁決因題目改動而失效 0",
+      "numerator": 0,
+      "denominator": 42,
+      "evidence": [
+        "golden_fixture_reviews",
+        "POST /api/teacher/golden/[questionId]",
+        "docs/teacher-review/golden-questions.v2.json"
+      ],
+      "recommendations": [
+        "由歷史科教師逐題核准，並提供 category、reasoning 及預期 grading",
+        "題目內容改變後必須重新核准；不得把 pending 當成 approved"
+      ]
+    },
+    {
       "id": "tests",
       "title": "測試與建置證據",
       "status": "PASS",
       "summary": "測試、型別、lint、build 全部通過（證據檔）",
       "numerator": 0,
-      "denominator": 8,
+      "denominator": 24,
       "evidence": [
         {
           "command": "npm test",
           "exitCode": 0,
-          "testFiles": 82,
-          "passed": 1131,
+          "testFiles": 91,
+          "passed": 1229,
           "skipped": 4,
-          "failed": 0
+          "failed": 0,
+          "note": "Sprint 16 ?? tests/review-queue.test.ts?????????97?623?42 ?????????? authz ???"
         },
         {
           "command": "npm run typecheck",
@@ -217,28 +289,119 @@
         {
           "command": "npm run build",
           "exitCode": 0,
-          "note": "首次執行因 OneDrive 檔案鎖定 .next 而 EPERM；清除 .next 後重跑成功（環境限制，不是程式錯誤）"
+          "note": "先清除 .next 再建置，避免 OneDrive 檔案鎖定造成 EPERM（環境限制，不是程式錯誤）"
         },
         {
           "command": "npm run audit:repair-provenance",
           "exitCode": 0,
-          "note": "裁決後重跑：877 語意不變、987 純格式、14 考核答案仍與重建原卷不同（2 題已刪除、2 題已按教師指示改回考核原空格；其餘 14 題已由教師逐題核准）"
+          "note": "877 語意不變、987 純格式、14 考核答案仍與重建原卷不同（2 題已刪除、2 題已按教師指示改回考核原空格；其餘 14 題已由教師逐題核准）"
         },
         {
           "command": "npm run audit:content",
           "exitCode": 0
         },
         {
-          "command": "npm run release:gate",
+          "command": "npm run audit:servability",
           "exitCode": 0,
-          "verdict": "NOT READY"
+          "result": "97 題不可作答（96 MCQ_ROMAN_LABEL_MISSING、1 FILL_ANSWER_LEAKS）"
         },
         {
-          "command": "node scripts/e2e-flow.mjs --start（暫存資料庫、空上載目錄）",
+          "command": "npm run audit:servability-evidence",
+          "exitCode": 0,
+          "result": "96 題已核對原文：0 題可直接由原文補標示；81 題原文標示不齊全（80 完全無編號、1 題只有 i–iii）、10 題陳述數與選項不符、4 題原始檔缺失、1 題找不到對應段落"
+        },
+        {
+          "command": "npm run audit:review-provenance",
+          "exitCode": 0,
+          "result": "teacher 16、owner-batch 1241、automation-only 623"
+        },
+        {
+          "command": "npm run audit:provenance-risk",
+          "exitCode": 0,
+          "result": "P0 0、P1 530、P2 0、P3 93（623 題全部有可比較的原始內容）"
+        },
+        {
+          "command": "npm run audit:adjudication-worklist",
+          "exitCode": 0,
+          "result": "97 題工作清單：Roman 96（81 原文可核對／10 陳述不一致／1 無法定位／4 缺檔）、答案外洩 1；0 題可自動修復"
+        },
+        {
+          "command": "npm run audit:source-crosswalk",
+          "exitCode": 0,
+          "result": "623 provenance／1,003 來源待核實，重疊 124（P1 31、P3 93）；31 題需先補來源"
+        },
+        {
+          "command": "npm run audit:golden-readiness",
+          "exitCode": 0,
+          "result": "42 候選、0 approved、42 待教師審核；HISTORY_REVIEWER_EMAILS 未設定"
+        },
+        {
+          "command": "npm run golden:candidates",
+          "exitCode": 0,
+          "result": "42 個 pending-review 候選"
+        },
+        {
+          "command": "npm run golden:export -- --check",
+          "exitCode": 0,
+          "result": "0 approved fixture；schema 可用；唯讀（檔案雜湊不變）",
+          "note": "Sprint 13：--check 不執行 migration、不寫 DB、不寫檔案；缺 DB／缺 0022 時 exit 2（INSUFFICIENT_EVIDENCE）。"
+        },
+        {
+          "command": "npm run db:migrate（未執行；只驗證缺 --database 時 exit 1 的契約）",
+          "exitCode": null,
+          "result": "UNVERIFIED（未對任何資料庫執行 migration）",
+          "note": "Sprint 13 新增獨立命令；本 Sprint 沒有執行，以免改動任何資料庫。"
+        },
+        {
+          "command": "npm run golden:eval",
+          "exitCode": 0,
+          "result": "INSUFFICIENT_EVIDENCE"
+        },
+        {
+          "command": "npm run release:gate",
+          "exitCode": 0,
+          "verdict": "NOT READY",
+          "note": "15 項閘門；加 --fail-on-not-ready 時 exit 1（Sprint 13 實測）。"
+        },
+        {
+          "command": "npm run audit:review-manifest",
+          "exitCode": 0,
+          "result": "623 題唯一、重複列 0；P1 530／P3 93；與來源待核實重疊 124；目前不可作答 21；教師裁決 0"
+        },
+        {
+          "command": "node scripts/e2e-flow.mjs --start（Sprint 15：暫存資料庫 + 複製 data/uploads）",
+          "exitCode": 0,
+          "passed": 128,
+          "failed": 0,
+          "note": "Sprint 15 本次實測（不是沿用 Sprint 14）。"
+        },
+        {
+          "command": "node scripts/e2e-flow.mjs --start（Sprint 14：暫存資料庫 + 複製 data/uploads）",
+          "exitCode": 0,
+          "passed": 128,
+          "failed": 0,
+          "note": "Sprint 14 歷史實測。"
+        },
+        {
+          "command": "node scripts/e2e-flow.mjs --start（暫存資料庫、空上載目錄、匿名示範模式）",
           "exitCode": 1,
-          "passed": 121,
-          "failed": 5,
-          "note": "5 項為既有環境限制：2 項練習抽到沒有教材節錄的校內試卷題、1 項該分節在該難度沒有可用填充題、2 項 OCR 因快照沒有上載原檔而失敗；與本次修改無關，已在報告逐項列明"
+          "passed": 126,
+          "failed": 2,
+          "note": "Sprint 12 歷史結果：兩項 OCR 失敗的唯一原因是缺少原始上載檔案。"
+        },
+        {
+          "command": "node scripts/e2e-flow.mjs --start（同一暫存資料庫，data/uploads 複製到暫存上載目錄）",
+          "exitCode": 0,
+          "passed": 128,
+          "failed": 0,
+          "note": "證明 2 項 OCR 失敗的唯一原因是缺少原始上載檔案；提供原檔後 OCR 完成並寫入標示來源的段落。"
+        },
+        {
+          "command": "node scripts/e2e-flow.mjs --start?Sprint 16?????? + ?? data/uploads?",
+          "exitCode": 0,
+          "passed": 128,
+          "failed": 0,
+          "note": "Sprint 16 ?????"
         }
       ],
       "recommendations": [
@@ -265,8 +428,8 @@
       "label": "content-quality-queue-2026-10-19",
       "metric": "佔位解釋",
       "previous": 1334,
-      "current": 1334,
-      "change": 0
+      "current": 1329,
+      "change": -5
     },
     {
       "label": "content-quality-queue-2026-10-19",
@@ -279,8 +442,8 @@
       "label": "content-quality-queue-2026-10-19",
       "metric": "技能空白",
       "previous": 1882,
-      "current": 1880,
-      "change": -2
+      "current": 1875,
+      "change": -7
     },
     {
       "label": "content-quality-queue-2026-10-19",

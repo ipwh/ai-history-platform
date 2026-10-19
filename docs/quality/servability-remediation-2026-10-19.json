@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-10-19T08:57:37.950Z",
+  "notice": "唯讀報告：沒有修改題目、審核或發布狀態；建議處置不等於已執行。",
+  "totals": {
+    "questions": 1875,
+    "unanswerable": 0,
+    "publishedUnanswerable": 0,
+    "withAttempts": 0,
+    "withSnapshots": 0,
+    "withCurrentHumanReview": 0
+  },
+  "byIssueCode": {},
+  "byCategory": {},
+  "byRecommendation": {},
+  "byStatus": {},
+  "items": []
+}

@@ -1,0 +1,757 @@
+{
+ "generatedAt": "2026-10-19T07:44:03.229Z",
+ "notice": "唯讀準備度報告：不核准任何 fixture、不寫入資料庫。缺少的項目必須由具授權的歷史科教師在正式核准流程提供。",
+ "inputs": {
+  "candidates": "docs\\teacher-review\\golden-candidates-2026-10-19.json",
+  "candidatesGeneratedAt": "2026-10-19T05:10:18.381Z",
+  "database": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+  "goldenDecisionTableAvailable": true,
+  "reviewerAllowlistConfigured": false,
+  "reviewerAllowlistSize": 0
+ },
+ "totals": {
+  "candidates": 42,
+  "approved": 0,
+  "pending": 42,
+  "staleDecisions": 0,
+  "readyForTeacherReview": 42,
+  "blockedByVersionDrift": 0,
+  "blockedByMissingEvidence": 0,
+  "categoriesRequiringTeacherInput": 7
+ },
+ "byStatus": {
+  "ready_for_teacher_review": 42
+ },
+ "rows": [
+  {
+   "questionId": "qb-JTH2ndEdFBQ05113",
+   "group": "teacher-adjudicated",
+   "candidateRevision": 8,
+   "currentRevision": 8,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ05161",
+   "group": "teacher-adjudicated",
+   "candidateRevision": 8,
+   "currentRevision": 8,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ08014",
+   "group": "teacher-adjudicated",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ08028",
+   "group": "teacher-adjudicated",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ09015",
+   "group": "teacher-adjudicated",
+   "candidateRevision": 6,
+   "currentRevision": 6,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ09028",
+   "group": "teacher-adjudicated",
+   "candidateRevision": 6,
+   "currentRevision": 6,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ10014",
+   "group": "teacher-adjudicated",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ10078",
+   "group": "teacher-adjudicated",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ10014",
+   "group": "answer-mapping-changed",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ10078",
+   "group": "answer-mapping-changed",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ10113",
+   "group": "answer-mapping-changed",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ10125",
+   "group": "answer-mapping-changed",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ10140",
+   "group": "answer-mapping-changed",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ10156",
+   "group": "answer-mapping-changed",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-NJCFN0110000009",
+   "group": "answer-mapping-changed",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-NJCFN0120000013",
+   "group": "answer-mapping-changed",
+   "candidateRevision": 6,
+   "currentRevision": 6,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ09015",
+   "group": "unservable",
+   "candidateRevision": 6,
+   "currentRevision": 6,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdMCQ01023",
+   "group": "unservable",
+   "candidateRevision": 3,
+   "currentRevision": 3,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdMCQ05129",
+   "group": "unservable",
+   "candidateRevision": 3,
+   "currentRevision": 3,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdMCQ05173",
+   "group": "unservable",
+   "candidateRevision": 3,
+   "currentRevision": 3,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdMCQ08026",
+   "group": "unservable",
+   "candidateRevision": 3,
+   "currentRevision": 3,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdMCQ08031",
+   "group": "unservable",
+   "candidateRevision": 3,
+   "currentRevision": 3,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdMCQ08032",
+   "group": "unservable",
+   "candidateRevision": 3,
+   "currentRevision": 3,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdMCQ08037",
+   "group": "unservable",
+   "candidateRevision": 3,
+   "currentRevision": 3,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ09028",
+   "group": "accepted-alternatives",
+   "candidateRevision": 6,
+   "currentRevision": 6,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-NJCFN0120000013",
+   "group": "accepted-alternatives",
+   "candidateRevision": 6,
+   "currentRevision": 6,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-NJCMN0060000001",
+   "group": "traceable-mc",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-NJCMN0060000002",
+   "group": "traceable-mc",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-NJCMN0060000003",
+   "group": "traceable-mc",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-NJCMN0060000004",
+   "group": "traceable-mc",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-NJCMN0060000005",
+   "group": "traceable-mc",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-NJCMN0060000006",
+   "group": "traceable-mc",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-NJCMN0060000007",
+   "group": "traceable-mc",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-NJCMN0060000008",
+   "group": "traceable-mc",
+   "candidateRevision": 5,
+   "currentRevision": 5,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）",
+    "錯誤選項說明 3 條（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ01001",
+   "group": "traceable-fill",
+   "candidateRevision": 2,
+   "currentRevision": 2,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ01002",
+   "group": "traceable-fill",
+   "candidateRevision": 4,
+   "currentRevision": 4,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ01003",
+   "group": "traceable-fill",
+   "candidateRevision": 4,
+   "currentRevision": 4,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ01004",
+   "group": "traceable-fill",
+   "candidateRevision": 2,
+   "currentRevision": 2,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ01005",
+   "group": "traceable-fill",
+   "candidateRevision": 4,
+   "currentRevision": 4,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ01006",
+   "group": "traceable-fill",
+   "candidateRevision": 2,
+   "currentRevision": 2,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ01007",
+   "group": "traceable-fill",
+   "candidateRevision": 2,
+   "currentRevision": 2,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  },
+  {
+   "questionId": "qb-JTH2ndEdFBQ01008",
+   "group": "traceable-fill",
+   "candidateRevision": 4,
+   "currentRevision": 4,
+   "revisionMatches": true,
+   "fingerprintMatches": true,
+   "hasSourceEvidence": true,
+   "answerComplete": true,
+   "missing": [
+    "預期 grading（需教師在核准時提供）",
+    "審核理由及類別（需教師提供）"
+   ],
+   "decision": null,
+   "decisionValidForCurrentVersion": null,
+   "status": "ready_for_teacher_review"
+  }
+ ],
+ "blockedByAllowlist": true
+}

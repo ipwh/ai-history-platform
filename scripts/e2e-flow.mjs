@@ -396,8 +396,19 @@ async function main() {
     check("回饋包含標準答案", Boolean(firstFeedback?.correctAnswer));
     check("回饋包含解釋", Boolean(firstFeedback?.explanation));
     check("回饋包含知識點", Boolean(firstFeedback?.knowledgePoint));
-    check("回饋包含教材來源位置", Boolean(firstFeedback?.sourceLocation));
-    check("回饋包含教材原文節錄", Boolean(firstFeedback?.sourceExcerpt));
+    // 教材節錄可否顯示由 source-visibility.ts 決定（fail-closed）：匯入的校內試題
+    // （origin = school-paper）沒有教材段落依據時，一律不向學生顯示檔名、題號及節錄。
+    // 因此這裡驗證的是「政策一致」，而不是「一定有節錄」：
+    //   - 有顯示 → 來源位置及節錄都必須存在；
+    //   - 沒顯示 → 兩者都必須為空，並且必須標示 sourceWithheld。
+    if (firstFeedback?.sourceWithheld === true) {
+      check("未核實來源的題目不會向學生顯示來源位置", !firstFeedback?.sourceLocation);
+      check("未核實來源的題目不會向學生顯示原文節錄", !firstFeedback?.sourceExcerpt);
+      check("未核實來源的題目會標示已略去節錄", firstFeedback?.sourceWithheld === true);
+    } else {
+      check("可顯示來源時，回饋包含教材來源位置", Boolean(firstFeedback?.sourceLocation));
+      check("可顯示來源時，回饋包含教材原文節錄", Boolean(firstFeedback?.sourceExcerpt));
+    }
 
     // 撤回教材發行權後，引用該教材的題目必須立即不再顯示原文節錄
     // （節錄只在來源已確認可向學生發布時才回傳）。題目本身、答案及解釋不受影響。
@@ -479,10 +490,13 @@ async function main() {
     }
 
     console.log("\n[7] 填充題自動評分");
+    // 用分類層（section，不是 childSection）抽題：E2E 選中的 childSection 只有選擇題，
+    // 若固定用 childSection 會永遠得到「沒有填充題」。用父分節（含子分節）才能實際
+    // 驗證填充題自動評分，而不是把缺乏題目誤當成功能失敗。
     const fillPractice = await call("POST", "/api/practice", {
       learnerId: LEARNER_ID,
       topicId: topic.id,
-      sectionIds: [childSection.id],
+      sectionIds: [section.id],
       questionTypes: ["fill"],
       difficulty: "basic",
       questionCount: 1,

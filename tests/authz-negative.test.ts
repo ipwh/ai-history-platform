@@ -28,6 +28,8 @@ process.env.AUTH_SECRET = "test-secret-0123456789abcdefghijklmnop";
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";
 process.env.AUTH_TEACHER_EMAILS = "teacher@example.com";
 process.env.AUTH_ADMIN_EMAILS = "admin@example.com";
+// 歷史科內容審核者名單（Sprint 12）：Golden 裁決需要學科授權，教師在此名單內。
+process.env.HISTORY_REVIEWER_EMAILS = "teacher@example.com";
 process.env.GOOGLE_CLIENT_ID = "test-client-id.apps.googleusercontent.com";
 process.env.GOOGLE_CLIENT_SECRET = "test-client-secret";
 delete process.env.ADMIN_TOKEN;
@@ -86,6 +88,12 @@ interface RouteCase {
   method: "GET" | "POST" | "PATCH" | "DELETE";
   /** 只限管理員的路由 */
   adminOnly: boolean;
+  /**
+   * 管理員是否也可通過（預設 true）。
+   * Sprint 12：Golden fixture 裁決需要歷史科學科授權（`HISTORY_REVIEWER_EMAILS`），
+   * 平台 admin 角色不足，因此該路由設為 false。
+   */
+  adminAllowed?: boolean;
   load: () => Promise<unknown>;
   /** 動態路由參數（一律用不存在的 ID，避免測試改動資料） */
   params?: Record<string, string>;
@@ -139,6 +147,35 @@ const ROUTES: RouteCase[] = [
     load: () => import("@/app/api/teacher/questions/[questionId]/review/route"),
     params: { questionId: "missing-question" },
     body: { decision: "approved" },
+  },
+  {
+    target: "POST /api/teacher/questions/[questionId]/servability",
+    method: "POST",
+    adminOnly: false,
+    load: () => import("@/app/api/teacher/questions/[questionId]/servability/route"),
+    params: { questionId: "missing-question" },
+    body: { decision: "return_to_draft", reason: "測試用理由", expectedRevision: 1 },
+  },
+  {
+    target: "GET /api/teacher/golden",
+    method: "GET",
+    adminOnly: false,
+    load: () => import("@/app/api/teacher/golden/route"),
+  },
+  {
+    target: "GET /api/teacher/review-queue",
+    method: "GET",
+    adminOnly: false,
+    load: () => import("@/app/api/teacher/review-queue/route"),
+  },
+  {
+    target: "POST /api/teacher/golden/[questionId]",
+    method: "POST",
+    adminOnly: false,
+    adminAllowed: false,
+    load: () => import("@/app/api/teacher/golden/[questionId]/route"),
+    params: { questionId: "missing-question" },
+    body: { decision: "rejected", reason: "測試用理由", expectedRevision: 1 },
   },
   {
     target: "DELETE /api/teacher/questions/[questionId]",
@@ -335,9 +372,13 @@ describe("負向授權：每一個特權路由", () => {
         }
       });
 
-      it("管理員可以使用", async () => {
+      it(route.adminAllowed === false ? "管理員被學科授權拒絕（403）" : "管理員可以使用", async () => {
         const response = await call(route, buildRequest(route, { cookie: cookieHeader(ADMIN_USER) }));
-        expect(isAuthorized(response)).toBe(true);
+        if (route.adminAllowed === false) {
+          expect(response.status).toBe(403);
+        } else {
+          expect(isAuthorized(response)).toBe(true);
+        }
       });
     });
   }
