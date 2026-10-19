@@ -1,4 +1,4 @@
-﻿# 歷史科自學網站（香港教育局歷史科課程：中一至中三）
+# 歷史科自學網站（香港教育局歷史科課程：中一至中三）
 
 供香港中學生使用的歷史科自學平台。學生以**學校 Google Workspace 帳戶**登入後，可揀選課題及課題內的多個**主題（分節，可多選）**，由 **AI 即時生成多項選擇題**（亦可改用教師題庫），完成練習後查看答案、解釋、知識點及**教材來源位置**；教師可上載 DOCX／PDF 教材、檢視及修正系統擷取的內容（包括**圖片 OCR 文字辨識**）、生成並查核題目。
 
@@ -59,8 +59,13 @@ npm run dev          # 啟動開發伺服器
 | `npm run import:materials` | 由命令列匯入 `materials/` 內的教材及校內試題（可加 `--books`、`--questions`、`--topic`、`--ocr`） |
 | `npm run generate:questions` | 為各課題生成題目（`--topic`、`--count`、`--draft-only`） |
 | `npm run publish:drafts` | **擁有者授權**的批次發布草稿題目（預設模擬；`--owner-email`、`--reason`、`--origins`、`--apply`，見第十節） |
-| `npm run approve:questions` | **擁有者授權**的批次覆核通過並發布題目（逐題寫入覆核紀錄；預設模擬，參數同上，見第十節） |
-| `npm run repair:questions` | 修復題庫中結構上無法作答的題目（多空格填充題、排版符號殘留；預設模擬、要 `--apply`；可加 `--delete-unusable` 刪除無法修復的題目；見第七節） |
+| `npm run approve:questions` | **擁有者授權**的批次覆核通過並發布題目（逐題寫入覆核紀錄；預設模擬，參數同上；**不會**處理待教師確認的題目，見第十節） |
+| `npm run repair:questions` | 修復題庫中結構上無法作答的題目（多空格填充題、排版符號殘留；預設模擬、要 `--apply`；可加 `--delete-unusable` 刪除**結構上**無法修復的題目、`--quarantine <報告>` 隔離已被證實改變考核答案的題目；見第七節） |
+| `npm run audit:repair-provenance` | 唯讀稽核：以 `materials/` 的原始試題檔重建修復前內容，逐題比較並列出被改變考核答案的題目（`--out <檔案>` 可寫出報告） |
+| `npm run audit:content` | 唯讀內容稽核：來源可追溯性、解釋品質、元知識點／難度／技能、政策分類；輸出 JSON 及 Markdown（不含學生資料） |
+| `npm run release:gate` | 唯讀發布閘門：綜合隔離、可作答性、來源、解釋、元數據、教師裁決、版權、Golden dataset、測試及部署證據，輸出 `PASS`／`FAIL`／`WARN`／`POLICY_PENDING`／`INSUFFICIENT_EVIDENCE` 及 `READY`／`READY WITH LIMITATIONS`／`NOT READY` |
+| `npm run review:adjudication` | 唯讀：由修復來源報告產生 18 題逐題裁決套件（原始 vs 現行、空格位置及答案次序、版本與紀錄來源、待填決定欄） |
+| `npm run review:content-queue` | 唯讀：把不同性質的內容問題分開列出（附錄 B 疑點、佔位解釋、知識點、技能／難度、來源不可追溯、教材發行權） |
 | `npm run simulate:usage` | **模擬學生使用**（課題 × 題型 × 難度 × 題數；需先啟動伺服器，見第七節） |
 | `npm run open:materials` | **擁有者授權**的批次開放教材給學生（預設模擬；`--owner-email`、`--reason`、`--topics`、`--apply`，見第十節） |
 | `npm run retire:materials` | 退掉被取代的教材文件（`--files "檔名,…"`，預設模擬、要 `--apply`；刪除路徑與管理介面相同） |
@@ -803,7 +808,7 @@ npm run simulate:usage -- --ai-only --topics topic-1,topic-5 --random 2
 
 | 缺陷 | 影響 | 修復 |
 | --- | --- | --- |
-| 填充題一句有多個空格，但答案區只有一個答案 | **923 題填充題中 574 題**：學生見到 2–5 個空格卻只有一個輸入框，其餘空格永遠沒有答案可對 | 匯入時把其餘空格的答案填回題幹，只保留一個空格（[question-bank.ts](src/server/materials/question-bank.ts) `normaliseMultiBlankFill`）；已用 `npm run repair:questions` 修好 548 題 |
+| 填充題一句有多個空格，但答案區只有一個答案 | **923 題填充題中 574 題**：學生見到 2–5 個空格卻只有一個輸入框，其餘空格永遠沒有答案可對 | 匯入時把其餘空格的答案填回題幹，只保留一個空格（[question-bank.ts](src/server/materials/question-bank.ts) `normaliseMultiBlankFill`）；已用 `npm run repair:questions` 修好 548 題。**2026-10-19 更正**：保留哪一個空格會影響被考核的答案，見下方「修復來源稽核」 |
 | 題幹完全沒有空格（原檔用 Word 底線排版，轉成文字後消失） | 1 題無法作答 | 由 `checkQuestionServable` 攔下，不派給學生，並已按擁有者指示刪除 |
 | 選項保留了原檔的項目符號（「. i和ii」） | 92 題顯示混亂 | 匯入及修復時移除；選項重複檢查改為保留標點（原本會把「ii，iii，iv，i」與「iii，ii，iv，i」誤判為重複） |
 | 選項在解析後全部變成「.」 | 1 題無法作答 | 匯入時略過，既有題目已刪除 |
@@ -815,6 +820,54 @@ npm run simulate:usage -- --ai-only --topics topic-1,topic-5 --random 2
 **多生成 1–2 題作備用（`GenerateOptions.overGenerate`）**：練習路徑每次向模型要求「所需題數 + 1–2 題」。多出的題目只在有題目被判不合格時補上，最終派給學生的數量仍以學生選擇的題數為上限（呼叫端會截取），因此不會多派題目。這只增加同一請求的輸出 token、不會增加請求次數；配合「按丟棄原因重試一次」，真實模型的出題成功率由約 7/8 提升至本輪量度的 **8/8**。
 
 **無法修復的題目已刪除**：原卷資料不足而無法還原的 29 題（多空格但答案表只有一個答案、選項在解析後全部變成「.」、題幹沒有空格）已由擁有者指示刪除，題庫現為 **1,882 題**（課題1 73、2 94、3 38、4 56、5 338、6 139、7 117、8 118、9 224、10 362、11 115、12 208）。刪除指令：`npm run repair:questions -- --delete-unusable --apply`（預設模擬；只刪除「由腳本標示、且結構上確實無法作答」的題目，同時清理其覆核紀錄、作答及回報）。
+
+### 修復來源稽核（2026-10-19）
+
+**為甚麼需要**：多空格填充題改寫時，若原第 1 個空格的答案在後文再次出現，系統會改用另一個空格（否則等於直接給答案）。這會令**被考核的答案改變**，但舊版修復紀錄一律寫成「考核的答案不變」。
+
+**稽核方法**（`npm run audit:repair-provenance`，唯讀、可重複執行）：以 `materials/` 內的原始試題檔配合 `parseQuestionBank`（不做多空格正規化）重建修復前內容，再與資料庫逐題比較。結果：
+
+| 分類 | 數量 | 說明 |
+| --- | --- | --- |
+| 語意不變（`NO_SEMANTIC_CHANGE_CONFIRMED`） | **877** | 347 題本來就是單一空格；530 題補回其餘空格的答案，但仍考核原第 1 個空格（考核答案相同） |
+| 純格式（`FORMATTING_CHANGE_ONLY`） | **987** | 選擇題只移除選項開頭的項目符號 |
+| **考核答案已改變（`ANSWER_MAPPING_CHANGED`）** | **18** | 保留的空格由第 1 個改為第 2／3 個（例如「戰爭」→「好戰」） |
+
+完整 18 題清單及逐題證據見 [docs/teacher-review/repair-provenance-2026-10-19.json](docs/teacher-review/repair-provenance-2026-10-19.json)。**這 18 題需要歷史科教師核對原卷**；本機資料集已用 `--quarantine` 隔離全部 18 題（0 題可派發，沒有新增或改寫任何覆核紀錄）。逐題裁決套件（**不是**覆核紀錄，所有決定欄留空）見 [docs/teacher-review/repair-adjudication-2026-10-19.md](docs/teacher-review/repair-adjudication-2026-10-19.md)。
+
+**已修正的程式行為**（見 [question-repair.ts](src/server/services/question-repair.ts)）：
+
+1. 匯入及修復只會在**仍考核原第 1 個空格**時自動改寫；會改變考核答案的題目**不改寫**，標示「待教師確認」（`teacher_confirmation_required`），學生不會收到。
+2. 修復理由按實際改動生成（「仍考核第 1 個空格；考核答案及題意不變」或「移除項目符號」），不再一律寫成「考核的答案不變」。
+3. 腳本補記的覆核紀錄一律以 `reviewer_role = automation` 及 `[automation]` 理由寫入，**不會冒充教師或管理員**。
+4. `--delete-unusable` 只會刪除結構上無法作答的題目，不會刪除待教師確認考核內容的題目。
+5. `--quarantine <報告>` 可把已被證實改變考核答案的題目標示待教師確認（預設模擬；`--apply` 才寫入，而且不會改寫題目內容或新增覆核）。
+
+既有 18 題的隔離指令（**先備份；預設模擬**）：
+
+```bash
+npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2026-10-19.json
+npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2026-10-19.json --apply --owner-email you@school.edu.hk
+```
+
+> 2026-10-19：本機 `data/app.db` 已執行上述隔離（先備份至 `%TEMP%`），其後完成逐題裁決：16 題核准、2 題拒絕並刪除、0 題仍隔離。逐題理由見 [docs/teacher-review/repair-adjudication-results-2026-10-19.md](docs/teacher-review/repair-adjudication-results-2026-10-19.md)；`question_reviews` 由 3,148 增至 3,168 筆。
+
+### 內容品質稽核與發布閘門（Sprint 9，2026-10-19）
+
+**`npm run audit:content`（唯讀）** 逐題分類來源、解釋及元數據，輸出 [docs/quality/content-audit-2026-10-19.md](docs/quality/content-audit-2026-10-19.md) 及 JSON。實測（1,880 題）：
+
+| 類別 | 結果 |
+| --- | --- |
+| 來源 | 可定位 **877**；只有檔名＋題號、未核實 **1,003**；不完整 0；無法追溯 0 |
+| 解釋 | 佔位文字 **1,334**；只列答案 **546**；明顯矛盾 0；有覆核但仍低品質 **1,244** |
+| 元數據 | 技能空白 **1,880**；知識點排版殘留 **122**、通用標籤 **587**、與分節對不上 **878**；無效關聯 0 |
+| 政策 | 硬性阻擋 97（已發布但結構不可作答，派發層會攔下）；待教師決定 3,834 項發現；待決政策 1,880 題 |
+
+**來源可追溯 ≠ 歷史正確 ≠ 版權許可。** 三者分開判斷，不會互相代替。
+
+**`npm run release:gate`（唯讀）** 綜合所有閘門，輸出 [docs/release-gate-2026-10-19.md](docs/release-gate-2026-10-19.md)。目前結果：**NOT READY**（來源待核實、佔位解釋、元數據、Golden dataset 空、部署證據不足；97 題已發布但不可作答；版權為 WARN）。閘門不會修改題庫，也不會把「未定義標準」當成通過。
+
+**限制**：稽核假設 `materials/` 內的來源檔與當初匯入時一致，而且現行 `parseQuestionBank` 的行為沒有改變。較早前的修復紀錄仍保留原本（部分不準確）的理由字串——歷史紀錄不會被改寫；影響範圍就是上表 18 題。
 
 > **不要把「題庫沒有這條題目」當成資料損壞**：即時生成的練習題只存在於練習快照，本來就不在題庫；它們的作答記錄是有效記錄，不可當作孤兒資料刪除。
 
@@ -971,7 +1024,7 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
 - 教師及管理員不可透過學生端 API 讀取或修改其他學習者的練習記錄（服務層會核對 `session.learnerId`，不符即回傳 `403`）；只可經教師端「學生練習記錄」（`/teacher/records`）查閱及下載學生的練習記錄。
 - 角色每次讀取工作階段時都**以目前的設定重新判定**（見 [src/server/auth/role.ts](src/server/auth/role.ts) 的 `revalidateSessionUser`）：把帳號移出 `AUTH_ADMIN_EMAILS`／`AUTH_TEACHER_EMAILS` 後，該帳號**現有的 cookie 立即失去權限**，毋須等待 30 天到期（撤銷的有效期為 0）。重新判定**只會維持或降權，不會升權**——升權一律要求重新登入，因此不可能因為重新判定時拿不到名冊資料而把學生變成教師。名冊提供的班別、學號只反映登入時的名冊狀態。
 - 自動化腳本可在 `ADMIN_TOKEN` 設定後以 `x-admin-token` 標頭呼叫後台 API。這個權杖**等同管理員並會繞過所有角色檢查**，因此：只接受 **32 個字元或以上**的值（過短一律視為無效並回傳 `401`）、以固定時間比較，且只應存放於伺服器的環境變數或 Secret Manager。權杖長度不足時，管理員端系統狀態頁會顯示「error」等級的設定問題。
-- 未登入（未設定 Google 憑證）時，`/api/teacher/*`、`/api/admin/*` 及其頁面會保持開放，方便本機測試；**在 Cloud Run 上則預設拒絕**（除非明確設定 `HISTORY_ALLOW_UNSAFE_DEMO_MODE=true`）。
+- 未登入（未設定 Google 憑證）時，`npm run dev` 仍會保持 `/api/teacher/*`、`/api/admin/*` 及其頁面開放，方便本機測試；**任何正式建置**（`npm run build` 後的 `npm start`，以及 Cloud Run）則預設拒絕（除非明確設定 `HISTORY_ALLOW_UNSAFE_DEMO_MODE=true`）。
 - 登入後的返回路徑只接受站內路徑（`next`），並在解析後再次確認留在本站，避免 `?next=` 被用作開放式轉址（含 `/\evil.example.com` 這類反斜線寫法）。
 - 未預期的伺服器錯誤只會回傳固定訊息，內部細節（錯誤內容、資料庫結構等）只寫入伺服器日誌。
 - 教師下載的練習記錄 CSV 會把以 `=`、`+`、`-`、`@` 起首的儲存格加上前置單引號，避免學生答案被 Excel／Google Sheets 當成公式執行。
@@ -1563,7 +1616,7 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 | 首次部署到**新建專案**時，部署步驟失敗：`Secret projects/<編號>/secrets/history-auth-secret/versions/latest was not found` | 舊版指令碼以「輸出是否為空」判斷機密是否已有版本，但 `gcloud secrets versions list` 在沒有版本時會把 `Listed 0 items.` 寫到 **stderr**，而 helper 以 `2>&1` 合併輸出，令新建的 `history-auth-secret` 被誤判為已有版本，結果從未寫入第一個版本 | 已修正為檢查是否真的有版本編號（`^\d+$`）。如使用舊版指令碼，可手動補一個版本：`"隨機字串" \| gcloud secrets versions add history-auth-secret --project <專案> --data-file -`。另：新建專案首次執行若在第 2 步（Artifact Registry）失敗，是因為剛啟用的 API 尚未生效，等 1–2 分鐘重跑即可（指令碼可安全重複執行） |
 | 部署成功但服務回 `403 Forbidden`（未開放公開存取） | Cloud Build 執行身分無 `run.services.setIamPolicy`，`--allow-unauthenticated` 未能套用（部署輸出會提示） | 指令碼已在部署後自動補上 `allUsers` → `roles/run.invoker`；如仍失敗，手動執行：`gcloud run services add-iam-policy-binding history-self-study --region=asia-east2 --project <專案> --member=allUsers --role=roles/run.invoker` |
 | `fetch failed`（備份失敗） | Cloud Run 只會在處理請求時分配 CPU，容器閒置時的背景計時器會被節流；Next.js 亦有自己的 SIGTERM 處理，關機備份未必來得及完成 | 備份改為在 API 請求週期內執行（`handleRoute` 內 `await backupIfDue()`），並只在資料有變更時上載；實測 27 MB 備份可在請求內完成 |
-| 後台 API 在 Cloud Run 上回 `403` | 未設定 Google 憑證（`authEnabled=false`），守衛拒絕公開存取 | 設定 `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` 後重新部署；臨時示範可用 `HISTORY_ALLOW_UNSAFE_DEMO_MODE=true` |
+| 正式建置的後台 API 回 `403` | 未設定 Google 憑證（`authEnabled=false`），正式建置（`npm start` 或 Cloud Run）一律 fail-closed | 設定 `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` 後重新部署；只在本機臨時示範時可用 `HISTORY_ALLOW_UNSAFE_DEMO_MODE=true` |
 | 登入後進入 `/admin` 被導向「只限管理員帳戶使用」 | `AUTH_ADMIN_EMAILS` 未設定（`cloudbuild.yaml` 的 `_ADMIN_EMAILS` 留空），因此沒有任何帳戶是管理員 | 部署時加 `-AdminEmails 你的電郵`，或用 `gcloud run services update <服務> --region=<區域> --update-env-vars AUTH_ADMIN_EMAILS=你的電郵` |
 
 **本機以 Docker 驗證（建議部署前先做）**

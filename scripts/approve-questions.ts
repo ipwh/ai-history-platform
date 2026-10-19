@@ -19,12 +19,18 @@
  *
  * 拒絕執行的情況：正式環境（Cloud Run／NODE_ENV=production）、缺少 --owner-email
  * 或 --reason。預設為模擬模式，加 `--apply` 才會寫入。
+ *
+ * 批次覆核**不會**處理帶有「待教師確認」標記的題目（`teacherConfirmationRequired`）：
+ * 那些題目的考核內容仍有未確定項目（例如自動修復改變了答案對應），只有教師的人工
+ * 決定可以解除暫緩。腳本會列出被保留的題目，方便教師逐題處理。
  */
 import { getServerConfig, isProductionRuntime } from "../src/server/config";
 import { getDb } from "../src/server/db/connection";
 import { QUESTION_ORIGIN_LABELS, type QuestionOrigin } from "../src/lib/types";
-import { listQuestions } from "../src/server/repositories/questions";
-import { recordQuestionReview } from "../src/server/services/question-service";
+import {
+  listOwnerApprovalCandidates,
+  recordQuestionReview,
+} from "../src/server/services/question-service";
 
 function readArg(name: string): string | null {
   const index = process.argv.indexOf(name);
@@ -63,17 +69,29 @@ function main(): void {
   console.log(`來源：${origins.map((origin) => QUESTION_ORIGIN_LABELS[origin] ?? origin).join("、")}`);
   if (topicId) console.log(`課題：${topicId}`);
 
-  const questions = listQuestions({
+  const { approvable, held } = listOwnerApprovalCandidates({
     ...(origins.length > 0 ? { origins } : {}),
     ...(topicId ? { topicId } : {}),
   });
-  console.log(`\n符合條件的題目：${questions.length} 題`);
+  console.log(`\n符合條件的題目：${approvable.length + held.length} 題`);
+  console.log(`可批次覆核：${approvable.length} 題`);
+  if (held.length > 0) {
+    console.log(
+      `\n保留（待教師確認，批次覆核不會處理）：${held.length} 題`,
+    );
+    for (const question of held) {
+      console.log(`  - ${question.id}（${question.status}，rev ${question.revision}）`);
+    }
+    console.log(
+      "  這些題目只可由教師在「題目管理」逐題核對後決定（核准／退回／拒絕）。",
+    );
+  }
 
   let created = 0;
   let alreadyReviewed = 0;
   let approved = 0;
   let published = 0;
-  for (const question of questions) {
+  for (const question of approvable) {
     if (!apply) continue;
     const result = recordQuestionReview({
       questionId: question.id,

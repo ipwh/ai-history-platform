@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { getServerConfig, MIN_AUTH_SECRET_LENGTH } from "./config";
+import { getServerConfig, MIN_AUTH_SECRET_LENGTH, isProductionRuntime } from "./config";
 import { isStudentPatternEmail } from "./auth/role";
 
 export { MIN_AUTH_SECRET_LENGTH };
@@ -139,12 +139,14 @@ export function describeConfigIssues(): ConfigIssue[] {
 
   // 登入與後台
   if (!config.auth.enabled) {
-    const onCloudRun = deployment.platform === "cloud-run";
+    // 正式建置（npm start／Cloud Run）一律 fail-closed：後台會被拒絕，
+    // 除非明確設定 HISTORY_ALLOW_UNSAFE_DEMO_MODE=true（見 config.ts）。
+    const publishedBuild = isProductionRuntime();
     issues.push({
-      level: onCloudRun ? "error" : "warning",
+      level: publishedBuild ? "error" : "warning",
       code: "auth-disabled",
-      message: onCloudRun
-        ? "在 Cloud Run 上未啟用學校 Google 帳戶登入：後台 API 會被拒絕（除非設定 HISTORY_ALLOW_UNSAFE_DEMO_MODE=true）。請設定 GOOGLE_CLIENT_ID、GOOGLE_CLIENT_SECRET 及 AUTH_SECRET。"
+      message: publishedBuild
+        ? "正式建置未啟用學校 Google 帳戶登入：後台 API 及頁面會被拒絕（除非設定 HISTORY_ALLOW_UNSAFE_DEMO_MODE=true）。請設定 GOOGLE_CLIENT_ID、GOOGLE_CLIENT_SECRET 及 AUTH_SECRET。"
         : "尚未啟用學校 Google 帳戶登入：學生以匿名 ID 使用，教師端及管理員端與學生端完全開放，只適合本機開發及示範。",
     });
   } else {

@@ -166,7 +166,14 @@ export function readCookieFromRequest(request: Request, name: string): string | 
     if (separator < 0) continue;
     if (part.slice(0, separator).trim() !== name) continue;
     const value = part.slice(separator + 1).trim();
-    return value.length > 0 ? decodeURIComponent(value) : null;
+    if (value.length === 0) return null;
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      // 損毀的百分比編碼（例如「%」）不應令回呼變成 500：視為沒有這個 cookie，
+      // 由呼叫端按「沒有暫存 state」處理（回 invalid_state）。
+      return null;
+    }
   }
   return null;
 }

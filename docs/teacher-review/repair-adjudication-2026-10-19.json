@@ -1,0 +1,2695 @@
+{
+  "generatedAt": "2026-10-19T01:49:20.628Z",
+  "status": "AWAITING_TEACHER_ADJUDICATION",
+  "notice": "本檔案是裁決表單與證據摘要，不是覆核紀錄。所有 decision 欄位均為 unset，須由教師在平台上逐題決定。",
+  "sourceReport": {
+    "path": "docs/teacher-review/repair-provenance-2026-10-19.json",
+    "generatedAt": "2026-10-19T01:32:39.065Z",
+    "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+    "limitations": [
+      "只覆蓋 materials/ 內仍存在的試題檔；來源檔已更新或題目已刪除時無法重建。",
+      "假設現行 parseQuestionBank 與當初匯入時的行為一致；解析器如有變更，結果可能與真正原版有差異。",
+      "比較基準是『原始題目可重建的預期修復結果』，不是題目的歷史版本紀錄（資料庫沒有保存舊版本內容）。"
+    ],
+    "counts": {
+      "NO_SEMANTIC_CHANGE_CONFIRMED": 877,
+      "FORMATTING_CHANGE_ONLY": 987,
+      "ANSWER_MAPPING_CHANGED": 18,
+      "REQUIRES_HISTORY_TEACHER_REVIEW": 18
+    }
+  },
+  "totals": {
+    "questions": 18,
+    "presentInBank": 18,
+    "missingFromBank": 0,
+    "currentlyQuarantined": 18,
+    "withAutomationReviewRecord": 18,
+    "automationRecordedAsHuman": 18
+  },
+  "items": [
+    {
+      "questionId": "qb-JTH2ndEdFBQ10014",
+      "topic": {
+        "id": "topic-10",
+        "title": "課題10：20世紀的國際紛爭及危機(II)–冷戰及後冷戰時代",
+        "level": 3,
+        "sectionId": "topic-10-coldwar-background",
+        "sectionTitle": "冷戰的背景與成因"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "A. 冷戰的背景與成因",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "一戰期間，俄國共產主義者發動「十月革命」，成功建立世界上第一個社會主義國家，並於＿＿＿年進一步成立「蘇維埃社會主義共和國聯盟」。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 40,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "社會",
+          "1922"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "1922",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 社會、(2) 1922",
+        "gradingPoints": [],
+        "sourceExcerpt": "一戰期間，俄國共產主義者發動「十月革命」，成功建立世界上第一個______________主義國家，並於______________年進一步成立「蘇維埃社會主義共和國聯盟」。",
+        "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_填充題.docx · 第 129 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「社會」變為「1922」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:34:16.340Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "一戰期間，俄國共產主義者發動「十月革命」，成功建立世界上第一個______________主義國家，並於______________年進一步成立「蘇維埃社會主義共和國聯盟」。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 31,
+            "length": 14
+          },
+          {
+            "index": 2,
+            "offset": 52,
+            "length": 14
+          }
+        ],
+        "blankAnswers": [
+          "社會",
+          null
+        ],
+        "correctAnswer": "社會",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「社會」變為「1922」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "3a8665927d33f3aa094a3b4d718a284bd15c257a9eeaec0d1ed8461882914df5",
+            "createdAt": "2026-10-18T12:42:10.586Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "3a8665927d33f3aa094a3b4d718a284bd15c257a9eeaec0d1ed8461882914df5",
+            "createdAt": "2026-10-18T12:32:24.639Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "9f1dd4b8e5a1ef8c621b97d925b61e04bec7baefca6288c2579707b68fb60b16",
+            "createdAt": "2026-10-18T09:53:06.821Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ10078",
+      "topic": {
+        "id": "topic-10",
+        "title": "課題10：20世紀的國際紛爭及危機(II)–冷戰及後冷戰時代",
+        "level": 3,
+        "sectionId": "topic-10-coldwar-background",
+        "sectionTitle": "冷戰的背景與成因"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "B. 冷戰的主要發展",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "美國自1956年起派遣U-2偵察機前往蘇聯收集情報。＿＿＿年5月，一架U-2偵察機在蘇聯領土上被擊落。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 26,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "U-2偵察機",
+          "1960"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "1960",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) U-2偵察機、(2) 1960",
+        "gradingPoints": [],
+        "sourceExcerpt": "美國自1956年起派遣______________前往蘇聯收集情報。______________年5月，一架U-2偵察機在蘇聯領土上被擊落。",
+        "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_填充題.docx · 第 713 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「U-2偵察機」變為「1960」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:34:27.755Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "美國自1956年起派遣______________前往蘇聯收集情報。______________年5月，一架U-2偵察機在蘇聯領土上被擊落。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 11,
+            "length": 14
+          },
+          {
+            "index": 2,
+            "offset": 34,
+            "length": 14
+          }
+        ],
+        "blankAnswers": [
+          "U-2偵察機",
+          null
+        ],
+        "correctAnswer": "U-2偵察機",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「U-2偵察機」變為「1960」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "e733591308443cf50961a1f05543fdc0afb00e4b012842f78d00d2a6c5085619",
+            "createdAt": "2026-10-18T12:42:29.532Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "e733591308443cf50961a1f05543fdc0afb00e4b012842f78d00d2a6c5085619",
+            "createdAt": "2026-10-18T12:32:42.339Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "794991bef28573b153ada845ca7784a09fb0bebcbd506a1e0516cda56f548734",
+            "createdAt": "2026-10-18T09:53:30.298Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ10113",
+      "topic": {
+        "id": "topic-10",
+        "title": "課題10：20世紀的國際紛爭及危機(II)–冷戰及後冷戰時代",
+        "level": 3,
+        "sectionId": "topic-10-coldwar-background",
+        "sectionTitle": "冷戰的背景與成因"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "B. 冷戰的主要發展",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "1977年，蘇聯在東歐部署新型導彈，射程覆蓋西歐。1979年， ＿＿＿決定將在西歐部署更多導彈作為回應。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 32,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "西歐",
+          "北約"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "北約",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 西歐、(2) 北約",
+        "gradingPoints": [],
+        "sourceExcerpt": "1977年，蘇聯在東歐部署新型導彈，射程覆蓋______________。1979年， ______________決定將在西歐部署更多導彈作為回應。",
+        "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_填充題.docx · 第 1028 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「西歐」變為「北約」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:34:33.902Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "1977年，蘇聯在東歐部署新型導彈，射程覆蓋______________。1979年， ______________決定將在西歐部署更多導彈作為回應。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 22,
+            "length": 14
+          },
+          {
+            "index": 2,
+            "offset": 44,
+            "length": 14
+          }
+        ],
+        "blankAnswers": [
+          "西歐",
+          null
+        ],
+        "correctAnswer": "西歐",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「西歐」變為「北約」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "8f6b881fa0e253fa20fa4980276cfc7266badcabb2c27a8de2fc840147fd0e05",
+            "createdAt": "2026-10-18T12:42:38.536Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "8f6b881fa0e253fa20fa4980276cfc7266badcabb2c27a8de2fc840147fd0e05",
+            "createdAt": "2026-10-18T12:32:51.091Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "ba4358a7b80819584f531a829179796a91fa2315ed80ee0b6ea5b1382fc4543e",
+            "createdAt": "2026-10-18T09:53:42.241Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ10125",
+      "topic": {
+        "id": "topic-10",
+        "title": "課題10：20世紀的國際紛爭及危機(II)–冷戰及後冷戰時代",
+        "level": 3,
+        "sectionId": "topic-10-coldwar-background",
+        "sectionTitle": "冷戰的背景與成因"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "B. 冷戰的主要發展",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "在經濟改革方面，戈巴卓夫在蘇聯的計劃經濟上，引入部分市場經濟元素，措施包括放寬私人企業的自主權、允許＿＿＿企業自訂價格及工資，以及容許於私人市場出售部分農工業產品等。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 50,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "市場",
+          "私人",
+          "國有"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "國有",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 市場、(2) 私人、(3) 國有",
+        "gradingPoints": [],
+        "sourceExcerpt": "在經濟改革方面，戈巴卓夫在蘇聯的計劃經濟上，引入部分______________經濟元素，措施包括放寬______________企業的自主權、允許______________企業自訂價格及工資，以及容許於私人市場出售部分農工業產品等。",
+        "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_填充題.docx · 第 1145 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 3 個（答案由「市場」變為「國有」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:34:36.048Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "在經濟改革方面，戈巴卓夫在蘇聯的計劃經濟上，引入部分______________經濟元素，措施包括放寬______________企業的自主權、允許______________企業自訂價格及工資，以及容許於私人市場出售部分農工業產品等。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 26,
+            "length": 14
+          },
+          {
+            "index": 2,
+            "offset": 51,
+            "length": 14
+          },
+          {
+            "index": 3,
+            "offset": 74,
+            "length": 14
+          }
+        ],
+        "blankAnswers": [
+          "市場",
+          null,
+          null
+        ],
+        "correctAnswer": "市場",
+        "options": [],
+        "blankCount": 3,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 3,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 3 個（答案由「市場」變為「國有」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "152ba7199a9a49bd89c0bb048acfe3b44ba1779fb13a943a29c0acd33b858c7c",
+            "createdAt": "2026-10-18T12:42:41.593Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "152ba7199a9a49bd89c0bb048acfe3b44ba1779fb13a943a29c0acd33b858c7c",
+            "createdAt": "2026-10-18T12:32:52.995Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "7e29aec7870c7cdf229b04520ce9daa90826ea7922a3c3ea050b754f029c85bf",
+            "createdAt": "2026-10-18T09:53:45.705Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ10140",
+      "topic": {
+        "id": "topic-10",
+        "title": "課題10：20世紀的國際紛爭及危機(II)–冷戰及後冷戰時代",
+        "level": 3,
+        "sectionId": "topic-10-coldwar-background",
+        "sectionTitle": "冷戰的背景與成因"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "B. 冷戰的主要發展",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "俄羅斯、烏克蘭與白俄羅斯於1991年12月8日簽訂協議，成立「獨立國家＿＿＿」。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 35,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "俄羅斯",
+          "聯合體"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "聯合體",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 俄羅斯、(2) 聯合體",
+        "gradingPoints": [],
+        "sourceExcerpt": "______________、烏克蘭與白俄羅斯於1991年12月8日簽訂協議，成立「獨立國家______________」。",
+        "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_填充題.docx · 第 1280 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「俄羅斯」變為「聯合體」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:34:38.898Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "______________、烏克蘭與白俄羅斯於1991年12月8日簽訂協議，成立「獨立國家______________」。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 0,
+            "length": 14
+          },
+          {
+            "index": 2,
+            "offset": 46,
+            "length": 14
+          }
+        ],
+        "blankAnswers": [
+          "俄羅斯",
+          null
+        ],
+        "correctAnswer": "俄羅斯",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「俄羅斯」變為「聯合體」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "abd8ba430cc0615cce2e1ccbb60e4b9bb35a8faecfef966e193abdbfac434f9e",
+            "createdAt": "2026-10-18T12:42:44.891Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "abd8ba430cc0615cce2e1ccbb60e4b9bb35a8faecfef966e193abdbfac434f9e",
+            "createdAt": "2026-10-18T12:32:55.750Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "8d4d5e59fa8708f5b9a5692de8788bd4078576c3fc64214bada2918e03f0d98d",
+            "createdAt": "2026-10-18T09:53:51.160Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ10156",
+      "topic": {
+        "id": "topic-10",
+        "title": "課題10：20世紀的國際紛爭及危機(II)–冷戰及後冷戰時代",
+        "level": 3,
+        "sectionId": "topic-10-coldwar-background",
+        "sectionTitle": "冷戰的背景與成因"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "B. 冷戰的主要發展",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "自1991年起，印度推行經濟改革，引入市場經濟元素，逐步開放市場及集中出口＿＿＿產品。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 37,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "市場",
+          "高科技"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "高科技",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 市場、(2) 高科技",
+        "gradingPoints": [],
+        "sourceExcerpt": "自1991年起，印度推行經濟改革，引入_____________經濟元素，逐步開放市場及集中出口_____________產品。",
+        "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_填充題.docx · 第 1432 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「市場」變為「高科技」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:34:41.767Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "自1991年起，印度推行經濟改革，引入_____________經濟元素，逐步開放市場及集中出口_____________產品。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 19,
+            "length": 13
+          },
+          {
+            "index": 2,
+            "offset": 48,
+            "length": 13
+          }
+        ],
+        "blankAnswers": [
+          "市場",
+          null
+        ],
+        "correctAnswer": "市場",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「市場」變為「高科技」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "5ad338f774a7d7b3ede73c7b97e0348c31a77badad942d6845aa406bc9124f93",
+            "createdAt": "2026-10-18T12:42:49.908Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "5ad338f774a7d7b3ede73c7b97e0348c31a77badad942d6845aa406bc9124f93",
+            "createdAt": "2026-10-18T12:32:59.779Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "05f51df656f2f70a3ef50a3e43abffc3e6703de94f511c0afdc4eaee0c1baab3",
+            "createdAt": "2026-10-18T09:53:55.910Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-NJCFN0110000009",
+      "topic": {
+        "id": "topic-11",
+        "title": "課題11：20世紀以來的國際合作",
+        "level": 3,
+        "sectionId": "topic-11-united-nations",
+        "sectionTitle": "聯合國的成立與運作"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "校內試題",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "1981年，愛滋病出現了首宗案例。1996年，聯合國為應對這個疾病而成立＿＿＿。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 36,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "愛滋病",
+          "聯合國愛滋病規劃署"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "聯合國愛滋病規劃署",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 愛滋病、(2) 聯合國愛滋病規劃署",
+        "gradingPoints": [],
+        "sourceExcerpt": "1981年，______________出現了首宗案例。1996年，聯合國為應對這個疾病而成立______________。",
+        "sourceLocation": "課題11 20世紀以來的國際合作_填充題.docx · 第 43 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「愛滋病」變為「聯合國愛滋病規劃署」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:41:03.073Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "1981年，______________出現了首宗案例。1996年，聯合國為應對這個疾病而成立______________。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 6,
+            "length": 14
+          },
+          {
+            "index": 2,
+            "offset": 47,
+            "length": 14
+          }
+        ],
+        "blankAnswers": [
+          "愛滋病",
+          null
+        ],
+        "correctAnswer": "愛滋病",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「愛滋病」變為「聯合國愛滋病規劃署」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "4ffdebadeb30e9185cf6d4476804070fde4015b684d17f47e2bfe2d6c76e8823",
+            "createdAt": "2026-10-18T12:43:03.334Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "4ffdebadeb30e9185cf6d4476804070fde4015b684d17f47e2bfe2d6c76e8823",
+            "createdAt": "2026-10-18T12:33:17.670Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "73be1292e66c57a4a82cea3ed6334aefe0d7c10855d33706caa1e59c806c4f5a",
+            "createdAt": "2026-10-18T09:55:44.051Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-NJCFN0110000060",
+      "topic": {
+        "id": "topic-11",
+        "title": "課題11：20世紀以來的國際合作",
+        "level": 3,
+        "sectionId": "topic-11-challenges-conflict",
+        "sectionTitle": "大型軍事衝突不斷"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "校內試題",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "較發達國家享有很大的科技優勢，然而它們為了維護＿＿＿而拒絕轉移尖端科技。欠發達國家則長期落後，倚賴外國技術輸入。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 23,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "科技",
+          "國家利益",
+          "技術輸入"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "國家利益",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 科技、(2) 國家利益、(3) 技術輸入",
+        "gradingPoints": [],
+        "sourceExcerpt": "較發達國家享有很大的________________優勢，然而它們為了維護________________而拒絕轉移尖端科技。欠發達國家則長期落後，倚賴外國________________。",
+        "sourceLocation": "課題11 20世紀以來的國際合作_填充題.docx · 第 298 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「科技」變為「國家利益」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:41:12.270Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "較發達國家享有很大的________________優勢，然而它們為了維護________________而拒絕轉移尖端科技。欠發達國家則長期落後，倚賴外國________________。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 10,
+            "length": 16
+          },
+          {
+            "index": 2,
+            "offset": 37,
+            "length": 16
+          },
+          {
+            "index": 3,
+            "offset": 78,
+            "length": 16
+          }
+        ],
+        "blankAnswers": [
+          "科技",
+          null,
+          null
+        ],
+        "correctAnswer": "科技",
+        "options": [],
+        "blankCount": 3,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「科技」變為「國家利益」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "005be5c570485f1916581f7e154b2e1e16c9daffbbf3dc27873af544daa67d3b",
+            "createdAt": "2026-10-18T12:43:14.209Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "005be5c570485f1916581f7e154b2e1e16c9daffbbf3dc27873af544daa67d3b",
+            "createdAt": "2026-10-18T12:33:16.972Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "7ff26a8281cc53bc4f1963715103bebd94890a5932e48f952232a0f81b82aa57",
+            "createdAt": "2026-10-18T09:55:30.281Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-NJCFN0120000013",
+      "topic": {
+        "id": "topic-12",
+        "title": "課題12：20世紀香港的成長與蛻變",
+        "level": 3,
+        "sectionId": "topic-12-pre-war-economy",
+        "sectionTitle": "戰前的經濟發展"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "A. 第二次世界大戰前的香港",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "1926年，新界華人鄉村代表組成＿＿＿，協助政府排解與仲裁鄉村糾紛。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 16,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "新界",
+          "新界鄉議局"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "新界鄉議局",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 新界、(2) 新界鄉議局",
+        "gradingPoints": [],
+        "sourceExcerpt": "1926年，________________華人鄉村代表組成________________，協助政府排解與仲裁鄉村糾紛。",
+        "sourceLocation": "課題12 二十世紀香港的成長與蛻變_填充題.docx · 第 112 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「新界」變為「新界鄉議局」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:41:53.835Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "1926年，________________華人鄉村代表組成________________，協助政府排解與仲裁鄉村糾紛。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 6,
+            "length": 16
+          },
+          {
+            "index": 2,
+            "offset": 30,
+            "length": 16
+          }
+        ],
+        "blankAnswers": [
+          "新界",
+          null
+        ],
+        "correctAnswer": "新界",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「新界」變為「新界鄉議局」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "eb1e4be48213c9c43f6801838a985e12cf8e18a5e9a36c97f31bf97967245870",
+            "createdAt": "2026-10-18T12:43:21.593Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "eb1e4be48213c9c43f6801838a985e12cf8e18a5e9a36c97f31bf97967245870",
+            "createdAt": "2026-10-18T12:33:39.388Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "d26875897be1fe1bb7f75851b575898407b0bb6cac419a4de6c8ee4f8ba8f4d9",
+            "createdAt": "2026-10-18T09:56:36.185Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ05113",
+      "topic": {
+        "id": "topic-5",
+        "title": "課題5：近代歐洲的興起",
+        "level": 2,
+        "sectionId": "topic-5-industrial",
+        "sectionTitle": "工業革命"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "C. 技術的革新：工業革命",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 8,
+        "teacherConfirmationRequired": true,
+        "stem": "工業革命期間，西方社會出現了三個新社會階級，分別為資產階級、中產階級及＿＿＿。醫生、律師等屬於中產階級。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 35,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "中產階級",
+          "工人階級",
+          "中產階級"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "工人階級",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 中產階級、(2) 工人階級、(3) 中產階級",
+        "gradingPoints": [],
+        "sourceExcerpt": "工業革命期間，西方社會出現了三個新社會階級，分別為資產階級、___________及___________。醫生、律師等屬於___________。",
+        "sourceLocation": "課題5 近代歐洲的興起_填充題.docx · 第 1037 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「中產階級」變為「工人階級」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:09:34.092Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "工業革命期間，西方社會出現了三個新社會階級，分別為資產階級、___________及___________。醫生、律師等屬於___________。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 30,
+            "length": 11
+          },
+          {
+            "index": 2,
+            "offset": 42,
+            "length": 11
+          },
+          {
+            "index": 3,
+            "offset": 62,
+            "length": 11
+          }
+        ],
+        "blankAnswers": [
+          "中產階級",
+          null,
+          null
+        ],
+        "correctAnswer": "中產階級",
+        "options": [],
+        "blankCount": 3,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「中產階級」變為「工人階級」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 7,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "cf2503c77858e999eae086d8d7e954184b1e30ae91d1f41877834b802e5e24cf",
+            "createdAt": "2026-10-18T12:40:19.131Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 6,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "cf2503c77858e999eae086d8d7e954184b1e30ae91d1f41877834b802e5e24cf",
+            "createdAt": "2026-10-18T12:34:12.154Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 5,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "3b90fd530f9bb459abdc3cb3324e83eacc3c377836538f712e74068fd61b57a5",
+            "createdAt": "2026-10-18T09:59:07.799Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ05161",
+      "topic": {
+        "id": "topic-5",
+        "title": "課題5：近代歐洲的興起",
+        "level": 2,
+        "sectionId": "topic-5-french-revolution",
+        "sectionTitle": "法國大革命及拿破崙時代"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "D. 對自由和民主的追求：法國大革命及其歷史意義",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 8,
+        "teacherConfirmationRequired": true,
+        "stem": "在民族主義的影響下，革命浪潮蔓延至十九世紀的中、南美洲，一系列以脫離＿＿＿帝國專制統治、建設獨立民族國家為目標的獨立運動相繼爆發。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 34,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "民族",
+          "殖民"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "殖民",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 民族、(2) 殖民",
+        "gradingPoints": [],
+        "sourceExcerpt": "在______________主義的影響下，革命浪潮蔓延至十九世紀的中、南美洲，一系列以脫離______________帝國專制統治、建設獨立民族國家為目標的獨立運動相繼爆發。",
+        "sourceLocation": "課題5 近代歐洲的興起_填充題.docx · 第 1479 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「民族」變為「殖民」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:09:43.009Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "在______________主義的影響下，革命浪潮蔓延至十九世紀的中、南美洲，一系列以脫離______________帝國專制統治、建設獨立民族國家為目標的獨立運動相繼爆發。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 1,
+            "length": 14
+          },
+          {
+            "index": 2,
+            "offset": 46,
+            "length": 14
+          }
+        ],
+        "blankAnswers": [
+          "民族",
+          null
+        ],
+        "correctAnswer": "民族",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「民族」變為「殖民」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 7,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "6038ea13e6e80e155eba1cb1fe73a32030cbbd9080b0dbb5e9f67861c696878c",
+            "createdAt": "2026-10-18T12:40:28.975Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 6,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "6038ea13e6e80e155eba1cb1fe73a32030cbbd9080b0dbb5e9f67861c696878c",
+            "createdAt": "2026-10-18T12:34:02.279Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 5,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "5a9933ab49d3bd786ac5b19b716e3af84c19d43091d43df142d2cee16d94a021",
+            "createdAt": "2026-10-18T09:58:46.221Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-NJCFN0060000057",
+      "topic": {
+        "id": "topic-6",
+        "title": "課題6：歐洲國家的殖民擴張",
+        "level": 2,
+        "sectionId": "topic-6-early-expansion",
+        "sectionTitle": "早期擴張（十六世紀初至十八世紀末）的背景及原因"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "B. 歐洲殖民擴張的原因",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 7,
+        "teacherConfirmationRequired": true,
+        "stem": "為確保美洲種植園勞動力充足，歐洲國家大規模捉拿美洲＿＿＿並輸入非洲黑奴，更促成跨大西洋奴隸貿易的出現。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 25,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "美洲",
+          "印第安人",
+          "跨大西洋奴隸"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "印第安人",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 美洲、(2) 印第安人、(3) 跨大西洋奴隸",
+        "gradingPoints": [],
+        "sourceExcerpt": "為確保______________種植園勞動力充足，歐洲國家大規模捉拿美洲______________並輸入非洲黑奴，更促成______________貿易的出現。",
+        "sourceLocation": "課題6 歐洲國家的殖民擴張_填充題.docx · 第 58 題 · B. 歐洲殖民擴張的原因",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「美洲」變為「印第安人」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:25:00.547Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "為確保______________種植園勞動力充足，歐洲國家大規模捉拿美洲______________並輸入非洲黑奴，更促成______________貿易的出現。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 3,
+            "length": 14
+          },
+          {
+            "index": 2,
+            "offset": 37,
+            "length": 14
+          },
+          {
+            "index": 3,
+            "offset": 62,
+            "length": 14
+          }
+        ],
+        "blankAnswers": [
+          "美洲",
+          null,
+          null
+        ],
+        "correctAnswer": "美洲",
+        "options": [],
+        "blankCount": 3,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「美洲」變為「印第安人」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 6,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "e2b7c9aec36255f7428e169de2e9943c8cb7bec35182a669c260aba402acaf64",
+            "createdAt": "2026-10-18T12:40:59.230Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 5,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "e2b7c9aec36255f7428e169de2e9943c8cb7bec35182a669c260aba402acaf64",
+            "createdAt": "2026-10-18T12:34:40.828Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "b3d3db5ffeb64cb7470b8c923cf0ce85cf7dba58ae98b07653ecb8bf863c8461",
+            "createdAt": "2026-10-18T10:01:04.723Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-NJCFN0070000033",
+      "topic": {
+        "id": "topic-7",
+        "title": "課題7：美國的成立及發展",
+        "level": 2,
+        "sectionId": "topic-7-revolution-causes",
+        "sectionTitle": "美國革命的內外成因"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "校內試題",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "俄國於1867年把阿拉斯加售予美國，這宗交易稱為「＿＿＿」。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 25,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "阿拉斯加",
+          "阿拉斯加購買案"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "阿拉斯加購買案",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 阿拉斯加、(2) 阿拉斯加購買案",
+        "gradingPoints": [],
+        "sourceExcerpt": "俄國於1867年把________________售予美國，這宗交易稱為「__________________」。",
+        "sourceLocation": "課題7 美國的成立及發展_填充題.docx · 第 163 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「阿拉斯加」變為「阿拉斯加購買案」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:31:21.326Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "俄國於1867年把________________售予美國，這宗交易稱為「__________________」。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 9,
+            "length": 16
+          },
+          {
+            "index": 2,
+            "offset": 37,
+            "length": 18
+          }
+        ],
+        "blankAnswers": [
+          "阿拉斯加",
+          null
+        ],
+        "correctAnswer": "阿拉斯加",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「阿拉斯加」變為「阿拉斯加購買案」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "84dab80ec8f74a3c8b1f5bb76007c4d353a823e7bc525cba2fd0118ebe025cec",
+            "createdAt": "2026-10-18T12:41:08.899Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "84dab80ec8f74a3c8b1f5bb76007c4d353a823e7bc525cba2fd0118ebe025cec",
+            "createdAt": "2026-10-18T12:34:52.528Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "9f32b21ae523c7b36d7af3001241aa75cb0f018c55104e9b9b46cfbdd2acd91f",
+            "createdAt": "2026-10-18T10:01:50.098Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08014",
+      "topic": {
+        "id": "topic-8",
+        "title": "課題8：香港直至19世紀末的成長與發展",
+        "level": 2,
+        "sectionId": "topic-8-occupation",
+        "sectionTitle": "英國侵佔香港"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "校內試題",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "英國殖民管治下，香港議政局及定例局的成員由港督委任，分為「官守議員」與「＿＿＿議員」。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 36,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "官守",
+          "非官守"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "非官守",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 官守、(2) 非官守",
+        "gradingPoints": [],
+        "sourceExcerpt": "英國殖民管治下，香港議政局及定例局的成員由港督委任，分為「__________議員」與「__________議員」。",
+        "sourceLocation": "課題8 直至二十世紀初香港的成長與發展_填充題.docx · 第 129 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「官守」變為「非官守」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:32:08.123Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "英國殖民管治下，香港議政局及定例局的成員由港督委任，分為「__________議員」與「__________議員」。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 29,
+            "length": 10
+          },
+          {
+            "index": 2,
+            "offset": 44,
+            "length": 10
+          }
+        ],
+        "blankAnswers": [
+          "官守",
+          null
+        ],
+        "correctAnswer": "官守",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「官守」變為「非官守」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "902fb7d6c4ecf32f6c41f0f804e402f773105f7e483eb27b3656f42491ca357d",
+            "createdAt": "2026-10-18T12:41:18.135Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "902fb7d6c4ecf32f6c41f0f804e402f773105f7e483eb27b3656f42491ca357d",
+            "createdAt": "2026-10-18T12:34:58.693Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "cc5d5e54a35ea9604731cbbca17c2159faf422642861e4c374d66232095f727c",
+            "createdAt": "2026-10-18T10:02:27.807Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08028",
+      "topic": {
+        "id": "topic-8",
+        "title": "課題8：香港直至19世紀末的成長與發展",
+        "level": 2,
+        "sectionId": "topic-8-occupation",
+        "sectionTitle": "英國侵佔香港"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "校內試題",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "1867年的香港已建有五個船塢，當中又以外資的香港＿＿＿公司規模最大。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 25,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "船塢",
+          "黃埔船塢"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "黃埔船塢",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 船塢、(2) 黃埔船塢",
+        "gradingPoints": [],
+        "sourceExcerpt": "1867年的香港已建有五個________________，當中又以外資的香港________________公司規模最大。",
+        "sourceLocation": "課題8 直至二十世紀初香港的成長與發展_填充題.docx · 第 265 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「船塢」變為「黃埔船塢」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:32:11.982Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "1867年的香港已建有五個________________，當中又以外資的香港________________公司規模最大。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 13,
+            "length": 16
+          },
+          {
+            "index": 2,
+            "offset": 39,
+            "length": 16
+          }
+        ],
+        "blankAnswers": [
+          "船塢",
+          null
+        ],
+        "correctAnswer": "船塢",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「船塢」變為「黃埔船塢」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "2ebd50d97a9c11557f0c1f26e6cca520f90827d100ce6116c8fbb4a83fc63138",
+            "createdAt": "2026-10-18T12:41:21.370Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "2ebd50d97a9c11557f0c1f26e6cca520f90827d100ce6116c8fbb4a83fc63138",
+            "createdAt": "2026-10-18T12:35:01.211Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "80735a6c151eb92d8741319cfbcc963180724aae3a98c4f4bccefbeacd7fe061",
+            "createdAt": "2026-10-18T10:02:32.144Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ09015",
+      "topic": {
+        "id": "topic-9",
+        "title": "課題9：20世紀的國際紛爭及危機(I)–兩次世界大戰",
+        "level": 3,
+        "sectionId": "topic-9-ww1-causes",
+        "sectionTitle": "第一次世界大戰：爆發的背景與成因"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "B. 兩次世界大戰前的國際關係與衝突的原因",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "在二十世紀初，軍備競賽的主要形式是擴大＿＿＿、研發軍備與擴建海軍。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 19,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "軍備",
+          "軍隊",
+          "海軍"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "軍隊",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 軍備、(2) 軍隊、(3) 海軍",
+        "gradingPoints": [],
+        "sourceExcerpt": "在二十世紀初，______________競賽的主要形式是擴大______________、研發軍備與擴建______________。",
+        "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_填充題.docx · 第 130 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「軍備」變為「軍隊」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:32:58.954Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "在二十世紀初，______________競賽的主要形式是擴大______________、研發軍備與擴建______________。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 7,
+            "length": 14
+          },
+          {
+            "index": 2,
+            "offset": 31,
+            "length": 14
+          },
+          {
+            "index": 3,
+            "offset": 53,
+            "length": 14
+          }
+        ],
+        "blankAnswers": [
+          "軍備",
+          null,
+          null
+        ],
+        "correctAnswer": "軍備",
+        "options": [],
+        "blankCount": 3,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「軍備」變為「軍隊」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "e1e5d5b7786dad46ae968be8774395a11098a261acc26fabc6f1b1a24eed9044",
+            "createdAt": "2026-10-18T12:41:31.876Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "e1e5d5b7786dad46ae968be8774395a11098a261acc26fabc6f1b1a24eed9044",
+            "createdAt": "2026-10-18T12:35:09.223Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "7fdbb24118d44c4426814874055ac87e1f3986c316123ad77fd2a6372e7597e1",
+            "createdAt": "2026-10-18T10:03:10.337Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ09016",
+      "topic": {
+        "id": "topic-9",
+        "title": "課題9：20世紀的國際紛爭及危機(I)–兩次世界大戰",
+        "level": 3,
+        "sectionId": "topic-9-ww1-causes",
+        "sectionTitle": "第一次世界大戰：爆發的背景與成因"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "B. 兩次世界大戰前的國際關係與衝突的原因",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "軍備競賽加劇了歐洲列強之間的敵意與猜忌，亦增加了戰爭風險。此外，擁有軍事優勢的國家變得＿＿＿，傾向以戰爭解決紛爭。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 43,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "戰爭",
+          "好戰"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "好戰",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 戰爭、(2) 好戰",
+        "gradingPoints": [],
+        "sourceExcerpt": "軍備競賽加劇了歐洲列強之間的敵意與猜忌，亦增加了______________風險。此外，擁有軍事優勢的國家變得______________，傾向以戰爭解決紛爭。",
+        "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_填充題.docx · 第 139 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「戰爭」變為「好戰」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:32:59.122Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "軍備競賽加劇了歐洲列強之間的敵意與猜忌，亦增加了______________風險。此外，擁有軍事優勢的國家變得______________，傾向以戰爭解決紛爭。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 24,
+            "length": 14
+          },
+          {
+            "index": 2,
+            "offset": 55,
+            "length": 14
+          }
+        ],
+        "blankAnswers": [
+          "戰爭",
+          null
+        ],
+        "correctAnswer": "戰爭",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「戰爭」變為「好戰」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "af4afbeeb8633fbf4ce03076c91e202a3a3a2c6efa5eb3eab24ccdd6951f7b55",
+            "createdAt": "2026-10-18T12:41:32.234Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "af4afbeeb8633fbf4ce03076c91e202a3a3a2c6efa5eb3eab24ccdd6951f7b55",
+            "createdAt": "2026-10-18T12:35:09.571Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "45f616ef506a7f79bded4a7cde5c9ed66ffa737f8dcab8b47f180c0057f62c98",
+            "createdAt": "2026-10-18T10:03:10.635Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ09028",
+      "topic": {
+        "id": "topic-9",
+        "title": "課題9：20世紀的國際紛爭及危機(I)–兩次世界大戰",
+        "level": 3,
+        "sectionId": "topic-9-ww1-causes",
+        "sectionTitle": "第一次世界大戰：爆發的背景與成因"
+      },
+      "questionType": "fill",
+      "difficulty": "basic",
+      "skill": null,
+      "knowledgePoint": "B. 兩次世界大戰前的國際關係與衝突的原因",
+      "current": {
+        "presentInBank": true,
+        "status": "published",
+        "revision": 5,
+        "teacherConfirmationRequired": true,
+        "stem": "法國的極端民族主義鼓吹報復德國，奪回在普法戰爭中失去的＿＿＿。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 27,
+            "length": 3
+          }
+        ],
+        "blankAnswers": [
+          "德國",
+          "阿爾薩斯—洛林 1919年，第一次世界大戰的戰勝國召開______________，並與德國簽訂《______________條約》。 巴黎和會",
+          "凡爾賽"
+        ],
+        "blankAnswersNote": "解釋列出的答案數目與題幹空格數目不一致，需人工核對。",
+        "correctAnswer": "阿爾薩斯—洛林 1919年，第一次世界大戰的戰勝國召開______________，並與德國簽訂《______________條約》。 巴黎和會",
+        "acceptedAnswers": [],
+        "options": [],
+        "explanation": "填充題答案（依空格次序）：(1) 德國、(2) 阿爾薩斯—洛林 1919年，第一次世界大戰的戰勝國召開______________，並與德國簽訂《______________條約》。 巴黎和會、(3) 凡爾賽",
+        "gradingPoints": [],
+        "sourceExcerpt": "法國的極端民族主義鼓吹報復______________，奪回在普法戰爭中失去的______________。",
+        "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_填充題.docx · 第 247 段（段落）",
+        "qualityWarnings": [
+          "平台自動檢查（隔離）：考核空格由第 1 個改為第 2 個（答案由「德國」變為「阿爾薩斯—洛林 1919年，第一次世界大戰的戰勝國召開______________，並與德國簽訂《______________條約》。 巴黎和會」）；須由教師核對原卷後確認，學生暫時不會收到這一題。"
+        ],
+        "origin": "school-paper",
+        "createdAt": "2026-10-18T08:33:02.301Z"
+      },
+      "original": {
+        "reconstructedFrom": "materials/（以 parseQuestionBank 重建，未經多空格正規化）",
+        "stem": "法國的極端民族主義鼓吹報復______________，奪回在普法戰爭中失去的______________。",
+        "blanks": [
+          {
+            "index": 1,
+            "offset": 13,
+            "length": 14
+          },
+          {
+            "index": 2,
+            "offset": 39,
+            "length": 14
+          }
+        ],
+        "blankAnswers": [
+          "德國",
+          null
+        ],
+        "correctAnswer": "德國",
+        "options": [],
+        "blankCount": 2,
+        "assessedBlankIndex": 1,
+        "currentBlankCount": 1,
+        "currentAssessedBlankIndex": 2,
+        "explanation": null
+      },
+      "flag": {
+        "reason": [
+          "考核空格由第 1 個改為第 2 個（答案由「德國」變為「阿爾薩斯—洛林 1919年，第一次世界大戰的戰勝國召開______________，並與德國簽訂《______________條約》。 巴黎和會」）"
+        ],
+        "classifications": [
+          "ANSWER_MAPPING_CHANGED",
+          "REQUIRES_HISTORY_TEACHER_REVIEW"
+        ],
+        "detectedAt": "2026-10-19T01:32:39.065Z",
+        "report": "docs/teacher-review/repair-provenance-2026-10-19.json"
+      },
+      "proposedCorrection": null,
+      "proposedCorrectionBasis": "NOT_DETERMINISTIC：保留原本被考核的空格會令答案在題幹其他地方出現（洩題），改考另一個空格則改變了考核重點；兩者都需要教師按教學意圖決定，不能由程式代為選擇。",
+      "provenance": {
+        "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+        "reviews": [
+          {
+            "revision": 4,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變",
+            "fingerprint": "fa05bcffafa2c84c6a67e7b68d5ba78b428aa38dd65472ebcbf1e938a522bb13",
+            "createdAt": "2026-10-18T12:41:36.197Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 3,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "自動修復多空格填充題：只把其餘空格的答案填入題幹，考核的答案不變",
+            "fingerprint": "fa05bcffafa2c84c6a67e7b68d5ba78b428aa38dd65472ebcbf1e938a522bb13",
+            "createdAt": "2026-10-18T12:35:13.610Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": true
+          },
+          {
+            "revision": 2,
+            "decision": "approved",
+            "reviewerEmail": "ipwh@pochiu.edu.hk",
+            "reviewerRole": "admin",
+            "reason": "擁有者指示：本 session 上載的校內題庫題目一律覆核通過並發布",
+            "fingerprint": "f2c7827efeae8f399576a52fa39bccc9aa7f2b0344d7dc725eca854b14a555e7",
+            "createdAt": "2026-10-18T10:03:14.603Z",
+            "sameRevisionAsCurrent": false,
+            "looksAutomated": false
+          }
+        ],
+        "automatedRepairApplied": true,
+        "automationRecordedAsHuman": true,
+        "ownerBatchAuthorisationReference": "docs/teacher-review/owner-publication-overrides.json（2026-10-15 批次授權；非逐題裁決）"
+      },
+      "decision": {
+        "state": "unset",
+        "reviewedRevision": null,
+        "reviewedFingerprint": null,
+        "allowed": [
+          "approved",
+          "rejected",
+          "returned"
+        ],
+        "approvedBy": null,
+        "decidedAt": null,
+        "note": null
+      },
+      "recordPath": "教師於「題目管理」(/teacher/questions) 逐題覆核；系統以登入身分及伺服器時間寫入 question_reviews（綁定 revision 及內容指紋），核准後才會解除「待教師確認」並發布。",
+      "evidenceLimitations": [
+        "資料庫沒有保存題目的歷史版本內容；「原始」版本是由 materials/ 來源檔重建，並非當時寫入資料庫的副本。",
+        "原始題目的解釋、知識點及難度沒有獨立留存，只能顯示現行版本。",
+        "自動修復紀錄（reviewer_role=automation）不是教師覆核；它只表示程式在某一版本做過格式化或安全修復。",
+        "擁有者於 2026-10-15 的批次授權涵蓋 143 題，屬科組整體審閱聲明，不能當作這 18 題的逐題裁決。"
+      ]
+    }
+  ]
+}

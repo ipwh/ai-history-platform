@@ -25,6 +25,11 @@ export function jsonError(message: string, status = 400, details: string[] = [])
   return NextResponse.json({ error: message, details }, { status, headers: privateHeaders() });
 }
 
+/** 供非 JSON 回應（例如 CSV 下載）沿用同一套不可快取標頭 */
+export function privateResponseHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  return { ...privateHeaders(), ...extra };
+}
+
 /**
  * API 回應一律不可被共用快取或瀏覽器快取。
  *

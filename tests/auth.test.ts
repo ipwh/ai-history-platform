@@ -215,6 +215,14 @@ describe("工作階段 cookie", () => {
       ),
     ).toBeNull();
   });
+
+  it("損毀的百分比編碼 cookie 不會令回呼拋出 500（視為沒有 cookie）", () => {
+    const request = new Request("http://localhost:3000/api/auth/google/callback", {
+      headers: { cookie: `${session.OAUTH_COOKIE}=%` },
+    });
+    expect(() => session.readCookieFromRequest(request, session.OAUTH_COOKIE)).not.toThrow();
+    expect(session.readCookieFromRequest(request, session.OAUTH_COOKIE)).toBeNull();
+  });
 });
 
 describe("登入設定", () => {

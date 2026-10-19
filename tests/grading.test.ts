@@ -53,9 +53,42 @@ describe("自動評分", () => {
     expect(gradeAnswer(question, "奴隸").isCorrect).toBe(false);
   });
 
-  it("空答案一律視為答錯", () => {
+  it("空白答案一律視為答錯", () => {
     const question = buildQuestion({});
     expect(gradeAnswer(question, "   ").isCorrect).toBe(false);
+  });
+
+  it("填充題接受標準答案內以「/」列出的同義寫法", () => {
+    const question = buildQuestion({
+      questionType: "fill",
+      options: [],
+      correctAnswer: "路德宗 / 信義宗",
+      question: "宗教改革後，追隨馬丁路德的教會稱為＿＿＿。",
+    });
+    expect(gradeAnswer(question, "路德宗").isCorrect).toBe(true);
+    expect(gradeAnswer(question, "信義宗").isCorrect).toBe(true);
+    expect(gradeAnswer(question, "加爾文宗").isCorrect).toBe(false);
+  });
+
+  it("以一點領導符（․）排版的答案，學生以「·」輸入亦視為相同", () => {
+    const question = buildQuestion({
+      questionType: "fill",
+      options: [],
+      correctAnswer: "尤利烏斯․ 凱撒",
+      question: "公元前60年，＿＿＿成功控制羅馬。",
+    });
+    expect(gradeAnswer(question, "尤利烏斯·凱撒").isCorrect).toBe(true);
+    expect(gradeAnswer(question, "尤利烏斯凱撒").isCorrect).toBe(true);
+    expect(gradeAnswer(question, "凱撒").isCorrect).toBe(false);
+  });
+
+  it("選擇題不會因為答案含「/」而被拆成多個正確選項", () => {
+    const question = buildQuestion({
+      options: ["X光 / 射線", "紅外線"],
+      correctAnswer: "X光 / 射線",
+    });
+    expect(gradeAnswer(question, "X光 / 射線").isCorrect).toBe(true);
+    expect(gradeAnswer(question, "X光").isCorrect).toBe(false);
   });
 
   it("正確率只計可自動評分的題目", () => {

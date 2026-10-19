@@ -740,6 +740,13 @@ export const questionReviewStatusSchema = z.object({
    */
   sourceExcerptHiddenFromStudents: z.boolean().default(false),
   sourceExcerptHiddenReason: studentExcerptHiddenReasonSchema.nullable().default(null),
+  /**
+   * 本題是否可以派給學生作答（結構檢查，見 question-servability.ts）。
+   * `false` 代表即使狀態是 `published`，學生練習也不會收到這一題（原因見
+   * `studentServableReason`），教師必須知道並修正內容，而不是以為已發布就等於學生看到。
+   */
+  studentServable: z.boolean().default(true),
+  studentServableReason: z.string().nullable().default(null),
 });
 export type QuestionReviewStatus = z.infer<typeof questionReviewStatusSchema>;
 

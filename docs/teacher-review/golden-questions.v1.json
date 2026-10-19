@@ -15,7 +15,8 @@
   },
   "targetPerCategory": 2,
   "notes": [
-    "本檔案目前刻意沒有任何已覆核題目：平台現時沒有可用的歷史科教師覆核者。",
+    "本檔案目前刻意沒有任何已覆核題目：這份**評估資料集**尚未建立，避免以程式產生的內容冒充人工覆核結果。",
+    "本檔案為空**不**表示題目從未經史實核對：擁有者確認題目上載前已由科組核對歷史事實（書面紀錄見 owner-publication-overrides.json，2026-10-15，理由明言未逐題留下覆核紀錄）。本檔案的狀態只描述這份評估資料集，不代表上載前核對的有無、範圍或版本。",
     "系統只會證明 sourceExcerpt 逐字出自所引用的教材段落（sourceVerified），不會、也不可以判斷史實正確。",
     "reviewStatus = approved 的紀錄必須填寫 reviewer 及 reviewedAt；tests/golden-questions.test.ts 會拒絕任何缺少覆核者資料的 approved 紀錄。",
     "需要向學生展示史料才能考核的類別（史料解讀、來源可靠性、衝突史料比較）屬 DEFERRED — OUT OF SCOPE FOR THIS PHASE，因此不在 coverage 之內，亦不可聲稱已涵蓋。"

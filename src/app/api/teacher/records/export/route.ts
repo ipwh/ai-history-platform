@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { handleRoute } from "@/server/http";
+import { handleRoute, privateResponseHeaders } from "@/server/http";
 import { requireTeacher } from "@/server/auth/guards";
 import {
   buildRecordsCsv,
@@ -20,10 +20,10 @@ export async function GET(request: Request) {
     const filename = `practice-records-${new Date().toISOString().slice(0, 10)}.csv`;
     return new NextResponse(`\uFEFF${csv}`, {
       status: 200,
-      headers: {
+      headers: privateResponseHeaders({
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="${filename}"`,
-      },
+      }),
     });
   });
 }

@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-10-19T03:50:00.000Z",
+  "environment": "Windows 11 / PowerShell / Node.js 24 / 本機開發資料庫 data/app.db（唯讀）",
+  "scope": "Sprint 9 驗證；沒有接觸正式資料庫、沒有部署、沒有呼叫付費 AI。",
+  "commands": [
+    {
+      "command": "npm test",
+      "exitCode": 0,
+      "testFiles": 82,
+      "passed": 1131,
+      "skipped": 4,
+      "failed": 0
+    },
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "npm run lint", "exitCode": 0 },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "note": "首次執行因 OneDrive 檔案鎖定 .next 而 EPERM；清除 .next 後重跑成功（環境限制，不是程式錯誤）"
+    },
+    {
+      "command": "npm run audit:repair-provenance",
+      "exitCode": 0,
+      "note": "裁決後重跑：877 語意不變、987 純格式、14 考核答案仍與重建原卷不同（2 題已刪除、2 題已按教師指示改回考核原空格；其餘 14 題已由教師逐題核准）"
+    },
+    { "command": "npm run audit:content", "exitCode": 0 },
+    { "command": "npm run release:gate", "exitCode": 0, "verdict": "NOT READY" },
+    {
+      "command": "node scripts/e2e-flow.mjs --start（暫存資料庫、空上載目錄）",
+      "exitCode": 1,
+      "passed": 121,
+      "failed": 5,
+      "note": "5 項為既有環境限制：2 項練習抽到沒有教材節錄的校內試卷題、1 項該分節在該難度沒有可用填充題、2 項 OCR 因快照沒有上載原檔而失敗；與本次修改無關，已在報告逐項列明"
+    }
+  ],
+  "failures": 0,
+  "skipped": 4,
+  "knownEnvironmentFailures": 5,
+  "notes": [
+    "failures 只計回歸測試（單元／整合／型別／lint／build）；E2E 的 5 項已知環境限制另行記錄，沒有當作通過或程式缺陷。",
+    "沒有執行：正式環境部署驗證、Cloud Run 併發、備份還原演練（需要授權及正式環境）。"
+  ]
+}

@@ -324,6 +324,19 @@ export function setTeacherConfirmationRequired(questionId: string, required: boo
 }
 
 /**
+ * 更新品質警告（不改版本）。
+ *
+ * 只用於「教師已解決某項疑問」的情況（例如核准後移除隔離警告）：警告描述的是
+ * 教師介面的提示狀態，不是題目內容，因此不應令版本遞增、也不應令剛寫入的覆核失效。
+ */
+export function setQualityWarnings(questionId: string, warnings: string[]): Question | null {
+  getDb()
+    .prepare("UPDATE questions SET quality_warnings_json = ? WHERE id = ?")
+    .run(JSON.stringify(warnings), questionId);
+  return getQuestion(questionId);
+}
+
+/**
  * 記錄「這一版題目通過自動品質驗證」（Sprint 7.8）。
  *
  * 只寫入自動驗證的版本及指紋——**不會**留下任何人工覆核紀錄，教師端因此
@@ -399,9 +412,12 @@ function mapReview(row: QuestionReviewRow): QuestionReview {
 /**
  * 新增一筆人工覆核紀錄。
  *
- * 使用 `INSERT ... ON CONFLICT DO NOTHING` 配合唯一索引，令重試或重複提交
- * 同一決定時**不會**產生重複事件（冪等）；回傳值指出這次是否真的寫入了新紀錄，
- * 讓呼叫端可以如實回應「已記錄」或「先前已記錄相同決定」，而不是假裝成功兩次。
+ * 冪等規則（Sprint「教師裁決」）：
+ *   - 預設：若同一題、同一版本、同一決定、同一內容指紋的紀錄已存在，回傳既有紀錄而
+ *     不新增，令重試或重複提交不會產生重複事件。
+ *   - `forceNew`：呼叫端已確認這是**新疑問出現之後**的獨立決定（題目帶「待教師確認」
+ *     標記），必須留下一筆帶新時間戳的紀錄，否則無法稽核「誰在何時解除了暫緩」。
+ *     資料庫的唯一索引已由 migration 0021 移除，冪等交由這裡維持。
  */
 export function insertQuestionReview(input: {
   id: string;
@@ -413,14 +429,32 @@ export function insertQuestionReview(input: {
   reviewerRole: string;
   questionFingerprint: string;
   createdAt: string;
+  forceNew?: boolean;
 }): { review: QuestionReview; created: boolean } {
-  const result = getDb()
+  const database = getDb();
+  if (!input.forceNew) {
+    const existing = database
+      .prepare(
+        `SELECT * FROM question_reviews
+         WHERE question_id = ? AND revision = ? AND decision = ? AND question_fingerprint = ?
+         ORDER BY created_at ASC, rowid ASC
+         LIMIT 1`,
+      )
+      .get(
+        input.questionId,
+        input.revision,
+        input.decision,
+        input.questionFingerprint,
+      ) as unknown as QuestionReviewRow | undefined;
+    if (existing) return { review: mapReview(existing), created: false };
+  }
+
+  database
     .prepare(
       `INSERT INTO question_reviews
        (id, question_id, revision, decision, reason, reviewer_email, reviewer_role,
         question_fingerprint, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (question_id, revision, decision, question_fingerprint) DO NOTHING`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       input.id,
@@ -434,18 +468,12 @@ export function insertQuestionReview(input: {
       input.createdAt,
     );
 
-  const existing = getDb()
-    .prepare(
-      `SELECT * FROM question_reviews
-       WHERE question_id = ? AND revision = ? AND decision = ? AND question_fingerprint = ?
-       LIMIT 1`,
-    )
-    .get(input.questionId, input.revision, input.decision, input.questionFingerprint) as unknown as
-    | QuestionReviewRow
-    | undefined;
-  if (!existing) throw new Error("覆核紀錄寫入失敗");
+  const inserted = database
+    .prepare("SELECT * FROM question_reviews WHERE id = ?")
+    .get(input.id) as unknown as QuestionReviewRow | undefined;
+  if (!inserted) throw new Error("覆核紀錄寫入失敗");
 
-  return { review: mapReview(existing), created: Number(result.changes ?? 0) > 0 };
+  return { review: mapReview(inserted), created: true };
 }
 
 /** 某題的覆核紀錄（最新在前） */

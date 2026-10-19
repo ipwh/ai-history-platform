@@ -106,7 +106,7 @@ describe("題目結構是否可派給學生", () => {
     expect(
       checkQuestionServable({
         questionType: "mc",
-        question: "按年代順序排列以下的年份。 i. 公元850年 ii. 公元前800年",
+        question: "按年代順序排列以下的年份。 i. 公元850年 ii. 公元前800年 iii. 公元1200年 iv. 公元前1500年",
         options: ["i，ii，iv，iii", "ii，iii，iv，i", "iii，ii，iv，i", "iv，iii，ii，i"],
         correctAnswer: "ii，iii，iv，i",
       }).ok,
@@ -114,9 +114,69 @@ describe("題目結構是否可派給學生", () => {
     expect(
       checkQuestionServable({
         questionType: "mc",
-        question: "以下哪項描述是正確的？",
+        question: "以下哪項描述是正確的？ i. 甲 ii. 乙 iii. 丙 iv. 丁",
         options: ["i及ii", "ii及iii", "iii及iv", "i、ii及iv"],
         correctAnswer: "ii及iii",
+      }).ok,
+    ).toBe(true);
+  });
+
+  it("選項以 i／ii 指涉題幹、但題幹沒有對應標示時不可派給學生", () => {
+    const unlabelled = checkQuestionServable({
+      questionType: "mc",
+      question: "下列哪些屬於一手資料？ 日記 錄像 事件發生時的報章報道 學術論文",
+      options: ["i、ii和iii", "i、ii和iv", "i、iii和iv", "ii、iii和iv"],
+      correctAnswer: "i、ii和iii",
+    });
+    expect(unlabelled.ok).toBe(false);
+    expect(unlabelled.reason).toContain("i");
+
+    // 只標示了部分陳述（缺 iii）仍然不可作答
+    expect(
+      checkQuestionServable({
+        questionType: "mc",
+        question: "以下哪項正確？ i. 甲 ii. 乙",
+        options: ["i及ii", "ii及iii", "iii及iv", "i及iv"],
+        correctAnswer: "i及ii",
+      }).ok,
+    ).toBe(false);
+
+    // 完全沒有羅馬數字選項的一般選擇題不受影響
+    expect(
+      checkQuestionServable({
+        questionType: "mc",
+        question: "以下哪個城市是意大利首都？",
+        options: ["米蘭", "羅馬", "都靈", "威尼斯"],
+        correctAnswer: "羅馬",
+      }).ok,
+    ).toBe(true);
+  });
+
+  it("答案欄混入空格標記、句末標點或整句內容的填充題不可派給學生", () => {
+    const corrupt = checkQuestionServable({
+      questionType: "fill",
+      question: "法國的極端民族主義鼓吹報復＿＿＿。",
+      options: [],
+      correctAnswer: "阿爾薩斯—洛林 1919年，戰勝國召開______________，並與德國簽訂條約。",
+    });
+    expect(corrupt.ok).toBe(false);
+
+    expect(
+      checkQuestionServable({
+        questionType: "fill",
+        question: "第一次世界大戰於＿＿＿年結束。",
+        options: [],
+        correctAnswer: "1918年。",
+      }).ok,
+    ).toBe(false);
+
+    // 「甲 / 乙」這類同義寫法仍然可以派給學生
+    expect(
+      checkQuestionServable({
+        questionType: "fill",
+        question: "宗教改革後，追隨馬丁路德的教會稱為＿＿＿。",
+        options: [],
+        correctAnswer: "路德宗 / 信義宗",
       }).ok,
     ).toBe(true);
   });

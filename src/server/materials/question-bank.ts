@@ -58,6 +58,13 @@ export interface ParsedBankQuestion {
   difficulty: Difficulty;
   /** 品質警告（只供教師端顯示，學生端看不到） */
   qualityWarnings: string[];
+  /**
+   * 整理題目時改變了被考核的內容（例如多空格填充題保留的不是原第 1 個空格）。
+   *
+   * 這種題目**必須**由教師確認，不可計入自動發布或批次發布（見
+   * services/question-repair.ts 及 questions.teacher_confirmation_required）。
+   */
+  requiresTeacherReview?: boolean;
 }
 
 export interface SkippedBankQuestion {
@@ -672,6 +679,16 @@ export interface FillNormalisation {
   question: string;
   /** 保留的那個空格的答案 */
   correctAnswer: string;
+  /**
+   * 保留的空格在**原題**的次序（1 = 第一個空格）。
+   *
+   * 大於 1 代表被考核的空格已改變：原題第 1 個空格的答案 `originalAnswer` 並不是
+   * `correctAnswer`。呼叫端不可把這種改寫描述為「考核的答案不變」，亦不可在未經
+   * 教師確認下當作等價。
+   */
+  assessedBlankIndex: number;
+  /** 原題第一個空格的答案（匯入時記錄的標準答案） */
+  originalAnswer: string;
   /** 其餘空格及其答案（供教師核對原卷） */
   filled: { answer: string; blankIndex: number }[];
 }
@@ -709,6 +726,8 @@ export function normaliseMultiBlankFill(question: string, answers: string[]): Fi
     return {
       question: rebuilt,
       correctAnswer: cleaned[keep],
+      assessedBlankIndex: keep + 1,
+      originalAnswer: cleaned[0],
       filled: cleaned
         .map((answer, index) => ({ answer, blankIndex: index + 1 }))
         .filter((entry) => entry.blankIndex - 1 !== keep),

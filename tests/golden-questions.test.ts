@@ -181,3 +181,62 @@ describe("黃金題庫（人工覆核）", () => {
     }
   });
 });
+
+/**
+ * 覆核證據的語意界線（2026-10-19 更正）。
+ *
+ * 初版稽核報告把「`golden-questions.v1.json` 的 `questions` 為空」推論成
+ * 「平台沒有任何一題經過歷史科教師確認史實」。這個推論不成立：該檔案只是一份
+ * **評估資料集**，空檔案只表示資料集未建立，不能反推題目的核對歷史
+ * （把「缺失的紀錄」當成「否定的事實」）。
+ *
+ * 這一組測試固定兩件事，避免日後審計重犯同一推論：
+ *   1. 文件不得再以「資料集為空」宣稱題目從未核對，並須保留擁有者確認的上載前核對；
+ *   2. 倉庫內「上載前科組已審閱」的書面證據必須存在。
+ */
+describe("覆核證據的語意界線", () => {
+  const auditPath = path.resolve(process.cwd(), "docs/audit-2026-10-18-platform-audit.md");
+  const overridesPath = path.resolve(
+    process.cwd(),
+    "docs/teacher-review/owner-publication-overrides.json",
+  );
+
+  it("稽核報告不得由空白的黃金題庫推論「從未核對史實」", () => {
+    const report = fs.readFileSync(auditPath, "utf8");
+    // 更正記錄需要引述原本的錯誤結論，因此只檢查「更正記錄」以外的內容
+    const withoutCorrectionRecord = report.replace(
+      /### 1\.1 更正記錄[\s\S]*?## 2\. 方法/,
+      "## 2. 方法",
+    );
+    expect(withoutCorrectionRecord).not.toContain("沒有一題經過歷史科教師確認史實");
+    expect(withoutCorrectionRecord).not.toContain("平台沒有任何一題經過歷史科教師確認史實");
+  });
+
+  it("稽核報告記錄擁有者確認的上載前科組核對，並把黃金題庫列為獨立缺口", () => {
+    const report = fs.readFileSync(auditPath, "utf8");
+    expect(report).toContain("上載前");
+    expect(report).toContain("擁有者確認");
+    expect(report).toContain("黃金評估題庫");
+  });
+
+  it("倉庫保留上載前科組審閱的書面證據（不得以缺失紀錄否定曾核對）", () => {
+    const ledger = JSON.parse(fs.readFileSync(overridesPath, "utf8")) as {
+      decisions?: { reason?: string; questionIds?: string[] }[];
+    };
+    const subjectPanel = (ledger.decisions ?? []).filter((decision) =>
+      (decision.reason ?? "").includes("科組已審閱"),
+    );
+    expect(subjectPanel.length).toBeGreaterThan(0);
+    expect((subjectPanel[0].questionIds ?? []).length).toBeGreaterThan(0);
+  });
+
+  it("黃金題庫的說明區分「資料集為空」與「未經史實核對」", () => {
+    // 直接讀原始 JSON：`notes` 不在 schema 內，經 schema 解析後會被移除
+    const dataset = JSON.parse(fs.readFileSync(datasetPath, "utf8")) as { notes?: string[] };
+    const notes = dataset.notes ?? [];
+    expect(notes.some((note) => note.includes("上載前"))).toBe(true);
+    expect(notes.some((note) => note.includes("表示題目從未經史實核對"))).toBe(true);
+    // 不得再宣稱平台沒有可用的覆核者（那是「資料集未有覆核者」，不是「從未核對」）
+    expect(notes.some((note) => note.includes("平台現時沒有可用的歷史科教師覆核者"))).toBe(false);
+  });
+});

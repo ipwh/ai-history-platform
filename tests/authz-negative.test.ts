@@ -700,6 +700,13 @@ describe("API 回應不可被快取", () => {
           return GET(new Request("http://localhost:3000/api/teacher/records", { headers: { cookie: cookieHeader(TEACHER_USER) } }));
         },
       },
+      {
+        label: "GET /api/teacher/records/export（學生個人資料 CSV）",
+        run: async () => {
+          const { GET } = await import("@/app/api/teacher/records/export/route");
+          return GET(new Request("http://localhost:3000/api/teacher/records/export", { headers: { cookie: cookieHeader(TEACHER_USER) } }));
+        },
+      },
     ];
 
     for (const item of cases) {

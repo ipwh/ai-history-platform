@@ -116,6 +116,97 @@ describe("結構上無法作答的題目不會派給學生", () => {
 
     expect(assembled.questions.some((question) => question.id === "q-test-leaking")).toBe(false);
   });
+
+  it("答案欄混入空格標記或整句內容的填充題不會派給學生（答案無法輸入）", async () => {
+    insertFill({
+      id: "q-test-corrupt-answer",
+      question: "法國的極端民族主義鼓吹報復＿＿＿。",
+      correctAnswer: "阿爾薩斯—洛林 1919年，戰勝國召開______________，並與德國簽訂條約。",
+    });
+
+    const assembled = await practice.createPractice({
+      learnerId: LEARNER,
+      topicId: "topic-5",
+      sectionIds: [SECTION],
+      questionTypes: ["fill"],
+      difficulty: "basic",
+      questionCount: 30,
+      mode: "standard",
+      sourceSessionId: null,
+    });
+
+    expect(assembled.questions.some((question) => question.id === "q-test-corrupt-answer")).toBe(false);
+  });
+
+  it("選項以 i／ii 指涉題幹、但題幹沒有標示的選擇題不會派給學生（無法對應）", async () => {
+    questionsRepo.insertQuestion({
+      id: "q-test-roman-unlabelled",
+      topicId: "topic-5",
+      sectionId: SECTION,
+      questionType: "mc",
+      difficulty: "basic",
+      question: "下列哪些屬於一手資料？ 日記 錄像 事件發生時的報章報道 學術論文",
+      options: ["i、ii和iii", "i、ii和iv", "i、iii和iv", "ii、iii和iv"],
+      correctAnswer: "i、ii和iii",
+      acceptedAnswers: [],
+      explanation: "測試用解釋。",
+      knowledgePoint: "測試",
+      sourceExcerpt: "測試",
+      sourceLocation: "測試",
+      sourceBlockIds: [],
+      gradingPoints: [],
+      origin: "school-paper",
+      status: "published",
+      sourceVerified: false,
+      qualityWarnings: [],
+      skill: null,
+      revision: 1,
+      autoValidatedAt: null,
+      autoValidatedRevision: null,
+      autoValidatedFingerprint: null,
+      teacherConfirmationRequired: false,
+      createdAt: "2026-10-18T00:00:00.000Z",
+    });
+
+    const assembled = await practice.createPractice({
+      learnerId: LEARNER,
+      topicId: "topic-5",
+      sectionIds: [SECTION],
+      questionTypes: ["mc"],
+      difficulty: "basic",
+      questionCount: 30,
+      mode: "standard",
+      sourceSessionId: null,
+    });
+
+    expect(assembled.questions.some((question) => question.id === "q-test-roman-unlabelled")).toBe(false);
+  });
+});
+
+describe("課題發布狀態", () => {
+  it("未發布的課題不可建立新練習（學生不能以 topicId 繞過發布狀態）", async () => {
+    const topicsRepo = await import("@/server/repositories/topics");
+    const original = topicsRepo.getTopic("topic-5");
+    expect(original).not.toBeNull();
+
+    topicsRepo.setTopicPublished("topic-5", false);
+    try {
+      await expect(
+        practice.createPractice({
+          learnerId: LEARNER,
+          topicId: "topic-5",
+          sectionIds: [SECTION],
+          questionTypes: ["mc"],
+          difficulty: "basic",
+          questionCount: 1,
+          mode: "standard",
+          sourceSessionId: null,
+        }),
+      ).rejects.toMatchObject({ status: 404 });
+    } finally {
+      topicsRepo.setTopicPublished("topic-5", original!.published);
+    }
+  });
 });
 
 describe("同時提交（雙擊／重複請求）", () => {

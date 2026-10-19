@@ -15,10 +15,25 @@ export function normalizeAnswer(value: string): string {
   return toHalfWidth(value)
     .replace(/\s+/g, "")
     .replace(
-      /[，。、；：？！「」『』（）()《》〈〉〔〕［］\[\]【】"'’‘“”,.;:!?—－・·\-–~～…⋯＊*｜|／/]/g,
+      // \u2024-\u2027 是一點領導符（․）、兩點領導符（‥）等排版字元：教材原檔常用作
+      // 「尤利烏斯․凱撒」的間隔符，學生輸入「·」或「•」時亦應視為相同答案。
+      /[，。、；：？！「」『』（）()《》〈〉〔〕［］\[\]【】"'’‘“”,.;:!?—－・·\u2024\u2025\u2026\u2027\-–~～…⋯＊*｜|／/]/g,
       "",
     )
     .toLowerCase();
+}
+
+/**
+ * 填充題的標準答案可能同時列出多個可接受寫法（例如「路德宗 / 信義宗」）。
+ *
+ * 正規化會移除「/」，令整串變成一個學生不可能剛好輸入的字串，結果任何一個
+ * 有效寫法都會被判錯。因此比對前先按「/」拆開，逐一接受。
+ */
+export function answerAlternatives(correctAnswer: string): string[] {
+  return correctAnswer
+    .split(/\s*[／/]\s*/)
+    .map((candidate) => candidate.trim())
+    .filter((candidate) => candidate.length > 0);
 }
 
 export interface GradeOutcome {
@@ -76,7 +91,12 @@ export function gradeAnswer(question: Question, answer: string): GradeOutcome {
     return { autoGraded: true, isCorrect: false };
   }
 
-  const accepted = [question.correctAnswer, ...question.acceptedAnswers]
+  const accepted = [
+    ...(question.questionType === "fill"
+      ? answerAlternatives(question.correctAnswer)
+      : [question.correctAnswer]),
+    ...question.acceptedAnswers.flatMap((candidate) => answerAlternatives(candidate)),
+  ]
     .map((candidate) => normalizeAnswer(candidate))
     .filter((candidate) => candidate.length > 0);
 

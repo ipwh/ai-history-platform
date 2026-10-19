@@ -682,12 +682,15 @@ function QuestionListCard({
               }`}
               title={
                 review?.approvedReview
-                  ? `由 ${review.approvedReview.reviewerEmail} 於 ${review.approvedReview.createdAt.slice(0, 10)} 覆核第 ${review.approvedReview.revision} 版` +
+                  ? (review.approvedReview.reviewerRole === "automation"
+                      ? `由自動修復程式記錄（非教師覆核）：${review.approvedReview.reviewerEmail}，第 ${review.approvedReview.revision} 版`
+                      : `由 ${review.approvedReview.reviewerEmail} 於 ${review.approvedReview.createdAt.slice(0, 10)} 覆核第 ${review.approvedReview.revision} 版`) +
                     (review.approvedReview.reason ? `；理由：${review.approvedReview.reason}` : "")
                   : "尚未有教師覆核紀錄"
               }
             >
               {QUESTION_REVIEW_STATE_LABELS[reviewState]}
+              {review?.approvedReview?.reviewerRole === "automation" ? "（自動記錄）" : ""}
             </span>
             <span className="badge" title="目前題目版本；修改後版本會遞增，舊覆核即失效">
               第 {question.revision} 版
@@ -715,6 +718,17 @@ function QuestionListCard({
                 }`}
               >
                 學生看不到節錄
+              </span>
+            ) : null}
+            {/* 結構上無法作答：即使已發布，學生練習也不會收到（見 question-servability.ts） */}
+            {question.status === "published" && review && !review.studentServable ? (
+              <span
+                className="badge badge-danger"
+                title={`學生練習不會收到這一題：${
+                  review.studentServableReason ?? "題目結構上無法作答"
+                }`}
+              >
+                學生無法作答（不會派發）
               </span>
             ) : null}
             {question.origin === "school-paper" ? (

@@ -9,36 +9,50 @@
  *   - 92 題選擇題的選項保留了原檔的項目符號（「. i和ii」），1 題的選項在解析後
  *     全部變成「.」，學生無法作答。
  *
- * 修復方式：
- *   1. **多空格填充題**：由評卷參考（「填充題答案（依空格次序）：(1) …、(2) …」）
- *      還原每個空格的答案，把其餘空格的答案填回題幹，只保留一個空格；被考核的
- *      答案不會在題幹其他位置出現（自動逐一嘗試）。考核的史實不變、答案不變。
- *   2. **選項開頭的項目符號**：移除，令學生看到的選項與原卷一致。
- *   3. **其餘無法修復的題目**（空格數與答案數不符、題幹沒有空格、選項失效、
- *      答案已在題幹出現）：標示為「待教師確認」，學生端不會再收到
- *      （見 services/question-servability.ts）。
- *   4. 已發布而被改寫的題目，會以擁有者身分重新記錄一次覆核（內容已改變，
- *      舊覆核紀錄會自然失效），覆核原因會寫明是自動修復。
+ * 處理方式（2026-10-19 修訂：見 services/question-repair.ts）：
+ *   1. **可安全還原的多空格填充題**（補回其餘空格的答案後，仍考核**原第 1 個空格**，
+ *      考核答案不變）：改寫題幹，只保留一個空格。
+ *   2. **選項項目符號**：移除，令學生看到的選項與原卷一致（語意不變）。
+ *   3. **會改變考核內容的改寫**（保留其他空格才不會令答案外洩，但答案會由第 1 個
+ *      空格變成第 N 個）：**不改寫**，保留原題供教師比較，並標示「待教師確認」，
+ *      學生不會收到；不會記錄任何覆核。
+ *   4. **其餘無法修復的題目**（空格數與答案數不符、題幹沒有空格、選項失效、
+ *      答案已在題幹出現）：標示為「待教師確認」，學生端不會再收到。
+ *   5. 已發布而**安全改寫**的題目：內容已改變，舊覆核紀錄不再對應目前版本，
+ *      以 `reviewer_role = automation` 及 `[automation]` 理由補記一次覆核，
+ *      如實標明是自動格式整理。**絕不以教師身分寫入。**
  *
- * 本腳本可重複執行（idempotent）：已修好的題目不會再被改動；由本腳本標示的
+ * 本腳本可重複執行（idempotent）：已整理好的題目不會再被改動；由本腳本標示的
  * 「待教師確認」在題目重新變得可用時會自動清除（其他來源的標記不受影響）。
  *
  * 用法：
  *   npm run repair:questions -- --owner-email you@school.edu.hk          # 模擬
  *   npm run repair:questions -- --owner-email you@school.edu.hk --apply  # 執行
- *   # 同時刪除無法修復的題目（擁有者指示；預設不刪除）
+ *   # 同時刪除結構上無法修復的題目（擁有者指示；預設不刪除）
+ *   # 注意：只會刪除「結構上無法作答」的題目，不會刪除待教師確認考核內容的題目。
  *   npm run repair:questions -- --delete-unusable --apply --owner-email you@school.edu.hk
+ *
+ *   # 只隔離（不改內容）已被證實改變考核答案的題目（清單由 audit-repair-provenance 產生）
+ *   npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2026-10-19.json
+ *   npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2026-10-19.json --apply --owner-email you@school.edu.hk
  *
  * 只可在本機執行（正式環境拒絕），並建議先備份資料庫。
  */
 import type { Question } from "../src/lib/types";
+import fs from "node:fs";
+import path from "node:path";
+
 import { getServerConfig, isProductionRuntime } from "../src/server/config";
 import { getDb } from "../src/server/db/connection";
-import { countBlankMarkers } from "../src/server/llm/fill-question";
-import { blankAnswersFromExplanation, normaliseMultiBlankFill } from "../src/server/materials/question-bank";
 import { getQuestion, listQuestions, updateQuestion } from "../src/server/repositories/questions";
 import { recordQuestionReview } from "../src/server/services/question-service";
-import { checkQuestionServable } from "../src/server/services/question-servability";
+import {
+  AUTO_QUARANTINE_PREFIX,
+  nextTeacherConfirmationFlag,
+  planQuestionRepair,
+  repairWarnings,
+  type RepairPlan,
+} from "../src/server/services/question-repair";
 
 function readArg(name: string): string | null {
   const index = process.argv.indexOf(name);
@@ -47,63 +61,80 @@ function readArg(name: string): string | null {
 
 const apply = process.argv.includes("--apply");
 const ownerEmail = (readArg("--owner-email") ?? "").trim();
-const role = (readArg("--role") ?? "admin").trim();
 /**
- * 刪除無法修復的題目（擁有者指示）。只會刪除「由本腳本標示待教師確認」且
- * 結構上確實無法作答的題目；其他待確認題目（例如 AI 品質疑問）不會被刪除。
+ * 本腳本寫入的覆核紀錄一律標示為自動化，不會冒充教師或管理員的人工覆核。
+ * `--role` 只為兼容舊有指令而接受，實際寫入的角色固定為 automation。
+ */
+const AUTOMATION_ROLE = "automation";
+/**
+ * 刪除無法修復的題目（擁有者指示）。只會刪除「結構上無法作答」且已由本腳本
+ * 標示待教師確認的題目；因改變考核內容而待確認的題目**不會**被刪除。
  */
 const deleteUnusable = process.argv.includes("--delete-unusable");
+/**
+ * 只隔離（不修改內容）在自動修復後被改動考核答案的題目。
+ *
+ * 用法：`--quarantine <manifest.json>`，manifest 為 `scripts/audit-repair-provenance.ts`
+ * 產生的報告（讀取 `affectedQuestionIds`）。預設模擬；要寫入需同時加 `--apply`。
+ */
+const quarantineManifest = readArg("--quarantine");
 
-/** 本腳本寫入的品質警告前綴（用以分辨其他來源的警告及標記） */
-const AUTO_PREFIX = "平台自動檢查：";
-
-interface Plan {
-  question: Question;
-  changed: boolean;
-  blocked: boolean;
-  note: string | null;
-  before?: string;
-  after?: string;
-}
-
-function autoWarnings(question: Question): string[] {
-  return question.qualityWarnings.filter((warning) => warning.startsWith(AUTO_PREFIX));
-}
-
-function otherWarnings(question: Question): string[] {
-  return question.qualityWarnings.filter((warning) => !warning.startsWith(AUTO_PREFIX));
-}
-
-/** 移除選項開頭殘留的項目符號（原檔寫成「A. . i和ii」） */
-function cleanBullet(value: string): string {
-  return value.replace(/^[.．·•‧]\s*/, "").trim();
-}
-
-/** 多空格填充題：可還原時改寫成單一空格，否則回傳原因 */
-function normaliseFill(question: Question): { rewritten: Question; note: string } | { reason: string } | null {
-  const blanks = countBlankMarkers(question.question);
-  if (blanks <= 1) return null;
-  const answers = [question.correctAnswer, ...question.gradingPoints]
-    .map((answer) => answer.trim())
-    .filter((answer) => answer.length > 0);
-  const normalised =
-    normaliseMultiBlankFill(question.question, answers) ??
-    normaliseMultiBlankFill(question.question, blankAnswersFromExplanation(question.explanation));
-  if (normalised === null) {
-    return {
-      reason: `題幹有 ${blanks} 個空格，但只有 ${answers.length} 個答案，未能還原其餘空格的答案`,
-    };
-  }
-  return {
-    rewritten: {
-      ...question,
-      question: normalised.question,
-      correctAnswer: normalised.correctAnswer,
-    },
-    note: `原題有 ${blanks} 個空格，已把其餘空格的答案（${normalised.filled
-      .map((entry) => entry.answer)
-      .join("、")}）填入題幹，只考核一個空格`,
+function runQuarantine(manifestPath: string): void {
+  const resolved = path.resolve(manifestPath);
+  const manifest = JSON.parse(fs.readFileSync(resolved, "utf8")) as {
+    affectedQuestionIds?: string[];
+    affected?: { id: string; notes?: string[] }[];
   };
+  const ids = manifest.affectedQuestionIds ?? manifest.affected?.map((item) => item.id) ?? [];
+  const notesById = new Map(
+    (manifest.affected ?? []).map((item) => [item.id, (item.notes ?? []).join("；")]),
+  );
+  if (ids.length === 0) {
+    console.log("隔離清單為空：沒有需要處理的題目。");
+    return;
+  }
+
+  let quarantined = 0;
+  let already = 0;
+  let missing = 0;
+  for (const id of ids) {
+    const question = getQuestion(id);
+    if (!question) {
+      missing += 1;
+      continue;
+    }
+    if (question.teacherConfirmationRequired) {
+      already += 1;
+      continue;
+    }
+    const detail = notesById.get(id) ?? "自動修復後被考核的空格已改變";
+    const warning = `${AUTO_QUARANTINE_PREFIX}${detail}；須由教師核對原卷後確認，學生暫時不會收到這一題。`;
+    if (apply) {
+      updateQuestion(id, {
+        ...question,
+        teacherConfirmationRequired: true,
+        qualityWarnings: [...question.qualityWarnings, warning],
+      });
+    }
+    quarantined += 1;
+  }
+
+  console.log(`\n隔離清單：${ids.length} 題`);
+  console.log(`${apply ? "已隔離" : "將隔離（模擬）"}：${quarantined} 題`);
+  console.log(`已標示待教師確認：${already} 題`);
+  console.log(`資料庫找不到：${missing} 題`);
+  console.log(
+    apply
+      ? "✓ 已寫入。這些題目不會派給學生，亦沒有記錄任何覆核。"
+      : "（模擬模式）未寫入。要真正隔離請加上 --apply。",
+  );
+}
+
+interface AppliedPlan {
+  original: Question;
+  plan: RepairPlan;
+  finalQuestion: Question;
+  shouldWrite: boolean;
 }
 
 function main(): void {
@@ -115,102 +146,77 @@ function main(): void {
     console.error("\n無法執行：--apply 需要 --owner-email，令改寫後的覆核紀錄可追溯至授權者。\n");
     process.exit(1);
   }
+  if (readArg("--role") !== null) {
+    console.warn("\n提示：--role 已不再使用；本腳本寫入的覆核紀錄一律標示為 automation。\n");
+  }
 
   getDb();
   console.log(`目標資料庫：${getServerConfig().databasePath}`);
   console.log(`模式：${apply ? "執行（--apply）" : "模擬（預設，不寫入）"}`);
 
+  if (quarantineManifest !== null) {
+    runQuarantine(quarantineManifest);
+    return;
+  }
+
   const questions = listQuestions({ questionTypes: ["fill", "mc"] });
-  const rewritten: Plan[] = [];
-  const blocked: Plan[] = [];
-  const unblocked: Plan[] = [];
+  const applied: AppliedPlan[] = [];
+  const rewritten: AppliedPlan[] = [];
+  const blocked: AppliedPlan[] = [];
+  const unusable: AppliedPlan[] = [];
+  const reviewRequired: AppliedPlan[] = [];
+  const unblocked: AppliedPlan[] = [];
   const failures: { id: string; error: string }[] = [];
 
   for (const original of questions) {
-    let candidate = original;
-    let changed = false;
-    let note: string | null = null;
-    let before: string | undefined;
-    let after: string | undefined;
-
-    if (original.questionType === "fill") {
-      const outcome = normaliseFill(original);
-      if (outcome !== null) {
-        if ("rewritten" in outcome) {
-          candidate = outcome.rewritten;
-          changed = true;
-          note = outcome.note;
-          before = original.question;
-          after = outcome.rewritten.question;
-        } else {
-          note = outcome.reason;
-        }
-      }
-    } else {
-      const options = original.options.map(cleanBullet);
-      const answer = cleanBullet(original.correctAnswer);
-      const cleanupSafe = options.every((option) => option.length > 0) && answer.length > 0;
-      if (
-        cleanupSafe &&
-        (answer !== original.correctAnswer ||
-          options.some((option, index) => option !== original.options[index]))
-      ) {
-        candidate = { ...original, options, correctAnswer: answer };
-        changed = true;
-        note = "已移除選項開頭殘留的項目符號（原檔的排版符號）";
-        before = original.options.join(" ／ ");
-        after = options.join(" ／ ");
-      }
-    }
-
-    // 改寫後（或原本）的結構檢查：這是「是否可以派給學生」的單一判斷來源
-    const check = checkQuestionServable(candidate);
-    const isBlocked = !check.ok;
-    if (isBlocked) note = check.reason ?? "結構不完整";
-
-    const wasAutoFlagged = autoWarnings(original).length > 0 && original.teacherConfirmationRequired;
-    // 由本腳本標示的題目，在重新變得可用時清除標記；其他來源的標記不動
-    const nextFlag = isBlocked ? true : wasAutoFlagged ? false : original.teacherConfirmationRequired;
-
-    const notes: string[] = [];
-    if (note !== null) {
-      notes.push(
-        isBlocked
-          ? `${AUTO_PREFIX}${note}；此題暫時不會派給學生，請按原卷修正。`
-          : `${AUTO_PREFIX}${note}。`,
-      );
-    }
-    const nextWarnings = [...otherWarnings(original), ...notes];
+    const plan = planQuestionRepair(original);
+    const nextWarnings = repairWarnings(original, plan);
+    const nextFlag = nextTeacherConfirmationFlag(original, plan);
     const warningsChanged =
       nextWarnings.length !== original.qualityWarnings.length ||
       nextWarnings.some((warning, index) => warning !== original.qualityWarnings[index]);
+    const flagChanged = nextFlag !== original.teacherConfirmationRequired;
+    const shouldWrite = plan.changed || warningsChanged || flagChanged;
 
-    const plan: Plan = { question: candidate, changed, blocked: isBlocked, note, before, after };
-    if (changed || warningsChanged || nextFlag !== original.teacherConfirmationRequired) {
-      plan.question = {
-        ...candidate,
-        qualityWarnings: nextWarnings,
-        teacherConfirmationRequired: nextFlag,
-      };
-      if (apply) {
-        try {
-          updateQuestion(original.id, plan.question);
-        } catch (error) {
-          failures.push({ id: original.id, error: String(error).slice(0, 400) });
+    const finalQuestion: Question = shouldWrite
+      ? {
+          ...plan.question,
+          qualityWarnings: nextWarnings,
+          teacherConfirmationRequired: nextFlag,
         }
+      : original;
+
+    const entry: AppliedPlan = { original, plan, finalQuestion, shouldWrite };
+    applied.push(entry);
+
+    if (shouldWrite && apply) {
+      try {
+        updateQuestion(original.id, finalQuestion);
+      } catch (error) {
+        failures.push({ id: original.id, error: String(error).slice(0, 400) });
       }
     }
 
-    if (changed) rewritten.push(plan);
-    if (isBlocked) blocked.push(plan);
-    if (!isBlocked && wasAutoFlagged) unblocked.push(plan);
+    if (plan.changed) rewritten.push(entry);
+    if (plan.blocked) blocked.push(entry);
+    if (plan.unusable) unusable.push(entry);
+    if (plan.requiresReview) reviewRequired.push(entry);
+    if (
+      !plan.blocked &&
+      original.teacherConfirmationRequired &&
+      nextFlag === false
+    ) {
+      unblocked.push(entry);
+    }
   }
 
-  // 已發布而被改寫的題目：內容已改變，舊覆核紀錄不再對應目前版本，
-  // 由擁有者以同一個原因重新記錄覆核（被標示待確認的題目不會被重新覆核）。
+  const appliedById = new Map(applied.map((entry) => [entry.original.id, entry]));
+
+  // 已發布而被**安全**改寫的題目：內容已改變，舊覆核紀錄不再對應目前版本，
+  // 以 automation 身分補記一次覆核（理由如實說明是自動格式整理）。
+  // 改變考核內容或結構失敗的題目不會被補記覆核。
   let refreshed = 0;
   if (apply) {
-    const reason = "模擬學生使用後自動修復：只把多餘空格的答案填入題幹／移除排版符號，考核的答案不變";
     const stale = getDb()
       .prepare(
         `SELECT id FROM questions q
@@ -225,24 +231,29 @@ function main(): void {
       )
       .all() as unknown as { id: string }[];
     for (const row of stale) {
+      const entry = appliedById.get(row.id);
+      if (!entry || !entry.plan.changed || entry.plan.blocked || entry.plan.reviewReason === null) {
+        continue;
+      }
       const current = getQuestion(row.id);
       if (!current || current.status !== "published" || current.teacherConfirmationRequired) continue;
       recordQuestionReview({
         questionId: current.id,
         decision: "approved",
-        reason,
+        reason: entry.plan.reviewReason,
         expectedRevision: current.revision,
-        actor: { email: ownerEmail, role },
+        actor: { email: ownerEmail, role: AUTOMATION_ROLE },
       });
       refreshed += 1;
     }
   }
 
   console.log(`\n掃描題目：${questions.length} 題`);
-  console.log(`改寫（多空格／排版符號）：${rewritten.length} 題`);
-  console.log(`標示待教師確認（無法自動修復）：${blocked.length} 題`);
+  console.log(`安全改寫（格式／考核答案不變）：${rewritten.length} 題`);
+  console.log(`因會改變考核內容而不改寫、待教師確認：${reviewRequired.length} 題`);
+  console.log(`結構上無法作答、待教師確認：${unusable.length} 題`);
   console.log(`重新可用而清除標記：${unblocked.length} 題`);
-  if (apply) console.log(`重新記錄覆核：${refreshed} 題`);
+  if (apply) console.log(`以 automation 身分補記覆核：${refreshed} 題`);
   if (failures.length > 0) {
     console.log(`\n⚠ ${failures.length} 題寫入失敗（未修改，題目保持原狀）：`);
     for (const failure of failures.slice(0, 5)) {
@@ -251,34 +262,41 @@ function main(): void {
   }
 
   if (rewritten.length > 0) {
-    console.log("\n改寫樣本：");
-    for (const plan of rewritten.slice(0, 4)) {
-      console.log(`  · ${plan.question.id}｜答案：${plan.question.correctAnswer}`);
-      console.log(`    修改前：${plan.before ?? ""}`);
-      console.log(`    修改後：${plan.after ?? ""}`);
+    console.log("\n安全改寫樣本：");
+    for (const entry of rewritten.slice(0, 4)) {
+      console.log(`  · ${entry.finalQuestion.id}｜答案：${entry.finalQuestion.correctAnswer}`);
+      console.log(`    修改前：${entry.plan.before ?? ""}`);
+      console.log(`    修改後：${entry.plan.after ?? ""}`);
     }
   }
-  if (blocked.length > 0) {
-    console.log("\n無法自動修復的題目：");
-    for (const plan of blocked.slice(0, 10)) {
-      console.log(`  · ${plan.question.id}｜${plan.note ?? ""}`);
+  if (reviewRequired.length > 0) {
+    console.log("\n改變考核內容（不改寫，待教師確認）：");
+    for (const entry of reviewRequired.slice(0, 10)) {
+      console.log(`  · ${entry.original.id}｜${entry.plan.note ?? ""}`);
     }
-    if (blocked.length > 10) console.log(`  …其餘 ${blocked.length - 10} 題`);
+    if (reviewRequired.length > 10) console.log(`  …其餘 ${reviewRequired.length - 10} 題`);
+  }
+  if (unusable.length > 0) {
+    console.log("\n結構上無法作答：");
+    for (const entry of unusable.slice(0, 10)) {
+      console.log(`  · ${entry.original.id}｜${entry.plan.note ?? ""}`);
+    }
+    if (unusable.length > 10) console.log(`  …其餘 ${unusable.length - 10} 題`);
   }
   console.log(
     apply
-      ? `\n✓ 已寫入。${blocked.length} 題暫時不會派給學生${
-          deleteUnusable ? "，並會按 --delete-unusable 刪除（見下）" : "，請在「題目管理」按原卷修正後再發布"
-        }。`
+      ? `\n✓ 已寫入。${blocked.length} 題暫時不會派給學生` +
+          `${deleteUnusable ? "；結構上無法作答者會按 --delete-unusable 刪除（見下）" : "，請在「題目管理」按原卷處理"}。`
       : "\n（模擬模式）未寫入。要真正修復請加上 --apply。",
   );
 
   /* ---------------------------------------------------------------- */
   /* 刪除無法修復的題目（--delete-unusable）                            */
   /* ---------------------------------------------------------------- */
-  if (!deleteUnusable || blocked.length === 0) return;
+  if (!deleteUnusable || unusable.length === 0) return;
 
-  const ids = blocked.map((plan) => plan.question.id);
+  // 只刪除結構上無法作答的題目；改變考核內容的題目必須保留原卷內容供教師核對。
+  const ids = unusable.map((entry) => entry.original.id);
   const placeholders = ids.map(() => "?").join(",");
   const snapshotSessions = getDb()
     .prepare("SELECT id, question_snapshot_json AS json FROM practice_sessions")
@@ -302,7 +320,7 @@ function main(): void {
   }
 
   console.log(
-    `\n刪除無法修復的題目：${ids.length} 題；練習快照需移除 ${removedFromSnapshots} 處` +
+    `\n刪除結構上無法作答的題目：${ids.length} 題；練習快照需移除 ${removedFromSnapshots} 處` +
       `（其中 ${emptiedSessions} 次練習會因此沒有題目而一併刪除）。`,
   );
 

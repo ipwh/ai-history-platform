@@ -198,14 +198,13 @@ describe("升級與冪等", () => {
     }
   });
 
-  it("重要的唯一索引存在（覆核冪等、稽核查詢有界）", () => {
+  it("重要的索引存在（覆核查詢有界、稽核查詢有界）", () => {
     const indexes = (
       getDb()
         .prepare("SELECT name FROM sqlite_master WHERE type = 'index'")
         .all() as unknown as { name: string }[]
     ).map((row) => row.name);
     for (const index of [
-      "idx_question_reviews_unique",
       "idx_question_reviews_question",
       "idx_distribution_audit_document",
       "idx_ai_operations_learner",
@@ -213,6 +212,10 @@ describe("升級與冪等", () => {
     ]) {
       expect(indexes, `${index} 不存在`).toContain(index);
     }
+    // Migration 0021 刻意移除覆核紀錄的唯一索引：同一版本可能先後出現兩次相同決定
+    // （批次授權核准 → 隔離 → 教師重新確認）。冪等改由 insertQuestionReview 維持，
+    // 見 tests/teacher-adjudication.test.ts。
+    expect(indexes).not.toContain("idx_question_reviews_unique");
   });
 
   it("測試只使用暫存資料庫，不會連接正式資料庫", () => {

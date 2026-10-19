@@ -4,7 +4,7 @@
  * 只讀取統計數字及狀態，不會修改任何資料；亦不會回傳憑證、完整路徑或學生個人資料。
  */
 import { appVersion, describeConfigIssues, describeDeployment } from "../config-diagnostics";
-import { getServerConfig } from "../config";
+import { getServerConfig, isUnsafeDemoModeAllowed } from "../config";
 import { databaseStatus } from "../db/connection";
 import { getBackupStatus } from "../db/backup";
 import { describeLlm } from "../llm";
@@ -173,8 +173,9 @@ export async function getSystemStatus(): Promise<SystemStatus> {
       enabled: config.auth.enabled,
       requireSignIn: config.auth.requireSignIn,
       schoolDomains: config.auth.schoolDomains,
-      // 在 Cloud Run 上，未啟用登入時後台 API 會被守衛直接拒絕（403），因此不算「開放」
-      staffApiOpen: !config.auth.enabled && !adminTokenSet && !onCloudRun(),
+      // 未啟用登入且在允許示範模式的環境（本機開發）時，後台 API 才會開放；
+      // 正式建置一律 fail-closed（見 config.ts 的 isUnsafeDemoModeAllowed）。
+      staffApiOpen: !config.auth.enabled && !adminTokenSet && isUnsafeDemoModeAllowed(),
     },
     roster: {
       enabled: config.roster.enabled,

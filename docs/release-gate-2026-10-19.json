@@ -1,0 +1,293 @@
+{
+  "generatedAt": "2026-10-19T03:43:39.689Z",
+  "notice": "唯讀發布閘門：沒有修改題目、覆核或發布狀態。未定義標準或沒有證據的項目不會當作通過。",
+  "verdict": "NOT READY",
+  "scope": {
+    "database": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+    "testsEvidence": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\release-evidence-2026-10-19.json",
+    "deploymentEvidence": null,
+    "golden": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\golden-questions.v1.json",
+    "provenance": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\repair-provenance-2026-10-19.json",
+    "contentQueue": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\content-quality-queue-2026-10-19.json"
+  },
+  "auditSummary": {
+    "questions": 1880,
+    "published": 1880,
+    "teacherConfirmationRequired": 0,
+    "source": {
+      "traceable": 877,
+      "partial": 0,
+      "unknown": 0,
+      "pending_verification": 1003
+    },
+    "explanation": {
+      "placeholder": 1334,
+      "answer_only": 546,
+      "insufficient": 0,
+      "potentially_inconsistent": 0,
+      "not_assessed": 0
+    },
+    "metadata": {
+      "skillMissing": 1880,
+      "bySeverity": {
+        "blocking": 0,
+        "needs_review": 1587,
+        "warning": 1880
+      },
+      "difficulty": {
+        "basic": 1880
+      }
+    },
+    "policy": {
+      "byCategory": {
+        "hard_block": 97,
+        "teacher_review": 3834,
+        "warning": 1880,
+        "policy_pending": 1880
+      },
+      "questionsWithHardBlock": 97,
+      "questionsWithTeacherReview": 1736,
+      "questionsReleasable": 0
+    },
+    "inputFingerprint": "3e92788a38fdbe96a968824b69eee6486cbd155fa48d01ee59c68605f8ad9555"
+  },
+  "gates": [
+    {
+      "id": "question-isolation",
+      "title": "隔離／待教師確認",
+      "status": "PASS",
+      "summary": "沒有題目帶待教師確認標記",
+      "numerator": 0,
+      "denominator": 1880,
+      "evidence": [
+        "questions.teacher_confirmation_required"
+      ],
+      "recommendations": [
+        "先完成教師裁決，再考慮發布"
+      ]
+    },
+    {
+      "id": "question-servability",
+      "title": "題目結構可作答",
+      "status": "FAIL",
+      "summary": "97 題已發布但結構上不可作答（派發層會攔下，學生不會收到；仍需修正或改回草稿）",
+      "numerator": 97,
+      "denominator": 1880,
+      "evidence": [
+        "checkQuestionServable()"
+      ],
+      "recommendations": [
+        "修正題幹／選項／答案，或把題目改回草稿；修正後重新覆核"
+      ]
+    },
+    {
+      "id": "answer-provenance",
+      "title": "考核答案的改寫來源",
+      "status": "PASS",
+      "summary": "已裁決 18 題考核答案改寫（無未決項目）",
+      "numerator": 0,
+      "denominator": 18,
+      "evidence": [
+        "repair-provenance-2026-10-19.json",
+        "repair-adjudication-results-2026-10-19.json"
+      ],
+      "recommendations": [
+        "維持隔離並由歷史科教師逐題裁決"
+      ]
+    },
+    {
+      "id": "source-traceability",
+      "title": "來源可追溯性",
+      "status": "POLICY_PENDING",
+      "summary": "可定位 877／1880；待核實 1003；無法追溯 0",
+      "numerator": 877,
+      "denominator": 1880,
+      "evidence": [
+        "source_location",
+        "source_block_ids",
+        "material_blocks",
+        "material_documents"
+      ],
+      "recommendations": [
+        "為校內試題建立文件紀錄（檔名、題號、雜湊）及匯入批次，或由教師確認來源"
+      ]
+    },
+    {
+      "id": "explanation-quality",
+      "title": "解釋品質",
+      "status": "POLICY_PENDING",
+      "summary": "佔位 1334、只列答案 546、疑似矛盾 0",
+      "numerator": 1880,
+      "denominator": 1880,
+      "evidence": [
+        "explanation 分類（placeholder／answer_only／potentially_inconsistent）"
+      ],
+      "recommendations": [
+        "由產品負責人決定佔位／只列答案的題目是否暫緩派發",
+        "疑似矛盾只進入教師覆核佇列，不自動裁定"
+      ]
+    },
+    {
+      "id": "metadata",
+      "title": "元數據完整性",
+      "status": "POLICY_PENDING",
+      "summary": "技能空白 1880；難度值 basic；阻擋級關聯錯誤 0",
+      "numerator": 1880,
+      "denominator": 1880,
+      "evidence": [
+        "skill",
+        "difficulty",
+        "knowledge_point",
+        "topics",
+        "sections"
+      ],
+      "recommendations": [
+        "教師提供技能標籤；不要在未經確認下填入預設值",
+        "修正無效課題／分節關聯"
+      ]
+    },
+    {
+      "id": "teacher-decisions",
+      "title": "未處理的教師裁決",
+      "status": "PASS",
+      "summary": "待目前版本覆核 0；未結回報 0",
+      "numerator": 0,
+      "denominator": null,
+      "evidence": [
+        "question_reviews",
+        "question_reports"
+      ],
+      "recommendations": [
+        "完成覆核或回報處理"
+      ]
+    },
+    {
+      "id": "copyright",
+      "title": "版權與教材發行權",
+      "status": "WARN",
+      "summary": "擁有者已確認版權；可向學生發布 12／36 份；逐份權利紀錄 12 份",
+      "numerator": 12,
+      "denominator": 36,
+      "evidence": [
+        "docs/teacher-review/copyright-owner-attestation-2026-10-19.md"
+      ],
+      "recommendations": [
+        "保留擁有者確認紀錄；如需逐份授權證明，另行補存",
+        "版權許可不等於歷史內容正確"
+      ]
+    },
+    {
+      "id": "golden-evaluation",
+      "title": "Golden evaluation dataset",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "summary": "資料集為空：評估證據不足（不是零錯誤）",
+      "numerator": 0,
+      "denominator": 0,
+      "evidence": [
+        "docs/teacher-review/golden-questions.v1.json"
+      ],
+      "recommendations": [
+        "由歷史科教師建立至少一組已覆核樣本"
+      ]
+    },
+    {
+      "id": "tests",
+      "title": "測試與建置證據",
+      "status": "PASS",
+      "summary": "測試、型別、lint、build 全部通過（證據檔）",
+      "numerator": 0,
+      "denominator": 8,
+      "evidence": [
+        {
+          "command": "npm test",
+          "exitCode": 0,
+          "testFiles": 82,
+          "passed": 1131,
+          "skipped": 4,
+          "failed": 0
+        },
+        {
+          "command": "npm run typecheck",
+          "exitCode": 0
+        },
+        {
+          "command": "npm run lint",
+          "exitCode": 0
+        },
+        {
+          "command": "npm run build",
+          "exitCode": 0,
+          "note": "首次執行因 OneDrive 檔案鎖定 .next 而 EPERM；清除 .next 後重跑成功（環境限制，不是程式錯誤）"
+        },
+        {
+          "command": "npm run audit:repair-provenance",
+          "exitCode": 0,
+          "note": "裁決後重跑：877 語意不變、987 純格式、14 考核答案仍與重建原卷不同（2 題已刪除、2 題已按教師指示改回考核原空格；其餘 14 題已由教師逐題核准）"
+        },
+        {
+          "command": "npm run audit:content",
+          "exitCode": 0
+        },
+        {
+          "command": "npm run release:gate",
+          "exitCode": 0,
+          "verdict": "NOT READY"
+        },
+        {
+          "command": "node scripts/e2e-flow.mjs --start（暫存資料庫、空上載目錄）",
+          "exitCode": 1,
+          "passed": 121,
+          "failed": 5,
+          "note": "5 項為既有環境限制：2 項練習抽到沒有教材節錄的校內試卷題、1 項該分節在該難度沒有可用填充題、2 項 OCR 因快照沒有上載原檔而失敗；與本次修改無關，已在報告逐項列明"
+        }
+      ],
+      "recommendations": [
+        "重新執行並更新 evidence 檔"
+      ]
+    },
+    {
+      "id": "deployment",
+      "title": "正式環境／部署驗證",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "summary": "沒有 Cloud Run／正式資料庫／備份還原證據",
+      "numerator": null,
+      "denominator": null,
+      "evidence": [
+        "需要 Cloud Run 部署、正式資料庫備份／還原、登入及權限抽查證據"
+      ],
+      "recommendations": [
+        "部署後完成登入、權限、備份還原及健康檢查"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "label": "content-quality-queue-2026-10-19",
+      "metric": "佔位解釋",
+      "previous": 1334,
+      "current": 1334,
+      "change": 0
+    },
+    {
+      "label": "content-quality-queue-2026-10-19",
+      "metric": "只列答案解釋",
+      "previous": 548,
+      "current": 546,
+      "change": -2
+    },
+    {
+      "label": "content-quality-queue-2026-10-19",
+      "metric": "技能空白",
+      "previous": 1882,
+      "current": 1880,
+      "change": -2
+    },
+    {
+      "label": "content-quality-queue-2026-10-19",
+      "metric": "來源無法追溯",
+      "previous": 0,
+      "current": 0,
+      "change": 0
+    }
+  ]
+}

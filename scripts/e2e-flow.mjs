@@ -81,9 +81,12 @@ async function main() {
       );
     }
     // 直接呼叫 Next.js 的 CLI，避免在 Windows 上呼叫 npm.cmd 的問題
+    // 端對端測試以匿名示範模式執行（未設定 Google 憑證），而 `next start` 屬正式建置，
+    // 後台預設 fail-closed；因此只在這個由測試啟動的子程序中明確允許示範模式。
     server = spawn(process.execPath, [nextBin, "start", "--port", port], {
       stdio: "ignore",
       cwd: process.cwd(),
+      env: { ...process.env, HISTORY_ALLOW_UNSAFE_DEMO_MODE: "true" },
     });
   }
 

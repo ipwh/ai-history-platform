@@ -37,7 +37,7 @@ import {
   saveAttempt,
   type WrongAttemptRef,
 } from "../repositories/practice";
-import { listQuestions } from "../repositories/questions";
+import { getQuestion, listQuestions } from "../repositories/questions";
 import { expandSectionIds, getTopic, sectionTitleMap } from "../repositories/topics";
 import { calculateAccuracy, gradeAnswer, type GradeOutcome } from "./grading";
 import { gradeWithAi } from "./ai-grading";
@@ -176,15 +176,21 @@ async function gradeWithAiIfNeeded(
 /**
  * 由練習快照收集需要重做的錯題。
  * 即時生成的題目只存在於練習快照內，因此不可依賴題庫查詢。
+ *
+ * 題庫題目仍以快照內容重做（凍結試卷是學生當時看到的試卷，撤回不會追溯改寫），
+ * 但**現行**的「待教師確認」標記必須尊重：題目在派發後才被隔離時，即使快照仍留有
+ * 當初的版本，也不會再次派給學生。
  */
 function collectQuestionsFromWrongAttempts(
   wrongAttempts: WrongAttemptRef[],
   sectionIds: string[],
   questionTypes: QuestionType[],
-): Question[] {
+): { questions: Question[]; withheldForReview: number } {
   const snapshotCache = new Map<string, Question[]>();
+  const bankCache = new Map<string, Question | null>();
   const selectedSectionIds = new Set(sectionIds);
   const collected = new Map<string, Question>();
+  let withheldForReview = 0;
 
   for (const attempt of wrongAttempts) {
     if (collected.has(attempt.questionId)) continue;
@@ -197,12 +203,22 @@ function collectQuestionsFromWrongAttempts(
     if (!question) continue;
     if (!selectedSectionIds.has(question.sectionId)) continue;
     if (!questionTypes.includes(question.questionType)) continue;
+
+    let bank = bankCache.get(question.id);
+    if (bank === undefined) {
+      bank = getQuestion(question.id) ?? null;
+      bankCache.set(question.id, bank);
+    }
+    if (bank?.teacherConfirmationRequired) {
+      withheldForReview += 1;
+      continue;
+    }
     // 結構上無法作答的題目（多個空格只有一個答案、選項失效等）不再派給學生
     if (!checkQuestionServable(question).ok) continue;
     collected.set(question.id, question);
   }
 
-  return [...collected.values()];
+  return { questions: [...collected.values()], withheldForReview };
 }
 
 /** 把題目數量平均分配到各分節，確保每個揀選的主題都有題目 */
@@ -434,6 +450,9 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
 
   const topic = getTopic(parsed.topicId);
   if (!topic) throw new PracticeServiceError("找不到指定的課題", 404);
+  // 未發布的課題不得建立新練習：閱讀頁（getLessonView）已一律回 404，若練習仍可
+  // 建立，學生便可直接以 topicId 繞過課程發布狀態取得題目及 AI 額度。
+  if (!topic.published) throw new PracticeServiceError("找不到指定的課題", 404);
 
   const sectionIds = expandSectionIds(topic.id, parsed.sectionIds);
   if (sectionIds.length === 0) throw new PracticeServiceError("找不到指定的分節", 404);
@@ -454,13 +473,23 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
         409,
       );
     }
-    selected = shuffle(
-      collectQuestionsFromWrongAttempts(wrongAttempts, sectionIds, parsed.questionTypes),
-    ).slice(0, parsed.questionCount);
+    const wrongSelection = collectQuestionsFromWrongAttempts(
+      wrongAttempts,
+      sectionIds,
+      parsed.questionTypes,
+    );
+    selected = shuffle(wrongSelection.questions).slice(0, parsed.questionCount);
     if (selected.length === 0) {
       throw new PracticeServiceError(
-        "之前的錯題不在這次選擇的主題內，請改選其他主題後再試。",
+        wrongSelection.withheldForReview > 0
+          ? "之前的錯題中，有題目正等待教師確認，暫時不能重做。請選擇「完整練習」或稍後再試。"
+          : "之前的錯題不在這次選擇的主題內，請改選其他主題後再試。",
         409,
+      );
+    }
+    if (wrongSelection.withheldForReview > 0) {
+      notices.push(
+        `有 ${wrongSelection.withheldForReview} 條錯題正等待教師確認，這次暫時不會提供重做。`,
       );
     }
     notices.push("這次練習只包含你之前答錯或標記需要重溫的題目。");
@@ -474,7 +503,17 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
       difficulty: parsed.difficulty,
       questionCount: parsed.questionCount,
     });
-    selected = shuffle(generated.questions).slice(0, parsed.questionCount);
+    // 即時生成的題目同樣要通過最後的結構安全網（與題庫路徑一致）：生成流程雖然
+    // 已驗證，但排版類缺陷（例如選項以 i／ii 指涉題幹卻沒有標示）仍可能漏網。
+    const servableGenerated = generated.questions.filter(
+      (question) => checkQuestionServable(question).ok,
+    );
+    selected = shuffle(servableGenerated).slice(0, parsed.questionCount);
+    if (servableGenerated.length < generated.questions.length) {
+      notices.push(
+        `有 ${generated.questions.length - servableGenerated.length} 條即時生成的題目結構上無法作答，已略過。`,
+      );
+    }
     origin = "generated";
     notices.push(...generated.notices);
   } else {
@@ -523,7 +562,8 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
         // 直接採用生成結果，會把「自動發布已暫緩」的題目寫進練習快照，令它繞過
         // 三條發布路徑的關卡（見 question-service 及 0020 migration）。
         const deliverable = generated.questions.filter(
-          (question) => !question.teacherConfirmationRequired,
+          (question) =>
+            !question.teacherConfirmationRequired && checkQuestionServable(question).ok,
         );
         const heldCount = generated.questions.length - deliverable.length;
         if (deliverable.length > 0) {

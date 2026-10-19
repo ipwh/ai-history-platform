@@ -52,6 +52,7 @@ import {
   recordQuestionAutoValidation,
   setQuestionStatus,
   setTeacherConfirmationRequired,
+  setQualityWarnings,
   updateQuestion,
 } from "../repositories/questions";
 import { getBlocksByIds } from "../repositories/materials";
@@ -61,6 +62,8 @@ import { normalizeForMatch, truncate } from "../materials/text-utils";
 import { topicLearningFocusText } from "../seed/curriculum-focus";
 import { buildMaterialUnits } from "./material-units";
 import { studentExcerptVisibility } from "./source-visibility";
+import { checkQuestionServable } from "./question-servability";
+import { AUTO_QUARANTINE_PREFIX } from "./question-repair";
 
 export class QuestionServiceError extends Error {
   readonly status: number;
@@ -576,6 +579,7 @@ export function questionReviewStatuses(questions: Question[]): QuestionReviewSta
     // 教師端要看到「學生其實看不到節錄」及原因，否則會誤以為已顯示教材依據。
     // 判定與學生端完全共用（source-visibility.ts），不會出現兩套標準。
     const visibility = studentExcerptVisibility(view.question);
+    const servability = checkQuestionServable(view.question);
     return {
       questionId: view.question.id,
       reviewState: view.reviewState,
@@ -583,6 +587,8 @@ export function questionReviewStatuses(questions: Question[]): QuestionReviewSta
       approvedReview: view.approvedReview,
       sourceExcerptHiddenFromStudents: !visibility.visible,
       sourceExcerptHiddenReason: visibility.reason,
+      studentServable: servability.ok,
+      studentServableReason: servability.reason,
       staleAttempts: view.staleAttempts,
       autoValidated: autoValidationIsCurrent(view.question),
     };
@@ -659,6 +665,9 @@ export function recordQuestionReview(input: {
     reviewerRole,
     questionFingerprint: questionFingerprint(existing),
     createdAt: nowIso(),
+    // 題目帶「待教師確認」時，這次決定是在疑問出現之後作出的，必須留下新紀錄，
+    // 即使同一版先前已有相同決定的紀錄（例如批次授權核准）。
+    forceNew: existing.teacherConfirmationRequired,
   });
   void review;
 
@@ -674,6 +683,18 @@ export function recordQuestionReview(input: {
       ? (setTeacherConfirmationRequired(published.id, false) ?? published)
       : published;
 
+  // 隔離警告描述的是「暫緩派發、待教師確認」的狀態；教師已核准即代表該狀態結束，
+  // 移除警告（不改版本，否則剛寫入的覆核會立即失效）。其他警告保留。
+  if (input.decision === "approved") {
+    const remaining = updated.qualityWarnings.filter(
+      (warning) => !warning.startsWith(AUTO_QUARANTINE_PREFIX),
+    );
+    if (remaining.length !== updated.qualityWarnings.length) {
+      const cleaned = setQualityWarnings(updated.id, remaining) ?? updated;
+      return { view: teacherQuestionView(cleaned), created };
+    }
+  }
+
   return { view: teacherQuestionView(updated), created };
 }
 
@@ -686,15 +707,19 @@ export function changeQuestionStatus(questionId: string, status: QuestionStatus)
   //   - 自動品質驗證紀錄（機器檢查通過，毋須等待教師預先批准）。
   // 兩者都沒有時不可發布；舊資料或教材依據自動核對（sourceVerified）都不算。
   if (status === "published") {
-    const approved = approvedReviewFor(existing);
-    // Sprint 7.9：閘門判定「未確定」的題目不可經自動驗證發布——警告（或自動驗證紀錄）
-    // 不得覆蓋未解決的依據問題。教師人工覆核後發布則屬已解決疑問的正式決定。
-    if (!approved && existing.teacherConfirmationRequired) {
+    // 「待教師確認」代表有**較後出現**的疑問（例如自動修復改變了被考核的答案，或
+    // 匯入時的正規化改變了考核重點）。即使同一版仍留有較早的覆核紀錄，也不可以只
+    // 切換狀態就發布：必須由教師重新覆核（`recordQuestionReview` 的 approved 會清除
+    // 標記），令決定在疑問出現之後作出。
+    if (existing.teacherConfirmationRequired) {
       throw new QuestionServiceError(
-        "無法發布：此題的品質檢查有未確定項目（答案或教材依據未能確定），須由教師核對內容後再發布。",
+        "無法發布：此題的品質檢查有未確定項目（待教師確認）。例如輔助修復可能改變了被考核的答案；請由教師在題目管理重新覆核並核准後再發布。",
         409,
       );
     }
+    const approved = approvedReviewFor(existing);
+    // Sprint 7.9：閘門判定「未確定」的題目不可經自動驗證發布——警告（或自動驗證紀錄）
+    // 不得覆蓋未解決的依據問題。教師人工覆核後發布則屬已解決疑問的正式決定。
     if (!approved && !autoValidationIsCurrent(existing)) {
       const state = reviewStateFor(existing);
       const guidance =
@@ -777,6 +802,29 @@ export function listOwnerPublicationCandidates(
   return {
     publishable: drafts.filter((question) => !question.teacherConfirmationRequired),
     held: drafts.filter((question) => question.teacherConfirmationRequired),
+  };
+}
+
+/**
+ * 擁有者授權的批次**覆核**（`scripts/approve-questions.ts`）可用的候選題目。
+ *
+ * 與批次發布一樣，批次覆核**不可**繞過「待教師確認」的關卡：當題目因品質閘門、
+ * 自動修復改變考核內容或隔離標記而暫緩時，只有教師的人工決定可以清除標記。
+ * 批次腳本只會處理 `approvable`，`held` 一律原樣保留並在輸出中列出。
+ */
+export function listOwnerApprovalCandidates(
+  filter: { origins?: QuestionOrigin[]; topicId?: string } = {},
+): {
+  approvable: Question[];
+  held: Question[];
+} {
+  const questions = listQuestions({
+    ...(filter.origins && filter.origins.length > 0 ? { origins: filter.origins } : {}),
+    ...(filter.topicId ? { topicId: filter.topicId } : {}),
+  });
+  return {
+    approvable: questions.filter((question) => !question.teacherConfirmationRequired),
+    held: questions.filter((question) => question.teacherConfirmationRequired),
   };
 }
 

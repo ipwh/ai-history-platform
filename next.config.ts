@@ -89,6 +89,31 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  /**
+   * 基本安全標頭。
+   *
+   * - `X-Frame-Options: DENY`：教師／管理員頁面不得被嵌入其他網站的 iframe，
+   *   避免以點擊劫持（clickjacking）誘使教師按下「發布題目」或「刪除教材」。
+   * - `X-Content-Type-Options: nosniff`：避免瀏覽器把上載內容當成其他類型執行。
+   * - `Referrer-Policy`：不把含工作階段資訊的完整網址傳給第三方。
+   * - `Permissions-Policy`：平台不需要攝影機、麥克風及定位。
+   *
+   * 未設定 `Content-Security-Policy`：Next.js 會在頁面注入內嵌 script，
+   * 需要 nonce 機制才能安全套用；這是獨立的加固工作，未完成前不可假裝已具備。
+   */
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

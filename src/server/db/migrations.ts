@@ -579,6 +579,22 @@ export const MIGRATIONS: Migration[] = [
       `ALTER TABLE questions ADD COLUMN teacher_confirmation_required INTEGER NOT NULL DEFAULT 0`,
     ],
   },
+  {
+    id: "0021-review-decision-events",
+    statements: [
+      // ── 同一版本可以出現兩次相同的覆核決定 ───────────────────────────
+      //
+      // 舊有唯一索引 (question_id, revision, decision, question_fingerprint) 令重複提交
+      // 冪等，但同時吞掉了「教師在疑問出現之後重新確認同一版內容」這個真實事件：
+      // 批次授權核准 → 自動修復／匯入正規化把題目標示「待教師確認」→ 教師核對後再次
+      // 核准。第二次決定不會寫入，於是「誰在何時解除了暫緩」沒有可稽核的時間戳。
+      //
+      // 改為由應用層維持冪等（見 repositories/questions.ts 的 insertQuestionReview）：
+      //   - 題目沒有「待教師確認」標記時，相同的重複提交回傳既有紀錄，不新增；
+      //   - 題目有待確認標記時，允許新增一筆紀錄，因為那是對新疑問的獨立決定。
+      `DROP INDEX IF EXISTS idx_question_reviews_unique`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

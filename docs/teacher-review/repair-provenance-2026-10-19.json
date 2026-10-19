@@ -1,0 +1,576 @@
+{
+ "generatedAt": "2026-10-19T01:32:39.065Z",
+ "method": "以 materials/ 內的試題檔配合 parseQuestionBank（不做多空格正規化）重建原始內容，與資料庫現時內容逐題比較；資料庫以 readOnly 開啟。",
+ "limitations": [
+  "只覆蓋 materials/ 內仍存在的試題檔；來源檔已更新或題目已刪除時無法重建。",
+  "假設現行 parseQuestionBank 與當初匯入時的行為一致；解析器如有變更，結果可能與真正原版有差異。",
+  "比較基準是『原始題目可重建的預期修復結果』，不是題目的歷史版本紀錄（資料庫沒有保存舊版本內容）。"
+ ],
+ "totals": {
+  "databaseQuestions": 1882,
+  "originalsParsed": 1927,
+  "compared": 1882
+ },
+ "counts": {
+  "NO_SEMANTIC_CHANGE_CONFIRMED": 877,
+  "FORMATTING_CHANGE_ONLY": 987,
+  "ANSWER_MAPPING_CHANGED": 18,
+  "REQUIRES_HISTORY_TEACHER_REVIEW": 18
+ },
+ "countsByTopic": {
+  "topic-1": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 30,
+   "FORMATTING_CHANGE_ONLY": 43
+  },
+  "topic-10": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 175,
+   "ANSWER_MAPPING_CHANGED": 6,
+   "REQUIRES_HISTORY_TEACHER_REVIEW": 6,
+   "FORMATTING_CHANGE_ONLY": 181
+  },
+  "topic-11": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 54,
+   "ANSWER_MAPPING_CHANGED": 2,
+   "REQUIRES_HISTORY_TEACHER_REVIEW": 2,
+   "FORMATTING_CHANGE_ONLY": 59
+  },
+  "topic-12": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 97,
+   "ANSWER_MAPPING_CHANGED": 1,
+   "REQUIRES_HISTORY_TEACHER_REVIEW": 1,
+   "FORMATTING_CHANGE_ONLY": 110
+  },
+  "topic-2": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 44,
+   "FORMATTING_CHANGE_ONLY": 50
+  },
+  "topic-3": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 18,
+   "FORMATTING_CHANGE_ONLY": 20
+  },
+  "topic-4": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 16,
+   "FORMATTING_CHANGE_ONLY": 40
+  },
+  "topic-5": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 156,
+   "ANSWER_MAPPING_CHANGED": 2,
+   "REQUIRES_HISTORY_TEACHER_REVIEW": 2,
+   "FORMATTING_CHANGE_ONLY": 180
+  },
+  "topic-6": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 68,
+   "ANSWER_MAPPING_CHANGED": 1,
+   "REQUIRES_HISTORY_TEACHER_REVIEW": 1,
+   "FORMATTING_CHANGE_ONLY": 70
+  },
+  "topic-7": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 51,
+   "ANSWER_MAPPING_CHANGED": 1,
+   "REQUIRES_HISTORY_TEACHER_REVIEW": 1,
+   "FORMATTING_CHANGE_ONLY": 65
+  },
+  "topic-8": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 58,
+   "ANSWER_MAPPING_CHANGED": 2,
+   "REQUIRES_HISTORY_TEACHER_REVIEW": 2,
+   "FORMATTING_CHANGE_ONLY": 58
+  },
+  "topic-9": {
+   "NO_SEMANTIC_CHANGE_CONFIRMED": 110,
+   "ANSWER_MAPPING_CHANGED": 3,
+   "REQUIRES_HISTORY_TEACHER_REVIEW": 3,
+   "FORMATTING_CHANGE_ONLY": 111
+  }
+ },
+ "affectedQuestionIds": [
+  "qb-JTH2ndEdFBQ10014",
+  "qb-JTH2ndEdFBQ10078",
+  "qb-JTH2ndEdFBQ10113",
+  "qb-JTH2ndEdFBQ10125",
+  "qb-JTH2ndEdFBQ10140",
+  "qb-JTH2ndEdFBQ10156",
+  "qb-NJCFN0110000009",
+  "qb-NJCFN0110000060",
+  "qb-NJCFN0120000013",
+  "qb-JTH2ndEdFBQ05113",
+  "qb-JTH2ndEdFBQ05161",
+  "qb-NJCFN0060000057",
+  "qb-NJCFN0070000033",
+  "qb-JTH2ndEdFBQ08014",
+  "qb-JTH2ndEdFBQ08028",
+  "qb-JTH2ndEdFBQ09015",
+  "qb-JTH2ndEdFBQ09016",
+  "qb-JTH2ndEdFBQ09028"
+ ],
+ "affected": [
+  {
+   "id": "qb-JTH2ndEdFBQ10014",
+   "topicId": "topic-10",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "一戰期間，俄國共產主義者發動「十月革命」，成功建立世界上第一個______________主義國家，並於______________年進一步成立「蘇維埃社會主義共和國聯盟」。",
+   "currentStem": "一戰期間，俄國共產主義者發動「十月革命」，成功建立世界上第一個社會主義國家，並於＿＿＿年進一步成立「蘇維埃社會主義共和國聯盟」。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "社會",
+   "currentCorrectAnswer": "1922",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 社會、(2) 1922",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「社會」變為「1922」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ10078",
+   "topicId": "topic-10",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "美國自1956年起派遣______________前往蘇聯收集情報。______________年5月，一架U-2偵察機在蘇聯領土上被擊落。",
+   "currentStem": "美國自1956年起派遣U-2偵察機前往蘇聯收集情報。＿＿＿年5月，一架U-2偵察機在蘇聯領土上被擊落。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "U-2偵察機",
+   "currentCorrectAnswer": "1960",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) U-2偵察機、(2) 1960",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「U-2偵察機」變為「1960」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ10113",
+   "topicId": "topic-10",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "1977年，蘇聯在東歐部署新型導彈，射程覆蓋______________。1979年， ______________決定將在西歐部署更多導彈作為回應。",
+   "currentStem": "1977年，蘇聯在東歐部署新型導彈，射程覆蓋西歐。1979年， ＿＿＿決定將在西歐部署更多導彈作為回應。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "西歐",
+   "currentCorrectAnswer": "北約",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 西歐、(2) 北約",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「西歐」變為「北約」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ10125",
+   "topicId": "topic-10",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "在經濟改革方面，戈巴卓夫在蘇聯的計劃經濟上，引入部分______________經濟元素，措施包括放寬______________企業的自主權、允許______________企業自訂價格及工資，以及容許於私人市場出售部分農工業產品等。",
+   "currentStem": "在經濟改革方面，戈巴卓夫在蘇聯的計劃經濟上，引入部分市場經濟元素，措施包括放寬私人企業的自主權、允許＿＿＿企業自訂價格及工資，以及容許於私人市場出售部分農工業產品等。",
+   "blankCountOriginal": 3,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 3,
+   "originalCorrectAnswer": "市場",
+   "currentCorrectAnswer": "國有",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 市場、(2) 私人、(3) 國有",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 3 個（答案由「市場」變為「國有」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ10140",
+   "topicId": "topic-10",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "______________、烏克蘭與白俄羅斯於1991年12月8日簽訂協議，成立「獨立國家______________」。",
+   "currentStem": "俄羅斯、烏克蘭與白俄羅斯於1991年12月8日簽訂協議，成立「獨立國家＿＿＿」。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "俄羅斯",
+   "currentCorrectAnswer": "聯合體",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 俄羅斯、(2) 聯合體",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「俄羅斯」變為「聯合體」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ10156",
+   "topicId": "topic-10",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "自1991年起，印度推行經濟改革，引入_____________經濟元素，逐步開放市場及集中出口_____________產品。",
+   "currentStem": "自1991年起，印度推行經濟改革，引入市場經濟元素，逐步開放市場及集中出口＿＿＿產品。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "市場",
+   "currentCorrectAnswer": "高科技",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 市場、(2) 高科技",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「市場」變為「高科技」）"
+   ]
+  },
+  {
+   "id": "qb-NJCFN0110000009",
+   "topicId": "topic-11",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "1981年，______________出現了首宗案例。1996年，聯合國為應對這個疾病而成立______________。",
+   "currentStem": "1981年，愛滋病出現了首宗案例。1996年，聯合國為應對這個疾病而成立＿＿＿。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "愛滋病",
+   "currentCorrectAnswer": "聯合國愛滋病規劃署",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 愛滋病、(2) 聯合國愛滋病規劃署",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「愛滋病」變為「聯合國愛滋病規劃署」）"
+   ]
+  },
+  {
+   "id": "qb-NJCFN0110000060",
+   "topicId": "topic-11",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "較發達國家享有很大的________________優勢，然而它們為了維護________________而拒絕轉移尖端科技。欠發達國家則長期落後，倚賴外國________________。",
+   "currentStem": "較發達國家享有很大的科技優勢，然而它們為了維護＿＿＿而拒絕轉移尖端科技。欠發達國家則長期落後，倚賴外國技術輸入。",
+   "blankCountOriginal": 3,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "科技",
+   "currentCorrectAnswer": "國家利益",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 科技、(2) 國家利益、(3) 技術輸入",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「科技」變為「國家利益」）"
+   ]
+  },
+  {
+   "id": "qb-NJCFN0120000013",
+   "topicId": "topic-12",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "1926年，________________華人鄉村代表組成________________，協助政府排解與仲裁鄉村糾紛。",
+   "currentStem": "1926年，新界華人鄉村代表組成＿＿＿，協助政府排解與仲裁鄉村糾紛。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "新界",
+   "currentCorrectAnswer": "新界鄉議局",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 新界、(2) 新界鄉議局",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「新界」變為「新界鄉議局」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ05113",
+   "topicId": "topic-5",
+   "questionType": "fill",
+   "revision": 7,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "工業革命期間，西方社會出現了三個新社會階級，分別為資產階級、___________及___________。醫生、律師等屬於___________。",
+   "currentStem": "工業革命期間，西方社會出現了三個新社會階級，分別為資產階級、中產階級及＿＿＿。醫生、律師等屬於中產階級。",
+   "blankCountOriginal": 3,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "中產階級",
+   "currentCorrectAnswer": "工人階級",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 中產階級、(2) 工人階級、(3) 中產階級",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「中產階級」變為「工人階級」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ05161",
+   "topicId": "topic-5",
+   "questionType": "fill",
+   "revision": 7,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "在______________主義的影響下，革命浪潮蔓延至十九世紀的中、南美洲，一系列以脫離______________帝國專制統治、建設獨立民族國家為目標的獨立運動相繼爆發。",
+   "currentStem": "在民族主義的影響下，革命浪潮蔓延至十九世紀的中、南美洲，一系列以脫離＿＿＿帝國專制統治、建設獨立民族國家為目標的獨立運動相繼爆發。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "民族",
+   "currentCorrectAnswer": "殖民",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 民族、(2) 殖民",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「民族」變為「殖民」）"
+   ]
+  },
+  {
+   "id": "qb-NJCFN0060000057",
+   "topicId": "topic-6",
+   "questionType": "fill",
+   "revision": 6,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "為確保______________種植園勞動力充足，歐洲國家大規模捉拿美洲______________並輸入非洲黑奴，更促成______________貿易的出現。",
+   "currentStem": "為確保美洲種植園勞動力充足，歐洲國家大規模捉拿美洲＿＿＿並輸入非洲黑奴，更促成跨大西洋奴隸貿易的出現。",
+   "blankCountOriginal": 3,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "美洲",
+   "currentCorrectAnswer": "印第安人",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 美洲、(2) 印第安人、(3) 跨大西洋奴隸",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「美洲」變為「印第安人」）"
+   ]
+  },
+  {
+   "id": "qb-NJCFN0070000033",
+   "topicId": "topic-7",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "俄國於1867年把________________售予美國，這宗交易稱為「__________________」。",
+   "currentStem": "俄國於1867年把阿拉斯加售予美國，這宗交易稱為「＿＿＿」。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "阿拉斯加",
+   "currentCorrectAnswer": "阿拉斯加購買案",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 阿拉斯加、(2) 阿拉斯加購買案",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「阿拉斯加」變為「阿拉斯加購買案」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ08014",
+   "topicId": "topic-8",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "英國殖民管治下，香港議政局及定例局的成員由港督委任，分為「__________議員」與「__________議員」。",
+   "currentStem": "英國殖民管治下，香港議政局及定例局的成員由港督委任，分為「官守議員」與「＿＿＿議員」。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "官守",
+   "currentCorrectAnswer": "非官守",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 官守、(2) 非官守",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「官守」變為「非官守」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ08028",
+   "topicId": "topic-8",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "1867年的香港已建有五個________________，當中又以外資的香港________________公司規模最大。",
+   "currentStem": "1867年的香港已建有五個船塢，當中又以外資的香港＿＿＿公司規模最大。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "船塢",
+   "currentCorrectAnswer": "黃埔船塢",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 船塢、(2) 黃埔船塢",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「船塢」變為「黃埔船塢」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ09015",
+   "topicId": "topic-9",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "在二十世紀初，______________競賽的主要形式是擴大______________、研發軍備與擴建______________。",
+   "currentStem": "在二十世紀初，軍備競賽的主要形式是擴大＿＿＿、研發軍備與擴建海軍。",
+   "blankCountOriginal": 3,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "軍備",
+   "currentCorrectAnswer": "軍隊",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 軍備、(2) 軍隊、(3) 海軍",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「軍備」變為「軍隊」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ09016",
+   "topicId": "topic-9",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "軍備競賽加劇了歐洲列強之間的敵意與猜忌，亦增加了______________風險。此外，擁有軍事優勢的國家變得______________，傾向以戰爭解決紛爭。",
+   "currentStem": "軍備競賽加劇了歐洲列強之間的敵意與猜忌，亦增加了戰爭風險。此外，擁有軍事優勢的國家變得＿＿＿，傾向以戰爭解決紛爭。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "戰爭",
+   "currentCorrectAnswer": "好戰",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 戰爭、(2) 好戰",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「戰爭」變為「好戰」）"
+   ]
+  },
+  {
+   "id": "qb-JTH2ndEdFBQ09028",
+   "topicId": "topic-9",
+   "questionType": "fill",
+   "revision": 4,
+   "status": "published",
+   "teacherConfirmationRequired": false,
+   "originalStem": "法國的極端民族主義鼓吹報復______________，奪回在普法戰爭中失去的______________。",
+   "currentStem": "法國的極端民族主義鼓吹報復德國，奪回在普法戰爭中失去的＿＿＿。",
+   "blankCountOriginal": 2,
+   "blankCountCurrent": 1,
+   "assessedBlankIndexOriginal": 1,
+   "assessedBlankIndexCurrent": 2,
+   "originalCorrectAnswer": "德國",
+   "currentCorrectAnswer": "阿爾薩斯—洛林 1919年，第一次世界大戰的戰勝國召開______________，並與德國簽訂《______________條約》。 巴黎和會",
+   "originalOptions": [],
+   "currentOptions": [],
+   "currentExplanation": "填充題答案（依空格次序）：(1) 德國、(2) 阿爾薩斯—洛林 1919年，第一次世界大戰的戰勝國召開______________，並與德國簽訂《______________條約》。 巴黎和會、(3) 凡爾賽",
+   "classifications": [
+    "ANSWER_MAPPING_CHANGED",
+    "REQUIRES_HISTORY_TEACHER_REVIEW"
+   ],
+   "notes": [
+    "考核空格由第 1 個改為第 2 個（答案由「德國」變為「阿爾薩斯—洛林 1919年，第一次世界大戰的戰勝國召開______________，並與德國簽訂《______________條約》。 巴黎和會」）"
+   ]
+  }
+ ]
+}

@@ -30,6 +30,7 @@ import { getServerConfig } from "../config";
 // ADMIN_TOKEN 可以繞過所有角色檢查（等同管理員），因此不接受過短的值：
 // 已設定但過短的權杖一律視為無效，令設定失誤即時浮現而不是靜靜降低安全性。
 import { MIN_ADMIN_TOKEN_LENGTH } from "../config-diagnostics";
+import { isUnsafeDemoModeAllowed } from "../config";
 import { ApiRouteError } from "../http";
 import { ensureLearner } from "../repositories/learners";
 import { SESSION_COOKIE, decodeSession } from "./session";
@@ -122,15 +123,9 @@ function tokenMatches(provided: string, expected: string): boolean {
 
 /**
  * 未啟用學校帳戶登入時，是否允許使用後台功能（本機開發／示範）。
- * Cloud Run 等公開部署環境預設拒絕，必須明確設定 HISTORY_ALLOW_UNSAFE_DEMO_MODE=true。
+ * 正式建置（包括 `next start` 及 Cloud Run）一律 fail-closed，
+ * 必須明確設定 HISTORY_ALLOW_UNSAFE_DEMO_MODE=true（見 config.ts）。
  */
-function isUnsafeDemoModeAllowed(): boolean {
-  const onCloudRun = (process.env.K_SERVICE ?? "").trim().length > 0;
-  if (!onCloudRun) return true;
-  return ["1", "true", "yes", "on"].includes(
-    (process.env.HISTORY_ALLOW_UNSAFE_DEMO_MODE ?? "").trim().toLowerCase(),
-  );
-}
 
 /** 由 Request 標頭解析工作階段（測試及 route handler 皆適用，毋須 Next 請求內容） */
 export function sessionFromRequest(request: Request): SessionUser | null {
@@ -200,10 +195,11 @@ async function requireStaff(
   }
 
   if (!isAuthEnabled()) {
-    // Cloud Run 等公開部署環境不允許「未啟用登入」的後台（否則任何人都能改教材及題目）
+    // 正式建置（包括 next start 及 Cloud Run）不允許「未啟用登入」的後台，
+    // 否則任何人都能改教材及題目。
     if (!isUnsafeDemoModeAllowed()) {
       throw new ApiRouteError(
-        "後台 API 在 Cloud Run 上必須先啟用學校帳戶登入（設定 GOOGLE_CLIENT_ID、GOOGLE_CLIENT_SECRET 及 AUTH_SECRET）。如要臨時示範，請設定 HISTORY_ALLOW_UNSAFE_DEMO_MODE=true。",
+        "正式環境的後台 API 必須先啟用學校帳戶登入（設定 GOOGLE_CLIENT_ID、GOOGLE_CLIENT_SECRET 及 AUTH_SECRET）。如要臨時在本機示範，請設定 HISTORY_ALLOW_UNSAFE_DEMO_MODE=true。",
         403,
       );
     }
@@ -336,7 +332,7 @@ async function guardStaffPage(
   options: { adminOnly: boolean },
 ): Promise<SessionUser | null> {
   if (!isAuthEnabled()) {
-    // 與 requireStaff 採用同一套判斷：公開部署環境不可渲染未受保護的後台頁面，
+    // 與 requireStaff 採用同一套判斷：正式建置不可渲染未受保護的後台頁面，
     // 否則任何人只要開啟 /admin 或 /teacher 就會看到後台介面。
     if (!isUnsafeDemoModeAllowed()) {
       redirect(`/login?error=not_configured&next=${encodeURIComponent(currentPath)}`);

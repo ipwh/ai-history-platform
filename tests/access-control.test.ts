@@ -236,13 +236,46 @@ describe("角色與權限", () => {
       const denied = await GET(request("/api/admin/system/health"));
       expect(denied.status).toBe(403);
       const body = (await denied.json()) as { error: string };
-      expect(body.error).toContain("Cloud Run");
+      expect(body.error).toContain("後台 API");
 
       process.env.HISTORY_ALLOW_UNSAFE_DEMO_MODE = "true";
       const allowed = await GET(request("/api/admin/system/health"));
       expect(allowed.status).toBe(200);
     } finally {
       delete process.env.HISTORY_ALLOW_UNSAFE_DEMO_MODE;
+      if (originalService === undefined) delete process.env.K_SERVICE;
+      else process.env.K_SERVICE = originalService;
+      if (originalClientId !== undefined) process.env.GOOGLE_CLIENT_ID = originalClientId;
+      if (originalClientSecret !== undefined) process.env.GOOGLE_CLIENT_SECRET = originalClientSecret;
+    }
+  });
+
+  it("正式建置（next start）未設定 HISTORY_ALLOW_UNSAFE_DEMO_MODE 時，後台一律拒絕", async () => {
+    const { GET } = await import("@/app/api/admin/system/health/route");
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalService = process.env.K_SERVICE;
+    const originalClientId = process.env.GOOGLE_CLIENT_ID;
+    const originalClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    // 模擬 `next start`：NODE_ENV=production，但不在 Cloud Run 上（舊行為會誤開後台）
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+    delete process.env.K_SERVICE;
+    delete process.env.GOOGLE_CLIENT_ID;
+    delete process.env.GOOGLE_CLIENT_SECRET;
+    delete process.env.HISTORY_ALLOW_UNSAFE_DEMO_MODE;
+    try {
+      const denied = await GET(request("/api/admin/system/health"));
+      expect(denied.status).toBe(403);
+
+      process.env.HISTORY_ALLOW_UNSAFE_DEMO_MODE = "true";
+      const allowed = await GET(request("/api/admin/system/health"));
+      expect(allowed.status).toBe(200);
+    } finally {
+      delete process.env.HISTORY_ALLOW_UNSAFE_DEMO_MODE;
+      if (originalNodeEnv === undefined) {
+        delete (process.env as Record<string, string | undefined>).NODE_ENV;
+      } else {
+        (process.env as Record<string, string | undefined>).NODE_ENV = originalNodeEnv;
+      }
       if (originalService === undefined) delete process.env.K_SERVICE;
       else process.env.K_SERVICE = originalService;
       if (originalClientId !== undefined) process.env.GOOGLE_CLIENT_ID = originalClientId;

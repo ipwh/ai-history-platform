@@ -97,20 +97,27 @@ function prepareSourceQuestion(
           skipReason: `填充題有 ${blanks} 個空格，但答案區只有 ${answerList.length} 個答案，未能確認每個空格的答案`,
         };
       }
+      // 保留的空格不是原第 1 個空格時，被考核的內容已經改變：不可描述為等價，
+      // 亦不可在未經教師確認下自動／批次發布（見 services/question-repair.ts）。
+      const answerChanged =
+        normalised.correctAnswer.trim() !== normalised.originalAnswer.trim();
       return {
         prepared: {
           ...source,
           question: normalised.question,
           correctAnswer: normalised.correctAnswer,
+          requiresTeacherReview: answerChanged,
           explanation:
             source.explanation.trim().length > 0
               ? source.explanation
-              : `原題有 ${blanks} 個空格，平台已把其餘空格的答案填入題幹，只考核第 ${normalised.filled.length + 1} 個空格。`,
+              : `原題有 ${blanks} 個空格，平台已把其餘空格的答案填入題幹，只考核第 ${normalised.assessedBlankIndex} 個空格。`,
           qualityWarnings: [
             ...source.qualityWarnings,
-            `原題有 ${blanks} 個空格，平台已把其餘空格的答案（${normalised.filled
-              .map((entry) => entry.answer)
-              .join("、")}）填入題幹，只考核一個空格；請教師核對是否與原卷一致。`,
+            answerChanged
+              ? `原題有 ${blanks} 個空格；因平台每題只有一個輸入框，考核空格由第 1 個改為第 ${normalised.assessedBlankIndex} 個（原答案「${normalised.originalAnswer}」，現考核「${normalised.correctAnswer}」）。這**改變了考核內容**，必須由教師確認，不會自動發布。`
+              : `原題有 ${blanks} 個空格，平台已把其餘空格的答案（${normalised.filled
+                  .map((entry) => entry.answer)
+                  .join("、")}）填入題幹，只考核第 1 個空格（考核答案不變）；請教師核對是否與原卷一致。`,
           ],
         },
       };
@@ -170,6 +177,9 @@ function buildQuestion(
     // 來源是校內試題檔本身（不是教材段落），因此不以教材依據核對標示
     sourceVerified: false,
     qualityWarnings: source.qualityWarnings,
+    // 整理時改變了考核內容（例如多空格填充題改考另一個空格）：一律暫緩發布，
+    // 由教師確認後才可發布，避免匯入流程靜默改寫答案。
+    teacherConfirmationRequired: source.requiresTeacherReview === true,
     createdAt: nowIso(),
   });
 }

@@ -245,23 +245,49 @@
 
 ## 5. 現況
 
-**人工覆核已於 2026-10-17 開始**：擁有者 `ipwh@pochiu.edu.hk` 在平台記錄了 17 筆覆核通過
-（經登入工作階段驗證，每筆綁定版本與內容指紋）。相對 642 條已發布題目仍屬小樣本，
-本文件所述的 8 題覆核套件仍然全部待覆核。
-`golden-questions.v1.json` 的 `questions` 陣列刻意保持空白，避免以程式產生的內容冒充
-人工覆核結果。這項 pending 項目指的是**人類覆核的覆蓋率**，仍然維持 pending。
+**平台內的覆核紀錄**：本機資料庫現有 3,148 筆「通過」紀錄，全部由同一個管理員帳號
+（`ipwh@pochiu.edu.hk`，`reviewer_role = admin`）於 2026-10-18 寫入，名義分為兩類：
+批次發布（1,882 筆）、自動修復後補記（1,266 筆）。早前文件記述的 17 筆「經登入工作階段
+逐題覆核」**不在**這份本機快照內；本報告無法確認它們是否仍存在於其他環境，因此不能與
+上列數字相加。這兩類紀錄的性質不同，系統目前**沒有欄位**區分（見
+[稽核報告](../audit-2026-10-18-platform-audit.md) AU-04），所以不可把 3,148 筆一律當成
+逐題人類審閱，也**不可**反推「沒有人核對過」。
+
+**上載前的史實核對（在平台以外進行）**：擁有者確認題目上載前已由科組核對歷史事實。
+倉庫內的書面證據是 [`owner-publication-overrides.json`](owner-publication-overrides.json)
+2026-10-15T08:41:22Z 的授權理由「科組已審閱課本及校內試卷題目，授權上線前批次發布
+（未逐題留下覆核紀錄）」（143 題）。該次核對的逐題範圍及結論不在倉庫內，**無法**逐題重建。
+
+**黃金題庫是一份獨立的評估資料集**：`golden-questions.v1.json` 的 `questions` 陣列刻意保持
+空白，避免以程式產生的內容冒充人工覆核結果。這項 pending 指的是**這份評估資料集尚未建立**
+（因而無法量度閘門與教師判斷的一致度），而**不是**「題目從未經史實核對」。
 
 **Sprint 7.8 之後，學生的自學不再被這項 pending 阻塞**：程式會先套用自動品質驗證
 （機器可判斷的缺陷：答案不唯一、教材不支持、解釋空洞等），通過的題目即供學生練習，
 並在教師端如實標示為「已發布（未經人工覆核）」。發布仍然必須有對應**目前版本**的一種
 驗證紀錄（人工覆核或自動驗證），否則一律 **409**——因此「沒有驗證就發布」依然不可能。
 
-**不可混淆的是**：目前學生可見的題目中，**沒有一題**經過歷史科教師確認史實；自動品質
-驗證**不是**史實正確的證明（見 README「自動品質閘門的能力與限制」）。學生回報與教師
-抽樣（第 6.5 節）是現階段發現史實問題的唯一途徑。
+**不可混淆的是**：自動品質驗證**不是**史實正確的證明（見 README「自動品質閘門的能力與限制」）。
+上載前的科組核對、本節的黃金題庫，以及平台內的逐題覆核紀錄是三件不同的事；任何一項都不能
+單獨證明「現行版本的全部題目已獲史實批准」。學生回報與教師抽樣（第 6.5 節）仍然是發現
+個別史實問題的主要途徑。
 
-**機器用的驗收樣本不是覆核紀錄**：[question-quality-fixtures.v1.json](./question-quality-fixtures.v1.json)
-是 Sprint 8.5 的教學品質閘門測試樣本（合成教材、機器判定，`reviewStatus: machine-fixtures-not-teacher-approved`）。
+**修復來源（repair provenance）**：2026-10-19 的唯讀稽核
+[repair-provenance-2026-10-19.json](./repair-provenance-2026-10-19.json) 以 `materials/` 內的原始
+試題檔重建修復前內容，逐題比較後發現 **18 題**的考核答案在自動修復後已改變
+（舊紀錄的「考核的答案不變」對這 18 題並不準確）。程式已改為：會改變考核答案時**不改寫**，
+標示待教師確認。本機資料集先以 `--quarantine` 隔離全部 18 題，然後由擁有者於 2026-10-19
+逐題裁決：**16 題核准、2 題拒絕並刪除、0 題仍隔離**；其中 2 題先退回、按指示修正後於第 6 版核准，
+1 題按指示新增可接受答案「鄉議局」。逐題理由見
+[repair-adjudication-results-2026-10-19.md](./repair-adjudication-results-2026-10-19.md)，
+裁決前的證據快照見 [repair-adjudication-2026-10-19.md](./repair-adjudication-2026-10-19.md)。
+本節的黃金題庫仍然保持空白，兩者不可互相代替。
+
+**隔離之後的重新確認**：18 題在隔離時版本會遞增（第 5–8 版），隔離前的核准因此自動失效；
+教師重新核准會寫入一筆帶新時間戳的紀錄（migration 0021），不會沿用舊紀錄。2026-10-19 的 18 題
+裁決已完成：16 核准（含 2 題修正後於第 6 版核准）、2 拒絕並刪除。
+
+**機器用的驗收樣本不是覆核紀錄**：[question-quality-fixtures.v1.json](./question-quality-fixtures.v1.json)是 Sprint 8.5 的教學品質閘門測試樣本（合成教材、機器判定，`reviewStatus: machine-fixtures-not-teacher-approved`）。
 它**不是**黃金題庫，也不代表任何題目已獲教師或史實批准；請勿把兩者混為一談。
 
 **真實生成題目的覆核樣本仍待覆核**：[generated-question-sample-2026-10.json](./generated-question-sample-2026-10.json)
@@ -279,6 +305,8 @@
 | [review-workflow-audit-2026-10.json](./review-workflow-audit-2026-10.json) | 覆核流程 12 項契約的逐項審核（角色、示範身分、版本綁定、只增不改、暫緩標記、來源可見性）及已知限制 | 發現 1 個實際缺陷並已修正（見下） |
 | [published-question-risk-report-2026-10.json](./published-question-risk-report-2026-10.json) | 兩條在 Sprint 8.6 被重算判 `reject` 的題目之風險評估 | 只有 1 條已發布（`q_058eda0378394d0f`）；另一條為草稿。**沒有**改動任何題目或發布狀態 |
 | [explanation-reference-corrections-2026-10.json](./explanation-reference-corrections-2026-10.json) | 7 條解釋段號的建議修正（v2，附舊值／建議值／信心／所需授權） | 全部 `applied: false`，**未取得授權、未套用** |
+| `npm run review:adjudication`（[build-teacher-adjudication.ts](../../scripts/build-teacher-adjudication.ts)） | 由修復來源報告產生 18 題逐題裁決套件（原始 vs 現行、空格位置及答案次序、版本與紀錄來源、待填決定欄）；**唯讀** | [repair-adjudication-2026-10-19.md](./repair-adjudication-2026-10-19.md)：18 題全部 `decision.unset`，`proposedCorrection: null` |
+| `npm run review:content-queue`（[build-content-quality-queue.ts](../../scripts/build-content-quality-queue.ts)） | 把**不同性質**的內容問題分開列出（附錄 B 疑點、佔位解釋、知識點、技能／難度、來源不可追溯、教材發行權） | [content-quality-queue-2026-10-19.md](./content-quality-queue-2026-10-19.md)：各分類互不等價，不是發布批准 |
 
 **已修正的實際缺陷（覆核版本綁定）**：`POST /api/teacher/questions/[questionId]/review` 以往只接受
 `decision`，教師的頁面若長時間開啟，可對已被別人修改的題目送出 `approved`，覆核紀錄便會綁到教師
@@ -355,4 +383,44 @@
 
 覆核紀錄保存版本及內容指紋，但**沒有**保存教師當時看到的題目全文快照，也沒有題目版本歷史表。
 三個改善方案的比較與建議（建議：覆核時寫入不可變快照，一個 nullable 欄位、無 backfill）見
-[review-auditability-options-2026-10.md](./review-auditability-options-2026-10.md)。**未實作任何 migration。**
+[review-auditability-options-2026-10.md](./review-auditability-options-2026-10.md)。上述快照建議**未實作**（沒有新增快照欄位）。
+
+另外兩項由 2026-10-19 裁決衝刺確認的限制：
+
+- **舊自動修復紀錄的角色欄不可靠**：18 題的舊紀錄以 `reviewer_role = admin` 寫入，理由含「自動修復」。
+  角色欄因此不能單獨證明是否人工覆核；裁決套件按理由另行標示，**不改寫歷史紀錄**。新寫入的修復紀錄
+  一律用 `automation`，教師介面亦會加註「（自動記錄）」。
+- **重新確認需要新紀錄**：同一版本可能先後出現兩次相同的核准決定（批次核准 → 隔離 → 教師重新確認）。
+  Migration 0021 已移除 `question_reviews` 的唯一索引，令第二次決定可以帶自己的時間戳；冪等改由
+  `insertQuestionReview()` 在題目沒有待確認標記時維持。此 migration 未在正式環境執行。
+
+## 9. 內容品質稽核與發布閘門（Sprint 9，2026-10-19）
+
+### 9.1 唯讀稽核
+
+`npm run audit:content`（[audit-content-quality.ts](../../scripts/audit-content-quality.ts)）逐題分類：
+
+| 類別 | 分類 |
+| --- | --- |
+| 來源 | `traceable`／`partial`／`unknown`／`pending_verification`（只代表可定位程度，不代表史實或版權） |
+| 解釋 | `placeholder`／`answer_only`／`insufficient`／`potentially_inconsistent`／`not_assessed`，另標示「有人工覆核但仍低品質」 |
+| 元數據 | 知識點空白／排版殘留／通用標籤／與分節對不上；技能空白；無效課題或分節關聯（阻擋級） |
+| 政策 | `hard_block`／`teacher_review`／`warning`／`policy_pending` |
+
+報告：[../quality/content-audit-2026-10-19.md](../quality/content-audit-2026-10-19.md)。
+
+**重要界線**：分類只會發現問題，不會修改題目，也不會裁定歷史事實、答案正確性或版權。
+
+### 9.2 發布閘門
+
+`npm run release:gate` 只讀取資料庫及既有報告，輸出
+[../release-gate-2026-10-19.md](../release-gate-2026-10-19.md)。未定義標準（例如佔位解釋是否暫緩派發）
+會顯示 `POLICY_PENDING`，沒有證據（Golden dataset 空、部署證據）會顯示 `INSUFFICIENT_EVIDENCE`，
+兩者都不會當作通過。
+
+### 9.3 版權確認
+
+擁有者已於 2026-10-19 確認版權，紀錄見
+[copyright-owner-attestation-2026-10-19.md](./copyright-owner-attestation-2026-10-19.md)。
+此紀錄是擁有者聲明，不是逐份出版社授權；`material_documents` 的逐份權利紀錄仍為 12／36，
+未有批次回填。版權許可與來源可追溯性、歷史準確性必須分開判斷。

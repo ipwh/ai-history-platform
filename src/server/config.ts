@@ -600,6 +600,24 @@ export function isProductionRuntime(): boolean {
   return (process.env.K_SERVICE ?? "").trim().length > 0;
 }
 
+/**
+ * 未啟用學校登入時，是否允許使用後台功能（教師端／管理員端）。
+ *
+ * **預設 fail-closed**：只要屬正式建置（`NODE_ENV=production`，包括 `npm run build`
+ * 之後的 `next start`）或執行於 Cloud Run，就必須明確設定
+ * `HISTORY_ALLOW_UNSAFE_DEMO_MODE=true` 才會開放後台。
+ *
+ * 舊行為只看 `K_SERVICE`，令任何**非 Cloud Run** 的正式部署（學校伺服器、其他雲端、
+ * Docker）在忘記設定 Google 憑證時，把教師端及管理員端（教材、題目、學生練習記錄）
+ * 完全開放給任何能連上網站的人。本機 `npm run dev` 不受影響。
+ */
+export function isUnsafeDemoModeAllowed(): boolean {
+  if (!isProductionRuntime()) return true;
+  return ["1", "true", "yes", "on"].includes(
+    (process.env.HISTORY_ALLOW_UNSAFE_DEMO_MODE ?? "").trim().toLowerCase(),
+  );
+}
+
 export const LLM_PROVIDER_LABELS: Record<LlmProviderName, string> = {
   mock: "本地示範生成（不需要 API key）",
   "openai-compatible": "OpenAI 相容 API",
