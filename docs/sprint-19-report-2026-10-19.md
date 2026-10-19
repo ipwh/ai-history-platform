@@ -195,3 +195,56 @@ INSUFFICIENT_EVIDENCE  deployment?????
 ```
 
 **????????????**?`question-servability` ? `servability-adjudication` ????????? PASS?`review-provenance` ? revision ?????????? FAIL?
+
+## 12. 正式環境部署記錄（2026-10-19，負責人明確授權）
+
+### 授權依據
+
+負責人書面確認接受下列後果後執行：**刪除正式獨有 400 題、改寫題幹、作答紀錄孤立**。
+
+### 執行前實測差異（唯讀下載 bucket 快照比對）
+
+| 項目 | 正式（部署前） | 本機 |
+| --- | --- | --- |
+| 題目 | 473（`qb-` 116／`demo-` 49／雜湊 308） | 1,875（全 `qb-`） |
+| 共同題目 | 73（其中 11 題題幹不同） | — |
+| 只在正式 | 400 | — |
+| migration | 0020 | 0022 |
+| 學習者 | 34 | 34（**完全重疊**） |
+| 作答／練習 | 140／92 | 162／83 |
+
+### 已執行步驟
+
+1. **備份**：`gs://…-history-backup/history/data/app.db.pre-s19-20261019T0915Z`（4,866,048 bytes）。
+2. **匯出**：`npm run snapshot:production`（`VACUUM INTO`＋完整性檢查 `ok`；清除教材開放狀態 12→0、`distribution_audit` 78→0）。
+3. **建置及部署**：`gcloud builds submit --config cloudbuild.yaml`，build `b2696420-…`，映像 `hk-history-self-study:b2696420-…`，revision `00027`。substitutions 全部沿用線上現有值（admin、84 位教師、roster sheet、backup bucket、執行身分 `history-run@…`），避免用到 YAML 內的空預設值。
+4. **上載新快照**：`data/exports/app.db`（13,107,200 bytes → bucket）。
+5. **觸發還原**：revision `00028`、`00029`（`--update-env-vars=APP_BUILD_ID`）。
+
+### 遇到的競態（已解決並驗證）
+
+第一次觸發（00028）時，容器在快照上載完成前已還原**舊**資料（日誌：`已由雲端還原（4752 KB）`）。再次觸發後，線上實例於 09:25:23 自行上載 **12,490,496 bytes** 備份（`backupsUploaded: 1`），證明執行中資料庫已是新題庫。
+
+### 部署後驗證（由執行中容器自行上載的快照下載核對）
+
+```
+questions: 1875 / published: 1875 / learners: 34 / attempts: 162
+question_reviews: 3157 / migrations: 22 / integrity_check: ok
+```
+
+`/api/health` → `200`，`persistence: {"backupEnabled":true,"lastSuccessAt":"2026-10-19T09:25:23Z","backupsUploaded":1,"restore":"restored"}`。
+
+### 如實記錄的代價
+
+- 正式獨有的 400 題（含 49 題 `demo-*`）已不存在。
+- 原正式的 15 筆作答、17 次練習紀錄被本機資料取代。
+- 歷史練習紀錄仍可顯示：83 次練習全部存放 `question_snapshot_json`；但 `attempts.question_id` 有 157 筆指向不存在題目（歷史回饋可讀，按課題統計錯題的 INNER JOIN 會略過這些紀錄）。
+- 正式環境先前 58 題不可作答（57 已發布）的問題，隨題庫替換一併消失。
+
+### 回滾
+
+```
+gcloud storage cp gs://amiable-nirvana-500300-a0-history-backup/history/data/app.db.pre-s19-20261019T0915Z \
+  gs://amiable-nirvana-500300-a0-history-backup/history/data/app.db
+gcloud run services update history-self-study --region=asia-east2 --update-env-vars=APP_BUILD_ID=rollback-<時間>
+```
