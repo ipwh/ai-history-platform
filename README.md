@@ -589,7 +589,7 @@ scripts/deploy-cloud-run.ps1      Cloud Build + Cloud Run 部署（見第十節�
 
 | 方法及路徑 | 用途 |
 | --- | --- |
-| `GET /api/health` | 健康檢查：版本、資料庫狀態（不含路徑）、LLM／OCR provider、登入及後台保護狀態、資料備份狀態（是否啟用、上次備份時間）、**定期維護（資料保留期清理）狀態** |
+| `GET /api/health` | 健康檢查：版本、資料庫狀態（不含路徑）、LLM／OCR provider、登入及後台保護狀態、資料備份狀態（是否啟用、上次備份時間）、**定期維護（資料保留期清理）狀態**、**教材庫概況（文件／段落／可向學生發布的文件數，只有數字）** |
 | `GET /api/auth/session` | 目前登入狀態及學校帳戶（未啟用登入時 `enabled: false`） |
 | `GET /api/auth/google/start` | 開始 Google 登入（導向 Google 同意頁） |
 | `GET /api/auth/google/callback` | Google 回呼：建立工作階段 cookie |
@@ -1738,10 +1738,14 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 | 名冊服務帳戶 | `history-roster-reader@pccss-ai-history.iam.gserviceaccount.com` |
 | 執行身分 | `history-run@pccss-ai-history.iam.gserviceaccount.com` |
 
-> **最近部署**：2026-10-20 09:10 UTC，revision `history-self-study-00020-c64`（commit `e1981cf`）。
+> **最近部署**：2026-10-21 07:5x UTC，revision `history-self-study-00022-52v`（commit `fae11e2`）。
 > 已驗證：`/api/health` 200（ok、資料庫、LLM、登入已啟用、`staffApiOpen=false`）、資料庫由 Cloud Storage 快照還原、
-> 未登入存取會轉到 `/login`。未驗證：真實帳戶登入、名冊載入、備份上載。證據（含未驗證清單）：
-> [docs/deployment-evidence-2026-10-19.json](docs/deployment-evidence-2026-10-19.json)。
+> 未登入存取會轉到 `/login`。**已確認 `HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk` 已寫入執行中的 revision**
+> （在此之前該變數從未設定，因此連擁有者都無法核准 Golden 或「已修復並核准」）。
+> 同日實測發現**正式資料庫的教材為 0 份**（`/api/health` → `materials: {documents:0, blocks:0, studentVisibleDocuments:0}`），
+> 因此學生端每個課題都顯示「尚未匯入教材」；原因是 `/admin/materials` 的「匯入全部課程教材」按鈕一直回
+> 400（`fileName: null` 被 schema 拒絕），已修正。未驗證：真實帳戶登入、名冊載入。
+> 證據（含未驗證清單）：[docs/deployment-evidence-2026-10-19.json](docs/deployment-evidence-2026-10-19.json)。
 
 > `amiable-nirvana-500300-a0`（與 ai-english-platform 共用）為**已停用的舊專案**，本平台不再使用其任何服務或 bucket；
 > 舊服務 `history-self-study --region=asia-east2 --project amiable-nirvana-500300-a0` 只作歷史參考，
