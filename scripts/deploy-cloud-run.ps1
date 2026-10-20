@@ -73,6 +73,10 @@ param(
     # 所有教師都必須在此列出（含校內網域帳戶）；網域本身不再授予教師權限。
     # 例外：-StaffAccessPolicy school-domain 時，校內網域的非學號形式帳戶皆為教師。
     [string]$TeacherEmails = "",
+    # 歷史科內容審核者名單（HISTORY_REVIEWER_EMAILS；多個以分號分隔）。
+    # 只有名單內的帳戶可核准 Golden fixture 及「已修復並核准」的學科裁決；
+    # 平台 teacher／admin 角色**不等於**學科審核資格，留空時一律 fail-closed。
+    [string]$ReviewerEmails = "",
     # 教職員存取政策（擁有者決定）：
     #   allowlist（預設）= 最小權限，只有 -AdminEmails／-TeacherEmails 列出的帳戶是教職員
     #   school-domain    = 暫時的全校教職員政策，-StaffDomains 所列網域的非學號形式帳戶皆為教師
@@ -157,6 +161,19 @@ if ($StaffAccessPolicy -eq "school-domain") {
 $adminEmailList = (@(($AdminEmails -split "[;,\s]+") | Where-Object { $_ }) -join ";")
 $teacherEmailList = (@(($TeacherEmails -split "[;,\s]+") | Where-Object { $_ }) -join ";")
 $staffDomainList = (@(($StaffDomains -split "[;,\s]+") | Where-Object { $_ }) -join ";")
+$reviewerEmailList = (@(($ReviewerEmails -split "[;,\s]+") | Where-Object { $_ }) -join ";")
+
+# 歷史科內容審核者名單留空時，所有學科裁決（Golden 核准、已修復並核准）都會回 403。
+# 這是 fail-closed 的設計，但部署時若忘記指定，教師會在介面上四處碰壁而不知原因，
+# 因此這裡明確提示（不顯示電郵）。
+if ($reviewerEmailList.Trim().Length -eq 0) {
+    Write-Warning @"
+未指定歷史科內容審核者（-ReviewerEmails）。部署後**沒有任何人**可以核准
+Golden fixture 或「已修復並核准」的學科裁決（平台 teacher／admin 角色不等於學科資格）。
+如有歷史科教師需要核准內容，請加上：
+  -ReviewerEmails 'history-teacher@pochiu.edu.hk'
+"@
+}
 
 $studentPatternEntries = @(
     (($adminEmailList + ";" + $teacherEmailList).Split(";")) |
@@ -465,7 +482,7 @@ if (-not $RosterSheetId -and $Apply) {
 }
 # --allow-unauthenticated 是切換式旗標（不能寫 =true）；不允許公開存取時留空，改由 IAP／身分權杖保護
 $authFlag = if ($AllowUnauthenticated) { "--allow-unauthenticated" } else { "" }
-$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13},_STAFF_ACCESS_POLICY={14},_STAFF_DOMAINS={15}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $adminEmailList, $teacherEmailList, $StaffAccessPolicy, $staffDomainList)
+$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13},_STAFF_ACCESS_POLICY={14},_STAFF_DOMAINS={15},_REVIEWER_EMAILS={16}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $adminEmailList, $teacherEmailList, $StaffAccessPolicy, $staffDomainList, $reviewerEmailList)
 Invoke-Gcloud builds submit --project $Project --config cloudbuild.yaml --substitutions $substitutions --timeout=1800s . | Out-Null
 
 # 已棄用的舊變數不會授予任何權限，但留著會產生 error 級設定警示，也容易令人誤以為仍然生效。

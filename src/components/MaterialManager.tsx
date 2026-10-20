@@ -262,7 +262,12 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
         imported: number;
         failed: number;
         results: { fileName: string; topicId: string | null; blockCount: number; errorMessage: string | null }[];
-      }>("/api/admin/materials/import", { fileName, all, runOcr: runOcrOnUpload });
+      }>("/api/admin/materials/import", {
+        // 全部匯入時不要送 fileName: null（伺服器會視為格式錯誤）
+        ...(fileName ? { fileName } : {}),
+        all,
+        runOcr: runOcrOnUpload,
+      });
 
       const details = result.results
         .map((item) => `${item.fileName}（${item.blockCount} 段）`)

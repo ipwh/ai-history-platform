@@ -18,9 +18,9 @@ const cookies = readTestCookies();
 const SESSION_COOKIE = "hk-history-session";
 
 const QUEUE_TABS = {
-  servability: "學生答唔到的題目",
-  provenance: "要跟進課本依據的題目",
-  golden: "評分示例題",
+  servability: "未能作答的題目",
+  provenance: "需核對課本依據的題目",
+  golden: "評分示例題目",
 } as const;
 
 const ITEM_LIST = 'ol[aria-label="題目清單"]';
@@ -41,7 +41,7 @@ async function apiContext(role?: keyof typeof UI_TEST_IDENTITIES) {
 }
 
 /**
- * 開啟「學生答唔到的題目」清單，並回傳伺服器實際提供的項目數。
+ * 開啟「未能作答的題目」清單，並回傳伺服器實際提供的項目數。
  *
  * 清單可能為空（所有題目已修復），此時頁面必須顯示明確的空狀態，
  * 而不是顯示推算數字；回傳 0 讓需要項目的測試以 skip 表示未驗證。
@@ -135,6 +135,48 @@ test.describe("清單與分頁", () => {
   });
 });
 
+test.describe("需核對課本依據的題目", () => {
+  test("點選題目後顯示題目內容、來源資料及前往題目管理的連結", async ({ page }) => {
+    await signIn(page, "reviewer");
+    const api = await apiContext("reviewer");
+    const queue = await api.get("/api/teacher/review-queue?queue=provenance&page=1&pageSize=10");
+    expect(queue.status()).toBe(200);
+    const payload = (await queue.json()) as {
+      available: boolean;
+      total: number;
+      items: { id: string }[];
+    };
+    await api.dispose();
+    test.skip(
+      !payload.available || payload.total === 0,
+      "此環境沒有需核對課本依據的題目，無法驗證詳情頁。",
+    );
+
+    await page.goto("/teacher/review");
+    await page.getByRole("tab", { name: QUEUE_TABS.provenance }).click();
+    const firstItem = page.locator(`${ITEM_LIST} button`).first();
+    await expect(firstItem).toBeVisible();
+    const questionId = await firstItem.getAttribute("data-question-id");
+    expect(questionId).toBeTruthy();
+    await firstItem.click();
+
+    // 題目本身必須顯示在同一頁，老師才知道要核對哪一題
+    await expect(page.getByRole("heading", { name: "這一題" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "題目現時記錄的來源" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "需要核對的原因" })).toBeVisible();
+
+    // 提供直達題目管理的渠道
+    const link = page.getByRole("link", { name: "前往題目管理修改此題" });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", new RegExp(`\\?question=${questionId}$`));
+
+    // 深層連結會直接開啟該題的編輯表單
+    await link.click();
+    await expect(page).toHaveURL(new RegExp(`/teacher/questions\\?question=${questionId}$`));
+    await expect(page.getByRole("heading", { name: "編輯題目" })).toBeVisible();
+  });
+});
+
 test.describe("不可作答題目：三個決定", () => {
   test("未選擇決定前不會出現提交按鈕，亦沒有任何預設核准", async ({ page }) => {
     await signIn(page, "reviewer");
@@ -144,7 +186,7 @@ test.describe("不可作答題目：三個決定", () => {
 
     await expect(page.getByRole("group", { name: "你的決定" })).toBeVisible();
     await expect(page.getByRole("button", { name: SUBMIT })).toHaveCount(0);
-    for (const label of ["要再查證", "先收起這題", "已修好，可以派"]) {
+    for (const label of ["要求補充證據", "退回草稿", "已修復並核准"]) {
       await expect(page.getByRole("button", { name: new RegExp(`^${label}`) })).toHaveAttribute(
         "aria-pressed",
         "false",
@@ -158,7 +200,7 @@ test.describe("不可作答題目：三個決定", () => {
     test.skip(queueSize === 0, EMPTY_QUEUE);
     await page.locator(`${ITEM_LIST} button`).first().click();
 
-    await page.getByRole("button", { name: /^先收起這題/ }).click();
+    await page.getByRole("button", { name: /^退回草稿/ }).click();
     await page.getByRole("button", { name: SUBMIT }).click();
 
     const alert = page.locator("#servability-form-error");
@@ -174,7 +216,7 @@ test.describe("不可作答題目：三個決定", () => {
     test.skip(queueSize === 0, EMPTY_QUEUE);
     await page.locator(`${ITEM_LIST} button`).first().click();
 
-    await page.getByRole("button", { name: /^先收起這題/ }).click();
+    await page.getByRole("button", { name: /^退回草稿/ }).click();
     await page.getByRole("button", { name: CHIP_NO_EVIDENCE }).click();
     await expect(page.getByText(/你會提交的決定/)).toContainText(CHIP_NO_EVIDENCE);
 
@@ -206,7 +248,7 @@ test.describe("不可作答題目：三個決定", () => {
       });
     });
 
-    await page.getByRole("button", { name: /^先收起這題/ }).click();
+    await page.getByRole("button", { name: /^退回草稿/ }).click();
     await page.getByRole("button", { name: CHIP_NO_EVIDENCE }).click();
     await page.getByRole("button", { name: SUBMIT }).click();
 
@@ -230,7 +272,7 @@ test.describe("不可作答題目：三個決定", () => {
       });
     });
 
-    await page.getByRole("button", { name: /^先收起這題/ }).click();
+    await page.getByRole("button", { name: /^退回草稿/ }).click();
     await page.getByRole("button", { name: CHIP_NO_EVIDENCE }).click();
     await page.getByRole("button", { name: SUBMIT }).click();
 
@@ -239,7 +281,7 @@ test.describe("不可作答題目：三個決定", () => {
   });
 });
 
-test.describe("評分示例題表單", () => {
+test.describe("評分示例題目表單", () => {
   test("沒有預選決定，用作示例需要完整評估欄位", async ({ page }) => {
     await signIn(page, "reviewer");
     const api = await apiContext("reviewer");
@@ -260,7 +302,7 @@ test.describe("評分示例題表單", () => {
 
     await expect(page.getByRole("button", { name: SUBMIT })).toHaveCount(0);
 
-    await page.getByRole("button", { name: /^可以用作示例/ }).click();
+    await page.getByRole("button", { name: /^可用作示例/ }).click();
     await page.getByRole("button", { name: CHIP_NO_EVIDENCE }).click();
     await page.getByRole("button", { name: SUBMIT }).click();
     await expect(page.locator("#golden-form-error")).toContainText("評估類別");
@@ -350,7 +392,7 @@ test.describe("錯誤與復原", () => {
     const queueSize = await openServabilityQueue(page);
     test.skip(queueSize === 0, EMPTY_QUEUE);
     await page.locator(`${ITEM_LIST} button`).first().click();
-    await page.getByRole("button", { name: /^先收起這題/ }).click();
+    await page.getByRole("button", { name: /^退回草稿/ }).click();
     await page.locator("#review-reason-extra").fill("尚未提交的理由，不應默默消失。");
 
     const dialogs: string[] = [];

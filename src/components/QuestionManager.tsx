@@ -38,7 +38,14 @@ interface GenerateResult extends GeneratedQuestionPreview {
  *
  * @param focusGenerate 由 /teacher/questions/generate 進入時，把生成區塊放在最前並自動捲動。
  */
-export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boolean } = {}) {
+export function QuestionManager({
+  focusGenerate = false,
+  focusQuestionId = null,
+}: {
+  focusGenerate?: boolean;
+  /** 由教師審核工作台進入時指定要直接開啟的題目（`?question=<id>`） */
+  focusQuestionId?: string | null;
+} = {}) {
   const [topics, setTopics] = useState<TopicOverview[]>([]);
   const [topicId, setTopicId] = useState<string>("");
   const [sectionId, setSectionId] = useState<string>("");
@@ -70,6 +77,35 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
     if (!focusGenerate) return;
     generateSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [focusGenerate]);
+
+  /**
+   * 由教師審核工作台以 `?question=<id>` 進入時，直接開啟該題的編輯表單。
+   *
+   * 沒有單一題目的 GET 端點，但覆核端點會回傳完整題目（`view.question`），因此沿用
+   * 同一個已受 `requireTeacher` 保護的來源，不另開 API。載入失敗時如實顯示錯誤，
+   * 不會假裝已開啟。
+   */
+  const [focusError, setFocusError] = useState<unknown>(null);
+  useEffect(() => {
+    if (!focusQuestionId) return;
+    let cancelled = false;
+    api
+      .get<{ view: { question: Question } }>(`/api/teacher/questions/${focusQuestionId}/review`)
+      .then((result) => {
+        if (cancelled) return;
+        // 編輯器只會在已選定課題時顯示，因此同時設定課題，令深層連結可以直接開啟表單
+        setTopicId(result.view.question.topicId);
+        setSectionId(result.view.question.sectionId);
+        setEditorState({ mode: "edit", question: result.view.question });
+        setFocusError(null);
+      })
+      .catch((caught: unknown) => {
+        if (!cancelled) setFocusError(caught);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [focusQuestionId]);
 
   const [reports, setReports] = useState<QuestionReportDetail[]>([]);
   const [reportStatusFilter, setReportStatusFilter] = useState<QuestionReportStatus | "">("open");
@@ -375,6 +411,12 @@ export function QuestionManager({ focusGenerate = false }: { focusGenerate?: boo
 
       {message ? <Notice tone="success">{message}</Notice> : null}
       {error ? <ErrorNotice error={error} onRetry={() => setQuestionsReloadToken((t) => t + 1)} /> : null}
+      {focusError ? (
+        <Notice tone="warning">
+          未能自動開啟指定的題目（可能已被刪除或連結有誤）：{String(focusQuestionId)}。
+          請在下方清單自行篩選該題。
+        </Notice>
+      ) : null}
 
       <section className="card flex flex-col gap-3" ref={generateSectionRef}>
         <h2 className="font-semibold">生成題目預覽</h2>

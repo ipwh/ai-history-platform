@@ -15,35 +15,35 @@ export interface QueueMeta {
 
 export const QUEUE_META: Record<WorkbenchQueue, QueueMeta> = {
   servability: {
-    label: "學生答唔到的題目",
-    hint: "題目本身有問題（例如沒有正確答案、選項重複），學生即使識也答不到。請你看完後決定怎樣處理。",
+    label: "未能作答的題目",
+    hint: "題目本身有結構問題（例如沒有記錄正確答案、選項重複），學生即使理解內容也無法作答。請審閱後選擇處理方式。",
   },
   provenance: {
-    label: "要跟進課本依據的題目",
-    hint: "這些題目的課本依據需要人手核對。看完證據後，請到題目頁面修改或補上依據。",
+    label: "需核對課本依據的題目",
+    hint: "這些題目的課本依據需要人手核對。點選題目後會顯示題目內容及來源資料，並可直接前往題目管理修改或補回依據。",
   },
   golden: {
-    label: "評分示例題",
-    hint: "這些題目適合用來做「標準答案示例」，供老師之間對照評分尺度。",
+    label: "評分示例題目",
+    hint: "這些題目適合作為「標準答案示例」，供教師之間對照評分尺度。",
   },
 };
 
-/** 不可作答的原因（issueCode）→ 一句老師看得明的廣東話。 */
+/** 不可作答的原因（issueCode）→ 一句教師看得明白的書面語說明。 */
 export const SERVABILITY_REASON_TEXT: Record<string, string> = {
-  MISSING_ANSWER: "這題沒有記錄正確答案，學生交了卷也不知對錯。",
-  FILL_NO_BLANK: "題目原本應該是填充題，但題幹裡找不到空格。",
+  MISSING_ANSWER: "此題沒有記錄正確答案，學生提交後無法得知對錯。",
+  FILL_NO_BLANK: "此題應為填充題，但題幹內找不到空格。",
   FILL_MULTI_BLANK: "題幹有多個空格，但只記錄了一個答案。",
-  FILL_ANSWER_TOO_LONG: "記錄的答案太長，似是整句句子而不是要填的字詞。",
-  FILL_ANSWER_CONTAINS_BLANK: "記錄的答案裡仍然有空格符號。",
-  FILL_ANSWER_SENTENCE: "記錄的答案是完整句子，跟填充題的格式不符。",
-  FILL_ANSWER_LEAKS: "答案已經出現在題幹其他位置，等於直接送分。",
+  FILL_ANSWER_TOO_LONG: "記錄的答案過長，似是一整句句子而不是須填寫的字詞。",
+  FILL_ANSWER_CONTAINS_BLANK: "記錄的答案內仍留有空格符號。",
+  FILL_ANSWER_SENTENCE: "記錄的答案是完整句子，與填充題格式不符。",
+  FILL_ANSWER_LEAKS: "答案已出現在題幹其他位置，等同直接提供答案。",
   MCQ_TOO_FEW_OPTIONS: "選擇題的選項數目不足。",
-  MCQ_EMPTY_OPTION: "選擇題有空白選項。",
-  MCQ_DUPLICATE_OPTION: "選擇題有重複選項。",
+  MCQ_EMPTY_OPTION: "選擇題內有空白選項。",
+  MCQ_DUPLICATE_OPTION: "選擇題內有重複選項。",
   MCQ_ANSWER_NOT_IN_OPTIONS: "記錄的正確答案不在選項之內。",
-  MCQ_ROMAN_LABEL_MISSING: "題幹用了羅馬數字小項，但選項對不上。",
-  MCQ_ANSWER_LEAKS: "正確答案已經出現在題幹中，等於直接送分。",
-  UNKNOWN: "系統未能判斷具體原因，需要你直接看題目。",
+  MCQ_ROMAN_LABEL_MISSING: "題幹使用羅馬數字小項，但選項未能對應。",
+  MCQ_ANSWER_LEAKS: "正確答案已出現在題幹中，等同直接提供答案。",
+  UNKNOWN: "系統未能判斷具體原因，需要直接審閱題目。",
 };
 
 export function servabilityReasonText(issueCode: string | null | undefined): string {
@@ -66,18 +66,18 @@ export interface DecisionMeta {
 export const SERVABILITY_DECISIONS: DecisionMeta[] = [
   {
     value: "request_more_evidence",
-    label: "要再查證",
-    effect: "題目退回草稿，等你補回原卷或課本證據再處理。學生不會見到這題。",
+    label: "要求補充證據",
+    effect: "題目退回草稿，待補回原卷或課本證據後再處理；期間學生不會看到此題。",
   },
   {
     value: "return_to_draft",
-    label: "先收起這題",
-    effect: "題目退回草稿，暫時不派給學生，之後可以再修改。",
+    label: "退回草稿",
+    effect: "題目退回草稿，暫時不會派發給學生，其後可再修改。",
   },
   {
     value: "approve_after_verified_repair",
-    label: "已修好，可以派",
-    effect: "只有在題目本身已可正常作答時才會成功；成功後仍要通過覆核才會派給學生。",
+    label: "已修復並核准",
+    effect: "只在題目本身已可正常作答時才會成功；成功後仍須通過覆核才會派發給學生。",
   },
 ];
 
@@ -85,14 +85,14 @@ export const SERVABILITY_DECISIONS: DecisionMeta[] = [
 export const SERVABILITY_SECONDARY_DECISIONS: DecisionMeta[] = [
   {
     value: "keep_quarantined",
-    label: "繼續隔離",
+    label: "維持隔離",
     effect: "維持不可派發，並保留待教師確認的標記。",
     secondary: true,
   },
   {
     value: "reject",
-    label: "不要這題",
-    effect: "留在草稿並標示不再採用。",
+    label: "不予採用",
+    effect: "留在草稿並標示為不再採用。",
     secondary: true,
   },
 ];
@@ -115,10 +115,10 @@ export function decisionMeta(value: string): DecisionMeta | null {
 export const REASON_CHIPS: string[] = [
   "缺少原卷或課本證據",
   "題幹資料不完整",
-  "答案有爭議，需要歷史科同事再議",
+  "答案有爭議，需歷史科教師再議",
   "已對照課本修正題目",
-  "這一題不需要保留",
-  "系統判斷有誤，題目其實正常",
+  "此題不需保留",
+  "系統判斷有誤，題目並無問題",
 ];
 
 /** Golden 候選的評估類別（原本是英文代碼，這裡加上中文說明）。 */
@@ -133,9 +133,9 @@ export const GOLDEN_CATEGORY_LABELS: Record<string, string> = {
 };
 
 export const GOLDEN_DECISIONS: DecisionMeta[] = [
-  { value: "approved", label: "可以用作示例", effect: "記錄為評分示例；只影響評分基準，不會改變題目的發布狀態。" },
-  { value: "revision_requested", label: "要再修改", effect: "記錄為要求修訂，題目需要再調整。" },
-  { value: "rejected", label: "不適合做示例", effect: "記錄為拒絕，這題不再列為示例候選。" },
+  { value: "approved", label: "可用作示例", effect: "記錄為評分示例；只影響評分基準，不會改變題目的發布狀態。" },
+  { value: "revision_requested", label: "要求修訂", effect: "記錄為要求修訂，題目需要再調整。" },
+  { value: "rejected", label: "不適合作示例", effect: "記錄為拒絕，此題不再列為示例候選。" },
 ];
 
 /** 把老師選的理由與自由輸入合併成要送到伺服器的理由字串。 */

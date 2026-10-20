@@ -1176,6 +1176,19 @@ export const healthSchema = z.object({
   /** 學生名冊狀態（不含任何學生個人資料） */
   roster: rosterStatusSchema,
   /**
+   * 教材庫概況（只有數量，不含檔名或內容）。
+   *
+   * 診斷用途：`blocks` 為 0 表示這個資料庫從未匯入教材（學生端會顯示「尚未匯入教材」）；
+   * `studentVisibleDocuments` 為 0 表示已匯入但沒有一份已開放給學生。
+   */
+  materials: z
+    .object({
+      documents: z.number().int().nonnegative().default(0),
+      blocks: z.number().int().nonnegative().default(0),
+      studentVisibleDocuments: z.number().int().nonnegative().default(0),
+    })
+    .default({ documents: 0, blocks: 0, studentVisibleDocuments: 0 }),
+  /**
    * 定期維護（資料保留期清理）的執行狀態。
    *
    * 只有類別、時間及次數，不含任何學習者資料；用途是證明保留期真的有在執行，

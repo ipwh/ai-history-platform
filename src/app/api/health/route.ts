@@ -3,6 +3,7 @@ import { handleRoute, jsonOk } from "@/server/http";
 import { resolveOcrProvider } from "@/server/ocr";
 import { requireTeacher } from "@/server/auth/guards";
 import { countMaterialBlocks, listTopics } from "@/server/repositories/topics";
+import { materialLibrarySummary } from "@/server/repositories/materials";
 import { ensureBootstrap } from "@/server/seed";
 import { getRosterStatus } from "@/server/roster";
 import { getSystemStatus } from "@/server/services/admin-dashboard";
@@ -38,6 +39,8 @@ export async function GET() {
         authEnabled: status.auth.enabled,
         staffApiOpen: status.auth.staffApiOpen,
         roster,
+        // 教材庫概況（只有數量）：診斷「學生端為甚麼沒有教材」
+        materials: materialLibrarySummary(),
         // 定期維護狀態（只有類別、時間及次數，不含任何學習者資料）
         maintenance: maintenanceStatus().map((entry) => ({
           kind: entry.kind,

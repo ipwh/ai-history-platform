@@ -13,8 +13,22 @@ import { requireAdmin } from "@/server/auth/guards";
 export const runtime = "nodejs";
 
 const schema = z.object({
-  /** 要匯入的教材檔案名稱（可為相對路徑；必須存在於 materials 資料夾）；all = true 時可省略 */
-  fileName: z.string().optional(),
+  /**
+   * 要匯入的教材檔案名稱（可為相對路徑；必須存在於 materials 資料夾）；all = true 時可省略。
+   *
+   * `null` 一律視為「未提供」：「匯入全部課程教材」按鈕本來就會以 `fileName: null`
+   * 呼叫此端點，若只寫 `.optional()` 會回 400（`expected string, received null`），
+   * 令該功能在介面上完全不能用。
+   */
+  fileName: z
+    .string()
+    .nullable()
+    .optional()
+    // 空白字串亦視為「未提供」，交由下方的可行動錯誤訊息處理（而不是格式錯誤）
+    .transform((value) => {
+      const trimmed = (value ?? "").trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    }),
   /** 匯入 materials 資料夾內全部教材（書本內容及校內試題） */
   all: z.boolean().default(false),
   /** 匯入後是否執行 OCR（背景執行） */

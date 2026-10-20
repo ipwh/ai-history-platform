@@ -698,6 +698,32 @@ export function documentIsStudentVisible(document: MaterialDocument): boolean {
 }
 
 /**
+ * 教材庫概況（只有數量）。
+ *
+ * 用途是診斷「為甚麼學生端顯示沒有教材」：`documents`／`blocks` 為 0 即代表此資料庫
+ * 從未匯入教材；`studentVisibleDocuments` 為 0 則代表已匯入但未開放給學生
+ * （未確認版權，或教師版文件未完成內容覆核）。不含檔名、內容或任何使用者資料。
+ */
+export function materialLibrarySummary(): {
+  documents: number;
+  blocks: number;
+  studentVisibleDocuments: number;
+} {
+  const db = getDb();
+  const documents = db.prepare("SELECT COUNT(*) AS total FROM material_documents").get() as
+    | { total: number }
+    | undefined;
+  const blocks = db.prepare("SELECT COUNT(*) AS total FROM material_blocks").get() as
+    | { total: number }
+    | undefined;
+  return {
+    documents: documents?.total ?? 0,
+    blocks: blocks?.total ?? 0,
+    studentVisibleDocuments: listStudentDistributableDocumentIds().size,
+  };
+}
+
+/**
  * 可向學生顯示的文件 ID（學生端唯一的來源判斷）。
  *
  * 只設定 `student_distribution = 1` 而**沒有**留下版權確認（教師版文件另需內容覆核）

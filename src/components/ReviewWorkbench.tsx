@@ -67,6 +67,8 @@ interface QuestionDetail {
     acceptedAnswers: string[];
     gradingPoints: string[];
     explanation: string;
+    knowledgePoint: string;
+    sourceExcerpt: string;
     sourceLocation: string;
     sourceBlockIds: string[];
     teacherConfirmationRequired: boolean;
@@ -352,8 +354,7 @@ export function ReviewWorkbench() {
 /* 共用小元件                                                          */
 /* ------------------------------------------------------------------ */
 
-function QuestionCard({ detail }: { detail: QuestionDetail }) {
-  const { question } = detail;
+function QuestionCard({ question }: { question: QuestionDetail["question"] }) {
   return (
     <article className="card flex flex-col gap-3">
       <h2 className="text-lg font-bold">這一題</h2>
@@ -603,7 +604,7 @@ function ServabilityPanel({
 
   return (
     <div className="flex flex-col gap-3">
-      <QuestionCard detail={detail} />
+      <QuestionCard question={detail.question} />
 
       <Notice tone="warning">
         <strong>這一題的問題：</strong>
@@ -1068,38 +1069,125 @@ function GoldenPanel({
 }
 
 /* ------------------------------------------------------------------ */
-/* 要跟進課本依據的題目                                                */
+/* 需核對課本依據的題目                                                */
 /* ------------------------------------------------------------------ */
 
+interface ProvenanceQueueDetail {
+  priority?: string;
+  repairCategory?: string;
+  sourceStatus?: string;
+  overlapsSourcePending?: boolean;
+  servable?: boolean;
+  issueCode?: string | null;
+  requiredDecision?: string;
+  notice?: string;
+}
+
+/** 修復分類代碼 → 書面語說明（教師看到的是意思，不是代碼）。 */
+const REPAIR_CATEGORY_TEXT: Record<string, string> = {
+  stem_or_option_meaning_changed: "題幹或選項的意思與原卷不同，需要對照原卷核實。",
+  answer_changed: "考核答案與原卷不同，需要對照原卷核實（這一類可能影響評分）。",
+  format_only: "只是格式或標點不同，內容與原卷相同，核對即可。",
+  source_missing: "找不到對應的課本段落，需要補回依據。",
+  unknown: "未能自動分類，需要直接審閱題目及來源。",
+};
+
+function repairCategoryText(code: string | undefined): string {
+  if (!code) return "（沒有記錄）";
+  return REPAIR_CATEGORY_TEXT[code] ?? `需要人手判斷的分類：${code}`;
+}
+
+/**
+ * 「需核對課本依據」清單的詳情。
+ *
+ * 這一類清單**沒有**逐題裁決 API（核對依據屬題目編輯工作），因此這裡的重點是
+ * 「把要核對的東西全部顯示在同一頁」，並提供直達題目管理的連結：
+ *   1. 題目本身（題幹、選項、正確答案、解釋）；
+ *   2. 題目現時記錄的來源（來源位置及教材段落）；
+ *   3. 一按即可前往題目管理修改（`/teacher/questions?question=<id>`）。
+ */
 function ProvenancePanel({ item }: { item: QueueItem }) {
-  const detail = item.detail as {
-    priority?: string;
-    repairCategory?: string;
-    sourceStatus?: string;
-    overlapsSourcePending?: boolean;
-    servable?: boolean;
-    issueCode?: string | null;
-    requiredDecision?: string;
-    notice?: string;
-  };
+  const detail = (item.detail ?? {}) as ProvenanceQueueDetail;
+  const [question, setQuestion] = useState<QuestionDetail["question"] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<QuestionDetailEnvelope>(`/api/teacher/questions/${item.id}/review`)
+      .then((result) => {
+        if (cancelled) return;
+        setQuestion(result.view.question);
+        setError(null);
+        setLoading(false);
+      })
+      .catch((caught: unknown) => {
+        if (cancelled) return;
+        setError(caught);
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [item.id, reloadToken]);
 
   return (
-    <article className="card flex flex-col gap-3">
-      <h2 className="text-lg font-bold">這一題需要你核對課本依據</h2>
+    <div className="flex flex-col gap-3">
       <Notice tone="info">
-        這裡只顯示現有的核對資料，沒有「一按就完成」的按鈕。看完後請到題目頁面補上或修正課本依據，
-        再回到覆核流程記錄。
+        這一類題目需要人手核對課本依據。核對後請到「題目管理」修改題目或補回依據；
+        此清單不會代替覆核，亦沒有「一按完成」的按鈕。
       </Notice>
-      <dl className="grid grid-cols-1 gap-1 text-sm">
-        <dt>題目現時可否作答</dt>
-        <dd>{detail.servable ? "可以（但仍未有老師逐題確認）" : "不可以，需要先修好題目"}</dd>
-        <dt>優先次序</dt>
-        <dd>
-          {detail.priority === "P1" ? "高（請先處理）" : detail.priority === "P3" ? "一般" : (detail.priority ?? "—")}
-        </dd>
-        <dt>要處理的問題</dt>
-        <dd>{detail.issueCode ? servabilityReasonText(detail.issueCode) : (detail.repairCategory ?? "—")}</dd>
-      </dl>
+
+      <article className="card flex flex-col gap-2">
+        <h2 className="text-lg font-bold">需要核對的原因</h2>
+        <p>{repairCategoryText(detail.repairCategory)}</p>
+        <p className="text-sm text-gray-600">
+          優先次序：{detail.priority === "P1" ? "高（建議先處理）" : detail.priority === "P3" ? "一般" : (detail.priority ?? "—")}
+          {detail.servable ? "；題目結構上可作答，但仍未有教師逐題確認" : "；題目現時不可作答，需先修好結構問題"}
+        </p>
+      </article>
+
+      {loading ? <Loading label="正在讀取題目…" /> : null}
+      {error ? <ErrorNotice error={error} onRetry={() => setReloadToken((n) => n + 1)} /> : null}
+      {question ? <QuestionCard question={question} /> : null}
+
+      {question ? (
+        <article className="card flex flex-col gap-2">
+          <h2 className="text-lg font-bold">題目現時記錄的來源</h2>
+          <p className="text-sm">來源位置：{question.sourceLocation || "（沒有記錄）"}</p>
+          <p className="text-sm">
+            教材段落：
+            {question.sourceBlockIds.length > 0 ? question.sourceBlockIds.join("、") : "（沒有連結任何段落）"}
+          </p>
+          {question.sourceExcerpt ? (
+            <blockquote
+              className="text-sm"
+              style={{ borderLeft: "3px solid var(--border-strong)", paddingLeft: "0.75rem" }}
+            >
+              {question.sourceExcerpt}
+            </blockquote>
+          ) : (
+            <p className="text-sm text-gray-600">（沒有記錄來源節錄）</p>
+          )}
+        </article>
+      ) : null}
+
+      <div className="card flex flex-col gap-2">
+        <h2 className="text-lg font-bold">下一步</h2>
+        <p className="text-sm text-gray-600">
+          在題目管理可以修改題幹、選項或答案，或重新連結教材段落；修改後題目會回到草稿，
+          並需要重新覆核才可再次派發。
+        </p>
+        <a className="btn btn-primary self-start" href={`/teacher/questions?question=${encodeURIComponent(item.id)}`}>
+          前往題目管理修改此題
+        </a>
+        <a className="btn self-start" href="/teacher/questions">
+          前往題目管理（搜尋及篩選）
+        </a>
+      </div>
+
       <details className="text-sm text-gray-600">
         <summary>技術資料（一般不需要理會）</summary>
         <dl className="mt-2 grid grid-cols-1 gap-1">
@@ -1118,6 +1206,6 @@ function ProvenancePanel({ item }: { item: QueueItem }) {
         </dl>
         <p className="mt-2">{detail.notice ?? "P1／P3 只是覆核排序，不是核准狀態。"}</p>
       </details>
-    </article>
+    </div>
   );
 }
