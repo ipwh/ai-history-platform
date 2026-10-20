@@ -354,6 +354,27 @@ describe("歷史科學科授權邊界（Sprint 12）", () => {
     }
   });
 
+  it("以分號分隔的多筆名單同樣生效（Cloud Run 的 --set-env-vars 用逗號分隔變數）", async () => {
+    const { historyReviewerEmails, isAuthorizedHistoryReviewer } = await import(
+      "@/server/auth/history-reviewer"
+    );
+    const original = process.env.HISTORY_REVIEWER_EMAILS;
+    // 實際部署時 --set-env-vars 以逗號分隔不同變數，因此名單本身必須用分號
+    process.env.HISTORY_REVIEWER_EMAILS = "First.Teacher@pochiu.edu.hk; second@pochiu.edu.hk";
+    try {
+      expect(historyReviewerEmails()).toEqual([
+        "first.teacher@pochiu.edu.hk",
+        "second@pochiu.edu.hk",
+      ]);
+      expect(isAuthorizedHistoryReviewer("second@pochiu.edu.hk")).toBe(true);
+      expect(isAuthorizedHistoryReviewer("FIRST.TEACHER@pochiu.edu.hk")).toBe(true);
+      expect(isAuthorizedHistoryReviewer("other@pochiu.edu.hk")).toBe(false);
+    } finally {
+      if (original === undefined) delete process.env.HISTORY_REVIEWER_EMAILS;
+      else process.env.HISTORY_REVIEWER_EMAILS = original;
+    }
+  });
+
   it("重複提交相同裁決不會產生重複紀錄；理由不同則另立一筆（Sprint 15）", async () => {
     const first = await callGoldenDecision(
       questionId,

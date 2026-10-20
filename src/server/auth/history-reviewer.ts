@@ -16,14 +16,24 @@
  */
 const ENV_KEY = "HISTORY_REVIEWER_EMAILS";
 
-/** 目前設定的歷史科審核者名單（小寫、去空白；未設定時為空陣列） */
+/**
+ * 目前設定的歷史科審核者名單（小寫、去空白；未設定時為空陣列）。
+ *
+ * 分隔符必須與其他角色名單一致（`[,;|\s]+`）：Cloud Run 的 `--set-env-vars`
+ * 以逗號分隔不同變數，因此實際傳入的多筆名單一定用分號，只按逗號分割會令
+ * 「第二位審核者」永遠不被承認（而且沒有任何錯誤訊息）。
+ */
 export function historyReviewerEmails(): string[] {
   const raw = process.env[ENV_KEY];
   if (!raw) return [];
-  return raw
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter((value) => value.length > 0);
+  return [
+    ...new Set(
+      raw
+        .split(/[,;|\s]+/)
+        .map((value) => value.trim().toLowerCase())
+        .filter((value) => value.length > 0),
+    ),
+  ];
 }
 
 /**
