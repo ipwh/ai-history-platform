@@ -101,7 +101,7 @@ function createSourceDocument(fileName: string, text: string, kind: "demo" | "qu
     {
       documentId: document.id,
       topicId: "topic-5",
-      sectionId: "topic-5-renaissance-features",
+      sectionId: "topic-5-renaissance-reformation",
       order: 0,
       type: "paragraph",
       level: null,
@@ -126,7 +126,7 @@ function makeQuestion(overrides: {
   return types.questionSchema.parse({
     id: overrides.id,
     topicId: "topic-5",
-    sectionId: "topic-5-renaissance-features",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "文藝復興時期歐洲人重視甚麼思想？",
@@ -151,7 +151,7 @@ function sessionWith(question: ReturnType<typeof makeQuestion>): string {
   const session = practiceRepo.createSession({
     learnerId: LEARNER,
     topicId: "topic-5",
-    sectionIds: ["topic-5-renaissance-features"],
+    sectionIds: ["topic-5-renaissance-reformation"],
     questionTypes: ["mc"],
     difficulty: "basic",
     mode: "standard",
@@ -257,7 +257,7 @@ describe("教材節錄顯示政策（fail-closed）", () => {
       {
         documentId: document.id,
         topicId: "topic-5",
-        sectionId: "topic-5-renaissance-features",
+        sectionId: "topic-5-renaissance-reformation",
         order: 1,
         type: "paragraph",
         level: null,
@@ -539,7 +539,7 @@ describe("教師端節錄可見性提示（與學生端同一判定）", () => {
     const { GET } = await import("@/app/api/teacher/questions/route");
     const response = await GET(
       new Request(
-        `http://localhost:3000/api/teacher/questions?topicId=topic-5&sectionId=topic-5-renaissance-features&status=published`,
+        `http://localhost:3000/api/teacher/questions?topicId=topic-5&sectionId=topic-5-renaissance-reformation&status=published`,
         { headers: { cookie: teacherCookie() } },
       ),
     );

@@ -133,7 +133,7 @@ describe("生成流程真的會套用品質閘門", () => {
     const ambiguous = candidate();
     const context = {
       topicId: "topic-5",
-      sectionId: "topic-5-renaissance-impact",
+      sectionId: "topic-5-renaissance-reformation",
       questionTypes: ["mc"] as ("mc" | "fill")[],
       difficulty: "basic" as const,
       origin: "material-ai" as const,

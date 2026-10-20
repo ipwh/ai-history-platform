@@ -27,7 +27,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 文藝復興：主要特點 ---------------- */
   {
     id: "q-renaissance-nature",
-    sectionId: "topic-5-renaissance-features",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "「文藝復興」是歐洲的一場甚麼運動？",
@@ -45,7 +45,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-renaissance-features",
-    sectionId: "topic-5-renaissance-features",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "以下哪一項是文藝復興的主要特點？",
@@ -64,7 +64,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 文藝復興：出現原因 ---------------- */
   {
     id: "q-renaissance-causes",
-    sectionId: "topic-5-renaissance-causes",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "advanced",
     question: "以下哪一項「不是」文藝復興出現的原因？",
@@ -77,7 +77,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-renaissance-feudal",
-    sectionId: "topic-5-renaissance-causes",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "fill",
     difficulty: "basic",
     question:
@@ -92,7 +92,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 文藝復興：起源與發展 ---------------- */
   {
     id: "q-renaissance-origin-place",
-    sectionId: "topic-5-renaissance-origin",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "文藝復興最先在哪個地區興起？",
@@ -104,7 +104,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-renaissance-origin-literature",
-    sectionId: "topic-5-renaissance-origin",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "fill",
     difficulty: "basic",
     question: "文藝復興最早出現在＿＿＿領域，其後才擴展至藝術及自然科學等範疇。",
@@ -116,7 +116,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-renaissance-origin-reason",
-    sectionId: "topic-5-renaissance-origin",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "advanced",
     question: "文藝復興首先在意大利半島興起的原因之一是甚麼？",
@@ -136,7 +136,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 文藝復興：文學、藝術與自然科學 ---------------- */
   {
     id: "q-renaissance-dante",
-    sectionId: "topic-5-renaissance-culture",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "《神曲》的作者是誰？",
@@ -149,7 +149,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-renaissance-decameron",
-    sectionId: "topic-5-renaissance-culture",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "advanced",
     question:
@@ -163,7 +163,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-renaissance-vinci",
-    sectionId: "topic-5-renaissance-culture",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "fill",
     difficulty: "basic",
     question: "達文西擅長運用透視、光線與陰影等技巧，其名作包括《蒙娜麗莎》與《＿＿＿》。",
@@ -175,7 +175,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-renaissance-michelangelo",
-    sectionId: "topic-5-renaissance-culture",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "advanced",
     question: "米開蘭基羅在西斯汀教堂天花板繪製的傳世巨作是？",
@@ -189,7 +189,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 文藝復興：影響 ---------------- */
   {
     id: "q-renaissance-impact",
-    sectionId: "topic-5-renaissance-impact",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "以下哪一項是文藝復興的影響？",
@@ -208,7 +208,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 宗教改革：背景 ---------------- */
   {
     id: "q-reformation-nature",
-    sectionId: "topic-5-reformation-background",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "「宗教改革」是一場甚麼運動？",
@@ -225,7 +225,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-reformation-background",
-    sectionId: "topic-5-reformation-background",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "advanced",
     question: "以下哪一項屬於宗教改革的背景？",
@@ -239,7 +239,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 宗教改革：發展 ---------------- */
   {
     id: "q-reformation-95theses",
-    sectionId: "topic-5-reformation-development",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "1517年，馬丁路德發表了甚麼文件，標誌宗教改革的展開？",
@@ -252,7 +252,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-reformation-sola-fide",
-    sectionId: "topic-5-reformation-development",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "fill",
     difficulty: "basic",
     question: "馬丁路德主張人要＿＿＿才可以得救（因信稱義），並不是倚靠購買「贖罪券」。",
@@ -264,7 +264,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-reformation-trigger",
-    sectionId: "topic-5-reformation-development",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "advanced",
     question: "宗教改革的導火線是甚麼？",
@@ -282,7 +282,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-reformation-protestant",
-    sectionId: "topic-5-reformation-development",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "advanced",
     question: "馬丁路德的主張最終促成甚麼結果？",
@@ -301,7 +301,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 宗教改革：影響 ---------------- */
   {
     id: "q-reformation-impact-war",
-    sectionId: "topic-5-reformation-impact",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "以下哪一項是宗教改革帶來的影響？",
@@ -320,7 +320,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 科學革命 ---------------- */
   {
     id: "q-science-society",
-    sectionId: "topic-5-science",
+    sectionId: "topic-5-science-enlightenment",
     questionType: "mc",
     difficulty: "basic",
     question:
@@ -335,7 +335,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 啟蒙運動 ---------------- */
   {
     id: "q-enlightenment-social-contract",
-    sectionId: "topic-5-enlightenment",
+    sectionId: "topic-5-science-enlightenment",
     questionType: "mc",
     difficulty: "advanced",
     question: "啟蒙思想中的「社會契約」主張甚麼？",
@@ -353,7 +353,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-enlightenment-rights",
-    sectionId: "topic-5-enlightenment",
+    sectionId: "topic-5-science-enlightenment",
     questionType: "fill",
     difficulty: "basic",
     question:
@@ -367,7 +367,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-enlightenment-separation",
-    sectionId: "topic-5-enlightenment",
+    sectionId: "topic-5-science-enlightenment",
     questionType: "mc",
     difficulty: "advanced",
     question: "啟蒙思想家提出「權力分立」的主要目的是甚麼？",
@@ -386,7 +386,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 工業革命：特點及出現原因 ---------------- */
   {
     id: "q-industrial-mechanisation",
-    sectionId: "topic-5-industrial-features",
+    sectionId: "topic-5-industrial",
     questionType: "mc",
     difficulty: "basic",
     question: "工業革命的「機械化」特點是指甚麼？",
@@ -404,7 +404,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-industrial-causes",
-    sectionId: "topic-5-industrial-features",
+    sectionId: "topic-5-industrial",
     questionType: "mc",
     difficulty: "advanced",
     question: "以下哪一項「不是」工業革命出現的原因？",
@@ -419,7 +419,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 工業革命：英國率先展開的原因 ---------------- */
   {
     id: "q-industrial-britain",
-    sectionId: "topic-5-industrial-britain",
+    sectionId: "topic-5-industrial",
     questionType: "mc",
     difficulty: "advanced",
     question: "以下哪一項是英國率先展開工業革命的原因？",
@@ -438,7 +438,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 工業革命：主要發展 ---------------- */
   {
     id: "q-industrial-jenny",
-    sectionId: "topic-5-industrial-development",
+    sectionId: "topic-5-industrial",
     questionType: "fill",
     difficulty: "basic",
     question: "工業革命期間，英國人發明「＿＿＿」（1764年），令紡織業的生產效率大幅提升。",
@@ -451,7 +451,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-industrial-watt",
-    sectionId: "topic-5-industrial-development",
+    sectionId: "topic-5-industrial",
     questionType: "mc",
     difficulty: "basic",
     question: "十八世紀，英國人瓦特改良了甚麼機器，令蒸汽成為穩定可靠的新能源？",
@@ -464,7 +464,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-industrial-factory-system",
-    sectionId: "topic-5-industrial-development",
+    sectionId: "topic-5-industrial",
     questionType: "fill",
     difficulty: "advanced",
     question: "工業革命前，歐洲人主要在家中以人手及簡單工具生產，這種模式稱為「＿＿＿制度」。",
@@ -479,7 +479,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 工業革命：影響 ---------------- */
   {
     id: "q-industrial-urbanisation",
-    sectionId: "topic-5-industrial-impact",
+    sectionId: "topic-5-industrial",
     questionType: "mc",
     difficulty: "basic",
     question: "工業革命期間的「城市化」是指甚麼？",
@@ -497,7 +497,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-industrial-gap",
-    sectionId: "topic-5-industrial-impact",
+    sectionId: "topic-5-industrial",
     questionType: "mc",
     difficulty: "advanced",
     question: "工業革命期間，資本主義盛行帶來了甚麼社會問題？",
@@ -516,7 +516,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 法國大革命：背景與成因 ---------------- */
   {
     id: "q-fr-estates",
-    sectionId: "topic-5-fr-background",
+    sectionId: "topic-5-french-revolution",
     questionType: "mc",
     difficulty: "basic",
     question: "法國大革命前，社會的「第三等級」是指甚麼人？",
@@ -529,7 +529,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-fr-causes",
-    sectionId: "topic-5-fr-background",
+    sectionId: "topic-5-french-revolution",
     questionType: "mc",
     difficulty: "advanced",
     question: "以下哪一項「不是」法國大革命的成因？",
@@ -548,7 +548,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 法國大革命：革命經過 ---------------- */
   {
     id: "q-fr-bastille",
-    sectionId: "topic-5-fr-course",
+    sectionId: "topic-5-french-revolution",
     questionType: "fill",
     difficulty: "basic",
     question: "1789年7月14日，巴黎民眾攻陷＿＿＿奪取武器，法國大革命正式爆發。",
@@ -560,7 +560,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   },
   {
     id: "q-fr-estates-general",
-    sectionId: "topic-5-fr-course",
+    sectionId: "topic-5-french-revolution",
     questionType: "mc",
     difficulty: "advanced",
     question: "1789年5月路易十六召開三級會議，第三等級代表為甚麼退出會議？",
@@ -581,7 +581,7 @@ export const DEMO_QUESTIONS: DemoQuestionSeed[] = [
   /* ---------------- 拿破崙時代 ---------------- */
   {
     id: "q-fr-napoleon",
-    sectionId: "topic-5-fr-napoleon",
+    sectionId: "topic-5-french-revolution",
     questionType: "mc",
     difficulty: "basic",
     question: "法國大革命之後，法國進入哪個時期？",

@@ -703,7 +703,7 @@ async function main() {
     { label: "無效難度", body: { difficulty: "impossible" }, expect: 400 },
     { label: "沒有分節", body: { sectionIds: [] }, expect: 400 },
     { label: "不存在的課題", body: { topicId: "topic-does-not-exist" }, expect: 404 },
-    { label: "其他課題的分節", body: { topicId: "topic-1", sectionIds: ["topic-5-renaissance"] }, expect: 404 },
+    { label: "其他課題的分節", body: { topicId: "topic-1", sectionIds: ["topic-5-renaissance-reformation"] }, expect: 404 },
   ];
   for (const item of boundary) {
     const response = await call("POST", "/api/practice", {

@@ -47,7 +47,7 @@ let questionsRepo: QuestionRepo;
 let questionService: QuestionService;
 let reports: ReportService;
 
-const SECTIONS = ["topic-5-industrial-development", "topic-5-industrial-features"];
+const SECTIONS = ["topic-5-industrial", "topic-5-industrial"];
 const STAGE = { A: "student-a", B: "student-b", C: "student-c", E: "student-e", F: "student-f" };
 
 function cookieFor(learnerId: string): string {
@@ -453,12 +453,14 @@ describe("批改契約（第 6 節）", () => {
     const key = "合成契約詞語";
     const accepted = "合成契約別稱";
     await createFillQuestion({ key, acceptedAnswers: [accepted], suffix: "可接受寫法" });
+    // 題庫抽題是隨機的；合併後的主題題目較多，因此要求題數上限，確保合成的題目一定被抽中
     const { sessionId } = await startBankPractice({
       learnerId,
-      questionCount: 10,
+      questionCount: 30,
       questionTypes: ["fill"],
     });
-    const fill = practiceRepo.getSessionQuestions(sessionId).find((q) => q.correctAnswer === key)!;
+    const fill = practiceRepo.getSessionQuestions(sessionId).find((q) => q.correctAnswer === key);
+    if (!fill) throw new Error("練習中找不到剛建立的合成填充題");
 
     // 各自用新練習提交（同一題只會評分一次）
     const acceptedSession = await sessionContaining(learnerId, fill.id, ["fill"]);

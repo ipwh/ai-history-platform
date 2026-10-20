@@ -20,9 +20,9 @@ let seed: Seed;
 
 const LEARNER = "ai-grading-learner";
 /** 示範題庫中有填充題的分節 */
-const SECTION = "topic-5-reformation-development";
+const SECTION = "topic-5-renaissance-reformation";
 /** 示範題庫中有選擇題的分節 */
-const MC_SECTION = "topic-5-renaissance-features";
+const MC_SECTION = "topic-5-renaissance-reformation";
 
 function gradingResponse(payload: unknown): Response {
   return new Response(

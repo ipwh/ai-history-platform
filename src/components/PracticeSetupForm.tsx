@@ -22,7 +22,13 @@ import {
 } from "@/lib/types";
 import { ErrorNotice, Loading, Notice } from "@/components/ui";
 
-const QUESTION_COUNTS = [5, 10, 15];
+/**
+ * 可選題目數量。
+ *
+ * 只保留 5 題及 10 題：部分課題的教材段落不多，要求太多題目時 AI 只能重複出題或
+ * 補題失敗，學生反而會見到「題數不足」的提示（2026-10-20 擁有者指示刪去 15 題）。
+ */
+const QUESTION_COUNTS = [5, 10];
 
 interface StartAttempt {
   mode: "standard" | "wrong-only";

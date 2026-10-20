@@ -21,7 +21,7 @@ let recordsService: RecordsService;
 let practiceRepo: PracticeRepository;
 
 const LEARNER = "test-learner-1";
-const SECTION = "topic-5-renaissance-features";
+const SECTION = "topic-5-renaissance-reformation";
 
 beforeAll(async () => {
   practice = await import("@/server/services/practice-service");

@@ -35,7 +35,7 @@ let materialService: MaterialService;
 let materialsRepo: MaterialsRepo;
 let seed: Seed;
 
-const SECTION = "topic-5-industrial-development";
+const SECTION = "topic-5-industrial";
 const LEARNER = "self-study-learner";
 
 beforeAll(async () => {

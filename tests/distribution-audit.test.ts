@@ -54,7 +54,7 @@ function studentBlockCount(topicId: string, sectionId?: string): number {
   return counts.get(sectionId) ?? 0;
 }
 
-const PILOT_SECTION = "topic-5-renaissance-features";
+const PILOT_SECTION = "topic-5-renaissance-reformation";
 
 const STUDENT = {
   email: "s2024146@pochiu.edu.hk",

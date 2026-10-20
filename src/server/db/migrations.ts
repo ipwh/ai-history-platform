@@ -617,6 +617,82 @@ export const MIGRATIONS: Migration[] = [
         ON golden_fixture_reviews (question_id, created_at)`,
     ],
   },
+  {
+    id: "0023-topic5-consolidated-themes",
+    statements: [
+      // 2026-10-20 擁有者指示：課題5 原本 18 個子分節對學生而言太瑣碎，
+      // 整合為「文藝復興與宗教改革」「科學革命與啟蒙運動」「工業革命」「法國大革命」4 個主題。
+      //
+      // 舊資料庫的教材段落及題目會一併改掛到新的主題（先改掛、後刪除舊分節，
+      // 以符合 section_id 的外鍵），因此學生的既有練習紀錄及教材不會消失。
+      // 全新資料庫由 seedCurriculum 建立相同的結構，這裡的 INSERT 會自動略過。
+      `INSERT INTO sections
+        (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+       SELECT 'topic-5-renaissance-reformation', 'topic-5', NULL, '文藝復興與宗教改革', '十四至十七世紀歐洲在文化、思想及宗教上的革新運動：文藝復興的特點、成因、起源與發展，以及宗教改革的背景、發展及影響。', '["文藝復興", "從神本走向人本", "文藝復興的主要特點", "文藝復興出現的原因", "文藝復興的起源與發展", "文學、藝術與自然科學", "文學方面的發展", "藝術方面的發展", "自然科學", "文藝復興的主要發展", "文藝復興的影響", "宗教改革", "宗教改革的背景", "宗教改革的發展", "宗教改革的影響"]', 0,
+              strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE EXISTS (SELECT 1 FROM topics WHERE id = 'topic-5')
+         AND NOT EXISTS (SELECT 1 FROM sections WHERE id = 'topic-5-renaissance-reformation')`,
+      `UPDATE sections
+       SET parent_id = NULL,
+           title = '文藝復興與宗教改革',
+           summary = '十四至十七世紀歐洲在文化、思想及宗教上的革新運動：文藝復興的特點、成因、起源與發展，以及宗教改革的背景、發展及影響。',
+           match_keywords_json = '["文藝復興", "從神本走向人本", "文藝復興的主要特點", "文藝復興出現的原因", "文藝復興的起源與發展", "文學、藝術與自然科學", "文學方面的發展", "藝術方面的發展", "自然科學", "文藝復興的主要發展", "文藝復興的影響", "宗教改革", "宗教改革的背景", "宗教改革的發展", "宗教改革的影響"]',
+           sort_order = 0,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE id = 'topic-5-renaissance-reformation'`,
+      `INSERT INTO sections
+        (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+       SELECT 'topic-5-science-enlightenment', 'topic-5', NULL, '科學革命與啟蒙運動', '十六至十八世紀歐洲在科學與思想上的一系列變革：科學革命的原因、發展及影響，以及啟蒙運動的背景、思想、傳播及影響。', '["科學革命", "啟蒙運動", "理性時代", "科學革命（十七至十八世紀）", "科學革命的原因", "科學革命的主要發展", "科學革命出現原因", "啟蒙運動（十七至十八世紀）", "主要的啟蒙思想", "啟蒙思想的傳播", "啟蒙運動的影響"]', 1,
+              strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE EXISTS (SELECT 1 FROM topics WHERE id = 'topic-5')
+         AND NOT EXISTS (SELECT 1 FROM sections WHERE id = 'topic-5-science-enlightenment')`,
+      `UPDATE sections
+       SET parent_id = NULL,
+           title = '科學革命與啟蒙運動',
+           summary = '十六至十八世紀歐洲在科學與思想上的一系列變革：科學革命的原因、發展及影響，以及啟蒙運動的背景、思想、傳播及影響。',
+           match_keywords_json = '["科學革命", "啟蒙運動", "理性時代", "科學革命（十七至十八世紀）", "科學革命的原因", "科學革命的主要發展", "科學革命出現原因", "啟蒙運動（十七至十八世紀）", "主要的啟蒙思想", "啟蒙思想的傳播", "啟蒙運動的影響"]',
+           sort_order = 1,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE id = 'topic-5-science-enlightenment'`,
+      `INSERT INTO sections
+        (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+       SELECT 'topic-5-industrial', 'topic-5', NULL, '工業革命', '十八世紀中葉至十九世紀末歐美的重大技術變革：特點與出現原因、英國率先展開的原因、主要發展及影響。', '["工業革命", "技術的革新", "工業革命的特點", "工業革命的出現原因", "工業革命出現的原因", "英國率先展開工業革命的原因", "英國率先", "工業革命的主要發展", "革命的起點", "新能源的應用", "工業革命的影響", "工業革命帶來的重要轉變"]', 2,
+              strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE EXISTS (SELECT 1 FROM topics WHERE id = 'topic-5')
+         AND NOT EXISTS (SELECT 1 FROM sections WHERE id = 'topic-5-industrial')`,
+      `UPDATE sections
+       SET parent_id = NULL,
+           title = '工業革命',
+           summary = '十八世紀中葉至十九世紀末歐美的重大技術變革：特點與出現原因、英國率先展開的原因、主要發展及影響。',
+           match_keywords_json = '["工業革命", "技術的革新", "工業革命的特點", "工業革命的出現原因", "工業革命出現的原因", "英國率先展開工業革命的原因", "英國率先", "工業革命的主要發展", "革命的起點", "新能源的應用", "工業革命的影響", "工業革命帶來的重要轉變"]',
+           sort_order = 2,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE id = 'topic-5-industrial'`,
+      `INSERT INTO sections
+        (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+       SELECT 'topic-5-french-revolution', 'topic-5', NULL, '法國大革命', '十八世紀末法國的政治革命及隨後的拿破崙時代：背景與成因、革命經過、拿破崙的上台與帝國，以及對後世的影響。', '["法國大革命", "拿破崙時代", "對自由和民主的追求", "革命的背景", "革命的成因", "革命的經過", "革命的爆發", "革命的導火線", "拿破崙的上台", "拿破崙的改革", "法國大革命及拿破崙時代的影響", "自由主義及民族主義"]', 3,
+              strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE EXISTS (SELECT 1 FROM topics WHERE id = 'topic-5')
+         AND NOT EXISTS (SELECT 1 FROM sections WHERE id = 'topic-5-french-revolution')`,
+      `UPDATE sections
+       SET parent_id = NULL,
+           title = '法國大革命',
+           summary = '十八世紀末法國的政治革命及隨後的拿破崙時代：背景與成因、革命經過、拿破崙的上台與帝國，以及對後世的影響。',
+           match_keywords_json = '["法國大革命", "拿破崙時代", "對自由和民主的追求", "革命的背景", "革命的成因", "革命的經過", "革命的爆發", "革命的導火線", "拿破崙的上台", "拿破崙的改革", "法國大革命及拿破崙時代的影響", "自由主義及民族主義"]',
+           sort_order = 3,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE id = 'topic-5-french-revolution'`,
+      `UPDATE material_blocks SET section_id = 'topic-5-renaissance-reformation' WHERE section_id IN ('topic-5-renaissance', 'topic-5-renaissance-features', 'topic-5-renaissance-causes', 'topic-5-renaissance-origin', 'topic-5-renaissance-culture', 'topic-5-renaissance-impact', 'topic-5-reformation', 'topic-5-reformation-background', 'topic-5-reformation-development', 'topic-5-reformation-impact')`,
+      `UPDATE questions SET section_id = 'topic-5-renaissance-reformation' WHERE section_id IN ('topic-5-renaissance', 'topic-5-renaissance-features', 'topic-5-renaissance-causes', 'topic-5-renaissance-origin', 'topic-5-renaissance-culture', 'topic-5-renaissance-impact', 'topic-5-reformation', 'topic-5-reformation-background', 'topic-5-reformation-development', 'topic-5-reformation-impact')`,
+      `UPDATE material_blocks SET section_id = 'topic-5-science-enlightenment' WHERE section_id IN ('topic-5-science', 'topic-5-enlightenment')`,
+      `UPDATE questions SET section_id = 'topic-5-science-enlightenment' WHERE section_id IN ('topic-5-science', 'topic-5-enlightenment')`,
+      `UPDATE material_blocks SET section_id = 'topic-5-industrial' WHERE section_id IN ('topic-5-industrial-features', 'topic-5-industrial-britain', 'topic-5-industrial-development', 'topic-5-industrial-impact')`,
+      `UPDATE questions SET section_id = 'topic-5-industrial' WHERE section_id IN ('topic-5-industrial-features', 'topic-5-industrial-britain', 'topic-5-industrial-development', 'topic-5-industrial-impact')`,
+      `UPDATE material_blocks SET section_id = 'topic-5-french-revolution' WHERE section_id IN ('topic-5-fr-background', 'topic-5-fr-course', 'topic-5-fr-napoleon', 'topic-5-fr-impact')`,
+      `UPDATE questions SET section_id = 'topic-5-french-revolution' WHERE section_id IN ('topic-5-fr-background', 'topic-5-fr-course', 'topic-5-fr-napoleon', 'topic-5-fr-impact')`,
+      `DELETE FROM sections WHERE id IN ('topic-5-renaissance', 'topic-5-renaissance-features', 'topic-5-renaissance-causes', 'topic-5-renaissance-origin', 'topic-5-renaissance-culture', 'topic-5-renaissance-impact', 'topic-5-reformation', 'topic-5-reformation-background', 'topic-5-reformation-development', 'topic-5-reformation-impact', 'topic-5-science', 'topic-5-enlightenment', 'topic-5-industrial-features', 'topic-5-industrial-britain', 'topic-5-industrial-development', 'topic-5-industrial-impact', 'topic-5-fr-background', 'topic-5-fr-course', 'topic-5-fr-napoleon', 'topic-5-fr-impact')`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

@@ -569,7 +569,7 @@ describe("練習資源的擁有權（跨學生）", () => {
           body: {
             learnerId: "attacker-supplied",
             topicId: "topic-5",
-            sectionIds: ["topic-5-renaissance-features"],
+            sectionIds: ["topic-5-renaissance-reformation"],
             questionTypes: ["mc"],
             difficulty: "basic",
             questionCount: 1,
@@ -653,7 +653,7 @@ describe("學習進度及重溫（跨學生）", () => {
         body: JSON.stringify({
           learnerId: "attacker-supplied",
           topicId: "topic-5",
-          sectionIds: ["topic-5-renaissance-features"],
+          sectionIds: ["topic-5-renaissance-reformation"],
           questionTypes: ["mc"],
           difficulty: "basic",
           questionCount: 1,

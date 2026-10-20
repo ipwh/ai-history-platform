@@ -21,7 +21,7 @@ const UNITS: MaterialUnit[] = [
 function context() {
   return {
     topicId: "topic-5",
-    sectionId: "topic-5-reformation",
+    sectionId: "topic-5-renaissance-reformation",
     questionTypes: ["mc", "fill"] as ("mc" | "fill")[],
     difficulty: "basic" as const,
     origin: "material-ai" as const,
@@ -731,7 +731,7 @@ describe("教材依據的範圍", () => {
     // 另一個段落，用於測試「節錄出自其他段落」
     {
       blockId: "blk_other",
-      sectionId: "topic-5-renaissance",
+      sectionId: "topic-5-renaissance-reformation",
       sourceLocation: "教材 DOCX · 第 7 段",
       text: "文藝復興重視人文主義，強調人的價值與尊嚴。",
     },
@@ -741,7 +741,7 @@ describe("教材依據的範圍", () => {
     return {
       topicId: "topic-5",
       sectionId: "topic-5-industrial",
-      sectionIds: ["topic-5-industrial", "topic-5-renaissance"],
+      sectionIds: ["topic-5-industrial", "topic-5-renaissance-reformation"],
       questionTypes: ["mc", "fill"],
       difficulty: "basic",
       origin: "material-ai",
@@ -825,7 +825,7 @@ describe("教材依據的範圍", () => {
 
     expect(result.accepted).toHaveLength(1);
     // context.sectionId 為 topic-5-industrial，但這題的依據來自文藝復興分節
-    expect(result.accepted[0].sectionId).toBe("topic-5-renaissance");
+    expect(result.accepted[0].sectionId).toBe("topic-5-renaissance-reformation");
   });
 
   it("提供節錄的段落不屬於本次要求的分節時，沿用呼叫端指定的分節", () => {

@@ -32,7 +32,7 @@ let materialService: MaterialService;
 let materialsRepo: MaterialsRepo;
 let seed: Seed;
 
-const SECTIONS = ["topic-5-industrial-development", "topic-5-industrial-features"];
+const SECTIONS = ["topic-5-industrial", "topic-5-industrial"];
 
 beforeAll(async () => {
   practice = await import("@/server/services/practice-service");

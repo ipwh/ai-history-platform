@@ -7,7 +7,7 @@ function buildQuestion(overrides: Partial<Question>): Question {
   return questionSchema.parse({
     id: "q1",
     topicId: "topic-5",
-    sectionId: "topic-5-renaissance",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "測試題目內容",

@@ -79,7 +79,7 @@ function createSourceDocument(teacherEdition: boolean) {
     {
       documentId: document.id,
       topicId: "topic-5",
-      sectionId: "topic-5-renaissance-features",
+      sectionId: "topic-5-renaissance-reformation",
       order: 0,
       type: "paragraph",
       level: null,
@@ -104,7 +104,7 @@ function makeQuestion(
   const question = types.questionSchema.parse({
     id: `result-excerpt-${sequence}`,
     topicId: "topic-5",
-    sectionId: "topic-5-renaissance-features",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "文藝復興時期歐洲人重視甚麼思想？",
@@ -125,7 +125,7 @@ function makeQuestion(
   const created = practiceRepo.createSession({
     learnerId: STUDENT.learnerId,
     topicId: "topic-5",
-    sectionIds: ["topic-5-renaissance-features"],
+    sectionIds: ["topic-5-renaissance-reformation"],
     questionTypes: ["mc"],
     difficulty: "basic",
     mode: "standard",

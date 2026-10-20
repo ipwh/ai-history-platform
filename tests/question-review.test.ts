@@ -335,7 +335,7 @@ describe("發布繞過途徑（Sprint 5 修正）", () => {
         headers: { cookie: cookieFor(TEACHER), "content-type": "application/json" },
         body: JSON.stringify({
           topicId: "topic-5",
-          sectionId: "topic-5-renaissance-features",
+          sectionId: "topic-5-renaissance-reformation",
           questionType: "mc",
           difficulty: "basic",
           question: "繞過測試：文藝復興的核心思想是甚麼？",
@@ -363,7 +363,7 @@ describe("發布繞過途徑（Sprint 5 修正）", () => {
     const before = repo.countQuestions({ topicId: "topic-5" });
     const created = service.createManualQuestion({
       topicId: "topic-5",
-      sectionId: "topic-5-renaissance-features",
+      sectionId: "topic-5-renaissance-reformation",
       questionType: "mc",
       difficulty: "basic",
       question: "建立測試：文藝復興的核心思想是甚麼？",
@@ -469,7 +469,8 @@ describe("發布狀態在所有面向保持一致", () => {
           sectionIds: [question.sectionId],
           questionTypes: ["mc"],
           difficulty: "basic",
-          questionCount: 5,
+          // ???????????????????????????????
+          questionCount: 30,
         }),
       }),
     );
@@ -489,7 +490,8 @@ describe("發布狀態在所有面向保持一致", () => {
           sectionIds: [question.sectionId],
           questionTypes: ["mc"],
           difficulty: "basic",
-          questionCount: 5,
+          // ???????????????????????????????
+          questionCount: 30,
         }),
       }),
     );

@@ -66,7 +66,7 @@ function createTeacherEditionDocument() {
     {
       documentId: document.id,
       topicId: "topic-5",
-      sectionId: "topic-5-renaissance-features",
+      sectionId: "topic-5-renaissance-reformation",
       order: 0,
       type: "paragraph",
       level: null,
@@ -125,20 +125,20 @@ describe("舊狀態：只設定 student_distribution 而沒有確認紀錄", () 
 
     // 1) 學生可用教材：該文件不會計入（學生連出題依據都沒有）
     expect(
-      materialsRepo.studentMaterialBlockCounts("topic-5").get("topic-5-renaissance-features") ?? 0,
+      materialsRepo.studentMaterialBlockCounts("topic-5").get("topic-5-renaissance-reformation") ?? 0,
     ).toBe(0);
 
     // 2) 即時出題的學生版教材依據：不會包含該文件的段落
     const studentUnits = materialUnits.buildMaterialUnits(
       "topic-5",
-      ["topic-5-renaissance-features"],
+      ["topic-5-renaissance-reformation"],
       { audience: "student" },
     );
     expect(studentUnits.some((unit) => unit.blockId === blockId)).toBe(false);
     // 教師／管理員生成不受此限（他們本來就可以看到教材）
     const staffUnits = materialUnits.buildMaterialUnits(
       "topic-5",
-      ["topic-5-renaissance-features"],
+      ["topic-5-renaissance-reformation"],
       { audience: "staff" },
     );
     expect(staffUnits.some((unit) => unit.blockId === blockId)).toBe(true);
@@ -147,7 +147,7 @@ describe("舊狀態：只設定 student_distribution 而沒有確認紀錄", () 
     const question = types.questionSchema.parse({
       id: `legacy-excerpt-${sequence}`,
       topicId: "topic-5",
-      sectionId: "topic-5-renaissance-features",
+      sectionId: "topic-5-renaissance-reformation",
       questionType: "mc",
       difficulty: "basic",
       question: "文藝復興時期歐洲人重視甚麼思想？",

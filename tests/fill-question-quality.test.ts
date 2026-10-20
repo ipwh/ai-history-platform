@@ -40,7 +40,7 @@ const UNITS: MaterialUnit[] = MATERIAL.split("\n").map((text, index) => ({
 function context(overrides: { questionTypes?: ("mc" | "fill")[] } = {}) {
   return {
     topicId: "topic-5",
-    sectionId: "topic-5-reformation",
+    sectionId: "topic-5-renaissance-reformation",
     questionTypes: overrides.questionTypes ?? (["fill"] as ("mc" | "fill")[]),
     difficulty: "basic" as const,
     origin: "material-ai" as const,

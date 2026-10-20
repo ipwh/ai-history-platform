@@ -22,7 +22,7 @@ let recordsService: RecordsService;
 
 const TEACHER = "teacher:teacher@pochiu.edu.hk";
 const STUDENT = "school:s2024146@pochiu.edu.hk";
-const SECTION = "topic-5-renaissance-features";
+const SECTION = "topic-5-renaissance-reformation";
 
 beforeAll(async () => {
   practice = await import("@/server/services/practice-service");

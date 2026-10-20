@@ -28,7 +28,7 @@ let materialUnits: MaterialUnits;
 let sourceVisibility: SourceVisibility;
 let types: Types;
 
-const SECTION = "topic-5-renaissance-features";
+const SECTION = "topic-5-renaissance-reformation";
 const LESSON_TEXT = "文藝復興時期，歐洲人重視人文主義。";
 const EXERCISE_TEXT = "根據以下資料，回答相關問題。（12分）";
 const ANSWER_TEXT = "資料線索：資料A指出人文主義重視人的價值。（1分）";

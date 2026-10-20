@@ -30,7 +30,7 @@ describe("題目的品質警告", () => {
     const question = types.questionSchema.parse({
       id: "q-warning-demo",
       topicId: "topic-5",
-      sectionId: "topic-5-renaissance-features",
+      sectionId: "topic-5-renaissance-reformation",
       questionType: "fill",
       difficulty: "basic",
       question: "宗教改革期間，提出《基督教要義》的改革者是誰？",

@@ -39,7 +39,7 @@ let practice: PracticeService;
 let materialService: MaterialService;
 let seed: Seed;
 
-const SECTION = "topic-5-industrial-development";
+const SECTION = "topic-5-industrial";
 const LEARNER = "audit-learner";
 
 function toInput(question: ReturnType<QuestionRepo["getQuestion"]>) {

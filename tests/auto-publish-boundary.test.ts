@@ -33,7 +33,7 @@ let seed: Seed;
 let types: Types;
 
 /** 生成測試所用、確定有教材的分節（需要在測試資料庫先匯入示範教材） */
-const GENERATION_SECTION = "topic-5-industrial-development";
+const GENERATION_SECTION = "topic-5-industrial";
 
 const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
 const ORIGINAL_K_SERVICE = process.env.K_SERVICE;
@@ -78,7 +78,7 @@ function insertDraft(): string {
   const question = types.questionSchema.parse({
     id: `auto-publish-${sequence}`,
     topicId: "topic-5",
-    sectionId: "topic-5-renaissance-features",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: `自動發布邊界測試題目 ${sequence}`,

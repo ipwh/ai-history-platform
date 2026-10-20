@@ -39,7 +39,7 @@ let practiceRepo: PracticeRepo;
 let reports: ReportService;
 let reportsRepo: ReportsRepo;
 
-const SECTIONS = ["topic-5-industrial-development"];
+const SECTIONS = ["topic-5-industrial"];
 
 const TEACHER = {
   email: "teacher@example.com",

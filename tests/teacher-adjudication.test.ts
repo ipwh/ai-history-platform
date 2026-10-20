@@ -24,7 +24,7 @@ delete process.env.K_SERVICE;
 
 const LEARNER = "teacher-adjudication-learner";
 const TOPIC = "topic-5";
-const SECTION = "topic-5-renaissance-features";
+const SECTION = "topic-5-renaissance-reformation";
 
 function buildQuestion(overrides: Partial<Question> & { id: string }): Question {
   return questionSchema.parse({

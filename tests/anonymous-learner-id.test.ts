@@ -98,7 +98,7 @@ describe("示範模式下的學習者身分", () => {
         body: JSON.stringify({
           learnerId: ACCOUNT_LEARNER_IDS[0],
           topicId: "topic-5",
-          sectionIds: ["topic-5-renaissance-features"],
+          sectionIds: ["topic-5-renaissance-reformation"],
           questionTypes: ["mc"],
           difficulty: "basic",
           questionCount: 1,
@@ -142,7 +142,7 @@ describe("示範模式下的跨學生隔離（已登入時工作階段優先）"
         body: JSON.stringify({
           learnerId: ANONYMOUS_A,
           topicId: "topic-5",
-          sectionIds: ["topic-5-renaissance-features"],
+          sectionIds: ["topic-5-renaissance-reformation"],
           questionTypes: ["mc"],
           difficulty: "basic",
           questionCount: 1,

@@ -26,7 +26,7 @@ let seed: Seed;
 let types: Types;
 
 const LEARNER = "ai-mode-learner";
-const SECTIONS = ["topic-5-renaissance-features", "topic-5-industrial-development"];
+const SECTIONS = ["topic-5-renaissance-reformation", "topic-5-industrial"];
 
 /**
  * 學生自行觸發的即時出題只可使用「已確認可向學生發布」的教材（Sprint 5 收緊）。
@@ -306,46 +306,45 @@ describe("多分節生成的分節歸屬", () => {
 });
 
 describe("分節可用性（介面顯示用，取代容易誤解的題目數量）", () => {
-  it("匯入教材後，分節（含子分節）會回報教材段落數", () => {
+  it("匯入教材後，每個主題（整合後已無子分節）會回報教材段落數", () => {
     const overview = topicService.getTopicDetail("topic-5", null);
     expect(overview).not.toBeNull();
 
-    const renaissance = overview!.sections.find((section) => section.id === "topic-5-renaissance");
-    expect(renaissance).toBeDefined();
-    expect(renaissance!.materialBlockCount).toBeGreaterThan(0);
-    expect(renaissance!.children.length).toBeGreaterThan(0);
-    // 每個主題都有自己的教材段落，因此學生可以逐個主題選取
-    expect(renaissance!.children.every((child) => child.materialBlockCount > 0)).toBe(true);
-    // 教材已確認可向學生發布，因此學生端也看得到可用段落
-    expect(renaissance!.studentMaterialBlockCount).toBeGreaterThan(0);
-    expect(renaissance!.children.every((child) => child.studentMaterialBlockCount > 0)).toBe(true);
-    expect(renaissance!.children.every((child) => types.isSectionPractisable(child, "ai"))).toBe(
-      true,
+    // 2026-10-20：課題5 整合為 4 個主題，學生直接選取這 4 個主題
+    expect(overview!.sections).toHaveLength(4);
+    for (const theme of overview!.sections) {
+      expect(theme.children).toHaveLength(0);
+      expect(theme.materialBlockCount).toBeGreaterThan(0);
+      // 教材已確認可向學生發布，因此學生端也看得到可用段落
+      expect(theme.studentMaterialBlockCount).toBeGreaterThan(0);
+      expect(types.isSectionPractisable(theme, "ai")).toBe(true);
+    }
+
+    const renaissance = overview!.sections.find(
+      (section) => section.id === "topic-5-renaissance-reformation",
     );
+    expect(renaissance?.title).toBe("文藝復興與宗教改革");
   });
 
   it("教材未開放給學生時，學生端可用段落數為 0，AI 出題不可選（但題庫仍可）", () => {
     revokeDistribution();
     try {
       const overview = topicService.getTopicDetail("topic-5", null);
-      const renaissance = overview!.sections.find((section) => section.id === "topic-5-renaissance");
+      const renaissance = overview!.sections.find(
+        (section) => section.id === "topic-5-renaissance-reformation",
+      );
       expect(renaissance).toBeDefined();
       // 教師可見的教材段落數不受影響（教材仍在，只是未開放）
       expect(renaissance!.materialBlockCount).toBeGreaterThan(0);
       // 學生可用段落數必須為 0，介面才不會承諾做不到的 AI 出題
       expect(renaissance!.studentMaterialBlockCount).toBe(0);
-      expect(renaissance!.children.every((child) => child.studentMaterialBlockCount === 0)).toBe(
-        true,
-      );
-      expect(renaissance!.children.every((child) => !types.isSectionPractisable(child, "ai"))).toBe(
-        true,
-      );
+      expect(types.isSectionPractisable(renaissance!, "ai")).toBe(false);
       // 題庫題目不受版權閘門影響，有已發布題目的主題仍可練習
-      const bankPractisable = renaissance!.children.filter(
-        (child) => child.publishedQuestionCount > 0,
+      const bankPractisable = overview!.sections.filter(
+        (section) => section.publishedQuestionCount > 0,
       );
       expect(bankPractisable.length).toBeGreaterThan(0);
-      expect(bankPractisable.every((child) => types.isSectionPractisable(child, "bank"))).toBe(
+      expect(bankPractisable.every((section) => types.isSectionPractisable(section, "bank"))).toBe(
         true,
       );
     } finally {

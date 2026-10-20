@@ -23,20 +23,20 @@ import { validateLlmQuestions } from "@/server/llm/validation";
 const UNITS: MaterialUnit[] = [
   {
     blockId: "blk_steam",
-    sectionId: "topic-5-industrial-development",
+    sectionId: "topic-5-industrial",
     sourceLocation: "教材 · 第 1 段",
     text: "工業革命前期，蒸汽被視為推動工業革命發展的重要動力，因此這一時期又被稱為「蒸汽時代」。",
   },
   {
     blockId: "blk_jenny",
-    sectionId: "topic-5-industrial-features",
+    sectionId: "topic-5-industrial",
     sourceLocation: "教材 · 第 2 段",
     text: "珍妮紡紗機：1764年發明，大幅提升紡織業的生產效率。",
   },
   {
     // 同一詞語在書中另一段出現（實測可見「十八世紀中葉」等多段共用同一答案）
     blockId: "blk_steam_2",
-    sectionId: "topic-5-industrial-development",
+    sectionId: "topic-5-industrial",
     sourceLocation: "教材 · 第 3 段",
     text: "「蒸汽時代」是工業革命前期的別稱，得名自蒸汽機的廣泛應用。",
   },
@@ -49,7 +49,7 @@ const STEAM_ELSEWHERE_EXCERPT = UNITS[2].text;
 function context() {
   return {
     topicId: "topic-5",
-    sectionId: "topic-5-industrial-development",
+    sectionId: "topic-5-industrial",
     questionTypes: ["fill"] as ("mc" | "fill")[],
     difficulty: "basic" as const,
     origin: "material-ai" as const,
@@ -159,7 +159,7 @@ describe("驗證器：同一批生成不可重複考核同一件史實", () => {
     });
     const result = validateLlmQuestions({ questions: [STEAM_A, jenny] }, {
       ...context(),
-      sectionIds: ["topic-5-industrial-development", "topic-5-industrial-features"],
+      sectionIds: ["topic-5-industrial", "topic-5-industrial"],
     });
 
     expect(result.accepted).toHaveLength(2);

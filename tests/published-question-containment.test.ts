@@ -134,7 +134,7 @@ function insertAnswerInStemQuestion(id = "q-containment-answer-in-stem") {
   return questions.insertQuestion({
     id,
     topicId: "topic-5",
-    sectionId: "topic-5-renaissance-features",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "fill",
     difficulty: "basic",
     question:

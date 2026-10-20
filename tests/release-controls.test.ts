@@ -165,13 +165,18 @@ describe("舊練習快照不可成為隔離題目的入口", () => {
     } as never);
     const snapshotQuestion = assembled.questions[0];
     expect(snapshotQuestion.id).toBeDefined();
+    // 題庫抽題是隨機的（同一分節還有其他已發布題目），因此以實際抽到的題目作答；
+    // 這裡檢驗的是「歷史回饋以練習快照為準」，而不是抽到哪一題。
+    // 學生端的題目不含標準答案，所以由題庫讀取。
+    const snapshotAnswer = repo.getQuestion(snapshotQuestion.id)?.correctAnswer ?? "";
+    expect(snapshotAnswer.length).toBeGreaterThan(0);
 
     // 先作答一次，之後把它隔離
     await practice.submitAnswer(
       assembled.session.id,
       "learner-snapshot",
       snapshotQuestion.id,
-      "人文主義",
+      snapshotAnswer,
     );
     repo.setTeacherConfirmationRequired(snapshotQuestion.id, true);
 
@@ -180,10 +185,10 @@ describe("舊練習快照不可成為隔離題目的入口", () => {
       assembled.session.id,
       "learner-snapshot",
       snapshotQuestion.id,
-      "人文主義",
+      snapshotAnswer,
     );
     expect(replay.recorded).toBe(false);
-    expect(replay.feedback.correctAnswer).toBe("人文主義");
+    expect(replay.feedback.correctAnswer).toBe(snapshotAnswer);
 
     // 另一題（未作答）在題庫被隔離後不可再作答
     const second = createMcQuestion("snapshot-2", "文藝復興興起於哪個國家？");

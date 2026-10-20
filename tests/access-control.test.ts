@@ -143,7 +143,7 @@ describe("角色與權限", () => {
         body: {
           learnerId: "attacker-controlled-id",
           topicId: "topic-5",
-          sectionIds: ["topic-5-renaissance-features"],
+          sectionIds: ["topic-5-renaissance-reformation"],
           questionTypes: ["mc"],
           difficulty: "basic",
           questionCount: 1,
@@ -169,7 +169,7 @@ describe("角色與權限", () => {
         body: {
           learnerId: "another-learner",
           topicId: "topic-5",
-          sectionIds: ["topic-5-renaissance-features"],
+          sectionIds: ["topic-5-renaissance-reformation"],
           questionTypes: ["mc"],
           difficulty: "basic",
           questionCount: 1,
@@ -202,7 +202,7 @@ describe("角色與權限", () => {
         body: {
           learnerId: "anonymous-id",
           topicId: "topic-5",
-          sectionIds: ["topic-5-renaissance-features"],
+          sectionIds: ["topic-5-renaissance-reformation"],
           questionTypes: ["mc"],
           difficulty: "basic",
           questionCount: 1,

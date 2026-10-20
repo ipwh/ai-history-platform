@@ -38,7 +38,7 @@ function buildQuestion(overrides: Partial<Question>): Question {
   return questionSchema.parse({
     id: "q-repair-test",
     topicId: "topic-5",
-    sectionId: "topic-5-renaissance-features",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "fill",
     difficulty: "basic",
     question: "＿＿＿是甲。",
@@ -392,7 +392,7 @@ describe("歷史作答與練習快照", () => {
   let practiceRepo: PracticeRepo;
 
   const LEARNER = "repair-provenance-learner";
-  const SECTION = "topic-5-renaissance-features";
+  const SECTION = "topic-5-renaissance-reformation";
   const QUESTION_ID = "q-repair-history";
 
   beforeAll(async () => {
@@ -459,6 +459,16 @@ t:fb; nil:2
   });
 
   it("題目日後被改寫，已派發的練習仍以原快照批改（不會追溯改分）", async () => {
+    // 題庫抽題是隨機的，而合併後的分節有更多填充題；先清空同分節的其他填充題，
+    // 令這次檢驗確定指向下面插入的那一條題目。
+    for (const existing of questionsRepo.listQuestions({
+      topicId: "topic-5",
+      sectionIds: [SECTION],
+      questionTypes: ["fill"],
+    })) {
+      questionsRepo.deleteQuestion(existing.id);
+    }
+
     questionsRepo.insertQuestion({
       id: QUESTION_ID,
       topicId: "topic-5",

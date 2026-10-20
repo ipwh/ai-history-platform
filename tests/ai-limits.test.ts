@@ -42,7 +42,7 @@ let getDb: Connection["getDb"];
 const LEARNER = "ai-limit-learner";
 const OTHER_LEARNER = "ai-limit-other-learner";
 /** 示範題庫中有填充題及短答題的分節（同 tests/ai-grading.test.ts） */
-const SECTION = "topic-5-reformation-development";
+const SECTION = "topic-5-renaissance-reformation";
 
 /** 生成用的 stub：回傳固定題目（不會發出網絡請求） */
 function generationResponse(): Response {

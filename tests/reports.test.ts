@@ -41,7 +41,7 @@ const THIRD_STUDENT = "school:s2024151@pochiu.edu.hk";
 const FOURTH_STUDENT = "school:s2024152@pochiu.edu.hk";
 const FIFTH_STUDENT = "school:s2024153@pochiu.edu.hk";
 const TEACHER = "teacher:teacher@example.com";
-const SECTION = "topic-5-renaissance-features";
+const SECTION = "topic-5-renaissance-reformation";
 
 const TEACHER_USER = {
   email: "teacher@example.com",

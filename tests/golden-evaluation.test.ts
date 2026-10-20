@@ -15,7 +15,7 @@ function question(overrides: Partial<Question> = {}): Question {
   return {
     id: "q1",
     topicId: "topic-5",
-    sectionId: "topic-5-renaissance-features",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "mc",
     difficulty: "basic",
     question: "誰在1517年發表《九十五條論證》？",
@@ -52,7 +52,7 @@ function fixture(overrides: Partial<GoldenFixture> = {}): GoldenFixture {
       level: 2,
       topicId: "topic-5",
       topicTitle: "近代歐洲的興起",
-      sectionId: "topic-5-renaissance-features",
+      sectionId: "topic-5-renaissance-reformation",
       sectionTitle: "文藝復興",
     },
     questionType: "mc",

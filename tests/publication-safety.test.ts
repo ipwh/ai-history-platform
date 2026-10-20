@@ -44,7 +44,7 @@ let session: SessionModule;
 let teacherReportsRoute: TeacherReportsRoute;
 
 const TOPIC = "topic-5";
-const SECTION = "topic-5-industrial-development";
+const SECTION = "topic-5-industrial";
 const LEARNER = "publish-safety-learner";
 
 interface InsertedQuestion {
@@ -307,8 +307,11 @@ describe("教師確認是唯一的解除途徑", () => {
     expect(questionRepo.getQuestion(held.id)?.status).toBe("published");
   });
 
-  it("重新驗證仍屬未確定時，回報補救 API 不會解除暫緩，題目亦不會進入學生練習", async () => {
+  it("答案只是教材語句的改寫時，重新驗證不會失敗，但仍保持待教師確認", async () => {
     const { blockId, excerpt } = firstSectionBlock();
+    // 2026-10-20 放寬「答案只是教材語句的改寫」這項阻礙：這類答案在真實模型很常見，
+    // 以往會被判為失敗（revalidate-failed）。現在機器檢查可以通過，但暫緩標記仍只由
+    // 教師的人工覆核解除，因此題目不會自行發布。
     const held = insertQuestion({
       id: "q-held-paraphrase-route",
       blockId,
@@ -320,7 +323,7 @@ describe("教師確認是唯一的解除途徑", () => {
       questionId: held.id,
       sessionId: null,
       reason: "answer-disputed",
-      detail: "合成測試：改寫答案仍未確定",
+      detail: "合成測試：答案只是教材語句的改寫",
     });
 
     const response = await patchReport(report.reportId, { action: "revalidate-question" });
@@ -328,7 +331,42 @@ describe("教師確認是唯一的解除途徑", () => {
     const payload = (await response.json()) as {
       remediation?: { action?: string; autoValidated?: boolean };
     };
+    expect(payload.remediation?.action).toBe("awaiting-teacher-confirmation");
+    expect(payload.remediation?.autoValidated).toBe(false);
+    expect(questionRepo.getQuestion(held.id)?.teacherConfirmationRequired).toBe(true);
+    expect(questionRepo.getQuestion(held.id)?.status).toBe("draft");
+    expect(questionService.isStudentPracticeEligible(questionRepo.getQuestion(held.id)!)).toBe(false);
+  });
+
+  it("節錄已不在教材段落之中時，重新驗證會失敗並保持暫緩，題目亦不會進入學生練習", async () => {
+    const { blockId } = firstSectionBlock();
+    // 教材重新匯入後，題目引用的節錄可能已失效；機器檢查必須如實失敗（blocked），
+    // 不可因為其他檢查寬鬆而當成通過。
+    //
+    // 註：單純「答案只是教材語句的改寫」已按擁有者指示放寬，不再判為失敗，只會維持
+    // 「待教師確認」（上一條測試已覆蓋該分支）；這裡測試的是節錄失效這條硬性失敗路徑。
+    const staleExcerpt = "這段節錄已不在現行教材之中（合成測試）";
+    const held = insertQuestion({
+      id: "q-held-stale-excerpt",
+      blockId,
+      excerpt: staleExcerpt,
+      teacherConfirmationRequired: true,
+    });
+    const report = reports.submitQuestionReport(LEARNER, {
+      questionId: held.id,
+      sessionId: null,
+      reason: "answer-disputed",
+      detail: "合成測試：節錄已失效",
+    });
+
+    const response = await patchReport(report.reportId, { action: "revalidate-question" });
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+      remediation?: { action?: string; autoValidated?: boolean; issues?: string[] };
+    };
     expect(payload.remediation?.action).toBe("revalidate-failed");
+    expect(payload.remediation?.autoValidated).toBe(false);
+    expect(payload.remediation?.issues?.join("") ?? "").toContain("節錄文字已不在所引用的教材段落之中");
     expect(questionRepo.getQuestion(held.id)?.teacherConfirmationRequired).toBe(true);
     expect(questionRepo.getQuestion(held.id)?.status).toBe("draft");
     expect(questionService.isStudentPracticeEligible(questionRepo.getQuestion(held.id)!)).toBe(false);

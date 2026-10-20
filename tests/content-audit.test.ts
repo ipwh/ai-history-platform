@@ -16,7 +16,7 @@ function buildQuestion(): Question {
   return questionSchema.parse({
     id: QUESTION_ID,
     topicId: "topic-5",
-    sectionId: "topic-5-renaissance-features",
+    sectionId: "topic-5-renaissance-reformation",
     questionType: "fill",
     difficulty: "basic",
     question: "文藝復興首先在＿＿＿興起。",
