@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2026-10-20T09:16:00.000Z",
+  "notice": "只記錄實際執行並觀察到的部署證據；未執行或未通過的項目明確列在 unverified，不會當作已驗證。",
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00020-c64",
+    "image": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:5b8cf755-68f9-4ffc-bdcd-b118ac0bb307",
+    "deployedWith": "./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply -RosterSheetId <已設定> -AdminEmails ipwh@pochiu.edu.hk -StaffAccessPolicy school-domain -StaffDomains pochiu.edu.hk",
+    "maxInstances": 1,
+    "materialsInImage": 36
+  },
+  "source": {
+    "branch": "main",
+    "commit": "e1981cf70ee75d0f3033ad63233caa4311a373b6",
+    "commitSubject": "feat(quality): 補寫全部 1,875 題解釋、簡化教師審核工作台、移除重複課題編號"
+  },
+  "notes": [
+    "2026-10-20 09:10 UTC 以 scripts/deploy-cloud-run.ps1 -Apply 部署；Cloud Build 成功，Cloud Run revision history-self-study-00020-c64 為 latestReady。",
+    "GET /api/health 回 HTTP 200：ok=true、database.status=ok、llmProvider=deepseek（deepseek-flash）、llmConfigured=true、authEnabled=true、staffApiOpen=false、ocrProvider=tesseract。",
+    "資料庫還原：health.persistence.restore=restored（容器啟動時由 Cloud Storage 快照還原）。",
+    "公開存取：allUsers 具 roles/run.invoker；AUTH_REQUIRE_SIGN_IN=true，未登入存取 / 會 307 轉到 /login（已實測）。",
+    "介面實測：公開 CSS 資產 /_next/static/chunks/1--pmo553mm0-.css 已無 .topic-tile__number（學生端課題卡重複課題編號已移除），.topic-tile 及 .topic-tile__title 仍在。",
+    "機密沿用 Secret Manager 現有版本（history-auth-secret 保留原版本，避免登出所有使用者）；名冊服務帳戶金鑰以本機 secrets/roster-service-account.json 更新一個新版本。"
+  ],
+  "unverified": [
+    "教師／學生實際登入流程未在本輪以真實 Google 帳戶完成（只驗證未登入時被轉到 /login）。",
+    "學生名冊載入：health.roster.loaded=false、error=null（未在部署後觸發載入），未核對班別／學號對應。",
+    "備份上載：health.persistence.backupsUploaded=0、lastSuccessAt=null（部署後未有資料變更觸發備份），未核對 Cloud Storage 物件。",
+    "多執行個體、冷啟動時間、配額與成本未量度。",
+    "docs 內的文件變更（發布閘門報告、部署證據本身）不影響執行中的映像檔，因此沒有為此再次部署。"
+  ]
+}

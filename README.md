@@ -903,11 +903,13 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 
 **來源可追溯 ≠ 歷史正確 ≠ 版權許可。** 三者分開判斷，不會互相代替。
 
-**`npm run release:gate`（唯讀）** 綜合所有閘門，輸出 [docs/release-gate-2026-10-19.md](docs/release-gate-2026-10-19.md)。目前結果：**NOT READY**（15 個閘門；來源待核實、佔位解釋、元數據、審核來源、結構裁決、provenance 風險、Golden 核准、部署證據不足；97 題已發布但不可作答；版權為 WARN）。閘門不會修改題庫，也不會把「未定義標準」當成通過。
+**`npm run release:gate`（唯讀）** 綜合所有閘門，輸出 [docs/release-gate-2026-10-19.md](docs/release-gate-2026-10-19.md)。目前結果（2026-10-20 重新產生）：**NOT READY**（15 個閘門）。已轉為 **PASS**：題目隔離、可作答性（0 題不可作答）、考核答案來源、**解釋品質（佔位 0、只列答案 0、疑似矛盾 0）**、教師裁決狀態、結構裁決、測試、**部署證據**（新增 [docs/deployment-evidence-2026-10-19.json](docs/deployment-evidence-2026-10-19.json)，記錄 2026-10-20 的 Cloud Run 部署、健康檢查及資料庫還原）。仍待處理：**review-provenance FAIL**（補寫令 1,875 題 `revision` +1，現時全部題目都沒有「目前版本」的教師逐題覆核）、來源待核實 998、技能標籤空白 1,875（負責人決定暫緩）、Golden 評估與核准證據不足、版權 WARN。閘門不會修改題庫，也不會把「未定義標準」當成通過。
 
 ### 題目可作答、審核來源與 Golden 基準（Sprint 10，2026-10-19）
 
 **`npm run audit:servability`（唯讀）**：[報告](docs/quality/servability-remediation-2026-10-19.md)。97 題已發布但結構不可作答——**96 題**選項以羅馬數字指涉題幹但題幹沒有標示、**1 題**填充題答案外洩。全部 **0 次作答、0 個練習快照**，建議一律 `teacher_review_required`（沒有可確定的自動修復）；本 Sprint **沒有修改任何題目**。
+
+> **現況（2026-10-20）**：同一指令重新產生報告，**不可作答題目為 0 題**（97 題已於 Sprint 10–14 全部處理），因此教師審核工作台的「學生答唔到的題目」清單目前是空的。
 
 **`npm run audit:review-provenance`（唯讀）**：[報告](docs/quality/review-provenance-2026-10-19.md)。修正 Sprint 9 的 1,279 筆說法：全部 3,168 筆的 `reviewer_role` 都是 `admin`；實際為 **1,882 筆擁有者批次、1,266 筆自動修復、20 筆教師裁決**。Sprint 9 多計的 **13 筆**是「教師裁決（自動修復改變考核答案）…」被字串規則誤判。目前版本：**16 題**有教師逐題裁決、**1,241 題**只有擁有者批次、**623 題**只有自動修復證據、0 題完全沒有證據。原始紀錄全部保留，沒有改寫。
 
@@ -992,6 +994,8 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 診斷報告：[docs/quality/explanation-skill-diagnosis-2026-10-20.md](docs/quality/explanation-skill-diagnosis-2026-10-20.md)；補寫指引及 AI 起草 prompt 範本：[docs/teacher-review/explanation-rewrite-guidelines-2026-10-20.md](docs/teacher-review/explanation-rewrite-guidelines-2026-10-20.md)。
 
 **實測（1,875 題，全部已發布）**：解釋為佔位文字 **1,329**（全部是同一句「答案依校內試題檔的評卷參考。」）、只列答案 **546**（「填充題答案（依空格次序）：……」）、有實質推理 **0**；技能標籤空白 **1,875（100%）**；有可用課文原文作依據 **0 題**（`source_excerpt` 全部是試卷原句）。
+
+> **已完成（2026-10-20）**：上述 1,875 題解釋**全部**已逐題依同課題課本／筆記段落補寫並通過品質分類器（重新產生清單：佔位 0、只列答案 0、過短 0），補寫紀錄 1,875 筆 `question_content_flags`。**技能標籤仍為空白**（負責人決定暫緩），因此上表的技能建議仍然有效但未寫入。詳見 [決定及進度紀錄](docs/teacher-review/decision-2026-10-20-explanation-rewrite.md)。
 
 **`npm run audit:explanation-worklist`（唯讀）** 產生每題的可操作清單（[JSON](docs/quality/explanation-skill-worklist-2026-10-20.json)、[教師版 Markdown](docs/teacher-review/explanation-skill-worklist-2026-10-20.md)）：題幹摘要、現有解釋、正確答案、知識點、來源位置、建議改進類型及建議技能。建議改進類型：需補概念定義 **1,217**、需補因果推理 **658**；技能首選建議的信心分佈為高 **0**／中 **877**（填充題短答案 → 正確地使用歷史辭彙）／低 **998**（選擇題無關鍵詞 → 同項推測，須教師確認）。
 
@@ -1733,6 +1737,11 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 | 備份 bucket | `gs://pccss-ai-history-history-backup`（前綴 `history`） |
 | 名冊服務帳戶 | `history-roster-reader@pccss-ai-history.iam.gserviceaccount.com` |
 | 執行身分 | `history-run@pccss-ai-history.iam.gserviceaccount.com` |
+
+> **最近部署**：2026-10-20 09:10 UTC，revision `history-self-study-00020-c64`（commit `e1981cf`）。
+> 已驗證：`/api/health` 200（ok、資料庫、LLM、登入已啟用、`staffApiOpen=false`）、資料庫由 Cloud Storage 快照還原、
+> 未登入存取會轉到 `/login`。未驗證：真實帳戶登入、名冊載入、備份上載。證據（含未驗證清單）：
+> [docs/deployment-evidence-2026-10-19.json](docs/deployment-evidence-2026-10-19.json)。
 
 > `amiable-nirvana-500300-a0`（與 ai-english-platform 共用）為**已停用的舊專案**，本平台不再使用其任何服務或 bucket；
 > 舊服務 `history-self-study --region=asia-east2 --project amiable-nirvana-500300-a0` 只作歷史參考，
