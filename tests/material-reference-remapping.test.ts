@@ -38,7 +38,7 @@ let questions: QuestionRepo;
 let remapping: RemappingModule;
 let seed: SeedModule;
 
-const SECTION_ID = "topic-1-origins";
+const SECTION_ID = "topic-1-stone-age";
 /** 2026-10 教材更新後重新連結的 30 條題目（清單必須仍然覆蓋全部） */
 const EXPECTED_QUESTION_IDS = [
   "q_07336d3a018348ab",

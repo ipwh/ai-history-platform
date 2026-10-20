@@ -44,7 +44,7 @@ describe("自動檢查通過 ≠ 已獲教育／史實認可", () => {
     const question = questions.insertQuestion({
       id: "fx-confidence-demo",
       topicId: "topic-1",
-      sectionId: "topic-1-origins",
+      sectionId: "topic-1-stone-age",
       questionType: "mc",
       difficulty: "basic",
       question: "合成問題：以下哪一項是合成項目？",
@@ -84,7 +84,7 @@ describe("自動檢查通過 ≠ 已獲教育／史實認可", () => {
     const question = questions.insertQuestion({
       id: "fx-confidence-1",
       topicId: "topic-1",
-      sectionId: "topic-1-origins",
+      sectionId: "topic-1-stone-age",
       questionType: "mc",
       difficulty: "basic",
       question: "合成問題：以下哪一項是合成答案？",

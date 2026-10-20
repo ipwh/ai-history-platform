@@ -63,7 +63,7 @@ function createDemoDocument(sourceNote: string) {
     {
       documentId: document.id,
       topicId: "topic-1",
-      sectionId: "topic-1-origins",
+      sectionId: "topic-1-stone-age",
       order: 0,
       type: "paragraph",
       level: null,
@@ -79,7 +79,7 @@ function createQuestion(id: string, input: { blockId: string; sourceVerified: bo
   return questions.insertQuestion({
     id,
     topicId: "topic-1",
-    sectionId: "topic-1-origins",
+    sectionId: "topic-1-stone-age",
     questionType: "mc",
     difficulty: "basic",
     question: "合成問題：古人類最早在哪一洲出現？",

@@ -411,7 +411,7 @@ describe("教師版／混合文件（不可只因 kind 不是試題檔就當作�
       {
         documentId: document.id,
         topicId: "topic-1",
-        sectionId: "topic-1-origins",
+        sectionId: "topic-1-stone-age",
         order: 0,
         type: "paragraph",
         level: null,
@@ -424,7 +424,7 @@ describe("教師版／混合文件（不可只因 kind 不是試題檔就當作�
       expect(teacherContent.looksLikeTeacherEdition(document.fileName)).toBe(true);
       // 完整治理開放（版權 + 內容覆核）後，只有段落層級的教師專用過濾會令內容不計入
       openDocumentForStudents(materialsRepo, document.id);
-      expect(studentBlockCount("topic-1", "topic-1-origins")).toBe(0);
+      expect(studentBlockCount("topic-1", "topic-1-stone-age")).toBe(0);
     } finally {
       materialsRepo.setDocumentStudentDistribution(document.id, false);
       materialsRepo.deleteDocument(document.id);

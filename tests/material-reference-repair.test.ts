@@ -41,7 +41,7 @@ let questions: QuestionRepo;
 let seed: SeedModule;
 let sourceVisibility: SourceVisibility;
 
-const SECTION_ID = "topic-1-origins";
+const SECTION_ID = "topic-1-stone-age";
 let documentSequence = 0;
 
 /**

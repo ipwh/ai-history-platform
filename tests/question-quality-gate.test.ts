@@ -903,7 +903,7 @@ describe("既有保護不受本 Sprint 影響（迴歸）", () => {
     const question = questions.insertQuestion({
       id: "fx-unverified-1",
       topicId: "topic-1",
-      sectionId: "topic-1-origins",
+      sectionId: "topic-1-stone-age",
       questionType: "mc",
       difficulty: "basic",
       question: "合成問題：以下哪一項是測試項目？",
@@ -938,7 +938,7 @@ describe("既有保護不受本 Sprint 影響（迴歸）", () => {
     const question = questions.insertQuestion({
       id: "fx-no-review-1",
       topicId: "topic-1",
-      sectionId: "topic-1-origins",
+      sectionId: "topic-1-stone-age",
       questionType: "mc",
       difficulty: "basic",
       question: "合成問題：以下哪一項是合成答案？",

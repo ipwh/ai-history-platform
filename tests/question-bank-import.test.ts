@@ -597,7 +597,7 @@ t:mc; nil:1
     expect(sections).not.toContain("topic-1-four-civilisations-mesopotamia");
     expect(sections).not.toContain("topic-1-four-civilisations-indus");
     expect(sections).not.toContain("topic-1-four-civilisations-yellow");
-    expect(sections).toContain("topic-1-four-civilisations-egypt");
+    expect(sections).toContain("topic-1-nile-civilisation");
   });
 });
 

@@ -693,6 +693,80 @@ export const MIGRATIONS: Migration[] = [
       `DELETE FROM sections WHERE id IN ('topic-5-renaissance', 'topic-5-renaissance-features', 'topic-5-renaissance-causes', 'topic-5-renaissance-origin', 'topic-5-renaissance-culture', 'topic-5-renaissance-impact', 'topic-5-reformation', 'topic-5-reformation-background', 'topic-5-reformation-development', 'topic-5-reformation-impact', 'topic-5-science', 'topic-5-enlightenment', 'topic-5-industrial-features', 'topic-5-industrial-britain', 'topic-5-industrial-development', 'topic-5-industrial-impact', 'topic-5-fr-background', 'topic-5-fr-course', 'topic-5-fr-napoleon', 'topic-5-fr-impact')`,
     ],
   },
+  {
+    id: "0024-topic1-consolidated-themes",
+    statements: [
+      // 2026-10-20 擁有者指示：課題1 原本 12 個分節（含子分節）對學生而言太瑣碎，
+      // 整合為「石器時代的演進」「古文明的興起」「尼羅河流域文明」「古與今：人類相同的基本需要」4 個主題。
+      //
+      // 舊資料庫的教材段落及題目會一併改掛到新的主題（先改掛、後刪除舊分節，
+      // 以符合 section_id 的外鍵），因此學生的既有練習紀錄及教材不會消失。
+      // 全新資料庫由 seedCurriculum 建立相同的結構，這裡的 INSERT 會自動略過。
+      `INSERT INTO sections
+        (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+       SELECT 'topic-1-stone-age', 'topic-1', NULL, '石器時代的演進', '人類歷史的起源與古人類的演化、史前時期與信史時期的劃分，以及舊石器時代、新石器時代至石器時代終結的演進。', '["石器時代的演進", "人類歷史的起源", "古人類", "南方古猿", "智人", "直立人", "能人", "歷史時期的劃分", "史前時期與信史時期", "計時紀年", "舊石器時代", "新石器時代", "新的生活模式", "石器時代的終結"]', 0,
+              strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE EXISTS (SELECT 1 FROM topics WHERE id = 'topic-1')
+         AND NOT EXISTS (SELECT 1 FROM sections WHERE id = 'topic-1-stone-age')`,
+      `UPDATE sections
+       SET parent_id = NULL,
+           title = '石器時代的演進',
+           summary = '人類歷史的起源與古人類的演化、史前時期與信史時期的劃分，以及舊石器時代、新石器時代至石器時代終結的演進。',
+           match_keywords_json = '["石器時代的演進", "人類歷史的起源", "古人類", "南方古猿", "智人", "直立人", "能人", "歷史時期的劃分", "史前時期與信史時期", "計時紀年", "舊石器時代", "新石器時代", "新的生活模式", "石器時代的終結"]',
+           sort_order = 0,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE id = 'topic-1-stone-age'`,
+      `INSERT INTO sections
+        (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+       SELECT 'topic-1-civilisation-rise', 'topic-1', NULL, '古文明的興起', '文明的特徵、古文明誕生的背景，以及四大古代文明的發源地與共同條件。', '["古文明的興起", "古文明的誕生", "文明的特徵", "城市生活的興起", "文字的發明", "古文明誕生的背景", "四大古代文明", "四大古代文明的簡介", "四大古代文明的特徵", "四大古代文明的發源地", "大河文明"]', 1,
+              strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE EXISTS (SELECT 1 FROM topics WHERE id = 'topic-1')
+         AND NOT EXISTS (SELECT 1 FROM sections WHERE id = 'topic-1-civilisation-rise')`,
+      `UPDATE sections
+       SET parent_id = NULL,
+           title = '古文明的興起',
+           summary = '文明的特徵、古文明誕生的背景，以及四大古代文明的發源地與共同條件。',
+           match_keywords_json = '["古文明的興起", "古文明的誕生", "文明的特徵", "城市生活的興起", "文字的發明", "古文明誕生的背景", "四大古代文明", "四大古代文明的簡介", "四大古代文明的特徵", "四大古代文明的發源地", "大河文明"]',
+           sort_order = 1,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE id = 'topic-1-civilisation-rise'`,
+      `INSERT INTO sections
+        (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+       SELECT 'topic-1-nile-civilisation', 'topic-1', NULL, '尼羅河流域文明', '古埃及文明（尼羅河流域）的位置、民族、衰落及文明特徵。', '["尼羅河流域文明", "尼羅河流域", "尼羅河", "古代埃及文明", "古埃及文明", "古埃及", "埃及"]', 2,
+              strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE EXISTS (SELECT 1 FROM topics WHERE id = 'topic-1')
+         AND NOT EXISTS (SELECT 1 FROM sections WHERE id = 'topic-1-nile-civilisation')`,
+      `UPDATE sections
+       SET parent_id = NULL,
+           title = '尼羅河流域文明',
+           summary = '古埃及文明（尼羅河流域）的位置、民族、衰落及文明特徵。',
+           match_keywords_json = '["尼羅河流域文明", "尼羅河流域", "尼羅河", "古代埃及文明", "古埃及文明", "古埃及", "埃及"]',
+           sort_order = 2,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE id = 'topic-1-nile-civilisation'`,
+      `INSERT INTO sections
+        (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+       SELECT 'topic-1-summary', 'topic-1', NULL, '古與今：人類相同的基本需要', '比較古今人類在飲食、記錄、管治及居住等基本需要上的延續與轉變。', '["古與今", "人類相同的基本需要", "基本的生存需要", "總結"]', 3,
+              strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE EXISTS (SELECT 1 FROM topics WHERE id = 'topic-1')
+         AND NOT EXISTS (SELECT 1 FROM sections WHERE id = 'topic-1-summary')`,
+      `UPDATE sections
+       SET parent_id = NULL,
+           title = '古與今：人類相同的基本需要',
+           summary = '比較古今人類在飲食、記錄、管治及居住等基本需要上的延續與轉變。',
+           match_keywords_json = '["古與今", "人類相同的基本需要", "基本的生存需要", "總結"]',
+           sort_order = 3,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE id = 'topic-1-summary'`,
+      `UPDATE material_blocks SET section_id = 'topic-1-stone-age' WHERE section_id IN ('topic-1-origins', 'topic-1-origins-species', 'topic-1-periods', 'topic-1-periods-paleolithic', 'topic-1-periods-neolithic', 'topic-1-periods-end')`,
+      `UPDATE questions SET section_id = 'topic-1-stone-age' WHERE section_id IN ('topic-1-origins', 'topic-1-origins-species', 'topic-1-periods', 'topic-1-periods-paleolithic', 'topic-1-periods-neolithic', 'topic-1-periods-end')`,
+      `UPDATE material_blocks SET section_id = 'topic-1-civilisation-rise' WHERE section_id IN ('topic-1-civilisation', 'topic-1-civilisation-features', 'topic-1-civilisation-background', 'topic-1-four-civilisations')`,
+      `UPDATE questions SET section_id = 'topic-1-civilisation-rise' WHERE section_id IN ('topic-1-civilisation', 'topic-1-civilisation-features', 'topic-1-civilisation-background', 'topic-1-four-civilisations')`,
+      `UPDATE material_blocks SET section_id = 'topic-1-nile-civilisation' WHERE section_id IN ('topic-1-four-civilisations-egypt')`,
+      `UPDATE questions SET section_id = 'topic-1-nile-civilisation' WHERE section_id IN ('topic-1-four-civilisations-egypt')`,
+      `DELETE FROM sections WHERE id IN ('topic-1-origins', 'topic-1-origins-species', 'topic-1-periods', 'topic-1-periods-paleolithic', 'topic-1-periods-neolithic', 'topic-1-periods-end', 'topic-1-civilisation', 'topic-1-civilisation-features', 'topic-1-civilisation-background', 'topic-1-four-civilisations', 'topic-1-four-civilisations-egypt')`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

@@ -35,7 +35,7 @@ let questions: QuestionRepo;
 let queue: QueueModule;
 let seed: SeedModule;
 
-const SECTION_ID = "topic-1-origins";
+const SECTION_ID = "topic-1-stone-age";
 const QUEUE_MANIFEST = path.join(
   "docs",
   "teacher-review",

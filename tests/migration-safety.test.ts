@@ -150,7 +150,7 @@ describe("升級與冪等", () => {
       db.prepare(
         `INSERT OR REPLACE INTO sections
            (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
-         VALUES ('topic-1-origins-regions', 'topic-1', 'topic-1-origins', '不同地區的舊石器時代人類', '', '[]', 99,
+         VALUES ('topic-1-origins-regions', 'topic-1', 'topic-1-stone-age', '不同地區的舊石器時代人類', '', '[]', 99,
                  '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
       ).run();
       db.prepare(
