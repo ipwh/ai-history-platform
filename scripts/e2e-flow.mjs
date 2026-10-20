@@ -298,7 +298,7 @@ async function main() {
             Number.isFinite(Date.parse(confirmed.payload?.governance?.rightsConfirmedAt ?? "")),
         );
       } else {
-        check("管理員可以確認教材的學生閱讀權限", withRights.status === 200, `HTTP ${withRights.status}`);
+        check("管理員可以確認教材的學生使用權限", withRights.status === 200, `HTTP ${withRights.status}`);
       }
 
       const topicsAfterRights = await call(

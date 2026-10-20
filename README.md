@@ -1810,6 +1810,57 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 
 > **若本次發布在遷移 0015–0017 之後出現嚴重安全缺陷**：最安全的回應是**停用受影響功能並向前修復**（例如暫時把所有文件設為不可發布、把教師名單收緊至一人），而**不是**切換回舊 revision——因為舊 revision 的安全政策更弱。切換流量只應用於純可用性問題（例如新 release 無法啟動）。
 
+### 2026-10-20 正式環境：後台重新載入修正與資料同步
+
+**1. 後台頁面無限重新載入（程式缺陷，已修正）**
+
+現象：已登入的管理員開啟 `/admin`、`/admin/materials`、`/admin/settings`、`/teacher`、`/teacher/questions`、
+`/teacher/review`、`/teacher/records` 或 `login?error=not_configured…` 時畫面不停重新載入；本機開發則正常。
+
+原因：這些頁面在**雲端建置時被預先渲染成靜態檔**。建置環境沒有 `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET`
+（兩者只在 Cloud Run 執行時注入），後台守衛於建置時判斷「登入未設定」，把
+`redirect("/login?error=not_configured&next=…")` 寫進靜態 HTML。部署後：靜態頁面把已登入使用者送回登入頁 →
+登入頁看到已有工作階段再導向 `/teacher` → 無限循環。
+
+修正：`src/app/layout.tsx` 加 `export const dynamic = "force-dynamic"`（所有頁面一律動態渲染）、
+`guardStaffPage` 先讀取工作階段才判斷登入設定，並新增 `npm run verify:build`
+（[scripts/verify-build-routes.mjs](scripts/verify-build-routes.mjs)）在 Dockerfile 與 CI 中檢查建置產物
+不得含預先渲染的頁面。部署為 revision `history-self-study-00011-g8l`。
+
+**2. 正式資料庫與本機同步（擁有者指示「以本機取代正式資料」）**
+
+原本的正式快照是 2026-10-15 匯入的舊版教材：課題1 課文只有 99 段，**完全沒有「埃及／尼羅河」正文**
+（當時的「不考核內容」過濾器會把排除標題之後的內容全部略過），因此「古埃及文明（尼羅河流域）」
+顯示為「AI 未開放」。介面的判斷正確，缺的是資料。
+
+| 項目 | 同步前（正式） | 同步後（＝本機） |
+| --- | --- | --- |
+| 題目 | 3,976 | 1,875 |
+| 覆核紀錄 | 98 | 3,157 |
+| 教材文件／段落 | 12／5,360 | 36／23,916 |
+| 學習者／練習／作答 | 4／25／96 | 34／83／162 |
+| 課題1 古埃及文明 學生可用段落 | 0 | 45 |
+
+執行步驟（可重做）：
+
+```powershell
+npm run snapshot:production -- --force                     # data/exports/app.db（清除教材開放狀態，fail-closed）
+$env:APP_DATABASE_PATH="data\exports\app.db"
+npm run open:materials -- --owner-email ipwh@pochiu.edu.hk `
+  --reason "擁有者沿用 2026-10-15 授權：12 課課本可於校內平台向學生發布" `
+  --label production-snapshot --apply                      # 授權紀錄：owner-material-openings.json 第 11 筆
+gcloud storage cp gs://pccss-ai-history-history-backup/history/data/app.db `
+  gs://pccss-ai-history-history-backup/history/data/app.db.pre-s20-20261020T0139Z   # 先備份舊快照
+gcloud storage cp data\exports\app.db gs://pccss-ai-history-history-backup/history/data/app.db
+gcloud run services update history-self-study --project pccss-ai-history --region asia-east2 `
+  --update-env-vars APP_BUILD_ID=restore-s20-<時間>       # 觸發新執行個體還原（revision 00012-dl8）
+```
+
+**如實記錄的代價**：正式環境原有的 2,101 題（只在正式存在）及 98 筆覆核紀錄已被取代；上載至容器
+`/tmp/data/uploads` 的教材副本不會隨資料庫還原（`materials/` 內的教材及題目不受影響）。
+回滾：`gcloud storage cp gs://…/history/data/app.db.pre-s20-20261020T0139Z gs://…/history/data/app.db`
+後再更新一次 `APP_BUILD_ID`。
+
 ---
 
 ### 需要擁有者決定的事項（尚未決定者一律視為未完成）
