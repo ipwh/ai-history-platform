@@ -58,6 +58,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Verify no page is prerendered (staff pages must stay dynamic)
+        run: npm run verify:build
+
   ui-tests:
     name: Playwright browser tests (requires content database)
     # 只有明確要求、且 runner 具備內容資料庫時才執行；見檔頭說明。

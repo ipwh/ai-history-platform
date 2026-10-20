@@ -23,7 +23,11 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+# 建置後立即檢查：任何頁面被預先渲染成靜態檔就令建置失敗。
+# 容器建置環境沒有 Google 登入憑證，若頁面在建置時被預先渲染，後台守衛會把
+# 「未設定登入」的重新導向烤進靜態頁面，部署後會令已登入使用者不停往返登入頁
+# （2026-10-20 實際缺陷，見 scripts/verify-build-routes.mjs）。
+RUN npm run build && npm run verify:build
 
 # ---------------------------------------------------------------------------
 # 3. 執行環境（最小映像檔；不需 devDependencies）

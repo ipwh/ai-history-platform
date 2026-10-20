@@ -331,16 +331,22 @@ async function guardStaffPage(
   currentPath: string,
   options: { adminOnly: boolean },
 ): Promise<SessionUser | null> {
+  // 先讀取工作階段（會呼叫 cookies()），令這個頁面一定是動態渲染。
+  // 若先判斷 isAuthEnabled() 才讀 cookie，建置環境（沒有登入憑證）會在建置時直接
+  // 執行下面的 redirect，並把它預先渲染成靜態頁面：已登入使用者其後會不停往返
+  // 登入頁（見 src/app/layout.tsx 的 dynamic 說明）。根配置亦已強制動態渲染，
+  // 這裡保留同一保證，避免日後移除根配置時再次出現。
+  const user = await getRequestUser();
+
   if (!isAuthEnabled()) {
     // 與 requireStaff 採用同一套判斷：正式建置不可渲染未受保護的後台頁面，
     // 否則任何人只要開啟 /admin 或 /teacher 就會看到後台介面。
     if (!isUnsafeDemoModeAllowed()) {
       redirect(`/login?error=not_configured&next=${encodeURIComponent(currentPath)}`);
     }
-    return getRequestUser();
+    return user;
   }
 
-  const user = await getRequestUser();
   if (!user) redirect(loginPath(currentPath));
   const allowed = options.adminOnly ? isAdminUser(user) : isStaffRole(user.role);
   if (!allowed) {
