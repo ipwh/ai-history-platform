@@ -48,6 +48,19 @@ function localDevOrigins(): string[] {
 const nextConfig: NextConfig = {
   allowedDevOrigins: localDevOrigins(),
   /**
+   * 關閉 Next.js 開發模式的 MCP 伺服器（`experimental.mcpServer`，Next 16 預設開啟）。
+   *
+   * 它會在每次寫日誌時把內容附加到 `.next/dev/logs/next-development.log`。
+   * 本專案的 Turbopack watcher 會監看整個專案（包括 `.next`），因此每一行日誌都
+   * 觸發一次重新編譯 → HMR 通知瀏覽器 → 整頁重新載入 → 新的請求再寫日誌，
+   * 形成**頁面不停重新載入**的無限循環（2026-10-20 實際發生，`curl` 直接請求則正常，
+   * 只有開著瀏覽器時才出現）。關閉後開發模式不再寫入該日誌檔。
+   * 只影響開發模式，正式建置與執行不受影響。
+   */
+  experimental: {
+    mcpServer: false,
+  },
+  /**
    * 本網站的頁面及 API 每次請求都會讀取本機 SQLite 資料庫，屬於「完全動態」的應用，
    * 因此關閉 Cache Components（`cacheComponents`）。
    *

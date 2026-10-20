@@ -1330,6 +1330,7 @@ node scripts/e2e-flow.mjs --start         # 端對端流程（會自行啟動 ne
   `⚠ Blocked cross-origin request to Next.js dev resource /_next/hmr`，用戶端連不上 HMR 便會反覆重載頁面。
   [next.config.ts](next.config.ts) 的 `allowedDevOrigins` 已自動加入本機所有 IPv4 位址（`127.0.0.1` 及區網 IP），令任何本機開啟方式都可正常使用；只影響開發模式。
   若仍出現不停重載，請**清除瀏覽器的硬快取**（Ctrl+Shift+R）或關閉舊分頁後重開；必要時停止伺服器、刪除 `.next` 再執行 `npm run dev`，以清除舊的 HMR 用戶端。
+- **頁面不停重新載入（2026-10-20 第二次，本機開發專屬）**：Next.js 16 的開發模式預設開啟 MCP 伺服器（`experimental.mcpServer`），每次寫日誌都會附加到 `.next/dev/logs/next-development.log`；本專案的 Turbopack watcher 會監看整個專案（含 `.next`），於是每一行日誌都觸發一次重新編譯 → HMR → 整頁重新載入 → 新請求再寫日誌，形成無限循環（`curl` 直接請求完全正常，只有開著瀏覽器時才出現）。[next.config.ts](next.config.ts) 已設 `experimental.mcpServer: false` 停止寫入該日誌檔（**只影響開發模式**，正式建置與執行不受影響）。若日後要重新啟用 Next.js 開發 MCP 工具，必須同時確認不會再出現此循環。
 - 若要測試**教師身分**的權限（403／401、教師測試模式橫幅），請設定 Google 憑證，並把測試者電郵加入 `AUTH_TEACHER_EMAILS`；要測試**管理員身分**（教材管理、系統狀態），請把電郵加入 `AUTH_ADMIN_EMAILS`。
 - **端對端測試需要匿名示範模式**：它會以未登入身分走完學生端及後台功能，因此若 `.env.local` 已設定 Google 憑證，必須在執行時覆寫（PowerShell 的空字串不會覆寫 `.env.local`，請用一個空白）：
 
