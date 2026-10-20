@@ -51,8 +51,15 @@ Write-Host "backup bucket     : $($subs['_BACKUP_BUCKET'])"
 Write-Host "backup interval   : $($subs['_BACKUP_INTERVAL_SECONDS'])"
 
 $missing = @()
-foreach ($k in @("_ADMIN_EMAILS", "_TEACHER_EMAILS", "_ROSTER_SHEET_ID", "_BACKUP_BUCKET", "_BACKUP_INTERVAL_SECONDS")) {
+foreach ($k in @("_ADMIN_EMAILS", "_ROSTER_SHEET_ID", "_BACKUP_BUCKET", "_BACKUP_INTERVAL_SECONDS")) {
     if ([string]::IsNullOrWhiteSpace($subs[$k])) { $missing += $k }
+}
+# 教師名單只在 allowlist 政策下必要；school-domain 政策由 AUTH_STAFF_DOMAINS 授權全校教職員。
+if ($subs["_STAFF_ACCESS_POLICY"] -ne "school-domain" -and [string]::IsNullOrWhiteSpace($subs["_TEACHER_EMAILS"])) {
+    $missing += "_TEACHER_EMAILS"
+}
+if ($subs["_STAFF_ACCESS_POLICY"] -eq "school-domain" -and [string]::IsNullOrWhiteSpace($subs["_STAFF_DOMAINS"])) {
+    $missing += "_STAFF_DOMAINS"
 }
 if ([string]::IsNullOrWhiteSpace($RuntimeSA)) { $missing += "RUNTIME_SA" }
 if ($missing.Count -gt 0) {
