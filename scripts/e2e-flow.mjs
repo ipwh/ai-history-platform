@@ -239,7 +239,7 @@ async function main() {
       `    課題：${topic?.title}；分節：${childSection?.title ?? section?.title}（${section?.publishedQuestionCount ?? 0} 題）`,
     );
 
-    console.log("\n[2b] 閱讀教材（先學習、後練習；版權閘門預設關閉）");
+    console.log("\n[2b] 教材發行權（版權閘門預設關閉）");
     // 先把所有教材還原為「未確認」（fail-closed 基準），令這一段可以重複執行：
     // 本流程後面會開放某份教材，若上一次執行未完成（例如中途失敗），
     // 殘留的狀態會令這裡看似「閘門失效」。這是測試隔離問題，不是產品問題。
@@ -249,24 +249,12 @@ async function main() {
     );
     for (const document of alreadyGranted) {
       await call("PATCH", `/api/admin/materials/${document.id}`, { studentDistribution: false });
-    }    if (alreadyGranted.length > 0) {
-      console.log(`    重設 ${alreadyGranted.length} 份教材的學生閱讀權限後再測試閘門`);
+    }
+    if (alreadyGranted.length > 0) {
+      console.log(`    重設 ${alreadyGranted.length} 份教材的學生使用權限後再測試閘門`);
     }
 
-    const lockedLesson = await call("GET", `/api/topics/${topic.id}/lesson?learnerId=${LEARNER_ID}`);
-    check("GET /api/topics/[topicId]/lesson 回應正常", lockedLesson.status === 200, `HTTP ${lockedLesson.status}`);
-    check(
-      "未確認版權前不顯示教材內容（fail-closed）",
-      (lockedLesson.payload?.sections ?? []).length === 0,
-      `分節數：${(lockedLesson.payload?.sections ?? []).length}`,
-    );
-    check(
-      "未確認版權時說明原因是版權確認",
-      typeof lockedLesson.payload?.notice === "string" && lockedLesson.payload.notice.includes("版權"),
-      String(lockedLesson.payload?.notice ?? ""),
-    );
-
-    // 由管理員明確確認某份教材可在平台發布，然後驗證內容才會出現
+    // 由管理員明確確認某份教材可在平台發布，然後驗證學生才可使用其內容
     const lessonMaterials = await call("GET", "/api/admin/materials");
     const distributableDocument = (lessonMaterials.payload?.documents ?? []).find(
       (document) =>
@@ -280,7 +268,7 @@ async function main() {
         { studentDistribution: true },
       );
       check(
-        "開放學生閱讀需要版權確認（409）",
+        "開放學生使用需要版權確認（409）",
         withoutRights.status === 409,
         `HTTP ${withoutRights.status}`,
       );
@@ -299,7 +287,7 @@ async function main() {
           { studentDistribution: true, confirmRights: true, confirmTeacherEdition: true },
         );
         check(
-          "明確確認後可以開放學生閱讀",
+          "明確確認後可以開放給學生使用",
           confirmed.status === 200 && confirmed.payload?.document?.studentDistribution === true,
           JSON.stringify(confirmed.payload)?.slice(0, 200),
         );
@@ -313,45 +301,22 @@ async function main() {
         check("管理員可以確認教材的學生閱讀權限", withRights.status === 200, `HTTP ${withRights.status}`);
       }
 
-      const lesson = await call("GET", `/api/topics/${topic.id}/lesson?learnerId=${LEARNER_ID}`);
-      const lessonSections = lesson.payload?.sections ?? [];
-      check("確認版權後才顯示閱讀內容", lessonSections.length > 0, `分節數：${lessonSections.length}`);
-      const lessonBlocks = lessonSections.flatMap((item) => item.blocks ?? []);
-      check("閱讀內容包含教材段落", lessonBlocks.length > 0, `段落數：${lessonBlocks.length}`);
-      check("每個段落都有來源位置", lessonBlocks.every((block) => (block.sourceLocation ?? "").length > 0));
-      check(
-        "不會顯示 OCR 說明行",
-        lessonBlocks.every((block) => !(block.text ?? "").includes("以上文字由 OCR")),
+      const topicsAfterRights = await call(
+        "GET",
+        `/api/topics/${topic.id}?learnerId=${LEARNER_ID}`,
+      );
+      const studentBlockTotal = (topicsAfterRights.payload?.topic?.sections ?? []).reduce(
+        (total, section) => total + (section.studentMaterialBlockCount ?? 0),
+        0,
       );
       check(
-        "沒有 OCR 文字的圖片不會顯示",
-        lessonBlocks.every(
-          (block) =>
-            !(block.type === "image" && (block.text ?? "").trim().length === 0 && (block.rows ?? []).length === 0),
-        ),
-      );
-
-      const lessonHtml = await fetch(`${BASE_URL}/learn/${topic.id}`).then((response) => response.text());
-      check("閱讀教材頁面可以開啟", lessonHtml.includes(topic.title));
-      check("閱讀教材頁面提供開始練習的入口", lessonHtml.includes("開始練習這個課題"));
-      // 教師專用內容（答案、評分參考）永不顯示給學生；數量會回報供管理員核對
-      check(
-        "回報被略過的教師專用段落數",
-        typeof lesson.payload?.withheldTeacherBlocks === "number",
-        `withheldTeacherBlocks=${lesson.payload?.withheldTeacherBlocks}`,
-      );
-      check(
-        "閱讀內容不含答案或評分參考標記",
-        !lessonBlocks.some((block) =>
-          /參考答案|建議答案|評分參考|得分要點|每個答案各佔/.test(block.text ?? ""),
-        ),
+        "確認版權後學生才有可用的教材段落",
+        studentBlockTotal > 0,
+        `可用段落：${studentBlockTotal}`,
       );
     } else {
       check("找到可測試版權閘門的教材文件", false, "找不到已對應課題且含段落的教材文件");
     }
-
-    const missingLesson = await call("GET", `/api/topics/topic-does-not-exist/lesson?learnerId=${LEARNER_ID}`);
-    check("不存在的課題不會回傳閱讀內容", missingLesson.status === 404, `HTTP ${missingLesson.status}`);
 
     console.log("\n[3] 建立練習（選擇題 + 填充題）");
     const created = await call("POST", "/api/practice", {

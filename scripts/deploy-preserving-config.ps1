@@ -1,9 +1,14 @@
 # 以線上現有設定重新部署，避免用到 cloudbuild.yaml 內的空預設值。
 # 只讀取現有設定 → 組 substitutions → gcloud builds submit。
+#
+# 專案**必須**是 pccss-ai-history：舊專案 amiable-nirvana-500300-a0 已停用。
+# （2026-10-19 的部署曾因這裡硬編碼舊專案而更新了錯誤的服務。）
+param(
+    [string]$Project = "pccss-ai-history",
+    [string]$Region = "asia-east2",
+    [string]$Service = "history-self-study"
+)
 $ErrorActionPreference = "Stop"
-$Project = "amiable-nirvana-500300-a0"
-$Region = "asia-east2"
-$Service = "history-self-study"
 
 function Get-EnvValue([string]$name) {
     $v = gcloud run services describe $Service --project $Project --region $Region `

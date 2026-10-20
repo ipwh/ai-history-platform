@@ -1,15 +1,15 @@
 /**
- * 教材發行權（學生閱讀權限）管理測試。
+ * 教材發行權（學生可用教材）管理測試。
  *
  * 驗證：
- *   1. 預設為關閉（fail-closed）：沒有管理員確認前，學生不會看到教材內容。
- *   2. 只有管理員可以變更發行權（學生及未登入者被拒），且學生的閱讀範圍只受
+ *   1. 預設為關閉（fail-closed）：沒有管理員確認前，學生不會用到教材內容。
+ *   2. 只有管理員可以變更發行權（學生及未登入者被拒），且學生可用範圍只受
  *      `student_distribution` 影響。
  *   3. 每次變更都會留下「誰在何時」的稽核記錄，操作者取自伺服器端的工作階段
  *      （前端傳來的值不會被採用）；重複設定相同值不會產生重複記錄。
- *   4. 關閉後立即生效：下一次讀取即不再顯示內容（沒有快取）。
+ *   4. 關閉後立即生效：下一次請求即不再計入學生可用教材（沒有快取）。
  *   5. **教師版／混合文件**：檔名標示為教師版時需額外確認；教師專用段落
- *      （答案、評分參考）不會顯示給學生，亦不會被當成「有教材可讀」。
+ *      （答案、評分參考）不會計入學生可用教材。
  *   6. 邊界情況：未知文件 ID、重複請求、先開放後撤銷。
  */
 import { beforeAll, describe, expect, it } from "vitest";
@@ -30,16 +30,31 @@ delete process.env.K_SERVICE;
 type SessionModule = typeof import("@/server/auth/session");
 type SeedModule = typeof import("@/server/seed");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
-type LessonService = typeof import("@/server/services/lesson-service");
 type MaterialService = typeof import("@/server/services/material-service");
 type TeacherContent = typeof import("@/server/materials/teacher-content");
 
 let session: SessionModule;
 let seed: SeedModule;
 let materialsRepo: MaterialsRepo;
-let lessonService: LessonService;
 let materialService: MaterialService;
 let teacherContent: TeacherContent;
+
+/**
+ * 學生實際可用的教材段落總數（同一分節內的段落數）。
+ *
+ * 發行權原本以學生閱讀頁（已於 2026-10-20 移除）驗證；現以同一閘門的學生端用途
+ * 驗證：只有已確認發行權（教師版另需內容覆核）且非教師專用的段落才會計入
+ * `studentMaterialBlockCounts`，亦即學生可否用來出題及看到題目來源節錄。
+ */
+function studentBlockCount(topicId: string, sectionId?: string): number {
+  const counts = materialsRepo.studentMaterialBlockCounts(topicId);
+  if (sectionId === undefined) {
+    return [...counts.values()].reduce((total, count) => total + count, 0);
+  }
+  return counts.get(sectionId) ?? 0;
+}
+
+const PILOT_SECTION = "topic-5-renaissance-features";
 
 const STUDENT = {
   email: "s2024146@pochiu.edu.hk",
@@ -97,11 +112,10 @@ beforeAll(async () => {
   session = await import("@/server/auth/session");
   seed = await import("@/server/seed");
   materialsRepo = await import("@/server/repositories/materials");
-  lessonService = await import("@/server/services/lesson-service");
   materialService = await import("@/server/services/material-service");
   teacherContent = await import("@/server/materials/teacher-content");
   seed.ensureBootstrap();
-  // 發行權是針對教材文件，因此測試需要已匯入的教材（與 lesson-service 測試一致）
+  // 發行權是針對教材文件，因此測試需要已匯入的教材
   const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
   if (!imported) throw new Error("找不到課題5的教材檔案，無法測試發行權");
 });
@@ -110,14 +124,13 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
   it("預設關閉：未確認的教材不會顯示給學生", () => {
     const documentId = pilotDocumentId();
     materialsRepo.setDocumentStudentDistribution(documentId, false);
-    expect(lessonService.getLessonView("topic-5").sections).toEqual([]);
+    expect(studentBlockCount("topic-5")).toBe(0);
     expect(materialsRepo.listStudentDistributableDocumentIds().size).toBe(0);
   });
 
   it("開放發行權需要版權確認（confirmRights），只帶 studentDistribution 會被拒（409）", async () => {
     // 用教師版文件驗證：即使確認了版權，仍需要內容安全覆核（見下一個測試）
-    const sectionId =
-      lessonService.getLessonView("topic-5").sections[0]?.id ?? "topic-5-renaissance-features";
+    const sectionId = PILOT_SECTION;
     const documentId = createTeacherEditionDocument(sectionId, "topic-5").id;
     const before = materialsRepo.listDistributionAudit(documentId).length;
     const response = await patchDocument(documentId, { studentDistribution: true }, cookieFor(ADMIN));
@@ -132,8 +145,7 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
   });
 
   it("版權確認與內容安全覆核分開記錄（誰在何時確認）", async () => {
-    const sectionId =
-      lessonService.getLessonView("topic-5").sections[0]?.id ?? "topic-5-renaissance-features";
+    const sectionId = PILOT_SECTION;
     const documentId = createTeacherEditionDocument(sectionId, "topic-5").id;
     const response = await patchDocument(
       documentId,
@@ -166,8 +178,7 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
   });
 
   it("沒有內容覆核確認時不會單獨寫入版權確認紀錄（兩項都通過才開放）", async () => {
-    const sectionId =
-      lessonService.getLessonView("topic-5").sections[0]?.id ?? "topic-5-renaissance-features";
+    const sectionId = PILOT_SECTION;
     const documentId = createTeacherEditionDocument(sectionId, "topic-5").id;
     // 教師版文件：只帶版權確認會被內容覆核關卡擋下
     const blocked = await patchDocument(
@@ -238,7 +249,7 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
     expect(Number.isNaN(Date.parse(body.distributionAudit[0].createdAt))).toBe(false);
 
     expect(materialsRepo.listStudentDistributableDocumentIds().has(documentId)).toBe(true);
-    expect(lessonService.getLessonView("topic-5").sections.length).toBeGreaterThan(0);
+    expect(studentBlockCount("topic-5")).toBeGreaterThan(0);
   });
 
   it("關閉後立即生效，並記錄是另一位管理員所為", async () => {
@@ -258,7 +269,7 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
     expect(body.distributionAudit[0].allowed).toBe(false);
     expect(body.distributionAudit[0].actorEmail).toBe(OTHER_ADMIN.email);
 
-    expect(lessonService.getLessonView("topic-5").sections).toEqual([]);
+    expect(studentBlockCount("topic-5")).toBe(0);
     expect(materialsRepo.listStudentDistributableDocumentIds().has(documentId)).toBe(false);
   });
 
@@ -340,8 +351,7 @@ function createTeacherEditionDocument(sectionId: string, topicId: string) {
 describe("教師版／混合文件（不可只因 kind 不是試題檔就當作學生內容）", () => {
 
   it("檔名標示為教師版時，開放學生閱讀需要額外明確確認（409）", async () => {
-    const lesson = lessonService.getLessonView("topic-5");
-    const sectionId = lesson.sections[0]?.id ?? "topic-5-renaissance-features";
+    const sectionId = PILOT_SECTION;
     const document = createTeacherEditionDocument(sectionId, "topic-5");
     try {
       expect(teacherContent.looksLikeTeacherEdition(document.fileName)).toBe(true);
@@ -372,30 +382,22 @@ describe("教師版／混合文件（不可只因 kind 不是試題檔就當作�
     }
   });
 
-  it("教師專用段落（答案、評分參考）不會顯示給學生，其他段落照常顯示", () => {
-    const lesson = lessonService.getLessonView("topic-5");
-    const sectionId = lesson.sections[0]?.id ?? "topic-5-renaissance-features";
+  it("教師專用段落（答案、評分參考）不會計入學生可用教材，其他段落照常計入", () => {
+    const sectionId = PILOT_SECTION;
     const document = createTeacherEditionDocument(sectionId, "topic-5");
     try {
+      // 只有課文段落會計入學生可用教材；答案／評分參考段落不會
+      const withoutDocument = studentBlockCount("topic-5", sectionId);
       openDocumentForStudents(materialsRepo, document.id);
-      const visible = lessonService.getLessonView("topic-5", [sectionId]);
-      const texts = visible.sections
-        .flatMap((section) => section.blocks)
-        .map((block) => block.text)
-        .join("\n");
-
-      expect(texts).toContain("文藝復興時期，歐洲人重視人文主義。");
-      expect(texts).not.toContain("參考答案");
-      expect(texts).not.toContain("每個答案各佔");
-      expect(visible.withheldTeacherBlocks).toBeGreaterThanOrEqual(1);
-      expect(visible.notice ?? "").toContain("答案");
+      const withDocument = studentBlockCount("topic-5", sectionId);
+      expect(withDocument - withoutDocument).toBe(1);
     } finally {
       materialsRepo.setDocumentStudentDistribution(document.id, false);
       materialsRepo.deleteDocument(document.id);
     }
   });
 
-  it("只有教師專用內容的文件不會被當成「有教材可讀」", () => {
+  it("只有教師專用內容的文件不會被當成「有學生可用教材」", () => {
     const document = materialsRepo.createDocument({
       fileName: "答案及評分參考.docx",
       kind: "demo",
@@ -420,12 +422,9 @@ describe("教師版／混合文件（不可只因 kind 不是試題檔就當作�
     ]);
     try {
       expect(teacherContent.looksLikeTeacherEdition(document.fileName)).toBe(true);
-      // 完整治理開放（版權 + 內容覆核）後，只有段落層級的教師專用過濾會令內容不顯示
+      // 完整治理開放（版權 + 內容覆核）後，只有段落層級的教師專用過濾會令內容不計入
       openDocumentForStudents(materialsRepo, document.id);
-      const lesson = lessonService.getLessonView("topic-1", ["topic-1-origins"]);
-      expect(lesson.sections).toEqual([]);
-      expect(lesson.withheldTeacherBlocks).toBe(1);
-      expect(lessonService.topicHasLesson("topic-1")).toBe(false);
+      expect(studentBlockCount("topic-1", "topic-1-origins")).toBe(0);
     } finally {
       materialsRepo.setDocumentStudentDistribution(document.id, false);
       materialsRepo.deleteDocument(document.id);
@@ -466,10 +465,10 @@ describe("發行權操作的邊界情況", () => {
   it("先開放再撤銷後，學生下一個請求立即看不到內容（沒有快取）", () => {
     const documentId = pilotDocumentId();
     openDocumentForStudents(materialsRepo, documentId);
-    expect(lessonService.getLessonView("topic-5").sections.length).toBeGreaterThan(0);
+    expect(studentBlockCount("topic-5")).toBeGreaterThan(0);
 
     materialsRepo.setDocumentStudentDistribution(documentId, false);
-    expect(lessonService.getLessonView("topic-5").sections).toEqual([]);
+    expect(studentBlockCount("topic-5")).toBe(0);
   });
 
   it("管理員端的段落預覽會回報教師專用段落數及教師版標示", async () => {

@@ -152,9 +152,6 @@ export function ResultView({ sessionId }: { sessionId: string }) {
         <Link href={`/practice/new?topic=${result.session.topicId}`} className="btn">
           再練習一次
         </Link>
-        <Link href={`/learn/${result.session.topicId}`} className="btn">
-          閱讀這個課題的教材
-        </Link>
         {staffHome ? (
           <Link href={staffHome.href} className="btn">
             {staffHome.label}

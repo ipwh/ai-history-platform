@@ -409,12 +409,12 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
       })
     : finalQuestions;
 
-  // Sprint 7.9：未確定項目（例如答案只是教材語句的改寫）不會自動發布，
+  // Sprint 7.9：未確定項目（例如題目要求的思考面向未見於教材）不會自動發布，
   // 只保留為草稿等待教師確認；其他題目不受影響。
   const heldCount = saved.filter((question) => question.teacherConfirmationRequired).length;
   if (heldCount > 0) {
     warnings.push(
-      `有 ${heldCount} 條題目的品質檢查有未確定項目（例如答案只是教材語句的改寫），` +
+      `有 ${heldCount} 條題目的品質檢查有未確定項目（例如題目要求的思考面向未見於教材），` +
         "已保留為草稿並交教師確認，不會自動發布；其他題目不受影響。",
     );
   }
@@ -880,7 +880,7 @@ export function recordAutoValidationAndPublish(questionId: string): Question {
   if (!validated) throw new QuestionServiceError("自動驗證紀錄寫入失敗", 500);
 
   if (!getServerConfig().autoPublishValidatedQuestions) return validated;
-  // 未確定項目（例如答案只是教材語句的改寫）即使已記錄自動驗證，也不得自動發布：
+  // 未確定項目（例如題目要求的思考面向未見於教材）即使已記錄自動驗證，也不得自動發布：
   // 題目保留為草稿，等待教師確認（見 changeQuestionStatus 及 0020 migration）。
   if (validated.teacherConfirmationRequired) return validated;
   const published = setQuestionStatusIfRevision(validated.id, "published", validated.revision);
@@ -965,7 +965,7 @@ export function revalidateQuestion(questionId: string): {
     };
   }
 
-  // 未確定項目（例如答案只是教材語句的改寫）或可修正的教學品質問題（例如解釋只重複答案）：
+  // 未確定項目（例如題目要求的思考面向未見於教材）或可修正的教學品質問題（例如解釋只重複答案）：
   // 即使沒有 BLOCKING 問題，仍不可由**機器檢查**清除暫緩標記。
   //
   // Sprint 8.5 修正的繞過路徑：以往這裡只檢查「未確定」項目，於是生成時被判 `revise`

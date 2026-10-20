@@ -702,7 +702,7 @@ function QuestionListCard({
             {question.teacherConfirmationRequired ? (
               <span
                 className="badge badge-danger"
-                title="品質檢查有未確定項目（例如答案只是教材語句的改寫），自動發布已暫緩，學生看不到這一題。核對內容後按「覆核通過並發布」，或先重新執行自動品質驗證。"
+                title="品質檢查有未確定項目（例如題目要求的思考面向未見於教材），自動發布已暫緩，學生看不到這一題。核對內容後按「覆核通過並發布」，或先重新執行自動品質驗證。"
               >
                 等待教師確認（自動發布暫緩）
               </span>

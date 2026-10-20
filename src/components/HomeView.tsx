@@ -183,14 +183,6 @@ export function HomeView() {
                       ›
                     </span>
                   </Link>
-                  {/* 先閱讀、後練習：讓學生毋須教師在場亦可先了解內容 */}
-                  <Link
-                    href={`/learn/${topic.id}`}
-                    className="text-xs self-start px-1"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    閱讀這個課題的教材 ›
-                  </Link>
                 </div>
               );
             })}

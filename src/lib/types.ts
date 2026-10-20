@@ -536,7 +536,7 @@ export const questionBaseSchema = z.object({
   /**
    * 自動發布被暫緩，等待教師確認（伺服器管理，不由前端提供）。
    *
-   * 品質閘門判定為「未確定」（例如答案只是教材語句的改寫、沒有逐字依據）或「需要修訂」
+   * 品質閘門判定為「未確定」（例如題目要求的思考面向未見於教材）或「需要修訂」
    * （例如解釋只是重複答案）時設為 true：題目仍然保留在題庫，但不會經自動驗證發布給學生
    * （見 question-service 的三條發布路徑）。
    *
@@ -951,63 +951,6 @@ export interface PracticeRecordTopicOption {
   level: number;
   topicNumber: number | null;
 }
-
-/* ------------------------------------------------------------------ */
-/* 學生閱讀教材（學習模式）                                            */
-/* ------------------------------------------------------------------ */
-
-/**
- * 學生閱讀用的教材段落。
- * 只包含已發布課題的教材內容（不含校內試題及答案），純粹供閱讀；
- * 學生在練習題中仍然看不到教材（題目不可要求參考教材）。
- */
-export const lessonBlockSchema = z.object({
-  id: z.string().min(1),
-  type: materialBlockTypeSchema,
-  /** 標題層級（1-6）；非標題為 null */
-  level: z.number().int().nullable(),
-  text: z.string(),
-  /** 表格資料（列為單位），非表格為空陣列 */
-  rows: z.array(z.array(z.string())).default([]),
-  sourceLocation: z.string(),
-  /** 文字來自 OCR 辨識（可能與原書有出入，介面必須提示學生對照課本） */
-  fromOcr: z.boolean().default(false),
-});
-export type LessonBlock = z.infer<typeof lessonBlockSchema>;
-
-export const lessonSectionSchema = z.object({
-  id: z.string().min(1),
-  title: z.string(),
-  /** 上層分節 ID（頂層為 null） */
-  parentId: z.string().nullable().default(null),
-  /** 縮排層級（0 = 頂層） */
-  depth: z.number().int().min(0).default(0),
-  blocks: z.array(lessonBlockSchema),
-});
-export type LessonSection = z.infer<typeof lessonSectionSchema>;
-
-export const lessonViewSchema = z.object({
-  topic: z.object({
-    id: z.string().min(1),
-    title: z.string(),
-    level: z.number().int(),
-    levelLabel: z.string(),
-    themeTitle: z.string(),
-  }),
-  sections: z.array(lessonSectionSchema),
-  /** 教材是否包含 OCR 辨識文字（介面顯示提示） */
-  hasOcrText: z.boolean().default(false),
-  /** 需要告知學生的訊息（例如教材尚未匯入） */
-  notice: z.string().nullable().default(null),
-  /**
-   * 因屬教師專用內容（答案、評分參考）而未顯示的段落數。
-   *
-   * 讓管理員核對「這份教師版教材是否有內容被略過」；學生介面只會說有部分內容未開放，
-   * 不會看到這些段落本身。這是啟發式過濾，不是內容審查證明。
-   */
-  withheldTeacherBlocks: z.number().int().min(0).default(0),
-});
-export type LessonView = z.infer<typeof lessonViewSchema>;
 
 /** 曾作答的學習者摘要（不含姓名等個人資料） */
 export interface PracticeRecordLearner {

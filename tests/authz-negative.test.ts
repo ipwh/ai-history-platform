@@ -469,8 +469,6 @@ const PUBLIC_API_ROUTES = new Set([
   "GET /api/health",
   "GET /api/topics",
   "GET /api/topics/[topicId]",
-  // 學生閱讀教材（只回傳已發布課題的教材內容；與其他學生端 API 一樣要求登入）
-  "GET /api/topics/[topicId]/lesson",
   "POST /api/practice",
   "GET /api/practice/[sessionId]",
   "POST /api/practice/[sessionId]/answers",

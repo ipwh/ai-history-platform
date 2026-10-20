@@ -77,7 +77,7 @@ export function TeacherDashboard({ teacherEmail }: { teacherEmail?: string | nul
         </p>
         <p className="text-sm text-gray-600">
           「待教師確認」{questions.awaitingTeacherConfirmation} 題是品質檢查有未確定項目的題目
-          （例如答案只是教材語句的改寫、未能確定依據）：自動發布已暫緩，學生看不到，
+          （例如題目要求的思考面向未見於教材）：自動發布已暫緩，學生看不到，
           須由教師在「題目管理」核對後逐題發布。
         </p>
       </section>

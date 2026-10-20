@@ -82,9 +82,9 @@ npm run import:materials -- --ocr              # 匯入後執行 OCR（辨識圖
    > **`--` 不可以省略**：`npm run <腳本> --apply` 的 `--apply` 會被 npm 吞掉，腳本會以模擬模式執行並
    > 顯示「將套用」，看起來像成功但沒有寫入（2026-10-16 實測）。請確認報告顯示「模式：套用（--apply）」
    > 及「已套用」數字。
-6. **驗證**：`npm test`、`npm run typecheck`；在 `/learn/<topicId>` 檢查課文，
+6. **驗證**：`npm test`、`npm run typecheck`；
    並在 `/teacher/questions` 檢查題目（逐條處理建議見 `docs/teacher-review/material-decision-queue-2026-10.json`）。
-   學生可見節錄的驗證請用**唯讀**端點（`/api/topics`、`/learn/<topicId>`），
+   學生可見內容的驗證請用**唯讀**端點（`/api/topics`、`/api/topics/<topicId>` 的 `studentMaterialBlockCount`），
    **不要**用 `GET /api/health`：它會執行 `ensureBootstrap()` 及保留期清理（會寫入資料）。
 
 > **已改名的檔案（離線快照）**：第 2 步的「在 `/admin/materials` 刪除」只適用於有管理介面的

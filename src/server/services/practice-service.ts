@@ -450,8 +450,8 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
 
   const topic = getTopic(parsed.topicId);
   if (!topic) throw new PracticeServiceError("找不到指定的課題", 404);
-  // 未發布的課題不得建立新練習：閱讀頁（getLessonView）已一律回 404，若練習仍可
-  // 建立，學生便可直接以 topicId 繞過課程發布狀態取得題目及 AI 額度。
+  // 未發布的課題不得建立新練習：若練習仍可建立，學生便可直接以 topicId 繞過
+  // 課程發布狀態取得題目及 AI 額度。
   if (!topic.published) throw new PracticeServiceError("找不到指定的課題", 404);
 
   const sectionIds = expandSectionIds(topic.id, parsed.sectionIds);

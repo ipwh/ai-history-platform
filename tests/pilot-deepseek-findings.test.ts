@@ -87,6 +87,19 @@ describe("試點缺陷 2：選擇題正確答案是教材改寫時被誤丟", ()
     expect(hasUncertainIssue(result.issues)).toBe(false);
   });
 
+  it("重疊率低於 0.6 但仍屬改寫的答案，現在會保留並只記錄警告（2026-10-20 放寬）", () => {
+    // 這條答案與教材的文字重疊率約為 0.54（只把句子換句話說），舊門檻 0.6 會把整題丟棄；
+    // 放寬後保留題目並記錄警告。
+    const result = checkQuestionQuality(
+      mc({ correctAnswer: "工業革命時期，各城市成立衛生局清理污水，並限制工廠工時" }),
+      UNITS,
+    );
+    expect(result.issues.filter((issue) => issue.severity === "blocking")).toHaveLength(0);
+    const issue = result.issues.find((issue) => issue.code === "answer-not-in-material");
+    expect(issue?.severity).toBe("warning");
+    expect(result.outcome).toBe("pass");
+  });
+
   it("杜撰的年份或人物不會因改寫規則而獲通過", () => {
     const result = checkQuestionQuality(
       mc({ correctAnswer: "工業革命由凱撒利昂於公元前50年推行，並設立公共衛生局負責清理污水" }),

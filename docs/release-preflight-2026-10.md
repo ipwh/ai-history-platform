@@ -5,6 +5,12 @@
 沒有部署、沒有讀取或改動正式資料；第 8 節是 Sprint 8.7 新增、供**獲授權操作員**日後執行的
 勾選清單（全部未執行），第 9 節是 Sprint 8.8 新增的**證據欄位**（沒有填證據即視為未完成）。
 
+> **2026-10-20 更正（部署目標）**：本文件第 10 節記錄的 2026-10-17 部署（revision `00026-yik`、
+> bucket `gs://amiable-nirvana-500300-a0-history-backup`）實際執行於**已停用的舊專案
+> `amiable-nirvana-500300-a0`**。現行正式環境為 `pccss-ai-history`（服務網址
+> `https://history-self-study-4sija7xvrq-df.a.run.app`）。第 10 節的 bucket 路徑、指令及
+> revision 名稱**不可重用**；現行部署及回滾步驟見根目錄 README 第十節。
+
 ---
 
 ## 1. 七個證據層級（不可互相代替）

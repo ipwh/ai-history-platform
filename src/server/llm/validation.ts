@@ -979,7 +979,7 @@ export function validateLlmQuestions(raw: unknown, context: ValidationContext): 
         ...quality.issues.map((issue) => `品質檢查提示：${issue.message}`),
       );
     }
-    // 未確定項目（例如答案只是教材語句的改寫）或可修正的教學品質問題（例如解釋只是
+    // 未確定項目（例如題目要求的思考面向未見於教材）或可修正的教學品質問題（例如解釋只是
     // 抄錄教材原文）：保留題目但暫緩自動發布，等待教師確認——警告不會覆蓋未解決的
     // 依據問題（見 questions.teacher_confirmation_required）。生成流程會在寫入前
     // 有限次重試（見 question-service），令可修正的題目有機會自動改善。

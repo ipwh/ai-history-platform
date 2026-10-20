@@ -4,11 +4,10 @@
  * 教師版課本（`HNC*_TE.docx`）除課文外還夾附資料題練習**及其評分參考**
  * （「（3分）」、「資料線索：」、「個人所知：」），匯入時亦會在圖片位置插入
  * `[[IMAGE_UNEXTRACTED]]`。這些內容不屬課文，部分更是答案，因此同一個判斷
- * （[content-policy.ts](../src/server/materials/content-policy.ts)）用於四處：
- *   1. 閱讀教材（不顯示）
- *   2. 出題素材（不可作為出題依據）
- *   3. 題目來源節錄（不顯示）
- *   4. 學生端可用性計數（與出題素材一致，避免介面承諾做不到的出題）
+ * （[content-policy.ts](../src/server/materials/content-policy.ts)）用於三處：
+ *   1. 出題素材（不可作為出題依據）
+ *   2. 題目來源節錄（不顯示）
+ *   3. 學生端可用性計數（與出題素材一致，避免介面承諾做不到的出題）
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import { openDocumentForStudents } from "./material-distribution";
@@ -19,14 +18,12 @@ process.env.LLM_PROVIDER = "mock";
 
 type ContentPolicy = typeof import("@/server/materials/content-policy");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
-type LessonService = typeof import("@/server/services/lesson-service");
 type MaterialUnits = typeof import("@/server/services/material-units");
 type SourceVisibility = typeof import("@/server/services/source-visibility");
 type Types = typeof import("@/lib/types");
 
 let policy: ContentPolicy;
 let materialsRepo: MaterialsRepo;
-let lessonService: LessonService;
 let materialUnits: MaterialUnits;
 let sourceVisibility: SourceVisibility;
 let types: Types;
@@ -39,7 +36,6 @@ const ANSWER_TEXT = "資料線索：資料A指出人文主義重視人的價值�
 beforeAll(async () => {
   policy = await import("@/server/materials/content-policy");
   materialsRepo = await import("@/server/repositories/materials");
-  lessonService = await import("@/server/services/lesson-service");
   materialUnits = await import("@/server/services/material-units");
   sourceVisibility = await import("@/server/services/source-visibility");
   types = await import("@/lib/types");
@@ -151,22 +147,6 @@ describe("非課文內容不會顯示、亦不會成為出題依據", () => {
     openDocumentForStudents(materialsRepo, document.id);
     return { document, blockIds: blocks.map((block) => block.id) };
   }
-
-  it("閱讀頁只顯示課文，練習題目、評分參考及碎片不顯示", () => {
-    const { document } = createMixedDocument();
-    try {
-      const lesson = lessonService.getLessonView("topic-5", [SECTION]);
-      const texts = lesson.sections.flatMap((section) => section.blocks.map((block) => block.text));
-
-      expect(texts).toContain(LESSON_TEXT);
-      expect(texts.join("\n")).not.toContain("（12分）");
-      expect(texts.join("\n")).not.toContain("資料線索");
-      expect(texts.join("\n")).not.toContain("約公元前3,500年");
-      expect(lesson.notice ?? "").toContain("只顯示課文內容");
-    } finally {
-      materialsRepo.deleteDocument(document.id);
-    }
-  });
 
   it("出題素材不會使用練習題目或評分參考（學生與教師生成皆然）", () => {
     const { document, blockIds } = createMixedDocument();

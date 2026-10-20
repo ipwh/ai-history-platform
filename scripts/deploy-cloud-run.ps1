@@ -45,14 +45,14 @@
 
 .EXAMPLE
     # 或明確由環境變數提供
-    ./scripts/deploy-cloud-run.ps1 -Project amiable-nirvana-500300-a0 -Apply `
+    ./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply `
         -AdminEmails ipwh@pochiu.edu.hk `
         -LlmApiKey $env:DEEPSEEK_API_KEY `
         -GoogleClientId $env:GOOGLE_CLIENT_ID -GoogleClientSecret $env:GOOGLE_CLIENT_SECRET
 #>
 [CmdletBinding()]
 param(
-    # GCP 專案 ID（必填）
+    # GCP 專案 ID（必填；正式環境為 pccss-ai-history）
     [Parameter(Mandatory = $true)][string]$Project,
     # Cloud Run 區域（香港最近為 asia-east2）
     [string]$Region = "asia-east2",

@@ -80,7 +80,7 @@ Route 總數：**35 個 route 檔／45 個 HTTP 方法**（`src/app/api/**/route
 | **舊練習快照作答** | `POST /api/practice/[sessionId]/answers` → `submitAnswer` | 練習擁有者 | — | **Sprint 12 新增**：未作答題目在題庫被隔離／不可作答時回 409；已作答題目仍回歷史回饋 | `tests/release-controls.test.ts`（新） |
 | 成績／進度 | `GET /api/practice/[sessionId]/result`、`GET /api/progress` | 練習擁有者 | — | 只讀歷史紀錄 | `tests/practice-*.test.ts` |
 | 直接按 ID 取題 | 沒有公開 API；`GET /api/teacher/...` 需教師 | — | — | — | `tests/authz-negative.test.ts` |
-| 課題／教材 | `GET /api/topics*`、`/lesson` | 公開（教材另受發行權閘門） | `topics.published=1` | 不涉及題目 | `tests/lesson-*.test.ts` |
+| 課題／教材 | `GET /api/topics*` | 公開（教材另受發行權閘門） | `topics.published=1` | 不涉及題目 | `tests/distribution-audit.test.ts` |
 
 ### 3.2 教師／管理員寫入路徑
 

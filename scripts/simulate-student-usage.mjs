@@ -663,10 +663,14 @@ async function main() {
   }
 
   for (const item of topics.slice(0, 4)) {
-    const lesson = await call("GET", `/api/topics/${item.id}/lesson?learnerId=${LEARNER}`);
-    check(lesson.status === 200, "lesson", `閱讀教材回應 ${lesson.status}：${item.id}`);
-    const sections = lesson.payload?.sections ?? [];
-    if (sections.length === 0) note(`課題 ${item.id} 的閱讀頁沒有可顯示的段落`);
+    // 學生端不再有閱讀教材頁；改為核對課題詳情中的學生可用教材段落數（AI 出題的唯一依據）
+    const detail = await call("GET", `/api/topics/${item.id}?learnerId=${LEARNER}`);
+    check(detail.status === 200, "topics", `課題詳情回應 ${detail.status}：${item.id}`);
+    const studentBlocks = (detail.payload?.topic?.sections ?? []).reduce(
+      (total, section) => total + (section.studentMaterialBlockCount ?? 0),
+      0,
+    );
+    if (studentBlocks === 0) note(`課題 ${item.id} 沒有學生可用教材段落（即時出題會被版權閘門擋下）`);
   }
 
   // 學生實際會打開的頁面：必須可以載入（App Router 的頁面在匿名模式下不會被重導向）

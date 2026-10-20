@@ -11,7 +11,7 @@
  *   1. `student_distribution = 1`
  *   2. 版權確認 `rights_confirmed_at`
  *   3. 教師版文件另需內容覆核 `content_reviewed_at`
- * 學生才會看到內容。三條學生端路徑（閱讀頁、教材節錄、學生即時 AI 出題的依據）都
+ * 學生才會看到內容。兩條學生端路徑（教材節錄、學生即時 AI 出題的依據）都
  * 使用同一個判斷（`listStudentDistributableDocumentIds`），因此一次修正同時覆蓋。
  */
 import { beforeAll, describe, expect, it } from "vitest";
@@ -30,13 +30,11 @@ delete process.env.ADMIN_TOKEN;
 delete process.env.K_SERVICE;
 
 type MaterialsRepo = typeof import("@/server/repositories/materials");
-type LessonService = typeof import("@/server/services/lesson-service");
 type MaterialUnits = typeof import("@/server/services/material-units");
 type PracticeService = typeof import("@/server/services/practice-service");
 type Types = typeof import("@/lib/types");
 
 let materialsRepo: MaterialsRepo;
-let lessonService: LessonService;
 let materialUnits: MaterialUnits;
 let practiceService: PracticeService;
 let types: Types;
@@ -84,7 +82,6 @@ let seed: typeof import("@/server/seed");
 
 beforeAll(async () => {
   materialsRepo = await import("@/server/repositories/materials");
-  lessonService = await import("@/server/services/lesson-service");
   materialUnits = await import("@/server/services/material-units");
   practiceService = await import("@/server/services/practice-service");
   types = await import("@/lib/types");
@@ -122,13 +119,14 @@ describe("舊狀態：只設定 student_distribution 而沒有確認紀錄", () 
     expect(payload.studentVisibleToStudents).toBe(false);
   });
 
-  it("三條學生端路徑都不會顯示內容：閱讀頁、節錄、即時出題的教材依據", async () => {
+  it("兩條學生端路徑都不會顯示內容：教材節錄、即時出題的教材依據", async () => {
     const { document, blockId } = createTeacherEditionDocument();
     materialsRepo.setDocumentStudentDistribution(document.id, true);
 
-    // 1) 閱讀頁：該文件不是可讀來源
-    const lesson = lessonService.getLessonView("topic-5", ["topic-5-renaissance-features"]);
-    expect(JSON.stringify(lesson)).not.toContain(SAMPLE_TEXT);
+    // 1) 學生可用教材：該文件不會計入（學生連出題依據都沒有）
+    expect(
+      materialsRepo.studentMaterialBlockCounts("topic-5").get("topic-5-renaissance-features") ?? 0,
+    ).toBe(0);
 
     // 2) 即時出題的學生版教材依據：不會包含該文件的段落
     const studentUnits = materialUnits.buildMaterialUnits(

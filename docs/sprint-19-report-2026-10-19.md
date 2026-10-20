@@ -198,6 +198,14 @@ INSUFFICIENT_EVIDENCE  deployment?????
 
 ## 12. 正式環境部署記錄（2026-10-19，負責人明確授權）
 
+> **2026-10-20 更正（目標專案錯誤）**：本節的 `gcloud builds submit` 及 `gcloud run services update`
+> 指令**沒有**帶 `--project`，而本機 `gcloud config` 的預設專案是當時仍在使用的
+> `amiable-nirvana-500300-a0`，因此 revision `00027`–`00029` 及 1,875 題新題庫的還原
+> **實際落在舊專案的服務**，不是對外的正式服務 `pccss-ai-history`
+> （`https://history-self-study-4sija7xvrq-df.a.run.app` 當時仍是舊版本，缺 `/teacher/review`
+> 及 `/api/teacher/golden`）。舊專案 `amiable-nirvana-500300-a0` 其後已停用；現行部署一律要帶
+> `--project pccss-ai-history`（見根目錄 README 第十節）。
+
 ### 授權依據
 
 負責人書面確認接受下列後果後執行：**刪除正式獨有 400 題、改寫題幹、作答紀錄孤立**。
