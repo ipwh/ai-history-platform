@@ -292,26 +292,6 @@ body {
   background: var(--surface);
 }
 
-/* 練習設定：每個分節一個群組，內含可多選的主題 */
-.section-group {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0.7rem 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  background: var(--surface);
-}
-
-.section-group[data-complete="true"] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.section-group[data-empty="true"] {
-  opacity: 0.7;
-}
-
 .source-box {
   border-left: 3px solid var(--accent);
   background: var(--accent-soft);

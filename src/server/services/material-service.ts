@@ -23,7 +23,7 @@ import {
 import { getTopic, listSections } from "../repositories/topics";
 import { importMaterial, repairQuestionsWithMissingBlocks, UnsupportedMaterialError } from "../materials/import-service";
 import { detectTopicId, resolveMaterialPath } from "../materials/material-files";
-import { extractQuestionBankText, isQuestionBankFileName } from "../materials/question-bank";
+import { extractQuestionBankText, isQuestionBankFileName, isRetiredQuestionBankFileName } from "../materials/question-bank";
 import { CURRICULUM_TOPICS } from "../seed/curriculum";
 import { importQuestionBank, type QuestionBankImportResult } from "./question-bank-import-service";
 import { startOcrJob } from "./ocr-service";
@@ -118,6 +118,8 @@ export async function importMaterialFromDisk(
   const resolved = resolveMaterialPath(materialsDir, fileName);
   if (!resolved) return null;
   const safeName = path.basename(resolved);
+  // 平台已移除資料題（DBQ）：不會匯入題庫，亦不可當作課文教材
+  if (isRetiredQuestionBankFileName(safeName)) return null;
 
   let buffer: Buffer;
   let stats: { size: number };

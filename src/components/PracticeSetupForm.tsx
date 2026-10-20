@@ -181,9 +181,11 @@ export function PracticeSetupForm() {
           if (initialSectionId) {
             const section = value.sections.find((item) => item.id === initialSectionId);
             setSelectedSections(
-              section && section.children.length > 0
-                ? [section.id, ...section.children.map((child) => child.id)]
-                : [initialSectionId],
+              section
+                ? section.children.length > 0
+                  ? section.children.map((child) => child.id)
+                  : [section.id]
+                : [],
             );
           }
         }
@@ -216,15 +218,20 @@ export function PracticeSetupForm() {
     };
   }, []);
 
-  /** 主題 ID → 分節（含子分節），用於判斷所選主題是否仍可出題 */
-  const themeById = useMemo(() => {
-    const map = new Map<string, SectionWithCount>();
-    for (const section of topic?.sections ?? []) {
-      map.set(section.id, section);
-      for (const child of section.children) map.set(child.id, child);
-    }
-    return map;
-  }, [topic]);
+  /**
+   * 課題內可選的主題：分節有子分節時，以子分節為主題；
+   * 沒有子分節時，分節本身就是一個主題。
+   */
+  const themes = useMemo<SectionWithCount[]>(
+    () =>
+      (topic?.sections ?? []).flatMap((section) =>
+        section.children.length > 0 ? section.children : [section],
+      ),
+    [topic],
+  );
+
+  /** 主題 ID → 主題，用於判斷所選主題是否仍可出題 */
+  const themeById = useMemo(() => new Map(themes.map((theme) => [theme.id, theme])), [themes]);
 
   /**
    * 已選、但依目前出題方式無法出題的主題。
@@ -240,26 +247,6 @@ export function PracticeSetupForm() {
         .filter((section) => !isSectionPractisable(section, questionSource)),
     [selectedSections, themeById, questionSource],
   );
-
-  /**
-   * 把分節及其主題整理成群組，用於「可多選」介面：
-   * 分節有子分節時，以子分節為可選主題；沒有子分節時，分節本身就是一個主題。
-   */
-  const sectionGroups = useMemo(() => {
-    if (!topic) return [];
-    return topic.sections.map((section) => {
-      const themeIds =
-        section.children.length > 0 ? section.children.map((child) => child.id) : [section.id];
-      const selectedCount = themeIds.filter((id) => selectedSections.includes(id)).length;
-      return {
-        section,
-        themeIds,
-        available: isSectionPractisable(section, questionSource),
-        selectedCount,
-        allSelected: selectedCount === themeIds.length,
-      };
-    });
-  }, [topic, selectedSections, questionSource]);
 
   /** 切換出題方式：AI 只能使用已開放給學生的教材，因此同時取消不可用的主題 */
   function handleQuestionSourceChange(source: PracticeQuestionSource) {
@@ -278,23 +265,13 @@ export function PracticeSetupForm() {
     );
   }
 
-  const totalSelectedThemes = sectionGroups.reduce((total, group) => total + group.selectedCount, 0);
+  const totalSelectedThemes = selectedSections.length;
 
-  function toggleSection(sectionId: string) {
+  function toggleTheme(themeId: string) {
     setSelectedSections((current) =>
-      current.includes(sectionId)
-        ? current.filter((item) => item !== sectionId)
-        : [...current, sectionId],
-    );
-  }
-
-  /** 選取／取消整個分節（包含分節本身及其全部主題） */
-  function toggleGroup(sectionId: string, themeIds: string[], allSelected: boolean) {
-    const groupIds = [sectionId, ...themeIds];
-    setSelectedSections((current) =>
-      allSelected
-        ? current.filter((id) => !groupIds.includes(id))
-        : [...new Set([...current, ...groupIds])],
+      current.includes(themeId)
+        ? current.filter((item) => item !== themeId)
+        : [...current, themeId],
     );
   }
 
@@ -383,7 +360,7 @@ export function PracticeSetupForm() {
           </span>
         </div>
         <p className="text-xs text-gray-500">
-          每個分節之下有多個主題：可按「全選此分節」一次選取，或逐個主題挑選，系統會按你所選的主題出題。
+          系統會按你所選的主題出題；課題下的每個主題都會直接列出，可多選。
           反白的主題目前未能出題（未有教材，或教材仍未開放給學生），可改用其他主題或題庫題目。
         </p>
 
@@ -412,66 +389,33 @@ export function PracticeSetupForm() {
           </Notice>
         ) : null}
 
-        <div className="flex flex-col gap-3">
-          {sectionGroups.map(({ section, themeIds, available, allSelected, selectedCount }) => (
-            <div
-              key={section.id}
-              className="section-group"
-              data-complete={allSelected}
-              data-empty={!available}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-semibold text-sm">{section.title}</span>
-                {available ? (
-                  <button
-                    type="button"
-                    className="chip text-xs"
-                    data-selected={allSelected}
-                    onClick={() => toggleGroup(section.id, themeIds, allSelected)}
-                  >
-                    {section.children.length > 0
-                      ? allSelected
-                        ? "取消全選"
-                        : `全選此分節（${selectedCount}/${themeIds.length}）`
-                      : allSelected
-                        ? "已選取"
-                        : "選取此分節"}
-                  </button>
-                ) : (
-                  <span className="badge badge-warning" title={unavailableReason(section, questionSource)}>
-                    {unavailableLabel(section, questionSource)}
-                  </span>
-                )}
-              </div>
-
-              {section.children.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {section.children.map((child) => {
-                    const childAvailable = isSectionPractisable(child, questionSource);
-                    return (
-                      <button
-                        key={child.id}
-                        type="button"
-                        className="chip"
-                        data-selected={selectedSections.includes(child.id)}
-                        disabled={!childAvailable}
-                        title={childAvailable ? undefined : unavailableReason(child, questionSource)}
-                        onClick={() => toggleSection(child.id)}
-                      >
-                        {child.title}
-                        {childAvailable ? null : (
-                          <span className="text-xs ml-1 opacity-70">
-                            （{unavailableLabel(child, questionSource)}）
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-          ))}
-        </div>
+        {themes.length === 0 ? (
+          <p className="text-sm text-gray-500">此課題暫未設定主題，請聯絡歷史科教師。</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {themes.map((theme) => {
+              const available = isSectionPractisable(theme, questionSource);
+              return (
+                <button
+                  key={theme.id}
+                  type="button"
+                  className="chip"
+                  data-selected={selectedSections.includes(theme.id)}
+                  disabled={!available}
+                  title={available ? undefined : unavailableReason(theme, questionSource)}
+                  onClick={() => toggleTheme(theme.id)}
+                >
+                  {theme.title}
+                  {available ? null : (
+                    <span className="text-xs ml-1 opacity-70">
+                      （{unavailableLabel(theme, questionSource)}）
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="card flex flex-col gap-2">

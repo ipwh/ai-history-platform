@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { CURRICULUM_TOPICS, findTopicSeedByFile } from "../seed/curriculum";
+import { isRetiredQuestionBankFileName } from "./question-bank";
 
 export interface MaterialFileEntry {
   /** 相對於 materials 資料夾的路徑（例如「課題5 近代歐洲的興起.docx」或「課題5 近代歐洲的興起/課題5 近代歐洲的興起.docx」） */
@@ -69,6 +70,8 @@ export function collectMaterialFiles(materialsDir: string): MaterialFileEntry[] 
       }
       const extension = path.extname(child.name).toLowerCase();
       if (!MATERIAL_EXTENSIONS.includes(extension as (typeof MATERIAL_EXTENSIONS)[number])) continue;
+      // 平台已移除資料題（DBQ）：這些檔案不會匯入題庫，亦不可當作課文教材
+      if (isRetiredQuestionBankFileName(child.name)) continue;
       entries.push({
         relativePath: path.relative(materialsDir, fullPath).split(path.sep).join("/"),
         fileName: child.name,

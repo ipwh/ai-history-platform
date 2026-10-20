@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ApiRouteError, handleRoute, jsonOk, parseJsonBody } from "@/server/http";
 import { getServerConfig, OCR_PROVIDER_LABELS } from "@/server/config";
 import { collectMaterialFiles } from "@/server/materials/material-files";
+import { isRetiredQuestionBankFileName } from "@/server/materials/question-bank";
 import { describeOcr } from "@/server/ocr";
 import { importMaterialFromDisk } from "@/server/services/material-service";
 import { findTopicSeedByFile } from "@/server/seed/curriculum";
@@ -77,6 +78,20 @@ export async function GET(request: Request) {
     }[] = [];
 
     for (const fileName of targets) {
+      // 平台已移除資料題（DBQ）：明確告知不會匯入，而不是回報「找不到檔案」
+      if (isRetiredQuestionBankFileName(fileName)) {
+        results.push({
+          fileName,
+          topicId: null,
+          status: "skipped",
+          blockCount: 0,
+          warnings: [],
+          errorMessage: "平台已移除資料題（DBQ），此檔案不會匯入題庫或教材",
+          questionImport: null,
+        });
+        continue;
+      }
+
       const imported = await importMaterialFromDisk(fileName, { runOcr: false });
       if (!imported) {
         results.push({
@@ -118,6 +133,7 @@ export async function GET(request: Request) {
     }
 
     const failed = results.filter((result) => result.status === "failed");
+    const skippedRetired = results.filter((result) => result.status === "skipped").length;
     if (failed.length === results.length && results.length > 0) {
       throw new ApiRouteError(
         `所有教材匯入失敗：${failed[0].errorMessage ?? "未知原因"}`,
@@ -127,8 +143,9 @@ export async function GET(request: Request) {
     }
 
     return jsonOk({
-      imported: results.length - failed.length,
+      imported: results.length - failed.length - skippedRetired,
       failed: failed.length,
+      skippedRetired,
       runOcr: body.runOcr,
       ocrProviderLabel: OCR_PROVIDER_LABELS[getServerConfig().ocr.provider],
       results,

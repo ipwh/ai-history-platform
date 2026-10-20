@@ -5,7 +5,7 @@
  *   課題N 課題名稱/
  *     課題N 課題名稱.docx          ← 書本內容（作為 AI 出題依據）
  *     HNCxY2E_QB_TN_1.MCQ.docx    ← 校內試題（匯入題庫，草稿待教師審核）
- *     …_2.FBQ / _3.TFQ / _4.MUQ / _5.COQ / _6.LAQ / _7.DBQ
+ *     …_2.FBQ / _3.TFQ / _4.MUQ / _5.COQ / _6.LAQ
  *
  * 用法：
  *   npm run import:materials                       # 匯入全部課題（書本內容 + 校內試題）
@@ -22,7 +22,7 @@ import { getServerConfig } from "../src/server/config";
 import { getDb } from "../src/server/db/connection";
 import { importMaterial } from "../src/server/materials/import-service";
 import { collectMaterialFiles } from "../src/server/materials/material-files";
-import { extractQuestionBankText, isQuestionBankFileName } from "../src/server/materials/question-bank";
+import { extractQuestionBankText, isQuestionBankFileName, isRetiredQuestionBankFileName } from "../src/server/materials/question-bank";
 import { describeOcr } from "../src/server/ocr";
 import { seedCurriculum, seedDemoQuestionBank } from "../src/server/seed";
 import { runOcr } from "../src/server/services/ocr-service";
@@ -99,8 +99,21 @@ async function main() {
 
   const importBooks = !questionsOnly;
   const importQuestions = !booksOnly;
-  const bookTargets = targets.filter((target) => !isQuestionBankFileName(path.basename(target.filePath)));
-  const questionTargets = targets.filter((target) => isQuestionBankFileName(path.basename(target.filePath)));
+  // 平台已移除資料題（DBQ）：不會匯入題庫，亦不可當作課文教材
+  const retiredTargets = targets.filter((target) =>
+    isRetiredQuestionBankFileName(path.basename(target.filePath)),
+  );
+  const activeTargets = targets.filter(
+    (target) => !isRetiredQuestionBankFileName(path.basename(target.filePath)),
+  );
+  if (retiredTargets.length > 0) {
+    console.log(
+      `\n【已停用的試題檔】共 ${retiredTargets.length} 份（資料題／DBQ 已從平台移除，不會匯入）`,
+    );
+    for (const target of retiredTargets) console.log(`－ ${path.basename(target.filePath)}`);
+  }
+  const bookTargets = activeTargets.filter((target) => !isQuestionBankFileName(path.basename(target.filePath)));
+  const questionTargets = activeTargets.filter((target) => isQuestionBankFileName(path.basename(target.filePath)));
 
   const importedDocuments: { id: string; fileName: string }[] = [];
   let importedQuestions = 0;

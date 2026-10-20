@@ -37,7 +37,7 @@
 import type { Difficulty, QuestionType } from "../../lib/types";
 import { answerLeaksIntoStem, countBlankMarkers, FILL_BLANK } from "../llm/fill-question";
 
-export type QuestionBankFileType = "MCQ" | "FBQ" | "TFQ" | "MUQ" | "COQ" | "LAQ" | "DBQ";
+export type QuestionBankFileType = "MCQ" | "FBQ" | "TFQ" | "MUQ" | "COQ" | "LAQ";
 
 export interface ParsedBankQuestion {
   /** 檔案內的題目編號（例如 JTH2ndEdMCQ01001） */
@@ -79,7 +79,7 @@ export interface QuestionBankParseResult {
   warnings: string[];
 }
 
-const QUESTION_BANK_TYPES = ["MCQ", "FBQ", "TFQ", "MUQ", "COQ", "LAQ", "DBQ"] as const;
+const QUESTION_BANK_TYPES = ["MCQ", "FBQ", "TFQ", "MUQ", "COQ", "LAQ"] as const;
 
 /**
  * 英文類型標記：`HNC1A2E_QB_T1_1.MCQ.docx`（正式題庫檔）或
@@ -95,7 +95,6 @@ const CHINESE_TYPE_SUFFIXES: readonly [RegExp, QuestionBankFileType][] = [
   [/配對題$/, "MUQ"],
   [/時序題$/, "COQ"],
   [/(?:長答題|短答題|問答題)$/, "LAQ"],
-  [/資料題$/, "DBQ"],
 ];
 
 /**
@@ -116,6 +115,18 @@ export function detectQuestionBankType(fileName: string): QuestionBankFileType |
     if (pattern.test(stem)) return type;
   }
   return null;
+}
+
+/**
+ * 已停用的試題檔（資料題／DBQ）。
+ *
+ * 平台已完全移除資料題，因此這類檔案**不會**匯入題庫，亦不會當作課文教材匯入
+ * （否則資料題內容會成為 AI 出題依據及學生可讀教材）。
+ */
+export function isRetiredQuestionBankFileName(fileName: string): boolean {
+  const base = fileName.split(/[\\/]/).pop() ?? fileName;
+  const stem = base.replace(/\.[^.]+$/, "");
+  return /資料題$/.test(stem) || /[._\s-]DBQ$/i.test(stem);
 }
 
 /** 是否為校內試題檔（依檔名判斷，供批次匯入及上載時使用） */
@@ -329,7 +340,7 @@ export function resolveQuestionType(
       // 是非題轉為兩個選項的選擇題（是／非）
       return "mc";
     default:
-      // MUQ（配對）、COQ（時序）及 LAQ／DBQ（長題目／資料題）需要平台尚未支援的題型
+      // MUQ（配對）、COQ（時序）及 LAQ（長題目）需要平台尚未支援的題型
       return typeTag === "mc" ? "mc" : null;
   }
 }
@@ -545,14 +556,9 @@ function parseTrueFalse(block: RawBlock, unitTitle: string): ParsedBankQuestion 
   };
 }
 
-function parseLongAnswer(
-  block: RawBlock,
-  fileType: "LAQ" | "DBQ",
-  unitTitle: string,
-): ParsedBankQuestion | null {
-  // 短答題功能已移除；長題目及資料題需要平台尚未支援的題型
+function parseLongAnswer(block: RawBlock, unitTitle: string): ParsedBankQuestion | null {
+  // 短答題功能已移除；長題目需要平台尚未支援的題型
   void block;
-  void fileType;
   void unitTitle;
   return null;
 }
@@ -577,7 +583,7 @@ export function parseQuestionBank(
   /** 目前的單元標題（例如「A. 石器時代的演進」），會套用到之後的題目 */
   let unitTitle = "";
 
-  // 單元標題有兩種寫法：「A. 歐洲殖民擴張的簡介」及「[擴張的原因]」（資料題）。
+  // 單元標題有兩種寫法：「A. 歐洲殖民擴張的簡介」及「[擴張的原因]」。
   // 選項也可能以「A.」開頭，因此只採用題目區塊以外的文字。
   const blockRanges = blocks.map((block) => ({ start: block.startIndex, end: block.endIndex }));
   const insideBlock = (index: number): boolean =>
@@ -613,7 +619,7 @@ export function parseQuestionBank(
     if (fileType === "MCQ") parsed = parseMcq(block, unitTitle);
     else if (fileType === "FBQ") parsed = parseFill(block, unitTitle);
     else if (fileType === "TFQ") parsed = parseTrueFalse(block, unitTitle);
-    else if (fileType === "LAQ" || fileType === "DBQ") parsed = parseLongAnswer(block, fileType, unitTitle);
+    else if (fileType === "LAQ") parsed = parseLongAnswer(block, unitTitle);
 
     if (!parsed) {
       const reason =
@@ -621,8 +627,8 @@ export function parseQuestionBank(
           ? "配對題需要平台尚未支援的題型"
           : fileType === "COQ"
             ? "時序題需要平台尚未支援的題型"
-            : fileType === "LAQ" || fileType === "DBQ"
-              ? "長題目／資料題需要平台尚未支援的題型（短答題功能已移除）"
+            : fileType === "LAQ"
+              ? "長題目需要平台尚未支援的題型（短答題功能已移除）"
               : "題目或答案格式不完整，無法忠實轉換";
       skipped.push({ sourceId: block.sourceId, reason });
       return;

@@ -2,7 +2,7 @@
  * 校內試題解析與匯入測試。
  *
  * 驗證：
- *   1. 七種試題檔的結構化格式解析（選擇／填充／是非／配對／時序／長題／資料題）。
+ *   1. 六種試題檔的結構化格式解析（選擇／填充／是非／配對／時序／長題）。
  *   2. 答案忠實取自檔案的答案區（不會猜測）；格式不完整時略過並記錄原因。
  *   3. 平台未支援的題型（配對、時序）不會被硬塞成其他題型。
  *   4. 匯入後題目為草稿、來源標示為校內試題、分節依關鍵詞對應。
@@ -125,19 +125,6 @@ ______________________
 t:sq; nil:1
 ]]`;
 
-const DBQ_TEXT = `資料題
-[[JTH2ndEdDBQ01001
-根據下列資料，回答有關問題。
-b
-資料I：《安妮日記》由德國籍荷蘭猶太女孩安妮．法蘭克撰寫。
-試根據史料出產的時代，順序排列三項資料。（3分）
-______________________
-##
-事件一。（1分）事件二。（2分）
-@@
-t:nil; nil:1
-]]`;
-
 const PIPE_MCQ_TEXT = `選擇題
 
 A. 歐洲殖民擴張的簡介
@@ -201,22 +188,6 @@ const PIPE_FBQ_TEXT = `填充題
 @@x)nil,2@@
 [[]]`;
 
-const PIPE_DBQ_TEXT = `資料題
-
-|!|NJCDN0060000001|!|
-根據下列資料，回答有關問題。
-難度：★★☆（共6分）
-
-資料I：一幅有關葡萄牙航海家達伽馬開闢新航路的地圖
-試根據資料I，解釋達伽馬所開闢的新航線。（2分）
-這條新航線以 ____________ 為起點，最後到達 ____________。
-##
-以西歐為起點，繞過好望角，最後到達印度。（2分）
-##
-@@a)nil,1@@
-@@b)nil,1@@
-[[]]`;
-
 beforeAll(async () => {
   bank = await import("@/server/materials/question-bank");
   importService = await import("@/server/services/question-bank-import-service");
@@ -229,14 +200,23 @@ beforeAll(async () => {
 });
 
 describe("試題檔類型判斷", () => {
-  it("由檔名判斷七種試題類型", () => {
+  it("由檔名判斷六種試題類型", () => {
     expect(bank.detectQuestionBankType("HNC1A2E_QB_T1_1.MCQ.docx")).toBe("MCQ");
     expect(bank.detectQuestionBankType("HNC1A2E_QB_T1_2.FBQ.docx")).toBe("FBQ");
     expect(bank.detectQuestionBankType("HNC1A2E_QB_T1_3.TFQ.docx")).toBe("TFQ");
     expect(bank.detectQuestionBankType("HNC1A2E_QB_T1_4.MUQ.docx")).toBe("MUQ");
     expect(bank.detectQuestionBankType("HNC1A2E_QB_T1_5.COQ.docx")).toBe("COQ");
     expect(bank.detectQuestionBankType("HNC1A2E_QB_T1_6.LAQ.docx")).toBe("LAQ");
-    expect(bank.detectQuestionBankType("HNC1A2E_QB_T1_7.DBQ.docx")).toBe("DBQ");
+  });
+
+  it("已移除的資料題（DBQ）不再被當成試題檔，亦不會當作課文教材匯入", () => {
+    expect(bank.detectQuestionBankType("HNC1A2E_QB_T1_7.DBQ.docx")).toBeNull();
+    expect(bank.detectQuestionBankType("課題1人類的需要 古與今_資料題.docx")).toBeNull();
+    expect(bank.isQuestionBankFileName("HNC1A2E_QB_T1_7.DBQ.docx")).toBe(false);
+    expect(bank.isRetiredQuestionBankFileName("HNC1A2E_QB_T1_7.DBQ.docx")).toBe(true);
+    expect(bank.isRetiredQuestionBankFileName("課題1人類的需要 古與今_資料題.docx")).toBe(true);
+    expect(bank.isRetiredQuestionBankFileName("課題1人類的需要 古與今_課文.docx")).toBe(false);
+    expect(bank.isRetiredQuestionBankFileName("HNC1A2E_QB_T1_1.MCQ.docx")).toBe(false);
   });
 
   it("書本內容及一般 PDF 不會被當成試題檔", () => {
@@ -251,7 +231,6 @@ describe("試題檔類型判斷", () => {
     expect(bank.detectQuestionBankType("課題1人類的需要 古與今_MCQ.docx")).toBe("MCQ");
     expect(bank.detectQuestionBankType("課題1人類的需要 古與今_填充題.docx")).toBe("FBQ");
     expect(bank.detectQuestionBankType("課題1人類的需要 古與今_是非題.docx")).toBe("TFQ");
-    expect(bank.detectQuestionBankType("課題1人類的需要 古與今_資料題.docx")).toBe("DBQ");
     expect(bank.parseQuestionBank(MCQ_TEXT, "課題1人類的需要 古與今_MCQ.docx").questions).toHaveLength(2);
   });
 });
@@ -299,12 +278,6 @@ describe("試題解析", () => {
     const result = bank.parseQuestionBank(LAQ_TEXT, "HNC1A2E_QB_T1_6.LAQ.docx");
     expect(result.questions).toHaveLength(0);
     expect(result.skipped[0]?.reason).toContain("長題目");
-  });
-
-  it("資料題：平台不再支援（短答題功能已移除），會略過並記錄原因", () => {
-    const result = bank.parseQuestionBank(DBQ_TEXT, "HNC1A2E_QB_T1_7.DBQ.docx");
-    expect(result.questions).toHaveLength(0);
-    expect(result.skipped[0]?.reason).toContain("資料題");
   });
 
   it("配對題與時序題不會被硬塞成其他題型，會略過並記錄原因", () => {
@@ -364,12 +337,6 @@ describe("乙式排版（|!|題號|!|）解析", () => {
     expect(result.questions[0].correctAnswer).toBe("新航路的開闢");
     expect(result.questions[1].correctAnswer).toBe("亞洲");
     expect(result.questions[1].explanation).toContain("(2) 美洲");
-  });
-
-  it("資料題（乙式排版）：平台不再支援，會略過並記錄原因", () => {
-    const result = bank.parseQuestionBank(PIPE_DBQ_TEXT, "HNC2A2E_QB_T6_7.DBQ.docx");
-    expect(result.questions).toHaveLength(0);
-    expect(result.skipped[0]?.reason).toContain("資料題");
   });
 
   it("選項結束符號（私人使用區字元）不會變成選項內容", () => {
