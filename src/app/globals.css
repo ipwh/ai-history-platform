@@ -243,6 +243,437 @@ body {
   background: var(--accent-soft);
 }
 
+/* 首頁：個人化摘要（問候、學習統計、主要行動） */
+.home-hero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.15rem 1.25rem;
+  border-radius: 18px;
+  border: 1px solid #cfdcff;
+  background: linear-gradient(135deg, #eef3ff 0%, #f7f9ff 55%, #ffffff 100%);
+}
+
+.home-hero__main {
+  flex: 1 1 22rem;
+  min-width: 0;
+}
+
+.home-hero__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.home-hero__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-top: 0.15rem;
+}
+
+.home-hero__subtitle {
+  font-size: 0.9rem;
+  color: #414a5c;
+  margin-top: 0.25rem;
+}
+
+.home-hero__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.home-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 5.5rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(28, 34, 48, 0.05);
+}
+
+.home-stat__value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+.home-stat__label {
+  font-size: 0.72rem;
+  color: #56617a;
+}
+
+.home-hero__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 0 1 24rem;
+}
+
+.home-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.9rem;
+  padding: 0.6rem 0.95rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-align: center;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.home-cta--primary {
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+  box-shadow: 0 2px 8px rgba(47, 91, 215, 0.25);
+}
+
+.home-cta--primary:hover {
+  background: #24499f;
+  border-color: #24499f;
+  color: #fff;
+}
+
+.home-cta--light {
+  background: #fff;
+  color: var(--accent);
+  border: 1px solid #b9cbf5;
+}
+
+.home-cta--light:hover {
+  background: var(--accent-soft);
+}
+
+/* 首頁：年級切換（中一／中二／中三） */
+.level-tabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: #e8edf8;
+  border: 1px solid var(--border);
+}
+
+.level-tab {
+  min-height: 2.4rem;
+  min-width: 4.2rem;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #48536b;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.level-tab:hover {
+  background: #ffffff;
+  color: var(--accent);
+}
+
+.level-tab[data-active="true"] {
+  background: #ffffff;
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(47, 91, 215, 0.2);
+}
+
+/* 首頁：年級說明橫幅 */
+.level-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.95rem;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  border: 1px solid #c6d6ff;
+}
+
+.level-banner__title {
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.level-banner__era {
+  margin-left: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #4a5670;
+}
+
+.level-banner__focus {
+  font-size: 0.85rem;
+  color: #414a5c;
+}
+
+.level-banner__count {
+  flex: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: #ffffff;
+  border: 1px solid #c6d6ff;
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+}
+
+/* 首頁：課題卡（整張卡可點，包含主題、進度及狀態） */
+.topic-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+}
+
+/* 每個年級固定 4 個課題：桌面用兩欄 2×2，比三欄加一個孤兒卡整齊 */
+@media (min-width: 701px) {
+  .topic-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.topic-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(28, 34, 48, 0.05);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.topic-tile:hover {
+  border-color: var(--level-accent);
+  box-shadow: 0 6px 16px rgba(47, 91, 215, 0.16);
+  transform: translateY(-1px);
+}
+
+.topic-tile:focus-visible {
+  outline: 2px solid var(--level-accent);
+  outline-offset: 2px;
+}
+
+.topic-tile__head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.topic-tile__number {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 11px;
+  background: var(--level-tint);
+  color: var(--level-accent);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.topic-tile__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 800;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.topic-tile__themes {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.topic-tile__themeText {
+  min-width: 0;
+  font-size: 0.76rem;
+  color: #4a5570;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-chip {
+  display: inline-block;
+  max-width: 12rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f7f9fd;
+  font-size: 0.74rem;
+  color: #3c465c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-chip--more {
+  border-color: #c6d6ff;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  flex: none;
+}
+
+.theme-chip--last {
+  border-color: #bfe6d1;
+  background: var(--success-soft);
+  color: var(--success);
+  font-weight: 700;
+  flex: none;
+}
+
+.topic-tile__meta {
+  font-size: 0.74rem;
+  color: #5a6580;
+}
+
+.topic-tile__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.topic-tile__progressText {
+  font-size: 0.72rem;
+  color: #5a6580;
+}
+
+.topic-tile__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.1rem;
+}
+
+.topic-tile__cta {
+  flex: none;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--level-accent);
+}
+
+/* 年級配色：中一綠、中二藍、中三紫，令學生一眼認出自己身處哪一年級 */
+[data-level="1"] {
+  --level-accent: #0f766e;
+  --level-tint: #e3f4f1;
+}
+
+[data-level="2"] {
+  --level-accent: #2f5bd7;
+  --level-tint: #eaf0ff;
+}
+
+[data-level="3"] {
+  --level-accent: #6d3bbf;
+  --level-tint: #f1eafd;
+}
+
+[data-level="1"] .home-hero,
+[data-level="2"] .home-hero,
+[data-level="3"] .home-hero {
+  border-color: color-mix(in srgb, var(--level-accent) 25%, #ffffff);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--level-accent) 9%, #ffffff) 0%,
+    #ffffff 60%
+  );
+}
+
+[data-level="1"] .home-hero__eyebrow,
+[data-level="2"] .home-hero__eyebrow,
+[data-level="3"] .home-hero__eyebrow {
+  color: var(--level-accent);
+}
+
+[data-level="1"] .home-stat__value,
+[data-level="2"] .home-stat__value,
+[data-level="3"] .home-stat__value {
+  color: var(--level-accent);
+}
+
+[data-level="1"] .home-cta--primary,
+[data-level="2"] .home-cta--primary,
+[data-level="3"] .home-cta--primary {
+  background: var(--level-accent);
+  border-color: var(--level-accent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--level-accent) 30%, transparent);
+}
+
+[data-level="1"] .home-cta--primary:hover,
+[data-level="2"] .home-cta--primary:hover,
+[data-level="3"] .home-cta--primary:hover {
+  background: color-mix(in srgb, var(--level-accent) 85%, #000000);
+  border-color: color-mix(in srgb, var(--level-accent) 85%, #000000);
+}
+
+[data-level="1"] .home-cta--light,
+[data-level="2"] .home-cta--light,
+[data-level="3"] .home-cta--light {
+  color: var(--level-accent);
+  border-color: color-mix(in srgb, var(--level-accent) 35%, #ffffff);
+}
+
+[data-level="1"] .level-tab[data-active="true"],
+[data-level="2"] .level-tab[data-active="true"],
+[data-level="3"] .level-tab[data-active="true"] {
+  border-color: var(--level-accent);
+  color: var(--level-accent);
+}
+
+[data-level="1"] .level-banner,
+[data-level="2"] .level-banner,
+[data-level="3"] .level-banner {
+  background: var(--level-tint);
+  border-color: color-mix(in srgb, var(--level-accent) 22%, #ffffff);
+}
+
+[data-level="1"] .level-banner__count,
+[data-level="2"] .level-banner__count,
+[data-level="3"] .level-banner__count {
+  color: var(--level-accent);
+  border-color: color-mix(in srgb, var(--level-accent) 30%, #ffffff);
+}
+
+/* 手機：課題卡改為單欄 */
+@media (max-width: 640px) {
+  .topic-grid {
+    /* 用 minmax(0, 1fr) 而非 1fr：否則格線的最小值會跟隨內容的 min-content（不換行的主題文字），造成橫向溢出 */
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-hero__actions {
+    flex: 1 1 100%;
+  }
+}
+
 /* 首頁：分節下的主題選項（整列可點，明顯看得出可以揀選） */
 .pick-grid {
   display: grid;
