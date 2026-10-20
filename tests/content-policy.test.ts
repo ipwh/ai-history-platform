@@ -231,7 +231,7 @@ describe("非課文內容不會顯示、亦不會成為出題依據", () => {
       {
         documentId: document.id,
         topicId: "topic-6",
-        sectionId: "topic-6-policy",
+        sectionId: "topic-6-methods-impact",
         order: 1,
         type: "paragraph",
         text: EXERCISE_TEXT,
@@ -240,7 +240,7 @@ describe("非課文內容不會顯示、亦不會成為出題依據", () => {
       {
         documentId: document.id,
         topicId: "topic-6",
-        sectionId: "topic-6-policy",
+        sectionId: "topic-6-methods-impact",
         order: 2,
         type: "paragraph",
         text: ANSWER_TEXT,
@@ -252,10 +252,10 @@ describe("非課文內容不會顯示、亦不會成為出題依據", () => {
     try {
       const counts = materialsRepo.studentMaterialBlockCounts("topic-6");
       // 教師可見的教材段落仍在（管理員端要看到），但學生可用數為 0
-      const blocks = materialsRepo.listGroundingBlocksForSections("topic-6", ["topic-6-policy"]);
+      const blocks = materialsRepo.listGroundingBlocksForSections("topic-6", ["topic-6-methods-impact"]);
       expect(blocks.length).toBeGreaterThan(0);
-      expect(counts.get("topic-6-policy") ?? 0).toBe(0);
-      expect(materialUnits.buildMaterialUnits("topic-6", ["topic-6-policy"], { audience: "student" })).toEqual(
+      expect(counts.get("topic-6-methods-impact") ?? 0).toBe(0);
+      expect(materialUnits.buildMaterialUnits("topic-6", ["topic-6-methods-impact"], { audience: "student" })).toEqual(
         [],
       );
     } finally {

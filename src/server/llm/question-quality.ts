@@ -28,6 +28,7 @@ export type QualityIssueCode =
   | "ambiguous-options"
   | "option-overlap"
   | "option-kind-mismatch"
+  | "option-vague"
   | "stem-answer-type-mismatch"
   | "answer-in-stem"
   | "answer-not-in-material"
@@ -490,6 +491,54 @@ function ambiguousOptionReason(
   }
 
   return { blocking: null, warnings };
+}
+
+/**
+ * 選項不可只是指代詞（2026-10-20 實際缺陷）。
+ *
+ * 真實模型在課題1「古與今」主題出了一題「人類的哪些進步促成了古代文明的出現？」，
+ * 其中一個選項是「這些進步」——題幹沒有交代「這些」指哪一些，學生根本無法判斷，
+ * 這種選項只是把題幹的指代詞搬過來。選項必須是具體內容，不可用「這些」「那些」
+ * 「上述」「前者」等指代詞開頭。
+ *
+ * 「以上皆是」「以上皆非」等是本地考試常用（而且有意義）的選項，因此明確放行。
+ */
+const VAGUE_OPTION_PREFIX =
+  /^(這些|那些|上述|以上|該|此|前者|後者|如此|這樣|那樣|它們|這個|那個)/;
+
+/** 指代式但屬合法考試用語的選項（去掉標點及空白後比對） */
+const ALLOWED_PRONOUN_OPTIONS = new Set([
+  "以上皆是",
+  "以上皆非",
+  "以上均是",
+  "以上均非",
+  "以上均對",
+  "以上均錯",
+  "以上各項皆是",
+  "以上各項皆非",
+  "以上各項均正確",
+  "以上答案皆正確",
+  "兩者皆是",
+  "兩者皆非",
+]);
+
+function vagueOptionReason(candidate: QualityCandidate): string | null {
+  if (candidate.questionType !== "mc") return null;
+  for (const raw of candidate.options) {
+    const option = raw.trim();
+    if (option.length === 0) continue;
+    const collapsed = option.replace(/[\s。．.，,、]/g, "");
+    if (ALLOWED_PRONOUN_OPTIONS.has(collapsed)) continue;
+    const match = VAGUE_OPTION_PREFIX.exec(collapsed);
+    if (match === null) continue;
+    // 只有指代詞本身（例如「這些」「上述」）或緊接少量字（「這些進步」）才算空泛；
+    // 「此時期的文藝復興」這類仍有具體內容的寫法交由教師判斷，不在此攔截。
+    const rest = collapsed.slice(match[0].length);
+    if (rest.length <= 4) {
+      return `選項「${option}」只是指代詞，題幹沒有交代它指哪一項具體內容，學生無法判斷`;
+    }
+  }
+  return null;
 }
 
 /** 題幹問「說明」時，每個選項都必須是說明句；問「詞語」時，選項不可長如段落 */
@@ -1037,6 +1086,9 @@ export function checkQuestionQuality(
 
   const kind = optionKindReason(candidate);
   if (kind !== null) blocking("option-kind-mismatch", kind);
+
+  const vague = vagueOptionReason(candidate);
+  if (vague !== null) blocking("option-vague", vague);
 
   const typeMismatch = stemAnswerTypeReason(candidate);
   if (typeMismatch !== null) blocking("stem-answer-type-mismatch", typeMismatch);

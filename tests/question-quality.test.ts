@@ -235,3 +235,51 @@ describe("題目品質閘門：教材依據與解釋", () => {
     expect(result.issues.map((issue) => issue.code)).toContain("copied-source");
   });
 });
+
+describe("題目品質閘門：選項不可只是指代詞", () => {
+  it("「這些進步」這類只有指代詞的選項會被丟棄（2026-10-20 實際缺陷）", () => {
+    const result = checkQuestionQuality(
+      candidate({
+        questionType: "mc",
+        question: "人類的哪些進步促成了古代文明的出現？",
+        options: ["城市的建立", "農業的發明", "這些進步", "文字的出現"],
+        correctAnswer: "城市的建立",
+        explanation: "教材指出城市的建立、農業的發明與文字的出現促成了古代文明的出現。",
+        sourceExcerpt: "這些進步促成了古代文明的出現",
+      }),
+      [
+        {
+          blockId: "blk_progress",
+          sourceLocation: "教材 · 古與今",
+          text: "這些進步促成了古代文明的出現。城市的建立、農業的發明與文字的出現改變了人類的生活。",
+        },
+      ],
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toContain("option-vague");
+    expect(result.issues.map((issue) => issue.message).join(" ")).toContain("這些進步");
+  });
+
+  it("「以上皆是」「以上皆非」等考試慣用選項仍然可用", () => {
+    const result = checkQuestionQuality(
+      candidate({
+        questionType: "mc",
+        question: "下列哪一項是促成古代文明出現的進步？",
+        options: ["城市的建立", "農業的發明", "文字的出現", "以上皆是"],
+        correctAnswer: "以上皆是",
+        explanation: "教材指出城市的建立、農業的發明與文字的出現都促成了古代文明的出現。",
+        sourceExcerpt: "這些進步促成了古代文明的出現",
+      }),
+      [
+        {
+          blockId: "blk_progress",
+          sourceLocation: "教材 · 古與今",
+          text: "這些進步促成了古代文明的出現。城市的建立、農業的發明與文字的出現改變了人類的生活。",
+        },
+      ],
+    );
+
+    expect(result.issues.map((issue) => issue.code)).not.toContain("option-vague");
+  });
+});

@@ -57,9 +57,9 @@ describe("教育局歷史科課程結構", () => {
         ids.add(section.id);
       }
     }
-    // 2026-10-20：課題1 由 12 個分節整合為 4 個主題、課題5 由 18 個分節整合為 4 個主題，
-    // 分節總數由 91 降至 69。這裡保留一個下限，防止日後誤刪大量分節。
-    expect(ids.size).toBeGreaterThan(60);
+    // 2026-10-20：按擁有者指示把各課題的分節整合為較少的主題，全課程分節總數由 91 降至 37。
+    // 這裡保留一個下限，防止日後誤刪大量分節。
+    expect(ids.size).toBeGreaterThan(30);
   });
 
   it("每個課程課題都對應一份教材檔案，並可由檔名反查", () => {
@@ -102,7 +102,7 @@ describe("課程結構寫入資料庫", () => {
   it("建立全部課題及分節，並記錄年級及課題編號", () => {
     const report = seed.seedCurriculum();
     expect(report.topics).toBe(12);
-    expect(report.sections).toBeGreaterThan(60);
+    expect(report.sections).toBeGreaterThan(30);
 
     const stored = topics.listTopics();
     expect(stored).toHaveLength(12);

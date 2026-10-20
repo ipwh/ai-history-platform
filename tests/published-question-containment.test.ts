@@ -31,7 +31,7 @@ let seed: Seed;
 let quality: Quality;
 
 const TOPIC = "topic-12";
-const SECTION = "topic-12-post-war-economy";
+const SECTION = "topic-12-post-war";
 
 /** 與真實引用段落同形的時間線清單（合成文字，不是課本原文） */
 const LIST_TEXT = [
