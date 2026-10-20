@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-20T09:12:29.932Z",
+  "generatedAt": "2026-10-20T09:24:45.389Z",
   "notice": "唯讀發布閘門：沒有修改題目、覆核或發布狀態。未定義標準或沒有證據的項目不會當作通過。",
   "verdict": "NOT READY",
   "scope": {
@@ -416,7 +416,7 @@
       "numerator": null,
       "denominator": null,
       "evidence": [
-        "2026-10-20 09:10 UTC 以 scripts/deploy-cloud-run.ps1 -Apply 部署；Cloud Build 成功，Cloud Run revision history-self-study-00020-c64 為 latestReady。",
+        "2026-10-20 09:10 UTC（commit e1981cf，revision history-self-study-00020-c64）及 09:18 UTC（commit 466e9d6，revision history-self-study-00021-4c4）各部署一次；兩次都以 scripts/deploy-cloud-run.ps1 -Apply 執行，Cloud Build 成功，latestReady 為 00021-4c4。第二次的程式碼與第一次相同（只多文件變更）。",
         "GET /api/health 回 HTTP 200：ok=true、database.status=ok、llmProvider=deepseek（deepseek-flash）、llmConfigured=true、authEnabled=true、staffApiOpen=false、ocrProvider=tesseract。",
         "資料庫還原：health.persistence.restore=restored（容器啟動時由 Cloud Storage 快照還原）。",
         "公開存取：allUsers 具 roles/run.invoker；AUTH_REQUIRE_SIGN_IN=true，未登入存取 / 會 307 轉到 /login（已實測）。",
