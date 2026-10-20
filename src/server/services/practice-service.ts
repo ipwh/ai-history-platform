@@ -570,7 +570,9 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
         );
         const heldCount = generated.questions.length - deliverable.length;
         if (deliverable.length > 0) {
-          selected = [...selected, ...deliverable];
+          // 生成時會超額產生（overGenerate），因此必須截回學生要求的題數，
+          // 否則會出現「要求 5 題卻交付 7 題」（2026-10-20 模擬學生使用時發現）。
+          selected = [...selected, ...deliverable].slice(0, parsed.questionCount);
           origin = "generated";
           notices.push(
             generated.usedDemoFallback
