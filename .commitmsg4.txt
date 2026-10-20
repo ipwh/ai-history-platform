@@ -1,7 +1,0 @@
-docs(deploy): 記錄第二次部署（revision 00021-4c4，commit 466e9d6）
-
-- `docs/deployment-evidence-2026-10-19.json`：改記錄最新的 revision／image／commit，
-  並註明 2026-10-20 共部署兩次（00020 為程式碼變更，00021 為同一程式碼的重新部署）。
-- 重新產生 `docs/release-gate-2026-10-19.{json,md}`（唯讀；deployment 仍為 PASS）。
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
