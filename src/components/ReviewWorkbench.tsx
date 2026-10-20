@@ -87,7 +87,9 @@ function issueCodeOf(item: QueueItem): string | null {
 function plainSummary(queue: QueueKind, item: QueueItem): string {
   if (queue === "servability") return servabilityReasonText(issueCodeOf(item));
   if (queue === "golden") return "可以考慮用作評分示例的題目。";
-  return "這一題的課本依據需要人手核對。";
+  const detail = (item.detail ?? {}) as ProvenanceQueueDetail;
+  const reason = repairCategoryText(detail.repairCategory);
+  return detail.priority === "P1" ? `${reason}（建議先處理）` : reason;
 }
 
 function isConflict(error: unknown): boolean {
