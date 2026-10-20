@@ -348,11 +348,25 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
   // 每一題都違反題幹規則（答案在題幹重複出現、題幹超過長度上限），令整次生成失敗、
   // 學生拿不到任何題目。這裡把上一輪的丟棄原因當作修訂指示重試**一次**，
   // 只在「本來會完全失敗」時發生，因此成本有上限（每次生成最多 3 次 provider 呼叫）。
-  if (questions.length === 0 && resolved.provider.name !== "mock" && discardedReasons.length > 0) {
+  //
+  // 2026-10-20 修正：模型有時**一個題目都沒有回傳**（空回應或全部無法解析），
+  // 此時 discardedReasons 是空的，舊條件（`discardedReasons.length > 0`）不會重試，
+  // 整節直接當作失敗——模擬學生使用時實際出現於「課題5 科學革命」一節。
+  // 現在只要沒有可用題目就重試一次；沒有丟棄原因時提示模型只輸出合格式的題目。
+  if (questions.length === 0 && resolved.provider.name !== "mock") {
     const notes = [...new Set(discardedReasons)].slice(0, 5);
-    warnings.push("第一輪生成的題目全部未達要求，已按丟棄原因重試一次。");
+    warnings.push(
+      notes.length > 0
+        ? "第一輪生成的題目全部未達要求，已按丟棄原因重試一次。"
+        : "第一輪生成沒有回傳可用題目，已重試一次。",
+    );
     try {
-      await attempt(false, notes);
+      await attempt(
+        false,
+        notes.length > 0
+          ? notes
+          : ["上一次回應沒有任何可用題目，請只輸出符合指定格式的題目。"],
+      );
     } catch (error) {
       warnings.push(
         `重試時 provider 回報錯誤（${error instanceof Error ? error.message : String(error)}），本次沒有可用題目。`,

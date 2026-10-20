@@ -45,6 +45,14 @@ const OTHER_LEARNER = `${LEARNER}-other`;
 
 const anomalies = [];
 const info = [];
+/**
+ * 「要求 N 題、實際較少」的個案。
+ *
+ * 這是平台**如實告知**的降級結果（教材不足或題目未通過檢查），不是錯誤，因此不計入
+ * anomalies（不會令模擬失敗）；但必須逐項列出，否則「學生選 10 題只拿到 5 題」這類
+ * 問題會在模擬中靜靜消失（2026-10-20 實際發生過）。
+ */
+const shortfalls = [];
 let checksRun = 0;
 let practicesRun = 0;
 let answersRun = 0;
@@ -187,6 +195,14 @@ function validateQuestions(practice, setup, topicSections) {
   }
   if (questions.length > setup.questionCount) {
     anomaly("too-many-questions", `交付題數 ${questions.length} 多於要求的 ${setup.questionCount}：${label}`);
+  }
+  if (questions.length < setup.questionCount) {
+    shortfalls.push({
+      label,
+      requested: setup.questionCount,
+      delivered: questions.length,
+      notice: practice.notice ?? null,
+    });
   }
   if (session.questionCount !== questions.length) {
     anomaly("session-count-mismatch", `session.questionCount=${session.questionCount} 但實際交付 ${questions.length} 題：${label}`);
@@ -743,6 +759,18 @@ async function main() {
 
   console.log("\n──────── 結果 ────────");
   console.log(`練習次數：${practicesRun}，作答次數：${answersRun}，檢查項目：${checksRun}`);
+  if (shortfalls.length > 0) {
+    console.log(
+      `\n題數少於要求（${shortfalls.length} 項；平台已如實告知學生，非錯誤，但需留意）：`,
+    );
+    for (const item of shortfalls.slice(0, 20)) {
+      console.log(`  - ${item.label}：要求 ${item.requested} 題，實際 ${item.delivered} 題`);
+      if (item.notice) console.log(`    ${item.notice.slice(0, 200)}`);
+    }
+    if (shortfalls.length > 20) console.log(`  …其餘 ${shortfalls.length - 20} 項`);
+  } else {
+    console.log("\n所有練習均取足要求的題數。");
+  }
   if (info.length > 0) {
     console.log(`\n已知／可接受的降級（${info.length} 項）：`);
     for (const message of info.slice(0, 20)) console.log(`  - ${message}`);
@@ -770,7 +798,11 @@ async function main() {
   const fs = await import("node:fs");
   fs.writeFileSync(
     arg("--report", "data/tmp-sim/report.json"),
-    JSON.stringify({ baseUrl: BASE_URL, learner: LEARNER, practicesRun, answersRun, checksRun, anomalies, info }, null, 2),
+    JSON.stringify(
+      { baseUrl: BASE_URL, learner: LEARNER, practicesRun, answersRun, checksRun, anomalies, shortfalls, info },
+      null,
+      2,
+    ),
     "utf8",
   );
   db.close();
