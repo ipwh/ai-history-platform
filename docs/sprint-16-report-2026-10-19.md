@@ -33,6 +33,12 @@
 
 ## 3. 工作台功能與限制
 
+> **更新（2026-10-20）**：工作台已簡化——單欄、三個大按鈕、理由快速選項、技術術語收進
+> 「技術資料」，並移除「必須勾選確認」（純前端提示）。裁決值、API 及伺服器驗證不變；
+> 瀏覽器層測試已於 Sprint 18 加入（`tests/ui/review-workbench.spec.ts`）。
+> 現況見 [README 第 16 節](../README.md) 及 [teacher-review/README.md 第 16.2 節](teacher-review/README.md)；
+> 本節保留為 Sprint 16 當時的實作紀錄。
+
 **已實作**
 - `/teacher/review`：三個分批佇列（servability 97、provenance 623、Golden 42），每頁 ≤ 10（API 上限 25），上一頁／下一頁，`aria-live` 計數。
 - 伺服器提供 `GET /api/teacher/review-queue`：唯讀、`requireTeacher`、參數驗證（不存在 queue → 400、`pageSize>25` → 400）；報告缺失時回 `available:false` 及原因，不以推測數字代替；provenance 佇列明示「P1／P3 只是排序」。

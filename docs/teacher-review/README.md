@@ -34,6 +34,19 @@
 > 校內試題（`origin = school-paper`）的節錄本來就不會顯示給學生（見 README「沒有引用段落 ≠ 可以顯示」），
 > 所以這是教師端的狀態記錄，不影響學生；教師如要處理，可為題目改用較短的單段節錄
 > （例如只引用資料原文）或把同組子題拆成獨立題目。
+>
+> **2026-10-20：解釋品質與技能標籤**——原本 1,875 題的解釋全部屬「佔位文字」（1,329 題，同一句
+> 「答案依校內試題檔的評卷參考。」）或「只列答案」（546 題），技能標籤 **100% 空白**。
+> **現況（2026-10-20 完成）**：全部 1,875 題的解釋已由 AI 逐題依課本段落補寫並通過品質分類器
+> （佔位／只列答案／過短均為 0），`explanation_rewritten` 標記 1,875 筆；`questions.skill` 依負責人
+> 決定**維持空白**。補寫**不是**覆核：`question_content_flags` 只是工作狀態，`question_reviews`
+> 沒有因此增加，題目 `revision` 如實 +1。
+> 工作清單：[explanation-skill-worklist-2026-10-20.md](explanation-skill-worklist-2026-10-20.md)；
+> 補寫指引及 AI 起草 prompt 範本：[explanation-rewrite-guidelines-2026-10-20.md](explanation-rewrite-guidelines-2026-10-20.md)；
+> 診斷：[../quality/explanation-skill-diagnosis-2026-10-20.md](../quality/explanation-skill-diagnosis-2026-10-20.md)；
+> 進度及決定：[decision-2026-10-20-explanation-rewrite.md](decision-2026-10-20-explanation-rewrite.md)。
+> 這批工作**不會**代替本文件描述的覆核：`question_content_flags` 內「解釋待重寫」等標記只是
+> 工作狀態，不是覆核決定，不會改變題目的發布狀態。
 
 ## 1. 四種狀態必須分開
 
@@ -645,10 +658,29 @@ P1 與 P3 各有核對清單；**P3 只代表排序較後，不代表核准**；
 
 ### 16.1 新頁面 `/teacher/review`
 
+> 這一節描述 2026-10-19 的初版；**2026-10-20 已簡化**，畫面行為以下方 16.2 為準。
+
 - 三個分批佇列：不可作答（97）、修復 provenance（623，P1 530／P3 93，只作排序）、Golden 候選（42，全部 pending）。
 - 佇列由 `GET /api/teacher/review-queue` 提供（教師／管理員可讀、唯讀、每頁 ≤ 25、報告缺失時如實顯示 `available:false`）。
 - 單題顯示：ID、版本、指紋、題幹／選項、標準答案、可接受答案、評分方式、評分要點、來源位置及段落、解釋、既有覆核歷史（唯讀）、不可作答原因。
 - 裁決表單：五個既有決定（含後果說明）、理由 ≥ 5 字、提交前必須勾選確認；409 會提示重新載入；不預設核准。
 - Golden 表單：核准必須提供類別、審核理由、預期 grading、每個錯誤選項說明、權威來源及級別；只有 `approved` 才要求這些欄位；重申裁決不改題目發布狀態。
-- **未完成／限制**：沒有自動化 UI 測試；provenance 佇列只顯示證據契約，沒有逐題裁決 API（需按 manifest 進行後再以覆核／servability 記錄）。
+- **限制**：provenance 佇列只顯示證據契約，沒有逐題裁決 API（需按 manifest 進行後再以覆核／servability 記錄）。
+
+### 16.2 2026-10-20 簡化（回應「介面太複雜」）
+
+原本的兩個操作障礙已經處理，**裁決值與伺服器驗證完全沒有改變**：
+
+| 原本 | 現在 |
+| --- | --- |
+| 左右兩欄（左清單、右詳情）＋三個技術名稱的分頁 | **單欄**：清單 → 點一題 → 詳情 → 「← 返回題目清單」；分頁改成白話名稱（學生答唔到的題目／要跟進課本依據的題目／評分示例題） |
+| 下拉選單列出五個決定 | **三個大按鈕**（要再查證／先收起這題／已修好，可以派），每個寫明「按完會發生甚麼」；其餘兩個收在「其他決定」 |
+| 理由必須自己打 ≥ 5 個字 | **六句快速理由**可點選（每句已長於 5 個字），可另加自由補充，提交前顯示「你會提交的決定：…；理由：…」 |
+| 提交前另有「我已閱讀…」勾選框 | 移除勾選框（純前端提示）；安全邊界不變：不預設核准、必須有理由、409 不顯示成功、離開前提示未提交內容 |
+| `provenance`／`servability`／`fingerprint`／`Golden fixture` 全部印在畫面上 | 這些字眼**不再出現在畫面**；技術資料全部收在「技術資料（一般不需要理會）」 |
+| 使用了不存在的 CSS class（`stack`／`row`／`button`／`muted`），實際是無樣式原始表單 | 改用既有設計系統（`.card`／`.btn`／`.chip`／`.badge`），按鈕加大、對比度提高 |
+
+文字集中管理在 [src/lib/review-workbench-labels.ts](../../src/lib/review-workbench-labels.ts)，由 [tests/review-workbench-labels.test.ts](../../tests/review-workbench-labels.test.ts) 守住「每個系統原因都有白話說明」「按鈕值必須是 API 接受的值」「快速理由必須 ≥ 5 字」「畫面文字不出現內部術語」；瀏覽器行為由 [tests/ui/review-workbench.spec.ts](../../tests/ui/review-workbench.spec.ts) 驗證。
+
+**仍需真人教師試用**：按鈕文字與理由句是否貼近校內說法，只能在真實審題時驗證；如果不合用，只需改 `review-workbench-labels.ts`，不需要改動任何裁決邏輯。
 

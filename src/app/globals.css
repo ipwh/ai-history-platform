@@ -476,20 +476,6 @@ body {
   gap: 0.55rem;
 }
 
-.topic-tile__number {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.2rem;
-  height: 2.2rem;
-  border-radius: 11px;
-  background: var(--level-tint);
-  color: var(--level-accent);
-  font-weight: 800;
-  font-size: 1rem;
-}
-
 .topic-tile__title {
   flex: 1 1 auto;
   min-width: 0;

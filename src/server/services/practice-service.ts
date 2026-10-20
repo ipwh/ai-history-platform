@@ -44,6 +44,39 @@ import { gradeWithAi } from "./ai-grading";
 import { generateQuestions } from "./question-service";
 import { checkQuestionServable } from "./question-servability";
 import { studentExcerptIsVisible } from "./source-visibility";
+import {
+  classifyExplanation,
+  isHeldByExplanationPolicy,
+  type ExplanationHoldPolicy,
+} from "../quality/explanation-quality";
+
+/**
+ * 依「解釋未達標」政策過濾可派發的題目。
+ *
+ * 只在政策不是 `off` 時才計算分類（分類雖然便宜，但每次組題都要對全部候選題跑一次）。
+ * 這是**產品政策**而不是品質判斷：分類只說明解釋的形態（佔位／只列答案），
+ * 是否因此不派給學生由 `EXPLANATION_HOLD_POLICY` 決定，預設維持現行行為。
+ *
+ * 範圍限制（刻意）：只套用於**新練習的題庫組題**。重做錯題（`mode = "wrong-only"`）
+ * 不會套用，因為那些題目學生已經作答並看過同一段解釋，中途抽起只會令流程中斷，
+ * 對「避免學生看到無法學習的解釋」沒有幫助。
+ */
+export function filterByExplanationPolicy<T extends Question>(
+  questions: T[],
+  policy: ExplanationHoldPolicy,
+): T[] {
+  if (policy === "off") return questions;
+  return questions.filter((question) => {
+    const explanationClass = classifyExplanation({
+      explanation: question.explanation,
+      correctAnswer: question.correctAnswer,
+      acceptedAnswers: question.acceptedAnswers,
+      options: question.options,
+      hasHumanReview: false,
+    }).class;
+    return !isHeldByExplanationPolicy(explanationClass, policy);
+  });
+}
 
 export class PracticeServiceError extends Error {
   readonly status: number;
@@ -520,14 +553,21 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
     origin = "generated";
     notices.push(...generated.notices);
   } else {
-    const bankAll = listQuestions({
-      topicId: topic.id,
-      sectionIds,
-      questionTypes: parsed.questionTypes,
-      statuses: ["published"],
-      // Sprint 7.9：閘門判定未確定、仍待教師確認的題目不會進入學生練習，
-      // 即使資料庫中因舊資料或人為操作而仍是 published。
-    }).filter((item) => !item.teacherConfirmationRequired && checkQuestionServable(item).ok);
+    const holdPolicy = getServerConfig().explanationHoldPolicy;
+    const bankAll = filterByExplanationPolicy(
+      listQuestions({
+        topicId: topic.id,
+        sectionIds,
+        questionTypes: parsed.questionTypes,
+        statuses: ["published"],
+        // Sprint 7.9：閘門判定未確定、仍待教師確認的題目不會進入學生練習，
+        // 即使資料庫中因舊資料或人為操作而仍是 published。
+      }).filter(
+        (item) => !item.teacherConfirmationRequired && checkQuestionServable(item).ok,
+      ),
+      // 解釋未達標是否暫緩派發由 EXPLANATION_HOLD_POLICY 決定（預設 off = 不影響）
+      holdPolicy,
+    );
 
     const sameDifficulty = shuffle(bankAll.filter((item) => item.difficulty === parsed.difficulty));
     selected = sameDifficulty.slice(0, parsed.questionCount);

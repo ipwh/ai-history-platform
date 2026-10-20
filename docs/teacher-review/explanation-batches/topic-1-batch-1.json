@@ -1,0 +1,246 @@
+{
+  "title": "課題1 解釋補寫（第 1 批，40 題）",
+  "notice": "只改 explanation；correctAnswer、options、題幹及空格不變；已發布狀態保留；revision 會 +1。",
+  "entries": [
+    {
+      "questionId": "qb-JTH2ndEdFBQ01001",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "考古發現顯示，最早期的人類約於七百多萬年前在非洲出現，被稱為「古人類」；其後他們才遷徙至亞洲及歐洲，所以非洲被視為人類的發源地。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01002",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 史前時期、(2) 信史時期",
+      "newExplanation": "文字發明前，人類沒有文字紀錄，只能靠考古發現（如石器、遺骸）認識當時的生活，這段時期稱為史前時期；文字出現之後才進入信史時期。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01003",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 文字、(2) 史前時期",
+      "newExplanation": "約公元前3200年人類發明文字，此後才能把事件記錄下來。因為有了文字紀錄，後人才可以直接研究當時發生的事，所以歷史學家以文字發明劃分史前與信史時期。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01004",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "公元紀年又稱公曆或基督教曆法，以耶穌基督誕生為起點計算年份。由於歐美及國際交流長期採用，它成為現今最普遍的計時紀年方法。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01005",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 耶穌基督、(2) 公元前、(3) 公元",
+      "newExplanation": "公元紀年以耶穌基督誕生為起點：出生之前的年代稱「公元前」，出生之後則稱「公元」。這種紀年方式源自基督教曆法，沿用至今。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01006",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "歷史資料分為兩種：一手資料是出自所研究時代的原始材料；二手資料則是後人根據一手資料整理、轉述或分析而成的著作，例如教科書及歷史論文。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01007",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "一手資料指出自所研究時代的原始材料，例如當時的物件、考古發現、官方紀錄及日記。由於未經後人轉述，它最能直接反映當時的情況。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01008",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 一手資料、(2) 考古",
+      "newExplanation": "考古發現、官方紀錄、日記都產生於事件發生的年代，屬一手資料。它們是研究該時代最直接的證據，但仍要留意記錄者的立場及資料是否完整。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01009",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "約公元前3200年人類發明文字，用於記錄與溝通；有了文字紀錄，後人才能直接得知當時發生的事，因此信史時期由文字出現開始。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01010",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "世界上最早的文字約於公元前3200年由兩河流域（新月沃土）的蘇美爾人發明。有了文字紀錄，人類歷史才由史前時期進入信史時期。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01011",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 狩獵、(2) 野果",
+      "newExplanation": "舊石器時代人類直接從大自然獲取食物，主要以採摘野果、捕魚及狩獵維生。由於要追捕獵物、尋找野果，他們過着不斷遷徙的游獵生活。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01012",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "舊石器時代人類為追捕獵物而不斷遷徙，通常以洞穴或簡陋茅舍棲身，並未建立固定村落。這種生活方式到新石器時代才改變。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01013",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "新石器時代人類學會耕種及畜牧，糧食供應轉趨穩定，於是開始定居並建造房屋，村落陸續出現，以村落為基礎的農耕社會逐漸形成。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01014",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "新石器時代人類學會耕種並飼養禽畜，由單純採集轉為生產糧食。糧食供應穩定後人口上升，推動定居生活與村落出現。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01015",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "約公元前4000年，人類發現並學會冶煉金屬，較堅硬鋒利的金屬器具逐漸取代石器。當金屬工具普遍使用，石器時代便告結束。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01016",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "新石器時代人類定居務農，村落人口不斷增加，部分村落發展為人口集中、分工複雜的城鎮；古代文明城市就是由這些村落逐步演變而成。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01017",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 城市居民的、(2) 公民的",
+      "newExplanation": "「文明」源於拉丁文civis，原意是「城市居民的」或「公民的」，引申指人類在城市生活的狀況，因此文明與城市、分工及制度密切相關。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01018",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 城市、(2) 文字",
+      "newExplanation": "歷史學家普遍以城市和文字作為界定文明社會的兩項重要標準，此外還包括政府與法律、宗教體系及社會分工。城市出現代表人口集中與生活組織化。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01019",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "四大古代文明都孕育於大河流域，故又稱「大河文明」。河流兩岸土地肥沃、水源穩定，方便灌溉與農耕，吸引人類聚居並發展出城市。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01033",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 古埃及、(2) 庫施",
+      "newExplanation": "尼羅河流域先後有古埃及人與努比亞人（庫施人）定居。古埃及人較早於約公元前3500年在尼羅河下游開創文明，是流域文明的代表。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01034",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "約公元前3100年那爾邁統一上、下埃及後，古埃及人在尼羅河流域共建立三十一個王朝，歷時約三千年，因此古埃及文明是尼羅河流域文明的象徵。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01035",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "早於公元前5000年，古埃及人已在尼羅河中、下游定居；約公元前3500年，他們在尼羅河下游兩岸開創文明，其後逐步向外擴展。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01036",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "約公元前3100年，上埃及國王那爾邁征服下埃及，統一古埃及並建立第一個王朝。此後古埃及共經歷三十一個王朝，文明延續約三千年。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01037",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 法老、(2) 祭司長",
+      "newExplanation": "法老是古埃及的政治與宗教領袖，負責頒布法律、徵稅及保衛國家。古埃及人相信法老是天神的化身，因此他同時以最高祭司長身分主持宗教儀式。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01038",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "古埃及最著名的建築是金字塔與神廟，兩者多以石材及泥磚建成。石材令建築得以長期保存，所以金字塔與神廟至今仍然可見。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01039",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "木乃伊是古埃及經過特別防腐處理的屍體。製作工序繁複，需用大量香料、鹽、藥材及亞麻布，費用高昂，所以只有王室、貴族與富商才負擔得起。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01040",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "文士是古埃及少數懂得閱讀、書寫與算術的人，受聘起草法令、撰寫官方紀錄。由於識字者極少，文士在政府運作中擔當重要角色。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01041",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "古埃及人信奉多神，並相信法老是太陽神拉的後裔，因此把法老視為天神一般敬拜。這種信仰加強了法老統治的宗教依據。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01042",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "約公元前3000年，古埃及人以尼羅河沿岸生長的「莎草」製成書寫用的紙張，稱為莎草紙。它方便書寫與保存，有助政府紀錄及文化傳播。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ01043",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 神碑體、(2) 僧侶體",
+      "newExplanation": "約公元前3000年，古埃及人發展出象形文字「神碑體」，主要刻在宗教建築上；約公元前2600年再簡化為僧侶體，用於政府紀錄與教育。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01001",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "考古發現顯示，最早期的人類約於七百多萬年前出現，被稱為「古人類」；其後才遷徙至亞洲及歐洲。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01002",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "考古證據顯示古人類約七百多萬年前在非洲出現，之後才遷徙至亞洲及歐洲，因此人類學家推斷非洲是人類的起源地。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01003",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "文字讓人類可以記錄事件，後人才能直接得知當時發生的事。約公元前3200年文字出現，人類歷史正式由史前時期進入信史時期。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01004",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "有文字紀錄才稱得上信史，所以歷史學家以文字發明的時間為界：之前是沒有文字紀錄的史前時期，之後是信史時期。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01005",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "約公元前3200年人類發明文字以作記錄及溝通，這是信史時期的開端；在此之前沒有文字紀錄，屬史前時期。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01006",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "世界上最早的文字約於公元前3200年由兩河流域（新月沃土）的蘇美爾人發明，其他古代文明發展出文字的時間較晚。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01007",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "現存最早的文字約出現於公元前3200年，由蘇美爾人發明，用作記錄與溝通，標誌着信史時期的開始。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01008",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "公元紀年又稱基督教曆法，以耶穌基督誕生為計算起點：出生之前的年份稱公元前，出生之後稱公元。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01009",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "公元元年之後，年份數字越大代表時間越晚、距今越近，所以這句描述並不正確。公元前的情況剛好相反：數字越大，距離現今越遠。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01010",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "現今國際間最普遍使用的紀年方式是公元紀年（公曆）。它以耶穌基督誕生為起點，方便不同地區比較及記錄事件發生的時間。",
+      "note": "依課題1 課本／筆記段落核對"
+    }
+  ]
+}

@@ -21,6 +21,40 @@ export const EXPLANATION_CLASSES = [
 
 export type ExplanationClass = (typeof EXPLANATION_CLASSES)[number];
 
+/**
+ * 「解釋未達標時是否暫緩派發」的政策選項（產品決定，預設 `off`）。
+ *
+ * 這是一個**政策**，不是品質判斷：分類只說明解釋的形態，實際是否因此不派給學生
+ * 由產品負責人決定。本題庫目前 1,875 題全部屬 `placeholder` 或 `answer_only`，
+ * 一旦啟用會令學生幾乎沒有題目可練習，因此預設關閉並在文件記錄影響。
+ *
+ *   - `off`：維持現行行為（照樣派發）。
+ *   - `placeholder`：解釋為空白／佔位文字時暫緩派發。
+ *   - `placeholder-or-answer-only`：佔位或只列答案時都暫緩派發（較嚴格）。
+ */
+export const EXPLANATION_HOLD_POLICIES = [
+  "off",
+  "placeholder",
+  "placeholder-or-answer-only",
+] as const;
+
+export type ExplanationHoldPolicy = (typeof EXPLANATION_HOLD_POLICIES)[number];
+
+/** 這個解釋分類在指定政策下是否暫緩派發 */
+export function isHeldByExplanationPolicy(
+  explanationClass: ExplanationClass,
+  policy: ExplanationHoldPolicy,
+): boolean {
+  switch (policy) {
+    case "off":
+      return false;
+    case "placeholder":
+      return explanationClass === "placeholder";
+    case "placeholder-or-answer-only":
+      return explanationClass === "placeholder" || explanationClass === "answer_only";
+  }
+}
+
 export type ExplanationQualityCode =
   | "EXPLANATION_PLACEHOLDER"
   | "EXPLANATION_ANSWER_ONLY"

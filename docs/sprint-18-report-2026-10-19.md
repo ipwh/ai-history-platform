@@ -48,6 +48,12 @@
 
 ## 5. 瀏覽器測試覆蓋（13 passed / 0 failed / 0 skipped）
 
+> **更新（2026-10-20）**：下表是 Sprint 18 當時的覆蓋。工作台在 2026-10-20 簡化後，測試已同步
+> 改寫（改用三個決定按鈕、快速理由、`data-question-id`、`#servability-form-error`／
+> `#golden-form-error`），並新增「單欄流程可返回清單」「未選決定前沒有提交按鈕」兩項；
+> 「缺少勾選確認」一項已隨勾選框移除而改成「未選理由時拒絕提交」。
+> 現行清單見 [tests/ui/review-workbench.spec.ts](../../tests/ui/review-workbench.spec.ts)。
+
 | 場景 | 測試 |
 | --- | --- |
 | 佇列與分頁 | 顯示伺服器提供的數量與第一頁項目；分頁使用伺服器端限制並可返回第一頁 |

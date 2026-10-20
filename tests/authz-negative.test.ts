@@ -169,6 +169,24 @@ const ROUTES: RouteCase[] = [
     load: () => import("@/app/api/teacher/review-queue/route"),
   },
   {
+    target: "GET /api/teacher/content-improvement",
+    method: "GET",
+    adminOnly: false,
+    load: () => import("@/app/api/teacher/content-improvement/route"),
+  },
+  {
+    target: "POST /api/teacher/content-improvement",
+    method: "POST",
+    adminOnly: false,
+    load: () => import("@/app/api/teacher/content-improvement/route"),
+    body: {
+      flag: "explanation_needs_rewrite",
+      action: "mark",
+      questionIds: ["missing-question"],
+      reason: "測試用理由",
+    },
+  },
+  {
     target: "POST /api/teacher/golden/[questionId]",
     method: "POST",
     adminOnly: false,

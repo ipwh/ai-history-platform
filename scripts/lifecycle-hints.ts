@@ -9,6 +9,8 @@
  */
 export function warnIfNpmSwallowedApply(apply: boolean): void {
   if (apply || !process.env.npm_lifecycle_event) return;
+  // `npx` 不會吞掉參數（它只是執行指令），因此不需要提示；這個提示只針對 `npm run`。
+  if (process.env.npm_lifecycle_event === "npx") return;
   console.log(
     "提示：以 npm 執行時，參數要寫在 `--` 之後（例如 `npm run " +
       process.env.npm_lifecycle_event +

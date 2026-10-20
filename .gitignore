@@ -75,3 +75,8 @@ next-env.d*.ts
 /docs/teacher-review/golden-candidates-*.json
 /docs/teacher-review/golden-candidates-*.md
 /docs/teacher-review/golden-questions.v2.json
+# 解釋補寫工作清單（逐題題幹／現有解釋／來源節錄）及批次上下文（含課本原文節錄）：
+# 同樣屬版權內容，只留在本機，可用 `npm run audit:explanation-worklist` 及
+# `npm run explanation:batch` 隨時重新產生。補寫清單本身（*-batch-N.json）只有題目 ID 及新解釋，會提交。
+/docs/quality/explanation-skill-worklist-*.json
+/docs/teacher-review/explanation-batches/*-context.json

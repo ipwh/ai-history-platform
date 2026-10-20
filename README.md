@@ -78,6 +78,10 @@ npm run dev          # 啟動開發伺服器
 | `npm run release:gate` | 唯讀發布閘門：綜合隔離、可作答性、來源、解釋、元數據、教師裁決、審核來源、結構裁決、provenance 風險、版權、Golden 核准、測試及部署證據，輸出 `PASS`／`FAIL`／`WARN`／`POLICY_PENDING`／`INSUFFICIENT_EVIDENCE` 及 `READY`／`READY WITH LIMITATIONS`／`NOT READY` |
 | `npm run review:adjudication` | 唯讀：由修復來源報告產生 18 題逐題裁決套件（原始 vs 現行、空格位置及答案次序、版本與紀錄來源、待填決定欄） |
 | `npm run review:content-queue` | 唯讀：把不同性質的內容問題分開列出（附錄 B 疑點、佔位解釋、知識點、技能／難度、來源不可追溯、教材發行權） |
+| `npm run audit:explanation-worklist` | 唯讀：解釋補寫＋技能建議工作清單（每題附題幹摘要、現有解釋、正確答案、來源位置、建議改進類型、建議技能及理由；輸出 JSON 及 Markdown） |
+| `npm run flag:content-improvement` | 批次標記「解釋待重寫」／「技能待確認」的進度（**預設模擬且以唯讀方式開資料庫**；`--flag`、`--reason`、`--limit`／`--ids`／`--all`、`--clear`、`--list`；`--apply` 必須另加 `--actor <電郵>`，見第七節） |
+| `npm run explanation:batch` | 唯讀：產生解釋補寫批次上下文（題幹、選項、答案、現有解釋，加上同課題最相關的 1–3 段課本原文；`--topic`、`--limit`、`--offset`、`--out`） |
+| `npm run explanation:apply` | 套用解釋補寫清單（**只改 `explanation`**，答案／選項／題幹不變、發布狀態保留、`revision` +1；**預設模擬且唯讀**；`--manifest`、`--apply` 另需 `--actor`，見第七節） |
 | `npm run simulate:usage` | **模擬學生使用**（課題 × 題型 × 難度 × 題數；需先啟動伺服器，見第七節） |
 | `npm run open:materials` | **擁有者授權**的批次開放教材給學生（預設模擬；`--owner-email`、`--reason`、`--topics`、`--apply`，見第十節） |
 | `npm run retire:materials` | 退掉被取代的教材文件（`--files "檔名,…"`，預設模擬、要 `--apply`；刪除路徑與管理介面相同） |
@@ -189,7 +193,7 @@ materials/
 | 頁面 | 路徑 | 功能 |
 | --- | --- | --- |
 | 學校帳戶登入 | `/login` | 以學校 Google Workspace 帳戶登入（未設定憑證時顯示設定說明） |
-| 課題選擇 | `/` | **首頁**：上方顯示個人化摘要（已作答題目、答對比率、待重溫題目）及「繼續上次練習」按鈕；下方用**中一／中二／中三分頁**只顯示該年級 4 個課題卡（課題編號、名稱、所屬主題、作答進度及狀態），點選課題卡直接進入練習設定 |
+| 課題選擇 | `/` | **首頁**：上方顯示個人化摘要（已作答題目、答對比率、待重溫題目）及「繼續上次練習」按鈕；下方用**中一／中二／中三分頁**只顯示該年級 4 個課題卡（課題名稱（已含課題編號）、所屬主題、作答進度及狀態），點選課題卡直接進入練習設定 |
 | **重溫題目** | `/review` | 依你的作答記錄列出**已到重溫時間**的題目（依課題分組、說明到期原因）；只顯示「有多少條」及所屬分節，不會顯示題目內容或答案，**查看頁面不等於已重溫** |
 | 練習設定 | `/practice/new?topic=…` | 直接列出該課題下**全部主題**揀選（可多選，不再分節分組）、題型、難度、題數、**出題方式（AI 即時生成／使用題庫）**、完整練習或重溫錯題 |
 | 練習作答 | `/practice/[sessionId]` | 一次一題、進度顯示、提交後顯示答案／解釋／知識點／教材來源；填充題另有 **AI 語意批改**；每題可**回報問題**；答案與標準答案極為接近時會標示「需要教師覆核」 |
@@ -222,9 +226,9 @@ materials/
 - **首頁只有一個年級、4 個課題**：以「中一／中二／中三」分頁切換，一次只顯示該年級的 4 個課題卡，避免一次顯示 12 個課題而令學生找不到自己的一級。
   - **年級會自動判斷**：依次用（1）學生上次手動選擇的年級、（2）練習次數最多的課題所屬年級、（3）中一。選擇只儲存在瀏覽器 `localStorage`（`hk-history-level`），不涉及個人資料。
   - 每個年級用不同主色（中一綠、中二藍、中三紫），學生切換後馬上看得出自己在哪一級。
-  - 課題卡顯示課題編號、名稱、狀態（尚未開始／需要重溫／已多次答對）、首兩個主題名稱（其餘以「＋N」表示）、作答進度條及「開始練習」。
+  - 課題卡顯示課題名稱（標題本身已含「課題1：…」，因此**不再另設編號徽章**，2026-10-20 移除）、狀態（尚未開始／需要重溫／已多次答對）、首兩個主題名稱（其餘以「＋N」表示）、作答進度條及「開始練習」。
   - 「繼續上次練習」只在該課題屬於目前選取的年級時才顯示，否則建議該年級中第一個已開始的課題，避免按鈕帶學生去另一個年級的課題（`hk-history-last-topic`）。
-- **點選課題後直接進入「練習設定」**：課題編號及名稱只在課題卡片顯示一次；由於練習設定內已列出該課題的全部主題，學生毋須再經另一個「選擇分節及主題」頁面重複選擇。
+- **點選課題後直接進入「練習設定」**：課題名稱（已含課題編號，卡片不再重複顯示編號）只在課題卡片顯示一次；由於練習設定內已列出該課題的全部主題，學生毋須再經另一個「選擇分節及主題」頁面重複選擇。
 - **課題 → 主題**的選擇集中在練習設定：
   - 練習設定的「1. 選擇主題（可多選）」直接列出該課題下的**全部主題**（不再按分節分組，亦沒有「全選此分節」）；右上角顯示「已選 N 個主題」及「清除選擇」。
   - 已選取的主題會以藍底顯示。
@@ -612,6 +616,7 @@ scripts/deploy-cloud-run.ps1      Cloud Build + Cloud Run 部署（見第十節�
 | `PATCH/DELETE /api/teacher/questions/[questionId]` | 發布／停用／編輯／刪除題目（**發布需要對應目前版本的人工覆核紀錄或自動品質驗證紀錄，否則 409**；編輯已發布題目會自動下架；**建立或編輯時不可直接指定 published，否則 409**） |
 | `GET/POST /api/teacher/questions/[questionId]/review` | 查閱題目的覆核狀態及紀錄／記錄人工覆核決定（`{decision: "approved" \| "rejected" \| "returned", reason?}`；退回或不可用必須有原因；重複提交不會重複記錄） |
 | `GET/PATCH /api/teacher/reports` | 題目回報清單（可按狀態／課題篩選）／處理回報。`PATCH` 可用 `{status}` 只更新回報，或用 `{action: "withdraw-question"}` 一併暫時下架題目、`{action: "revalidate-question"}` 重新執行自動品質驗證；實際行動會記錄在回報的 `resolution_action` |
+| `GET/POST /api/teacher/content-improvement` | 解釋補寫／技能確認的工作佇列（唯讀，可按標記、解釋分類、建議改進類型及是否已標記篩選）／批次標記 `explanation_needs_rewrite`、`skill_needs_confirmation`（`{flag, action: "mark" \| "clear", questionIds, reason}`，最多 200 題、必須有理由）。標記只寫入 `question_content_flags`（只可新增），**不會**改變題目內容、答案、技能或發布狀態 |
 | `GET /api/teacher/records` | 學生練習記錄（可按 `topicId`、`learnerId`、`from`／`to` 日期篩選），每筆含作答日期、課題、題型及答對／答錯的題目 |
 | `GET /api/teacher/records/export` | 下載學生練習記錄 CSV（同樣支援上述篩選；UTF-8 BOM，Excel 可直接開啟） |
 | `PATCH /api/admin/sections/[sectionId]` | 修改分節名稱、說明及關鍵詞（**管理員**） |
@@ -961,17 +966,70 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 - **Golden 重複提交**：同一版本／指紋／決定／理由的重複提交不再新增裁決列（回 `created: false`）；理由不同則另立一筆。
 - **決策包**：[policy-decisions-2026-10-19.md](docs/teacher-review/policy-decisions-2026-10-19.md) 頂部新增 13 項一頁總覽（負責角色多為 `UNASSIGNED`、影響閘門、安全預設、完成證據）。
 
-### 教師審核工作台（Sprint 16，2026-10-19）
+### 教師審核工作台（Sprint 16，2026-10-19；2026-10-20 簡化）
 
-- 新頁面 **/teacher/review**（導覽「教師審核」）：三個分批佇列——不可作答 97、修復 provenance 623、Golden 候選 42。
+- 新頁面 **/teacher/review**（導覽「教師審核」）：三個分批清單——「學生答唔到的題目」、「要跟進課本依據的題目」、「評分示例題」。
 - 佇列 API：`GET /api/teacher/review-queue?queue=servability|provenance|golden&page&pageSize`（教師／管理員可讀、唯讀、每頁上限 25）。
 - 單題詳情用既有 `GET /api/teacher/questions/[id]/review`；裁決用既有 `POST /api/teacher/questions/[id]/servability`；Golden 用 `POST /api/teacher/golden/[id]`（核准須填類別、理由、預期 grading、錯誤選項說明）。
-- 所有裁決仍由伺服器驗證：版本＋指紋（409）、學科授權（403）、不預設核准、提交前必須勾選確認；UI 不會令題目自動可派發。
-- **限制**：沒有自動化 UI 測試（repo 無瀏覽器測試框架），只有 API 授權／分批測試、typecheck、lint、build 及既有 E2E；需真人教師試用驗收。
+- 所有裁決仍由伺服器驗證：版本＋指紋（409）、學科授權（403）、不預設核准；UI 不會令題目自動可派發。
+- UI 測試：`tests/ui/review-workbench.spec.ts`（Playwright，真實伺服器＋真實授權）；文字表單元測試：`tests/review-workbench-labels.test.ts`。
+
+**2026-10-20 簡化（回應「介面太複雜，一般電腦技能的老師難以適應」）**：
+
+- **單欄、一步一步**：清單 → 點一題 → 看題目與問題 → 按一個決定 → 選一句理由 → 確認提交；有「← 返回題目清單」。
+- **畫面不出現內部術語**：原本的 `provenance`／`servability`／`fingerprint`／`Golden fixture` 等字眼已從畫面移除，技術資料（版本、指紋、來源段落、覆核紀錄）全部收在「技術資料（一般不需要理會）」內。
+- **三個大按鈕代替下拉選單**：常用決定只有三個（要再查證／先收起這題／已修好，可以派），其餘兩個收在「其他決定」。每個按鈕同時寫明「按完會發生甚麼」。按鈕背後的裁決值與 API 完全不變。
+- **理由改成快速選項**：六句常用理由（每句已長於伺服器要求的 5 個字）可點選，另可自由補充；老師完全不打字也能提交，提交前會顯示「你會提交的決定：…；理由：…」。
+- **移除「我已閱讀…」勾選框**：它只是前端提示，伺服器本來就不接受無理由的裁決。簡化後仍保留同一批安全邊界——沒有預設核准、必須有理由（≥5 字）、409 版本衝突不顯示成功、離開前會提示未提交內容；`tests/ui/review-workbench.spec.ts` 逐項驗證。若要恢復勾選框，只需在 `ServabilityPanel` 的提交前加回一個 checkbox 條件。
+- **樣式改用既有設計系統**（`.card`／`.btn`／`.chip`／`.badge`）：舊版用了一組不存在的 CSS class（`stack`／`row`／`button`／`muted`），所以頁面實際上是無樣式的原始表單，這也是「難用」的成因之一。
 
 > **不要把「題庫沒有這條題目」當成資料損壞**：即時生成的練習題只存在於練習快照，本來就不在題庫；它們的作答記錄是有效記錄，不可當作孤兒資料刪除。
 
 **修復後的量度**：資料庫副本上跑 66 次練習、478 次作答、824 項檢查 → **0 項異常**（包含重新載入練習頁、成績頁、首頁／練習設定頁／重溫頁）；接駁真實模型（DeepSeek）的即時生成 8 次練習 → **8 次全部成功出題**；真實模型的混合（題庫＋即時生成）27 次練習、157 次作答、251 項檢查 → **0 項異常**。
+
+### 解釋品質與技能標籤（2026-10-20）
+
+診斷報告：[docs/quality/explanation-skill-diagnosis-2026-10-20.md](docs/quality/explanation-skill-diagnosis-2026-10-20.md)；補寫指引及 AI 起草 prompt 範本：[docs/teacher-review/explanation-rewrite-guidelines-2026-10-20.md](docs/teacher-review/explanation-rewrite-guidelines-2026-10-20.md)。
+
+**實測（1,875 題，全部已發布）**：解釋為佔位文字 **1,329**（全部是同一句「答案依校內試題檔的評卷參考。」）、只列答案 **546**（「填充題答案（依空格次序）：……」）、有實質推理 **0**；技能標籤空白 **1,875（100%）**；有可用課文原文作依據 **0 題**（`source_excerpt` 全部是試卷原句）。
+
+**`npm run audit:explanation-worklist`（唯讀）** 產生每題的可操作清單（[JSON](docs/quality/explanation-skill-worklist-2026-10-20.json)、[教師版 Markdown](docs/teacher-review/explanation-skill-worklist-2026-10-20.md)）：題幹摘要、現有解釋、正確答案、知識點、來源位置、建議改進類型及建議技能。建議改進類型：需補概念定義 **1,217**、需補因果推理 **658**；技能首選建議的信心分佈為高 **0**／中 **877**（填充題短答案 → 正確地使用歷史辭彙）／低 **998**（選擇題無關鍵詞 → 同項推測，須教師確認）。
+
+**技能框架已存在、只是未使用**：`questions.skill TEXT NULL` 對應 `HISTORY_SKILLS`（教育局《歷史科課程指引》9 項，`historySkillSchema` 為**單選**）。現有選擇題／填充題實際上只能考核其中 1–2 項；第 3、5、7、8、9 項（描述圖表特徵、比較不同解釋、質疑資料可信性、運用想像、組織表達）需要附史料的**新題型**，不是靠補標籤可以達成。
+
+**`npm run flag:content-improvement`** 批次標記「解釋待重寫」／「技能待確認」，記錄誰、何時、甚麼理由：
+
+```bash
+npm run flag:content-improvement -- --flag explanation_needs_rewrite --limit 50 \
+  --reason "2026-10 內容稽核：解釋為佔位文字"                      # 模擬（唯讀，不寫入）
+npm run flag:content-improvement -- --flag explanation_needs_rewrite --limit 50 \
+  --reason "2026-10 內容稽核：解釋為佔位文字" \
+  --actor teacher@pochiu.edu.hk --apply                             # 真正寫入（必須有 --actor）
+npm run flag:content-improvement -- --flag explanation_needs_rewrite --clear \
+  --ids qb-xxxx --reason "已按課本補寫" --actor teacher@pochiu.edu.hk --apply
+npm run flag:content-improvement -- --list                          # 目前進度
+```
+
+標記寫入 `question_content_flags`（**只可新增**，解除標記是新增一筆 `state = cleared` 事件），**不是**覆核決定：不會改變題目的發布狀態、內容、答案或技能，也不會令既有覆核紀錄失效。題目被改寫後，舊標記會標示「內容已改，需重新判斷」而不會靜默清除。教師端亦可用 `GET/POST /api/teacher/content-improvement`（`requireTeacher`；學生 403、未登入 401）。
+
+**暫緩派發政策 `EXPLANATION_HOLD_POLICY`（預設 `off`，2026-10-20 已決定維持 `off`）**：`off`／`placeholder`／`placeholder-or-answer-only`。以現時題庫計，啟用 `placeholder` 後可派發題目會由 1,875 題減至 546 題，啟用 `placeholder-or-answer-only` 則為 **0 題**，因此預設關閉；設定後管理員端設定診斷會顯示 warning 及影響，無效值則回退 `off` 並顯示 error。政策只套用於新練習的題庫組題，「重做錯題」不受影響（那些題目學生已作答並看過同一段解釋）。
+
+**逐題補寫解釋（2026-10-20 決定）**：由 AI 逐題補寫、教師抽核，每個批次都以**同課題課本／筆記段落**核對。決定紀錄見 [docs/teacher-review/decision-2026-10-20-explanation-rewrite.md](docs/teacher-review/decision-2026-10-20-explanation-rewrite.md)。
+
+```bash
+# 1. 產生批次（唯讀，附最相關的 1–3 段課本原文）
+npm run explanation:batch -- --topic topic-2 --limit 40 \
+  --out docs/teacher-review/explanation-batches/topic-2-batch-1-context.json
+
+# 2. 模擬套用（預設唯讀，不寫入）
+npm run explanation:apply -- --manifest docs/teacher-review/explanation-batches/topic-1-batch-1.json
+
+# 3. 真正寫入
+npm run explanation:apply -- --manifest docs/teacher-review/explanation-batches/topic-1-batch-1.json \
+  --actor ai-copilot-2026-10-20 --actor-role automation --apply
+```
+
+補寫的界線（測試：`tests/explanation-rewrite.test.ts`）：**只改 `explanation`**，答案、選項、題幹及空格不變；**保留發布狀態**（不因補寫而下架）；`revision` 如實 +1，舊覆核如實失效（負責人已確認接受此做法）；**不寫 `question_reviews`**（補寫不是教師覆核），紀錄寫入 `question_content_flags` 的 `explanation_rewritten`；新解釋必須通過同一套品質分類器（不可仍是佔位文字／只列答案／過短／與答案矛盾）。進度：**全部 12 個課題共 1,875 題已完成**（1,875 題仍全部 `published`，`question_reviews` 沒有增加；重新產生的工作清單顯示 `placeholder`／`answer_only`／`insufficient` 均為 0）。教師仍須**逐題核實**補寫內容，`questions.skill` 依負責人決定暫時維持空白。
 
 ### 題庫：讓每個課題都有題目
 
@@ -1779,6 +1837,7 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 | `ADMIN_TOKEN` | 空 | 供自動化腳本以 `x-admin-token` 呼叫後台 API（教師端及管理員端）；**最少 32 個字元**，等同管理員並會繞過角色檢查 |
 | `DEMO_AUTO_PUBLISH_QUESTIONS` | 本機 `true`／正式 `false` | 示範模式是否自動發布**本地示範生成**的題目（未經任何驗證）；只限非正式環境生效 |
 | `AUTO_PUBLISH_VALIDATED_QUESTIONS` | `true` | 是否讓**通過自動品質驗證**的題目立即供學生自學（Sprint 7.8；任何環境適用）。設為 `false` 即回復「只發布經人工覆核題目」的舊行為，已驗證題目會留在草稿 |
+| `EXPLANATION_HOLD_POLICY` | `off` | 解釋未達標是否暫緩派發：`off`／`placeholder`／`placeholder-or-answer-only`。**屬產品決定**：以 2026-10-20 題庫計，`placeholder` 會令可派發題目由 1,875 題減至 546 題，`placeholder-or-answer-only` 則為 0 題。無效值回退 `off` 並顯示 error 級設定警示；啟用時顯示 warning 及影響範圍 |
 
 ---
 
@@ -1910,6 +1969,10 @@ gcloud run services update history-self-study --project pccss-ai-history --regio
 | 13 | **舊狀態文件的處理**：本機資料庫中課題5 的教師版文件（`HNC2A2E_T5_SN_TE.docx`）在 0017 之前已開放，因此**沒有**版權／內容確認紀錄 | **已解決（2026-10-16）**：該文件已隨更新教材被取代及刪除（見第十二節第 40 項），本機現時只剩 2026-10 版本的 12 份課本文件（各有完整的擁有者授權紀錄） | 已完成 |
 | 14 | **更新教材後 66 條題目失去教材依據**：這些題目的原文節錄在新版教材找不到逐字相符的段落（多為舊版用詞改寫或舊教師版的練習題目） | **已解決（2026-10-16）**：30 條重新連結、31 條按新教材改寫（含更正答案）、5 條因新教材完全沒有相關內容而刪除；另有 23 條統一用詞。全部經逐字比對驗證，沒有改動題目以外的紀錄；另處理 10 條課題1 校內短答題的教材依據連結。未通過核對由 71 條減至 25 條（餘下 25 條為課題1 校內試卷題目，節錄由多段文字組成，平台的單一段落核對規則無法涵蓋） | 已完成（教師如認為改寫後的題目不合用，可另行修改或停用） |
 | 15 | **正式環境是否同步更新教材**：本機的教材更新（2026-10-16）不會自動傳到 Cloud Run | 未執行前，正式環境仍是 2026-10-15 的教材版本（內容為同一系列較舊版本）。更新方式見第十節做法 A 及第十二節第 43 項 | 科主任／IT（決定何時部署） |
+| 16 | **佔位解釋的題目是否暫緩派發** | **已決定（2026-10-20）：否**。`EXPLANATION_HOLD_POLICY` 維持 `off`，題目照樣派發；學生仍會看到佔位解釋，直至補寫完成。開關及診斷警示保留，日後可改變決定 | 已由產品負責人決定 |
+| 17 | **技能標籤由誰逐題確認** | **已決定（2026-10-20）：暫緩**。`questions.skill` 維持空白，`/api/progress` 技能統計因此沒有數據（已接受的狀態）；建議規則及教師端標記功能保留，隨時可恢復 | 已由產品負責人決定（暫緩） |
+| 18 | **解釋由誰補寫** | **已決定（2026-10-20）：由 AI 逐題補寫、教師抽核**。每批以同課題課本段落核對；進度見 [決定紀錄](docs/teacher-review/decision-2026-10-20-explanation-rewrite.md) | 已由產品負責人決定；教師抽核待安排 |
+| 19 | **是否新增史料題以覆蓋第 3、5、7、8、9 項技能** | **已決定（2026-10-20）：否**。現有選擇／填充題無法考核這些技能，如實記錄而不以標籤掩蓋 | 已由產品負責人決定 |
 
 > **成本換算的限制（誠實說明）**：目前系統只記錄 AI 呼叫**次數**，`llm_usage` 沒有 provider 回報的實際費用欄位，專案內亦沒有模型價格表。因此**無法**由系統計算每位學生或整體的金額，亦不應在文件中填寫推測價格。若要金額上限，需要另行加入價格表及用量換算（屬新功能，需先評估）。
 

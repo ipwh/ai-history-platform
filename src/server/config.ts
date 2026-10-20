@@ -4,6 +4,11 @@
  */
 import path from "node:path";
 
+import {
+  EXPLANATION_HOLD_POLICIES,
+  type ExplanationHoldPolicy,
+} from "./quality/explanation-quality";
+
 export type LlmProviderName = "mock" | "openai-compatible" | "deepseek" | "gemini";
 export type OcrProviderName = "none" | "tesseract" | "google-vision";
 
@@ -74,6 +79,17 @@ export interface ServerConfig {
    * 教師覆核成為事後補救。自動驗證紀錄與人工覆核紀錄分開保存，不會互相冒充。
    */
   autoPublishValidatedQuestions: boolean;
+  /**
+   * 解釋未達標的題目是否暫緩派發（產品政策，預設 `off`）。
+   *
+   * 由環境變數 `EXPLANATION_HOLD_POLICY` 設定；可選值見
+   * `src/server/quality/explanation-quality.ts` 的 `EXPLANATION_HOLD_POLICIES`。
+   *
+   * 為甚麼預設關閉：本題庫 1,875 題的解釋全部屬「佔位文字」或「只列答案」，一旦啟用
+   * `placeholder`，學生幾乎沒有題目可練習。是否接受這個取捨屬產品決定，因此做成可
+   * 配置而非硬編碼。設定後 `describeConfigIssues()` 會提出警告並顯示影響範圍。
+   */
+  explanationHoldPolicy: ExplanationHoldPolicy;
   /** AI 用量上限（避免個別帳戶或整體用量失控） */
   aiLimits: AiLimitConfig;
   /** 資料庫備份（把 SQLite 檔案備份到 Cloud Storage，令容器重建後仍保留資料） */
@@ -284,6 +300,21 @@ function readNonNegativeInt(name: string, fallback: number): number {
 function readBoolean(name: string, fallback: boolean): boolean {  const raw = readEnv(name);
   if (raw === null) return fallback;
   return ["1", "true", "yes", "on"].includes(raw.toLowerCase());
+}
+
+/**
+ * 讀取「解釋未達標是否暫緩派發」的政策值。
+ *
+ * 空白或未設定 → `off`（維持現行行為）。無效值 → `off`，並由
+ * `describeConfigIssues()` 產生 error 級警示，避免設定打錯字而靜默變成封鎖全部題目。
+ */
+function readExplanationHoldPolicy(): ExplanationHoldPolicy {
+  const raw = readEnv("EXPLANATION_HOLD_POLICY");
+  if (raw === null) return "off";
+  const normalised = raw.toLowerCase();
+  return (EXPLANATION_HOLD_POLICIES as readonly string[]).includes(normalised)
+    ? (normalised as ExplanationHoldPolicy)
+    : "off";
 }
 
 /** 讀取正整數；可設為 off／none／0 表示不使用（回傳 null） */
@@ -577,6 +608,10 @@ export function getServerConfig(): ServerConfig {
     // 毋須等待教師逐題預先批准；教師覆核改為事後補救。設為 false 可回復「只發布
     // 經人工覆核題目」的舊行為（已通過自動驗證的題目會留在草稿）。
     autoPublishValidatedQuestions: readBoolean("AUTO_PUBLISH_VALIDATED_QUESTIONS", true),
+    // 解釋未達標是否暫緩派發（產品政策，預設 off = 維持現行行為）。
+    // 不合法或空白一律回退 off（fail-open 於「維持現狀」而不是意外封鎖全部題目），
+    // 並由 describeConfigIssues() 產生 error 級設定警示。
+    explanationHoldPolicy: readExplanationHoldPolicy(),
     aiLimits: readAiLimits(),
     backup: readBackupConfig(),
     maxUploadBytes: readPositiveInt("APP_MAX_UPLOAD_BYTES", DEFAULT_MAX_UPLOAD_BYTES),

@@ -66,7 +66,7 @@ function toLevel(raw: string): Level | null {
  * 版面由三部分組成：
  *   1. 個人化摘要（已作答題目、答對比率、待重溫題目）及「繼續上次練習」；
  *   2. 年級切換（中一／中二／中三）— 只顯示該年級的 4 個課題，避免一次過顯示 12 個；
- *   3. 課題卡：顯示課題編號、主題、進度及狀態，整張卡可點擊進入練習設定。
+ *   3. 課題卡：顯示課題名稱（已含課題編號）、主題、進度及狀態，整張卡可點擊進入練習設定。
  *
  * 年級會自動判斷：先用學生上次的選擇，再用「練習次數最多的課題」所屬年級（通常就是
  * 本學年），最後才用中一。選擇只儲存在瀏覽器（localStorage），不涉及個人資料。
@@ -312,9 +312,6 @@ export function HomeView() {
                 onClick={() => rememberTopic(topic.id)}
               >
                 <span className="topic-tile__head">
-                  <span className="topic-tile__number" aria-hidden="true">
-                    {topic.topicNumber ?? "•"}
-                  </span>
                   <span className="topic-tile__title">{topic.title}</span>
                   <span className={`badge ${stateBadge}`}>{LEARNING_STATE_LABELS[state]}</span>
                 </span>

@@ -1,0 +1,204 @@
+{
+  "title": "課題1 解釋補寫（第 2 批，33 題）",
+  "notice": "只改 explanation；correctAnswer、options、題幹及空格不變；已發布狀態保留；revision 會 +1。",
+  "entries": [
+    {
+      "questionId": "qb-JTH2ndEdMCQ01011",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "計算公元年份所屬的世紀，可把百位數字加 1：2019 的百位是 20，20+1=21，所以屬二十一世紀。只有剛好以「00」結尾的年份才直接取百位數字。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01012",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "公元前年份數字越大代表越早，所以公元前800年最早，其次是公元前95年；之後才輪到公元後的年份，公元15年又早於公元850年，次序為 ii、iii、iv、i。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01013",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "史前時期指沒有文字紀錄的時期。約公元前3200年人類發明文字後，歷史才有文字紀錄可考，史前時期至此結束，進入信史時期。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01014",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "文字約在公元前3200年才發明，所以史前時期人類不懂以文字記事。他們已懂得生火煮食、用獸皮製作簡單衣服及狩獵野獸，只是沒有文字紀錄。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01015",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "舊石器時代約始於距今二百五十萬年前（即約公元前250萬年），至距今約一萬二千年前結束，人類以敲擊方式製作粗糙石器。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01016",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "德馬尼西人、爪哇人、元謀人都屬舊石器時代的早期人類；羅馬人是後來在意大利半島建立的文明，年代遠晚於舊石器時代，並非當時的族群。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01017",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "舊石器時代人類不斷遷徙，仍未定居（i 錯），也未懂得耕作（iii 錯）；但他們已學會生火及用火，並以石頭、樹枝及獸骨製作工具，所以 ii 和 iv 正確。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01018",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "生火在舊石器時代已學會（i 錯），新石器時代人類亦已懂得飼養禽畜（ii 錯）。他們學會製造衣服，並定居建立村落，所以 iii 和 iv 正確。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01019",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "舊石器時代人類以採摘野果、捕魚及狩獵為生，仍未懂得耕種；耕種要到新石器時代才出現。因此「以耕種為生」一項並不正確。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01020",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "約公元前4000年，人類發現金屬並學會冶煉，金屬器具逐漸取代石器。當人類懂得用金屬製造工具，石器時代便結束，進入金屬時代。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01021",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "約公元前4000年，人類發現金屬並學會冶煉不同金屬，較堅硬鋒利的金屬器具取代石器，標誌金屬時代開始；是公元前而非公元後。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01022",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "文字紀錄指以文字寫成的文件。《中英聯合聲明》是文字文件；秦俑、萬里長城、李鄭屋漢墓都屬實物或建築遺存，不是文字紀錄。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01023",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "日記、錄像及事件發生時的報章報道都在事件發生的年代產生，屬一手資料；學術論文是後人分析一手資料寫成，屬二手資料。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01024",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "文明社會的特徵包括建立城市、創造文字、建立政府及法律、建立宗教體系，以及發展科學技術；建立軍隊不在所列特徵之內。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01025",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "歷史學家普遍以城市和文字作為界定文明社會的兩項重要標準：城市代表人口集中與分工，文字代表有系統的紀錄與溝通。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01026",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "四大古文明都位於大河流域，土地肥沃、水源穩定（雨水及河水充足），有利農耕與聚居；生物多樣及地貌豐富並不是課本所列的條件。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01027",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "新月沃土（兩河流域）是最早出現的古文明，約始於公元前3500年，蘇美爾人更在此發明了世界上最早的文字。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01028",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "現時所知最早的文明約於公元前3500年出現，位於新月沃土及尼羅河流域一帶；尼羅河流域文明亦約於此時展開。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01029",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "四大古代文明都孕育於大河流域，故又稱「大河文明」。河流提供灌溉與飲用水，兩岸土地肥沃，吸引人類聚居並發展出城市。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01030",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "河谷土地肥沃而非貧瘠，才有利耕種；河流亦提供飲用水及灌溉水源，並吸引動物前來，為人類提供獵物。因此「貧瘠土地有利耕種」並不正確。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01047",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "早於公元前5000年，古埃及人與努比亞人已在尼羅河中、下游地區定居，其後約於公元前3500年在尼羅河下游兩岸開創文明。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01048",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "尼羅河流域先有古埃及人與努比亞人定居；努比亞人曾建立庫施王國，故又稱庫施人。巴比倫人、蘇美爾人及亞述人則屬兩河流域的民族。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01049",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "法老是古埃及的政治與宗教領袖，管治全埃及，負責頒布法律、徵稅及保衛國家；維齊爾則是法老委任的最高級官員，負責審理重大案件。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01050",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "古埃及人信奉多神，每座城市各有自己的守護神，並非相同；部分神祇在某些王朝時期才被尊為國家守護神。法老則被視為太陽神拉的後裔。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01051",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "製作木乃伊工序繁複，需時七十多天，用上大量香料、鹽、藥材及優質亞麻布，還要聘請祭司主持儀式，費用高昂，平民無法負擔。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01052",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "公元前四世紀，馬其頓人征服古埃及，並在當地傳播希臘語與古希臘文明；至公元前30年起才由古羅馬人統治古埃及。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01053",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "古埃及人先後使用神碑體、僧侶體及世俗體；楔形文字是兩河流域蘇美爾人發明的文字，並非古埃及人所創。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01054",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "約公元前2600年，古埃及人把神碑體簡化為僧侶體，但神碑體仍用於記載碑文與宗教經文，並沒有因此停用。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01055",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "約公元前2600年，古埃及人把複雜的神碑體簡化為僧侶體，後者用於政府紀錄與教育；神碑體則繼續用於碑文與宗教經文。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01056",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "古埃及的喪葬與宗教建築（金字塔、神廟）多以石材及泥磚建成；石材令建築得以長期保存，所以金字塔與神廟至今仍然可見。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01057",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "金字塔是古埃及人為紀念法老及王族而興建的大型陵墓，作為他們死後的永久居所，並非官員或平民的居所。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01058",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "金字塔通常在法老加冕時開始建造、於其去世時完工，需動用數以萬計工人；它是為法老及王族而建的陵墓，並非只有法老才可以興建。",
+      "note": "依課題1 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01059",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "古埃及人發明十進制、懂得計算面積與斜率以興建金字塔，並釀造葡萄酒及啤酒、發明日晷與水鐘；階梯式蓄水池不屬古埃及的成就。",
+      "note": "依課題1 課本／筆記段落核對"
+    }
+  ]
+}

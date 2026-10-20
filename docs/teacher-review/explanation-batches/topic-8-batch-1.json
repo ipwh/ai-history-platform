@@ -1,0 +1,246 @@
+{
+  "title": "課題8 解釋補寫（第 1 批，40 題）",
+  "notice": "只改 explanation；答案、選項、題幹及空格不變；已發布狀態保留；revision +1。",
+  "entries": [
+    {
+      "questionId": "qb-JTH2ndEdFBQ08001",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "清政府在第一次鴉片戰爭（1840至1842年）戰敗，1842年簽訂《南京條約》，被迫割讓香港島予英國；英國隨後任命砵甸乍為首任港督。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08002",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "砵甸乍是簽訂《南京條約》時的英方全權代表，其後被委任為香港首任總督，正式對香港實行殖民管治。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08003",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 北京條約、(2) 九龍半島",
+      "newExplanation": "清政府在第二次鴉片戰爭（1856至1860年）戰敗，1860年簽訂《北京條約》，被迫割讓九龍半島南部予英國。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08004",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 南、(2) 昂船洲",
+      "newExplanation": "《北京條約》割讓的是九龍半島「界限街以南」的地區及昂船洲，故此處應填「南」。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08005",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "1898年英國強迫清政府簽訂《展拓香港界址專條》，租借界限街以北至深圳河以南的地區及附近島嶼，為期九十九年。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08006",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 香港島、(2) 九龍半島、(3) 英國",
+      "newExplanation": "1842年《南京條約》割讓香港島，1860年《北京條約》割讓九龍半島南部，1898年再以《展拓香港界址專條》租借新界九十九年。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08007",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 鴉片、(2) 香港島",
+      "newExplanation": "清政府在第一次鴉片戰爭中戰敗，1842年簽訂《南京條約》，被迫割讓香港島予英國。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08008",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 北、(2) 九十九",
+      "newExplanation": "《展拓香港界址專條》租借界限街以「北」、深圳河以南的地區及附近島嶼，為期九十九年，自此英國對整個香港實行殖民管治。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08009",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "根據《英皇制誥》，港督是英皇駐港的代表，也是香港政府的最高負責人，任期一般為五年。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08010",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 輔政司、(2) 庫務司",
+      "newExplanation": "輔政司負責統籌各政府部門及官員（後稱布政司），庫務司則負責制定政府預算及財政事務。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08011",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 庫務司、(2) 華民政務司",
+      "newExplanation": "庫務司負責制定政府預算及處理財政事務（後稱財政司），華民政務司則專責處理華人事務。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08012",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "港督在英國政府規定的範圍內享有極大自主權，同時兼任議政局及定例局的主席，集行政與立法權力於一身。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08013",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 立法局、(2) 起草、(3) 審議",
+      "newExplanation": "議政局（後稱行政局）是諮詢機構，定例局（後稱立法局）則負責審議法案及處理財政撥款。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08014",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 官守、(2) 非官守",
+      "newExplanation": "兩局成員由港督全權委任，分為官守議員（政府官員）與非官守議員（多由商界或社會精英出任）。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08015",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 港督、(2) 官守、(3) 1850、(4) 非官守",
+      "newExplanation": "兩局議員全由港督委任，早期議席全屬官守議員，議政局及定例局分別於1850年及1896年才增設非官守議員。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08016",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "1844年成立最高法院，是香港的最高司法機關，依據香港法律審案。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08017",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 英皇制誥、(2) 外交",
+      "newExplanation": "1843年4月，英國頒布《英皇制誥》及《皇室訓令》兩份法律文件，確立香港的政府架構及典章制度。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08018",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 司法、(2) 英國、(3) 英皇制誥",
+      "newExplanation": "最高法院是香港最高司法機關，可獨立審理本地條例是否抵觸英國法律或《英皇制誥》。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08019",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 議政、(2) 定例",
+      "newExplanation": "港督同時兼任議政局和定例局的主席，對法案有最終決定權。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08020",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 主席、(2) 法案",
+      "newExplanation": "港督兼任議政局及定例局的主席，集行政與立法權力於一身，更對法案有最終決定權。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08021",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "港督享有特定的司法權，包括赦免罪犯、減刑等，權力相當集中。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08022",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "英國於1841年強佔香港島後，隨即宣布香港為自由港，發展轉口貿易，作為向中國經濟擴張的基地。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08023",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "在自由港政策下，商船可自由進出香港的港口，無須繳納港口稅，吸引大量商人前來貿易。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08024",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 香港島、(2) 自由港、(3) 港口稅",
+      "newExplanation": "英國於1841年強佔香港島後便推行自由港政策，商船可自由進出香港港口，無須繳交港口稅。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08025",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 轉口貿易、(2) 鴉片",
+      "newExplanation": "香港成為自由港後前來經商的外國商人大增，轉口貿易成為香港的經濟支柱，其中以鴉片貿易的收益最大。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08026",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "外國商人以香港為中轉站，把印度生產的棉花與鴉片，以及英國的棉織品轉銷內地；同時採購內地的茶葉、絲綢、瓷器轉銷英國及其殖民地。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08027",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 航運、(2) 銀行",
+      "newExplanation": "暢旺的轉口貿易帶動了航運業、銀行業、造船業與船舶修理業等相關產業的發展。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08028",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 船塢、(2) 黃埔船塢",
+      "newExplanation": "至1867年香港已建有五個船塢，造船與船舶修理業由外資企業壟斷，並以香港黃埔船塢公司規模最大。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08029",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "香港人口由1841年約一萬人增至1898年約三十七萬人，外來人口是急升的重要動力，並以中國內地的移居人士為主。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08030",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "人口激增令居住環境擁擠、衛生條件惡劣，其中以華人聚居的太平山區（今上環太平山街一帶）情況最為嚴重。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08031",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "1894年太平山區爆發嚴重鼠疫，造成多人死亡，政府遂為該區進行大規模消毒。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08032",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "1883年香港政府成立潔淨局，專責清洗街道等衛生工作，但仍未能有效改善華人住宅區的衛生問題。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08033",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 警隊、(2) 團防局",
+      "newExplanation": "1844年香港政府成立警隊，1866年更允許華人成立團防局，協助維持地方治安。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08034",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "1842至1897年間，香港政府對本地華人實施宵禁，沒有通行證的華人於夜間指定時段不得外出。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08035",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "自1891年起，團防局委員會主席一職由華民政務司兼任，以加強介入華人社區事務並進行監視。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08036",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "十九世紀末只有少數華人精英及領袖獲委任為太平紳士、潔淨局議員甚或定例局議員，大多數華人仍未獲得公平待遇，社會地位低下。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08037",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "1888年英國通過《歐洲人區域保留條例》，指定部分地區不可興建中式住宅，是當時限制華人的歧視措施之一。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08038",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "華民政務司負責處理華人事務，自1891年起更兼任團防局委員會主席，以加強介入並監視華人社區。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08039",
+      "expectedExplanation": "答案依校內試題檔的評卷參考。",
+      "newExplanation": "律師伍廷芳於1880年被委任為定例局首位華人非官守議員，成為華人精英與政府溝通的重要橋樑。",
+      "note": "依課題8 課本／筆記段落核對"
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ08040",
+      "expectedExplanation": "填充題答案（依空格次序）：(1) 伍廷芳、(2) 非官守",
+      "newExplanation": "1880年，華人律師伍廷芳獲委任為定例局首位華人非官守議員，反映政府開始借助華人精英管治不斷擴大的華人社會。",
+      "note": "依課題8 課本／筆記段落核對"
+    }
+  ]
+}

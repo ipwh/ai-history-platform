@@ -9,6 +9,7 @@ import path from "node:path";
 
 import { getServerConfig, MIN_AUTH_SECRET_LENGTH, isProductionRuntime } from "./config";
 import { isStudentPatternEmail } from "./auth/role";
+import { EXPLANATION_HOLD_POLICIES } from "./quality/explanation-quality";
 
 export { MIN_AUTH_SECRET_LENGTH };
 
@@ -357,6 +358,30 @@ export function describeConfigIssues(): ConfigIssue[] {
       code: "auto-publish-validated-disabled",
       message:
         "AUTO_PUBLISH_VALIDATED_QUESTIONS=false：通過自動品質驗證的題目會留在草稿，必須由教師發布；確定這是刻意的設定。",
+    });
+  }
+
+  // 解釋未達標是否暫緩派發（產品政策；預設 off）
+  const holdPolicyRaw = (process.env.EXPLANATION_HOLD_POLICY ?? "").trim();
+  if (
+    holdPolicyRaw.length > 0 &&
+    !(EXPLANATION_HOLD_POLICIES as readonly string[]).includes(holdPolicyRaw.toLowerCase())
+  ) {
+    issues.push({
+      level: "error",
+      code: "explanation-hold-policy-invalid",
+      message: `EXPLANATION_HOLD_POLICY="${holdPolicyRaw}" 不是有效值（${EXPLANATION_HOLD_POLICIES.join("／")}）；已回退為 off。打錯字不會令題目意外全部停止派發。`,
+    });
+  }
+  if (config.explanationHoldPolicy !== "off") {
+    issues.push({
+      level: "warning",
+      code: "explanation-hold-policy-active",
+      message:
+        `EXPLANATION_HOLD_POLICY=${config.explanationHoldPolicy}：解釋為佔位文字` +
+        (config.explanationHoldPolicy === "placeholder-or-answer-only" ? "或只列答案" : "") +
+        "的題目不會派給學生。以 2026-10-20 的題庫為例，1,875 題全部屬這兩類，啟用後學生將沒有題目可練習；" +
+        "請確認這是刻意的產品決定，並先以 `npm run audit:explanation-worklist` 查看影響範圍。",
     });
   }
 

@@ -1343,6 +1343,47 @@ export const MIGRATIONS: Migration[] = [
       `DELETE FROM sections WHERE id IN ('topic-3-pre-medieval', 'topic-6-intro', 'topic-2-classical', 'topic-2-classical-greece', 'topic-2-classical-rome', 'topic-2-medieval', 'topic-2-medieval-christianity', 'topic-2-medieval-feudalism', 'topic-2-medieval-legacy', 'topic-2-medieval-end', 'topic-3-empire', 'topic-3-trade-network', 'topic-3-europe', 'topic-3-asia', 'topic-3-golden-age', 'topic-4-documented', 'topic-4-life', 'topic-6-early-expansion', 'topic-6-late-expansion', 'topic-6-policy', 'topic-6-impact-others', 'topic-6-impact-europe', 'topic-7-revolution-causes', 'topic-7-revolution-impact', 'topic-7-constitution', 'topic-7-postwar', 'topic-8-occupation', 'topic-8-economy', 'topic-8-society', 'topic-9-ww1-causes', 'topic-9-ww1-trigger', 'topic-9-ww1-result', 'topic-9-interwar', 'topic-9-treaty', 'topic-9-ww2', 'topic-9-impact', 'topic-10-coldwar-early', 'topic-10-coldwar-thaw', 'topic-10-coldwar-deteriorate', 'topic-11-challenges-conflict', 'topic-11-challenges-poverty', 'topic-11-challenges-health', 'topic-11-challenges-environment', 'topic-11-league', 'topic-12-pre-war-economy', 'topic-12-pre-war-chinese', 'topic-12-post-war-economy', 'topic-12-post-war-society', 'topic-12-global-links')`,
     ],
   },
+  {
+    id: "0026-question-content-flags",
+    statements: [
+      // ── 內容改進標記（append-only）────────────────────────────────
+      //
+      // 教師需要把「解釋待重寫」「技能待確認」這類**工作狀態**記下來，但這些標記
+      // 不是覆核決定：
+      //
+      //   - 放進 `question_reviews` 會把它們當成裁決（例如 `returned` 會令題目下架），
+      //     而且會污染「誰核准過這一版」的證據；
+      //   - 寫進 `questions.skill` 之類的欄位會在教師未逐題確認前改動已發布題目。
+      //
+      // 因此另設一個**只可新增**的事件表：每一列是一個「標記／解除標記」事件，
+      // 保留誰（actor_email／actor_role）、何時、甚麼理由（reason），永不覆寫歷史。
+      // 現行狀態 = 每題每種標記的最新一列事件。
+      //
+      // flag 的允許值由應用層列舉（見 src/server/quality/content-flags.ts）。
+      // revision 及 question_fingerprint 記錄「標記時看的是哪一版」，題目之後被改寫時，
+      // 事件仍然保留，但會被視為「內容已改，需重新判斷」，不會靜默當成已處理。
+      `CREATE TABLE IF NOT EXISTS question_content_flags (
+        id TEXT PRIMARY KEY,
+        question_id TEXT NOT NULL,
+        revision INTEGER NOT NULL,
+        question_fingerprint TEXT NOT NULL,
+        flag TEXT NOT NULL,
+        state TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        actor_email TEXT NOT NULL,
+        actor_role TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )`,
+      // 重複提交同一個事件不會產生重複列（冪等）；不同時間的同一決定仍是不同事件，
+      // 因此索引不含 created_at。
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_question_content_flags_unique
+         ON question_content_flags(question_id, revision, question_fingerprint, flag, state)`,
+      `CREATE INDEX IF NOT EXISTS idx_question_content_flags_question
+         ON question_content_flags(question_id, created_at DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_question_content_flags_flag
+         ON question_content_flags(flag, created_at DESC)`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {
