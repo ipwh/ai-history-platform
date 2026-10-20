@@ -118,6 +118,75 @@ describe("試點缺陷 2：選擇題正確答案是教材改寫時被誤丟", ()
     expect(blocking.map((issue) => issue.code)).toContain("answer-not-in-material");
   });
 
+  it("並列式短答案只要每一項見於教材就不丟棄（連接詞不同）", () => {
+    // 2026-10-20 正式環境實際個案：教材寫「只有王室、貴族、富商等才有能力負擔」，
+    // 模型寫成「王室、貴族和富商」，舊規則因少於 8 字而直接丟棄整題。
+    const material: MaterialUnit[] = [
+      {
+        blockId: "egypt-mummy",
+        sourceLocation: "合成教材 · 第 1 段",
+        text: "製作木乃伊的費用高昂，一般只有王室、貴族、富商等才有能力負擔。",
+      },
+    ];
+    const result = checkQuestionQuality(
+      mc({
+        question: "根據教材，古埃及只有哪類人有能力負擔製作木乃伊？",
+        options: ["王室、貴族和富商", "所有平民", "只有祭司", "只有農民"],
+        correctAnswer: "王室、貴族和富商",
+        sourceExcerpt: "一般只有王室、貴族、富商等才有能力負擔",
+        sourceBlockIds: ["egypt-mummy"],
+      }),
+      material,
+    );
+    expect(result.issues.filter((issue) => issue.severity === "blocking")).toHaveLength(0);
+    const issue = result.issues.find((entry) => entry.code === "answer-not-in-material");
+    expect(issue?.severity).toBe("warning");
+    expect(result.outcome).toBe("pass");
+  });
+
+  it("並列式答案只要有一項不見於教材就仍然丟棄", () => {
+    const material: MaterialUnit[] = [
+      {
+        blockId: "egypt-mummy",
+        sourceLocation: "合成教材 · 第 1 段",
+        text: "製作木乃伊的費用高昂，一般只有王室、貴族、富商等才有能力負擔。",
+      },
+    ];
+    const result = checkQuestionQuality(
+      mc({
+        question: "根據教材，古埃及只有哪類人有能力負擔製作木乃伊？",
+        options: ["王室、貴族和商人", "所有平民", "只有祭司", "只有農民"],
+        correctAnswer: "王室、貴族和商人",
+        sourceExcerpt: "一般只有王室、貴族、富商等才有能力負擔",
+        sourceBlockIds: ["egypt-mummy"],
+      }),
+      material,
+    );
+    const blocking = result.issues.filter((issue) => issue.severity === "blocking");
+    expect(blocking.map((issue) => issue.code)).toContain("answer-not-in-material");
+  });
+
+  it("異體字（氾／泛、週／周）不會令正確答案被當成無依據", () => {
+    const material: MaterialUnit[] = [
+      {
+        blockId: "egypt-nile",
+        sourceLocation: "合成教材 · 第 1 段",
+        text: "古埃及人觀察尼羅河的氾濫週期，制定曆法。",
+      },
+    ];
+    const result = checkQuestionQuality(
+      mc({
+        question: "古埃及人觀察甚麼現象來制定曆法？",
+        options: ["泛濫周期", "潮汐", "月相", "雨季"],
+        correctAnswer: "泛濫周期",
+        sourceExcerpt: "古埃及人觀察尼羅河的氾濫週期，制定曆法",
+        sourceBlockIds: ["egypt-nile"],
+      }),
+      material,
+    );
+    expect(result.issues.filter((issue) => issue.severity === "blocking")).toHaveLength(0);
+  });
+
   it("填充題的短答案仍然必須逐字見於教材（沒有套用改寫規則）", () => {
     const result = checkQuestionQuality(
       mc({

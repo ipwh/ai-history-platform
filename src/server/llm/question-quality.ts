@@ -248,10 +248,58 @@ function unsupportedFactTokens(text: string, materialText: string): string[] {
 }
 
 /**
+ * 答案與教材「用字等同」的處理（只用於比對，不改動任何顯示文字）。
+ *
+ * 為甚麼需要（2026-10-20 實際缺陷）：真實模型寫選擇題時，正確選項常是教材的並列詞語，
+ * 但換了連接詞或異體字，逐字比對就會把正確答案丟棄，學生拿不到題目：
+ *   教材「只有王室、貴族、富商等才有能力負擔」
+ *   答案「王室、貴族和富商」（、→和，少了「等」）
+ *   教材「尼羅河的氾濫週期」／答案「泛濫周期」（氾→泛、週→周）
+ * 這些都不是杜撰，只是書寫差異。
+ */
+const ANSWER_JOINERS = /[、和及與]/;
+
+/** 常見異體字（只影響比對，不影響題目顯示） */
+const VARIANT_CHARS: readonly [string, string][] = [
+  ["氾", "泛"],
+  ["週", "周"],
+  ["裏", "裡"],
+  ["佔", "占"],
+  ["註", "注"],
+];
+
+/** 比對用正規化：在 normalizeForMatch 之上統一異體字 */
+export function normalizeForAnswerMatch(text: string): string {
+  let value = normalizeForMatch(text);
+  for (const [variant, canonical] of VARIANT_CHARS) {
+    value = value.split(variant).join(canonical);
+  }
+  return value;
+}
+
+/**
+ * 並列式短答案是否由教材用語組成：以「、和及與」分項，每一項（≥2 字）都見於教材。
+ *
+ * 只適用於**兩個或以上**分項的答案（例如「王室、貴族和富商」、「化學及醫學知識」）；
+ * 單一詞語仍須逐字或按改寫規則見於教材，避免只憑幾個常用字就當作有依據。
+ */
+function answerChunksSupported(rawKey: string, materialText: string): boolean {
+  const parts = rawKey
+    .split(ANSWER_JOINERS)
+    .map((part) => normalizeForAnswerMatch(part))
+    .filter((part) => part.length > 0);
+  if (parts.length < 2) return false;
+  if (!parts.every((part) => part.length >= 2)) return false;
+  const material = normalizeForAnswerMatch(materialText);
+  return parts.every((part) => material.includes(part));
+}
+
+/**
  * 答案是否可視為「教材支持的改寫」（非逐字引用）。
  *
  * 三項條件同時成立才接納，任何一項不成立即維持原本的丟棄行為（fail-closed）：
- *   1. 只有完整句子的答案才適用：短答案（詞語）仍必須逐字見於教材；
+ *   1. 只有完整句子的答案才適用：短答案（詞語）仍必須逐字見於教材
+ *      （並列式短答案另由 `answerChunksSupported` 逐項核對）；
  *   2. 答案不可帶有教材沒有的具體事實標記（年份、數字、《》標題）；
  *   3. 與教材的二字片段重疊率達 `PARAPHRASE_MIN_COVERAGE`。
  *
@@ -281,10 +329,11 @@ function paraphraseSupport(
  * 而下一步又用逐字比對把它丟棄（兩套標準會令可用的題目白白流失）。
  */
 export function answerSupportedByMaterial(answer: string, materialText: string): boolean {
-  const key = normalizeForMatch(answer);
-  const material = normalizeForMatch(materialText);
+  const key = normalizeForAnswerMatch(answer);
+  const material = normalizeForAnswerMatch(materialText);
   if (key.length === 0 || material.length === 0) return false;
   if (material.includes(key)) return true;
+  if (answerChunksSupported(answer, materialText)) return true;
   return (
     key.length >= PARAPHRASE_MIN_LENGTH &&
     bigramCoverage(key, material) >= PARAPHRASE_MIN_COVERAGE
@@ -920,13 +969,30 @@ export function checkQuestionQuality(
     candidate.questionType === "mc" || candidate.questionType === "fill";
 
   if (keyMustAppearInMaterial && normalizedKey.length > 0 && materialText.length > 0) {
+    // 逐字：忽略教材的括號附註，並把常見異體字（氾／泛、週／周）視為相同用字。
     const literal =
       materialText.includes(normalizedKey) ||
       materialTextWithoutNotes.includes(normalizedKey) ||
+      (normalizeForAnswerMatch(key).length > 0 &&
+        normalizeForAnswerMatch(units.map((unit) => unit.text).join("\n")).includes(
+          normalizeForAnswerMatch(key),
+        )) ||
       (normalizedKey.length >= 20 && excerptText.includes(normalizedKey.slice(0, 20)));
-    const paraphrase = literal ? null : paraphraseSupport(candidate.questionType, normalizedKey, candidate.correctAnswer, materialText, excerptText);
-    if (!literal && paraphrase === null) {
+    // 並列式短答案（「王室、貴族和富商」）逐項核對：連接詞或次序用字不同不應判為無依據。
+    const chunksSupported = literal ? false : answerChunksSupported(key, units.map((unit) => unit.text).join("\n"));
+    const paraphrase = literal || chunksSupported
+      ? null
+      : paraphraseSupport(candidate.questionType, normalizedKey, candidate.correctAnswer, materialText, excerptText);
+    if (!literal && !chunksSupported && paraphrase === null) {
       blocking("answer-not-in-material", `標準答案「${key}」未見於提供的教材，無法確認依據`);
+    } else if (chunksSupported) {
+      issues.push({
+        code: "answer-not-in-material",
+        message:
+          `標準答案「${truncateForMessage(key)}」由教材的並列詞語組成（每一項都見於教材，但連接詞或次序不同），` +
+          "並非逐字原文；已記錄為警告供教師覆核，不會因此丟棄",
+        severity: "warning",
+      });
     } else if (paraphrase !== null) {
       issues.push({
         code: "answer-not-in-material",

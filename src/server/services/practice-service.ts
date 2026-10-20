@@ -368,15 +368,17 @@ async function generatePracticeQuestions(options: {
 
   collect(outcomes);
 
-  // 由已成功出題的分節補足不足的題數。最多補兩輪（有進展才繼續），避免無限重試；
-  // 2026-10-18 由「只補一次」放寬為兩輪：單輪補題常因個別分節無合適題材而不足，
-  // 令學生明明還有可用題材卻只拿到部分題目。
+  // 由已成功出題的分節補足不足的題數，最多三輪；**同一輪沒有進展不會立即停止**，
+  // 連續兩輪都沒有新題目才放棄——真實模型每一輪的選材有隨機性，2026-10-20 正式環境
+  // 就出現「第一次補題剛好重複同一批史實」而令學生選 10 題只拿到 5 題
+  // （單獨重跑同一請求即可補回 4 題）。
   //
-  // 補題的第二輪會把「第一輪完全出不到題目」的分節也納入（機會均等），因為單次生成
+  // 補題的第二輪起會把「完全出不到題目」的分節也納入（機會均等），因為單次生成
   // 失敗往往只是模型寫壞了一題，再試一次多數可以交出題目。
   let missing = options.questionCount - questions.length;
   const emptySectionIds = countUnproductiveSections(allocation, sectionsWithQuestions);
-  for (let round = 0; round < 2 && missing > 0; round += 1) {
+  let noGainRounds = 0;
+  for (let round = 0; round < 3 && missing > 0; round += 1) {
     const fallbackSections =
       round === 0 ? [...sectionsWithQuestions] : [...sectionsWithQuestions, ...emptySectionIds];
     if (fallbackSections.length === 0) break;
@@ -390,7 +392,8 @@ async function generatePracticeQuestions(options: {
     });
     collect(topUp);
     missing = options.questionCount - questions.length;
-    if (questions.length === before) break;
+    noGainRounds = questions.length === before ? noGainRounds + 1 : 0;
+    if (noGainRounds >= 2) break;
   }
 
   if (questions.length === 0) {
