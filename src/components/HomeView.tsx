@@ -162,6 +162,10 @@ export function HomeView() {
   const dueCount = progress?.review.dueCount ?? 0;
   const totalAttempted = started.reduce((sum, item) => sum + item.attemptedQuestions, 0);
   const totalCorrect = started.reduce((sum, item) => sum + item.correctQuestions, 0);
+  const totalPracticeAnswers = topics.reduce(
+    (sum, topic) => sum + topic.progress.answeredQuestions,
+    0,
+  );
   const overallAccuracy =
     totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : null;
 
@@ -202,8 +206,8 @@ export function HomeView() {
           </p>
           <div className="home-hero__stats">
             <div className="home-stat">
-              <span className="home-stat__value">{totalAttempted}</span>
-              <span className="home-stat__label">已作答題目</span>
+              <span className="home-stat__value">{totalPracticeAnswers}</span>
+              <span className="home-stat__label">練習累計答題</span>
             </div>
             <div className="home-stat">
               <span className="home-stat__value">
@@ -327,7 +331,9 @@ export function HomeView() {
                 <span className="topic-tile__progress">
                   <ProgressBar value={eligible > 0 ? answered / eligible : 0} />
                   <span className="topic-tile__progressText">
-                    {eligible > 0 ? `已作答 ${answered}／${eligible} 條` : "尚未有可作答題目"}
+                    {eligible > 0
+                      ? `題庫進度 ${answered}／${eligible} 條 ・ 練習累計答題 ${topic.progress.answeredQuestions} 題`
+                      : `尚未有可作答題目 ・ 練習累計答題 ${topic.progress.answeredQuestions} 題`}
                   </span>
                 </span>
                 <span className="topic-tile__footer">

@@ -927,6 +927,10 @@ export interface PracticeRecordSession {
   sessionId: string;
   learnerId: string;
   learnerLabel: string;
+  learnerName: string | null;
+  learnerClassName: string | null;
+  learnerStudentNumber: string | null;
+  learnerEmail: string | null;
   topicId: string;
   topicTitle: string;
   createdAt: string;
@@ -952,11 +956,18 @@ export interface PracticeRecordTopicOption {
   topicNumber: number | null;
 }
 
-/** 曾作答的學習者摘要（不含姓名等個人資料） */
+/** 曾使用平台的學習者摘要（學生名冊欄位只會在教師端 API 提供） */
 export interface PracticeRecordLearner {
   learnerId: string;
   lastAt: string;
   sessions: number;
+  answeredQuestions: number;
+  correctCount: number;
+  accuracy: number | null;
+  name: string | null;
+  className: string | null;
+  studentNumber: string | null;
+  email: string | null;
 }
 
 /** 教師端首頁統計（只包含出題相關及學生練習記錄；教材、OCR 及系統狀態屬管理員職能） */

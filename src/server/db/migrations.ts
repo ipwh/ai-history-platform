@@ -1384,6 +1384,27 @@ export const MIGRATIONS: Migration[] = [
          ON question_content_flags(flag, created_at DESC)`,
     ],
   },
+  {
+    id: "0027-roster-student-identities",
+    statements: [
+      // 教師端需要按班別、姓名及學號監察學生使用情況，但名冊（Google Sheet）只是
+      // 記憶體快取，Google 短暫故障或部署重啟後便無法配對，教師只會見到電郵。
+      //
+      // 每次名冊成功載入時整體替換此表，只保存教師監察所需的四項資料；
+      // 不保存密碼、登入憑證或任何作答內容。名冊停用後仍可讀取最後一次成功的
+      // 身分快照，避免歷史練習記錄突然失去姓名及班別。
+      `CREATE TABLE IF NOT EXISTS roster_students (
+        email TEXT PRIMARY KEY,
+        name TEXT NOT NULL DEFAULT '',
+        class_name TEXT NOT NULL DEFAULT '',
+        student_number TEXT NOT NULL DEFAULT '',
+        in_scope INTEGER NOT NULL DEFAULT 1,
+        updated_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_roster_students_class
+         ON roster_students(class_name, student_number)`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

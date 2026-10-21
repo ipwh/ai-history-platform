@@ -12,6 +12,7 @@ import {
   type AssembledPractice,
   type Difficulty,
   type PracticeResult,
+  type PracticeSession,
   type PracticeSetupInput,
   type Question,
   type QuestionFeedback,
@@ -109,6 +110,17 @@ function shuffleQuestionOptions(question: Question): Question {
 
 function toStudentQuestion(question: Question): StudentQuestion {
   return studentQuestionSchema.parse(question);
+}
+
+function getCompleteSessionQuestions(session: PracticeSession): Question[] {
+  const questions = getSessionQuestions(session.id);
+  if (questions.length !== session.questionCount || questions.length === 0) {
+    throw new PracticeServiceError(
+      "這次練習的題目資料不完整，暫時無法顯示。請返回課題頁重新開始練習。",
+      409,
+    );
+  }
+  return questions;
 }
 
 export function buildFeedback(
@@ -746,7 +758,7 @@ export function getPracticeView(sessionId: string, learnerId: string): PracticeV
     throw new PracticeServiceError("不能讀取其他學習者的練習記錄", 403);
   }
 
-  const questions = getSessionQuestions(sessionId);
+  const questions = getCompleteSessionQuestions(session);
   const attempts = listAttempts(sessionId);
   const attemptByQuestion = new Map(attempts.map((attempt) => [attempt.questionId, attempt]));
 
@@ -784,7 +796,7 @@ export async function submitAnswer(
     throw new PracticeServiceError("不能修改其他學習者的練習記錄", 403);
   }
 
-  const questions = getSessionQuestions(sessionId);
+  const questions = getCompleteSessionQuestions(session);
   const question = questions.find((item) => item.id === questionId);
   if (!question) throw new PracticeServiceError("這條題目不屬於本次練習", 404);
 
@@ -891,7 +903,7 @@ export function getPracticeResult(sessionId: string, learnerId: string): Practic
     throw new PracticeServiceError("不能讀取其他學習者的練習記錄", 403);
   }
 
-  const questions = getSessionQuestions(sessionId);
+  const questions = getCompleteSessionQuestions(session);
   const attempts = listAttempts(sessionId);
   const attemptByQuestion = new Map(attempts.map((attempt) => [attempt.questionId, attempt]));
   const titles = sectionTitleMap(session.topicId);

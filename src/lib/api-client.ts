@@ -47,7 +47,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   const text = await response.text();
-  const payload: unknown = text.length > 0 ? JSON.parse(text) : null;
+  const payload = parseResponsePayload(text, response.status);
 
   if (!response.ok) {
     const record = (payload ?? {}) as { error?: string; details?: string[] };
@@ -71,7 +71,7 @@ export const api = {
   upload: async <T,>(path: string, formData: FormData): Promise<T> => {
     const response = await fetch(path, { method: "POST", body: formData });
     const text = await response.text();
-    const payload: unknown = text.length > 0 ? JSON.parse(text) : null;
+    const payload = parseResponsePayload(text, response.status);
     if (!response.ok) {
       const record = (payload ?? {}) as { error?: string; details?: string[] };
       throw new ApiError(
@@ -83,3 +83,15 @@ export const api = {
     return payload as T;
   },
 };
+
+function parseResponsePayload(text: string, status: number): unknown {
+  if (text.length === 0) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new ApiError(
+      `伺服器回應格式不正確（HTTP ${status}），請重試。`,
+      status,
+    );
+  }
+}

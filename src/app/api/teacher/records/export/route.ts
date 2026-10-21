@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 
 import { handleRoute, privateResponseHeaders } from "@/server/http";
 import { requireTeacher } from "@/server/auth/guards";
+import { listRecordLearners } from "@/server/repositories/practice";
+import { listStoredRosterStudents } from "@/server/repositories/roster-identities";
+import { getRosterSnapshot } from "@/server/roster";
 import {
   buildRecordsCsv,
+  enrichPracticeRecordLabels,
+  enrichRecordLearners,
   listPracticeRecords,
   recordFilterFromParams,
 } from "@/server/services/practice-records";
@@ -15,7 +20,13 @@ export async function GET(request: Request) {
   return handleRoute(async () => {
     await requireTeacher(request);
     const params = new URL(request.url).searchParams;
-    const records = listPracticeRecords(recordFilterFromParams(params, 2000));
+    const roster = await getRosterSnapshot();
+    const rosterStudents = roster.students.length > 0 ? roster.students : listStoredRosterStudents();
+    const learners = enrichRecordLearners(listRecordLearners(), rosterStudents);
+    const records = enrichPracticeRecordLabels(
+      listPracticeRecords(recordFilterFromParams(params, 2000)),
+      learners,
+    );
     const csv = buildRecordsCsv(records);
     const filename = `practice-records-${new Date().toISOString().slice(0, 10)}.csv`;
     return new NextResponse(`\uFEFF${csv}`, {

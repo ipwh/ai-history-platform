@@ -12,6 +12,7 @@ type Seed = typeof import("@/server/seed");
 type LearnerRepository = typeof import("@/server/repositories/learners");
 type RecordsService = typeof import("@/server/services/practice-records");
 type PracticeRepository = typeof import("@/server/repositories/practice");
+type DatabaseConnection = typeof import("@/server/db/connection");
 
 let practice: PracticeService;
 let questionsRepo: QuestionRepository;
@@ -19,6 +20,7 @@ let seed: Seed;
 let learners: LearnerRepository;
 let recordsService: RecordsService;
 let practiceRepo: PracticeRepository;
+let database: DatabaseConnection;
 
 const LEARNER = "test-learner-1";
 const SECTION = "topic-5-renaissance-reformation";
@@ -30,6 +32,7 @@ beforeAll(async () => {
   learners = await import("@/server/repositories/learners");
   recordsService = await import("@/server/services/practice-records");
   practiceRepo = await import("@/server/repositories/practice");
+  database = await import("@/server/db/connection");
   seed.ensureBootstrap();
 });
 
@@ -384,6 +387,26 @@ describe("學生練習流程（整合測試）", () => {
     expect(() => practice.getPracticeView(assembled.session.id, "other-learner")).toThrow(/其他學習者/);
   });
 
+  it("練習快照題目數不完整時明確回報，避免學生頁一直停在載入畫面", async () => {
+    const assembled = await practice.createPractice({
+      learnerId: LEARNER,
+      topicId: "topic-5",
+      sectionIds: [SECTION],
+      questionTypes: ["mc"],
+      difficulty: "basic",
+      questionCount: 1,
+      mode: "standard",
+      sourceSessionId: null,
+    });
+
+    database.getDb()
+      .prepare("UPDATE practice_sessions SET question_snapshot_json = ? WHERE id = ?")
+      .run("[]", assembled.session.id);
+
+    expect(() => practice.getPracticeView(assembled.session.id, LEARNER))
+      .toThrow("這次練習的題目資料不完整");
+  });
+
   it("選擇題選項次序會被打亂，正確答案不會固定在第一個位置", async () => {
     const positions = new Set<number>();
     for (let attempt = 0; attempt < 30; attempt += 1) {
@@ -426,6 +449,33 @@ describe("學生練習流程（整合測試）", () => {
     expect(record.questionTypeLabels.length).toBeGreaterThan(0);
     expect(record.questions).toHaveLength(record.totalQuestions);
     expect(record.correctCount + record.wrongCount).toBeLessThanOrEqual(record.totalQuestions);
+
+    const learner = practiceRepo.listRecordLearners().find((item) => item.learnerId === LEARNER);
+    expect(learner?.answeredQuestions).toBeGreaterThan(0);
+    expect(learner?.correctCount).toBe(progress.correctAnswers);
+  });
+
+  it("教師端學習者清單可按校內電郵配對名冊資料", () => {
+    const [enriched] = recordsService.enrichRecordLearners(
+      [],
+      [{
+        email: "student@example.edu.hk",
+        name: "測試學生",
+        className: "2A",
+        studentNumber: "08",
+        inScope: true,
+      }],
+    );
+
+    expect(enriched).toMatchObject({
+      learnerId: "school:student@example.edu.hk",
+      sessions: 0,
+      answeredQuestions: 0,
+      name: "測試學生",
+      className: "2A",
+      studentNumber: "08",
+      email: "student@example.edu.hk",
+    });
   });
 
   it("練習記錄可匯出 CSV，欄位包含作答日期、課題、題型及結果", () => {
@@ -433,6 +483,10 @@ describe("學生練習流程（整合測試）", () => {
       recordsService.listPracticeRecords({ learnerId: LEARNER }),
     );
     expect(csv).toContain("作答日期");
+    expect(csv).toContain("學生姓名");
+    expect(csv).toContain("班別");
+    expect(csv).toContain("學號");
+    expect(csv).toContain("電郵");
     expect(csv).toContain("課題");
     expect(csv).toContain("題型");
     expect(csv).toContain("結果");

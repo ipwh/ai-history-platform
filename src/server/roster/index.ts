@@ -7,6 +7,7 @@
  *   3. 對外只提供查詢結果及統計（人數、來源、更新時間），不提供整份名冊。
  */
 import { getServerConfig, type RosterConfig } from "../config";
+import { replaceStoredRosterStudents } from "../repositories/roster-identities";
 import { buildRoster, detectColumns, type RosterStudent } from "./columns";
 import { fetchRosterRows } from "./source";
 
@@ -98,6 +99,18 @@ export async function getRosterSnapshot(options: { force?: boolean } = {}): Prom
     try {
       const rows = await fetchRosterRows(config);
       const indexed = buildRosterIndex(rows, config);
+      try {
+        // 教師端在名冊暫時不可用或已停用時，仍可顯示上次成功的姓名、班別及學號。
+        // 只保存開放班別內的學生，避免把平台範圍外的名冊資料長期留存在資料庫。
+        replaceStoredRosterStudents(
+          indexed.students.filter((student) => student.inScope),
+        );
+      } catch (error) {
+        console.warn(
+          "[roster] 名冊身分快照寫入失敗，教師端只會使用即時名冊：",
+          error instanceof Error ? error.message : error,
+        );
+      }
       cache = { ...indexed, loadedAt: Date.now(), error: null };
       return snapshotFrom(cache);
     } catch (error) {

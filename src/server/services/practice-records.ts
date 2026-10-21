@@ -1,24 +1,115 @@
 /**
  * 學生練習記錄的查閱與匯出（教師端）。
  *
- * 練習記錄一律由資料庫的練習快照及作答記錄讀取，並不會回傳學生的其他個人資料；
- * 學習者只以帳戶電郵（已登入學生）或匿名 ID 顯示。
+ * 練習記錄一律由資料庫的練習快照及作答記錄讀取；教師端回應只會按名冊補上
+ * 班別、姓名、學號及帳戶電郵，未核對名冊的學習者仍以電郵或匿名 ID 顯示。
  */
 import {
   DIFFICULTY_LABELS,
   QUESTION_TYPE_LABELS,
+  type PracticeRecordLearner,
   type PracticeRecordQuestion,
   type PracticeRecordSession,
 } from "../../lib/types";
+import type { RosterStudent } from "../roster/columns";
 import { getTopic, sectionTitleMap } from "../repositories/topics";
 import {
   getSessionQuestions,
   listAttempts,
+  listRecordLearners,
   listSessionsForRecords,
   type SessionRecordFilter,
 } from "../repositories/practice";
 
 export type { PracticeRecordQuestion, PracticeRecordSession };
+
+/**
+ * 教師端監察只列出真實學生：教師／管理員的測試記錄另有標示，
+ * 端對端測試產生的 `e2e-` 學習者亦不應混入班別名單。
+ */
+function isRealStudentLearner(learnerId: string): boolean {
+  return (
+    !learnerId.startsWith("teacher:") &&
+    !learnerId.startsWith("admin:") &&
+    !learnerId.startsWith("e2e-")
+  );
+}
+
+/** 只在教師端回應補上名冊身分資料。 */
+export function enrichRecordLearners(
+  learners: ReturnType<typeof listRecordLearners>,
+  rosterStudents: RosterStudent[],
+): PracticeRecordLearner[] {
+  const rosterByEmail = new Map(rosterStudents.map((student) => [student.email, student]));
+  const learnerById = new Map(
+    learners
+      .filter((learner) => isRealStudentLearner(learner.learnerId))
+      .map((learner) => {
+        const email = learner.learnerId.startsWith("school:")
+          ? learner.learnerId.slice("school:".length).toLowerCase()
+          : null;
+        const rosterStudent = email ? rosterByEmail.get(email) : undefined;
+        return [
+          learner.learnerId,
+          {
+            ...learner,
+            name: rosterStudent?.name || null,
+            className: rosterStudent?.className || null,
+            studentNumber: rosterStudent?.studentNumber || null,
+            email,
+          },
+        ];
+      }),
+  );
+
+  for (const student of rosterStudents) {
+    if (!student.inScope) continue;
+    const learnerId = `school:${student.email}`;
+    if (learnerById.has(learnerId)) continue;
+    learnerById.set(learnerId, {
+      learnerId,
+      lastAt: "",
+      sessions: 0,
+      answeredQuestions: 0,
+      correctCount: 0,
+      accuracy: null,
+      name: student.name || null,
+      className: student.className || null,
+      studentNumber: student.studentNumber || null,
+      email: student.email,
+    });
+  }
+
+  return [...learnerById.values()].sort((left, right) => right.lastAt.localeCompare(left.lastAt));
+}
+
+/** 練習記錄及 CSV 匯出共用同一套學生標示。 */
+export function enrichPracticeRecordLabels(
+  records: PracticeRecordSession[],
+  learners: PracticeRecordLearner[],
+): PracticeRecordSession[] {
+  const learnerById = new Map(learners.map((learner) => [learner.learnerId, learner]));
+  return records.map((record) => {
+    const learner = learnerById.get(record.learnerId);
+    if (!learner) return record;
+    const primary = learner.name || learner.email || record.learnerLabel;
+    const details = [learner.className, learner.studentNumber]
+      .filter((value): value is string => Boolean(value))
+      .join(" ・ ");
+    return {
+      ...record,
+      learnerLabel: [
+        primary,
+        details ? `（${details}）` : "",
+        learner.name && learner.email ? ` · ${learner.email}` : "",
+      ].join(""),
+      learnerName: learner.name,
+      learnerClassName: learner.className,
+      learnerStudentNumber: learner.studentNumber,
+      learnerEmail: learner.email,
+    };
+  });
+}
 
 /**
  * 把學習者 ID 轉成教師易讀的標示。
@@ -63,6 +154,12 @@ function buildSessionRecord(
     sessionId: session.id,
     learnerId: session.learnerId,
     learnerLabel: learnerLabel(session.learnerId),
+    learnerName: null,
+    learnerClassName: null,
+    learnerStudentNumber: null,
+    learnerEmail: session.learnerId.startsWith("school:")
+      ? session.learnerId.slice("school:".length)
+      : null,
     topicId: session.topicId,
     topicTitle,
     createdAt: session.createdAt,
@@ -128,8 +225,8 @@ export function recordFilterFromParams(
 const FORMULA_LEADING = /^[=+\-@\t\r]/;
 
 /** CSV 欄位轉義：公式起首的字元加前置單引號，含逗號、引號或換行時以雙引號包住 */
-function csvCell(value: string | number | null): string {
-  if (value === null) return "";
+function csvCell(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return "";
   let text = String(value);
   if (FORMULA_LEADING.test(text)) text = `'${text}`;
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
@@ -156,7 +253,11 @@ function outcomeOf(row: PracticeRecordQuestion): keyof typeof OUTCOME_LABELS {
 export function buildRecordsCsv(records: PracticeRecordSession[]): string {
   const header = [
     "作答日期",
-    "學習者",
+    "學生姓名",
+    "班別",
+    "學號",
+    "電郵",
+    "學習者 ID",
     "課題",
     "分節",
     "題型",
@@ -179,7 +280,11 @@ export function buildRecordsCsv(records: PracticeRecordSession[]): string {
       lines.push(
         [
           record.createdAt,
-          record.learnerLabel,
+          record.learnerName,
+          record.learnerClassName,
+          record.learnerStudentNumber,
+          record.learnerEmail,
+          record.learnerId,
           record.topicTitle,
           row.sectionTitle,
           row.questionTypeLabel,

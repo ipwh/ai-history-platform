@@ -430,16 +430,47 @@ export function listSessionsForRecords(filter: SessionRecordFilter = {}): Practi
   return rows.map(mapSession);
 }
 
-/** 教師端查閱用：列出所有曾作答的學習者（最新記錄在前，不重複） */
-export function listRecordLearners(): { learnerId: string; lastAt: string; sessions: number }[] {
+/** 教師端查閱用：彙總所有曾使用平台的學習者活動（最新記錄在前） */
+export function listRecordLearners(): {
+  learnerId: string;
+  lastAt: string;
+  sessions: number;
+  answeredQuestions: number;
+  correctCount: number;
+  accuracy: number | null;
+}[] {
   return getDb()
     .prepare(
-      `SELECT learner_id AS learnerId, MAX(created_at) AS lastAt, COUNT(*) AS sessions
-       FROM practice_sessions
-       GROUP BY learner_id
+      `WITH answer_stats AS (
+         SELECT learner_id,
+                COUNT(*) AS answered_questions,
+                SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) AS correct_count,
+                COUNT(is_correct) AS graded_questions
+         FROM attempts
+         GROUP BY learner_id
+       )
+       SELECT s.learner_id AS learnerId,
+              MAX(s.created_at) AS lastAt,
+              COUNT(*) AS sessions,
+              COALESCE(a.answered_questions, 0) AS answeredQuestions,
+              COALESCE(a.correct_count, 0) AS correctCount,
+              CASE WHEN COALESCE(a.graded_questions, 0) > 0
+                   THEN 1.0 * a.correct_count / a.graded_questions
+                   ELSE NULL
+              END AS accuracy
+       FROM practice_sessions s
+       LEFT JOIN answer_stats a ON a.learner_id = s.learner_id
+       GROUP BY s.learner_id
        ORDER BY lastAt DESC`,
     )
-    .all() as unknown as { learnerId: string; lastAt: string; sessions: number }[];
+    .all() as unknown as {
+      learnerId: string;
+      lastAt: string;
+      sessions: number;
+      answeredQuestions: number;
+      correctCount: number;
+      accuracy: number | null;
+    }[];
 }
 
 /** 學習進度及重溫排程使用的作答記錄（已連結題庫題目） */

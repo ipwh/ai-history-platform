@@ -196,7 +196,7 @@ materials/
 | 頁面 | 路徑 | 功能 |
 | --- | --- | --- |
 | 學校帳戶登入 | `/login` | 以學校 Google Workspace 帳戶登入（未設定憑證時顯示設定說明） |
-| 課題選擇 | `/` | **首頁**：上方顯示個人化摘要（已作答題目、答對比率、待重溫題目）及「繼續上次練習」按鈕；下方用**中一／中二／中三分頁**只顯示該年級 4 個課題卡（課題名稱（已含課題編號）、所屬主題、作答進度及狀態），點選課題卡直接進入練習設定 |
+| 課題選擇 | `/` | **首頁**：上方顯示個人化摘要（練習累計答題、答對比率、待重溫題目）及「繼續上次練習」按鈕；課題卡分開顯示已發布題庫的不同題目進度及練習累計答題（包括 AI 生成題目及重做），避免完成多次練習後題庫進度仍顯示 0 而令人誤會；下方用**中一／中二／中三分頁**只顯示該年級 4 個課題卡（課題名稱（已含課題編號）、所屬主題、作答進度及狀態），點選課題卡直接進入練習設定 |
 | **重溫題目** | `/review` | 依你的作答記錄列出**已到重溫時間**的題目（依課題分組、說明到期原因）；只顯示「有多少條」及所屬分節，不會顯示題目內容或答案，**查看頁面不等於已重溫** |
 | 練習設定 | `/practice/new?topic=…` | 直接列出該課題下**全部主題**揀選（可多選，不再分節分組）、**題型（一次一種：選擇題或填充題）**、難度（只限選擇題）、題數、**出題方式（AI 即時生成／使用題庫）**、完整練習或重溫錯題 |
 | 練習作答 | `/practice/[sessionId]` | 一次一題、進度顯示、提交後顯示答案／解釋／知識點／教材來源；填充題另有 **AI 語意批改**；每題可**回報問題**；答案與標準答案極為接近時會標示「需要教師覆核」 |
@@ -526,7 +526,7 @@ materials/
 | 教師端首頁 | `/teacher` | 題庫概況（題目總數／已發布／草稿／已停用／校內試題待核對／未通過教材核對／待覆核回報）、學生練習記錄數量及常用操作入口 |
 | 題目管理 | `/teacher/questions` | 生成題目預覽（附教材依據）、手動新增／編輯／發布／停用／刪除題目、依分節及狀態篩選、**題目回報覆核**（可按狀態及課題篩選，標記已處理／已略過／重設待覆核；即時生成題目會標示「AI 即時生成題目」及「只存於該次練習，未存入題庫」） |
 | 題目生成與審核 | `/teacher/questions/generate` | 同上，預設捲動至生成區塊，方便直接出題及審核 |
-| 學生練習記錄 | `/teacher/records` | 查閱學生練習記錄（可按課題、學習者及日期篩選），顯示作答日期、課題、題型、答對及答錯的題目，並可**下載 CSV** 存檔（每題一列，含學生答案、正確答案及結果） |
+| 學生練習記錄 | `/teacher/records` | 名冊配對顯示學生姓名、班別、學號及電郵（名冊暫時不可用時沿用上次成功載入的身分快照）；可搜尋學生、按班別／近 7 日活躍／7–13 日未活動／14 日以上未活動／尚未開始篩選，檢視練習次數、累計答題、答對比率及最近活動；選擇學生後可按課題及日期查閱逐題作答，並可**下載 CSV**（每題一列，含學生資料、學生答案、正確答案及結果） |
 
 ### 管理員端
 
@@ -649,7 +649,7 @@ scripts/deploy-cloud-run.ps1      Cloud Build + Cloud Run 部署（見第十節�
 | `GET/POST /api/teacher/questions/[questionId]/review` | 查閱題目的覆核狀態及紀錄／記錄人工覆核決定（`{decision: "approved" \| "rejected" \| "returned", reason?}`；退回或不可用必須有原因；重複提交不會重複記錄） |
 | `GET/PATCH /api/teacher/reports` | 題目回報清單（可按狀態／課題篩選）／處理回報。`PATCH` 可用 `{status}` 只更新回報，或用 `{action: "withdraw-question"}` 一併暫時下架題目、`{action: "revalidate-question"}` 重新執行自動品質驗證；實際行動會記錄在回報的 `resolution_action` |
 | `GET/POST /api/teacher/content-improvement` | 解釋補寫／技能確認的工作佇列（唯讀，可按標記、解釋分類、建議改進類型及是否已標記篩選）／批次標記 `explanation_needs_rewrite`、`skill_needs_confirmation`（`{flag, action: "mark" \| "clear", questionIds, reason}`，最多 200 題、必須有理由）。標記只寫入 `question_content_flags`（只可新增），**不會**改變題目內容、答案、技能或發布狀態 |
-| `GET /api/teacher/records` | 學生練習記錄（可按 `topicId`、`learnerId`、`from`／`to` 日期篩選），每筆含作答日期、課題、題型及答對／答錯的題目 |
+| `GET /api/teacher/records` | 學生練習記錄（可按 `topicId`、`learnerId`、`from`／`to` 日期篩選），每筆含作答日期、課題、題型及答對／答錯的題目；另回傳 `learners`（每位學生的姓名、班別、學號、電郵、練習次數、累計答題及答對比率）及 `rosterSource`（`live`／`snapshot`／`none`） |
 | `GET /api/teacher/records/export` | 下載學生練習記錄 CSV（同樣支援上述篩選；UTF-8 BOM，Excel 可直接開啟） |
 | `PATCH /api/admin/sections/[sectionId]` | 修改分節名稱、說明及關鍵詞（**管理員**） |
 | `PATCH /api/admin/topics/[topicId]` | 發布／取消發布課題（**管理員**） |
@@ -969,6 +969,7 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 
 - **TOCTOU 防護**：覆核、狀態切換、自動發布全部改用 `UPDATE ... WHERE revision = ?`（`setQuestionStatusIfRevision`）；題目在檢查與更新之間被修改時回 409，舊核准不會套用到新版本。
 - **舊練習快照**：已作答題目仍顯示歷史回饋；**未作答**題目若在題庫已被隔離或結構不可作答，`POST /api/practice/[sessionId]/answers` 回 409，不再接受新作答。
+- **題目快照完整性**：學生端載入及成績頁會核對練習快照題數；快照缺漏時顯示可理解的錯誤及重新開始提示，不會無限停留在載入畫面。
 - **批次工具**：`publish-draft-questions`／`approve-questions` 的候選清單排除結構不可作答題目（不會因個別 409 中斷整批，也不會繞過可作答性）。
 - **學科授權邊界**：Golden fixture 裁決及「已修復並核准」需要 `HISTORY_REVIEWER_EMAILS` 名單內的帳戶；`teacher`／`admin` 平台角色本身不足，名單未設定時 fail-closed（admin 亦 403）。名單人選需科組指定（見政策清單第 9 項）。
 - **閘門 fail-closed**：沒有題目資料（0 題）時 8 個內容閘門一律 `INSUFFICIENT_EVIDENCE`；測試證據檔無法解析時 `tests` 由 PASS 降為 `INSUFFICIENT_EVIDENCE`（本 Sprint 實際發生並已修正證據檔編碼）。
@@ -1366,7 +1367,7 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
 | 強制登入 | `STUDENT_ROSTER_ENFORCE=true`（預設）時，名冊以外的學生會被導向 `/login?error=not_in_roster` 並說明原因；教師帳戶**不受名冊限制** |
 | 班別範圍 | `STUDENT_ROSTER_CLASS_PREFIXES=1,2,3`（前綴比對，只開放中一至中三）或 `STUDENT_ROSTER_CLASSES=1A,2B`（完全比對）；留空 = 不設限。範圍外的學生會被導向 `/login?error=outside_scope` 並顯示「本平台只開放中一至中三」 |
 | 快取 | 預設 600 秒（`STUDENT_ROSTER_CACHE_TTL_SECONDS`）；讀取失敗時沿用上一次成功的名冊（並在管理員端顯示錯誤），完全沒有可用名冊時**預設拒絕登入**（`STUDENT_ROSTER_FAIL_OPEN=true` 可改為放行，安全性較低） |
-| 個資 | 名冊只存在伺服器記憶體快取，不會寫入資料庫或回傳給前端；健康檢查及教師端只顯示來源、人數及更新時間，**不含姓名或電郵** |
+| 個資 | 名冊的姓名、班別、學號及電郵只供伺服器核對身分及教師端監察；每次成功載入會以同一批資料整體更新資料庫的 `roster_students` 身分快照（不保存密碼、登入憑證或作答內容），令 Google 短暫故障或名冊停用後，教師端仍能顯示上次成功的姓名及班別。健康檢查只顯示來源、人數及更新時間，**不含姓名或電郵** |
 
 **方案 A：Google Sheets API + 服務帳戶（建議）**
 
@@ -1379,8 +1380,9 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
    STUDENT_ROSTER_ENFORCE=true
    STUDENT_ROSTER_SOURCE=sheets-api
    STUDENT_ROSTER_SHEET_ID=1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM
-   STUDENT_ROSTER_SHEET_NAME=名冊
-   STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=./secrets/roster-sa.json   # 或直接貼上 JSON 內容
+   # 留空 = 第一張工作表（此校名冊為「工作表1」）；填錯工作表名稱會令名冊讀取失敗
+   STUDENT_ROSTER_SHEET_NAME=
+   STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=./secrets/roster-service-account.json   # 或直接貼上 JSON 內容
    ```
 
 **方案 B：CSV 匯出（最快，但 Sheet 需開放檢視權限）**
@@ -1393,7 +1395,7 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
    STUDENT_ROSTER_ENFORCE=true
    STUDENT_ROSTER_SOURCE=csv
    STUDENT_ROSTER_SHEET_ID=1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM
-   STUDENT_ROSTER_SHEET_NAME=名冊
+   STUDENT_ROSTER_SHEET_NAME=
    ```
 
 **方案 C：本機 CSV（離線／測試）**
@@ -1405,6 +1407,8 @@ STUDENT_ROSTER_FILE=./data/student-roster.csv
 
 > 想先試用而不影響登入，可設 `STUDENT_ROSTER_ENFORCE=false`：名冊只提供班別及學號，不會阻止名冊以外的帳戶登入。
 > 教師端「課題與系統狀態」頁會顯示名冊來源、是否已載入、人數、更新時間及最近錯誤；`/api/health` 亦回報名冊狀態（不含學生資料）。
+>
+> **教師端只看到電郵／匿名 ID 時**：先確認 `STUDENT_ROSTER_*` 已設定（本機為 `.env.local`，Cloud Run 為 `cloudbuild.yaml` 的 `_ROSTER_*` substitution）。名冊首次成功載入後會寫入 `roster_students` 身分快照；即使之後名冊暫時不可用，`/teacher/records` 仍會使用快照顯示姓名、班別及學號，並提示資料可能不是最新。
 
 ---
 
@@ -1414,6 +1418,7 @@ STUDENT_ROSTER_FILE=./data/student-roster.csv
 - 上載教材內容存於資料庫（可在 `/admin/materials` 刪除）；**原始檔案經儲存層（預設 `data/uploads/`）保存**；OCR 語言資料存放於 `data/ocr-cache/`；`data/` 整個目錄已被 `.gitignore` 忽略。
 - **檔案儲存抽象**：教材原始檔及 OCR 需要的檔案一律經 [src/server/storage/](src/server/storage/) 存取，業務邏輯不會寫死本機路徑。本機使用 `LocalStorageProvider`；未來部署 Cloud Run 可改用 `GcsStorageProvider`（已預留介面，尚未實作，設定 `STORAGE_PROVIDER=gcs` 時會回報清楚的「尚未實作」錯誤）。
 - 學習記錄：只儲存學習者 ID（匿名 UUID、`school:<電郵>` 或 `teacher:<電郵>`）、練習設定、作答內容及分數，**不收集姓名、電話或其他個人資料**。
+- **名冊身分快照（`roster_students`，migration 0027）**：啟用學生名冊時，每次成功載入會把開放班別學生的姓名、班別、學號及電郵整體寫入此表，供教師端按班別監察。這是唯一會把姓名寫入資料庫的地方；不保存密碼、登入憑證或任何作答內容。名冊停用後仍保留最後一次成功的快照，教師可繼續辨識歷史練習記錄；如學校要求只保留即時名冊，可清空此表並停用名冊（教師端會如實提示未能配對）。
 - 教師與學生的記錄以不同學習者 ID 前綴儲存，不會混用；教師以學生端測試時亦只會產生自己的記錄。
 - 題目回報（`question_reports`）：儲存回報的學習者 ID、題目、原因及補充說明，供教師覆核；教師端只顯示「學生／教師回報」類別，不顯示姓名或電郵。`question_id` 刻意不加外鍵，因為 AI 即時生成的題目只存在於練習快照、不會寫入題庫（題目是否存在由服務層核對）。
 - **資料持久化（Cloud Run 免費方案）**：SQLite 快照（`VACUUM INTO`）定期上傳到 Cloud Storage，並在啟動時還原；未設定 `BACKUP_BUCKET` 時完全不會啟用。詳見第十節「資料持久化」。
@@ -1799,7 +1804,7 @@ gcloud builds triggers create github `
   --name history-main --project 你的專案ID `
   --repo-name ai-history-platform --repo-owner ipwh `
   --branch-pattern "^main$" --build-config cloudbuild.yaml `
-  --substitutions _REGION=asia-east2,_SERVICE=history-self-study,_REPOSITORY=history,_AUTH_FLAG=--allow-unauthenticated,_RUNTIME_SA=history-run@你的專案ID.iam.gserviceaccount.com,_ROSTER_SHEET_ID=你的SheetID,_ROSTER_SHEET_NAME=名冊,_BACKUP_BUCKET=你的專案ID-history-backup,_ADMIN_EMAILS=你的電郵
+  --substitutions _REGION=asia-east2,_SERVICE=history-self-study,_REPOSITORY=history,_AUTH_FLAG=--allow-unauthenticated,_RUNTIME_SA=history-run@你的專案ID.iam.gserviceaccount.com,_ROSTER_SHEET_ID=你的SheetID,_ROSTER_SHEET_NAME=工作表1,_BACKUP_BUCKET=你的專案ID-history-backup,_ADMIN_EMAILS=你的電郵
 ```
 
 **部署後必做**
@@ -1836,10 +1841,21 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 | 名冊服務帳戶 | `history-roster-reader@pccss-ai-history.iam.gserviceaccount.com` |
 | 執行身分 | `history-run@pccss-ai-history.iam.gserviceaccount.com` |
 
-> **最近部署**：2026-10-21 06:51 UTC，revision **`history-self-study-00030-4f6`**（commit `cd82ea8`），100% 流量；
-> 資料快照於 06:45 UTC 上載，由 revision `history-self-study-00029-89l` 啟動時還原。`/api/health` 200；
-> 正式題庫 **2,082** 題（已發布 2,056、草稿 26），`qb-NJCFN0110000026` 題幹已為 1944 年（revision 4）。
-> 記錄見第十二節第 55 項。
+> **最近部署**：2026-10-21 08:06 UTC，revision **`history-self-study-00031-fxx`**（沿用映像檔
+> `7e0e539f-69d9-4003-89d3-56d43ee9559e`，先上載資料、後重啟），100% 流量；資料快照於 08:06 UTC 上載，
+> 由新 revision 啟動時還原（13,256 KB）。`/api/health` 200（`persistence.restore = restored`）；
+> 正式題庫 **2,080** 題（全部已發布、`teacher_confirmation_required = 0`），由 bucket 重新下載核對：
+> 修正及刪除均已生效、`PRAGMA integrity_check = ok`。
+> 本輪為**全題庫逐題 AI 核對**（教材段落 + 公認史實，必要時查權威網上資源）：2,082 題全部核對，
+> 校準 20/20 抓到故意改錯的答案；共 **33 題修正、2 題刪除**（平台無法顯示題目附圖）、
+> **3 題模型誤報維持原答案**；26 條原本待教師確認的草稿逐題核對為正確後解除暫緩並發布。
+> 報告：[docs/quality/answer-verification-2026-10-21.md](docs/quality/answer-verification-2026-10-21.md)；
+> 發布及回滾紀錄：[docs/teacher-review/answer-verification-release-2026-10-21.md](docs/teacher-review/answer-verification-release-2026-10-21.md)。
+> **這不是教師覆核**：`question_reviews` 仍為 40 筆，教師端如實顯示「已發布（未經人工覆核）」。
+
+> **2026-10-21 較早的部署（已被 `00031-fxx` 取代）**：revision `history-self-study-00030-4f6`（commit `cd82ea8`），
+> 資料快照於 06:45 UTC 上載，由 revision `history-self-study-00029-89l` 啟動時還原；當時題庫 2,082 題
+> （已發布 2,056、草稿 26），`qb-NJCFN0110000026` 題幹已為 1944 年（revision 4）。記錄見第十二節第 55 項。
 
 > **2026-10-21 較早的部署（已被 `00030-4f6` 取代）**：revision `history-self-study-00022-52v`（commit `fae11e2`）。
 > 已驗證：`/api/health` 200（ok、資料庫、LLM、登入已啟用、`staffApiOpen=false`）、資料庫由 Cloud Storage 快照還原、
@@ -2158,7 +2174,9 @@ node scripts/e2e-flow.mjs --start   # 端對端檢查全部通過（含版權閘
 | `tests/material-reference-remapping.test.ts`（Sprint 8.2；8.3 擴充） | **教材依據重新連結清單**：清單檔符合 schema 並覆蓋 30 條；套用器只在節錄逐字相符時連結，題目內容指紋不符（教師改過）、狀態與清單記載不符、目標文件未開放（`--require-open`）時不套用；第二次執行回報「已套用（略過）」且版本號不變；段落 ID 不在此資料庫時以「檔名＋位置字串」定位（跨資料庫重現）；**同一位置對應多個段落（歧義）或完全找不到時一律拒絕**；清單同時把同一段落列為主要及相關段落時不會寫入重複的引用段落；已套用的題目其後由另一份清單更新用詞時，重複執行仍為 no-op；不會建立人工覆核紀錄 |
 | `tests/material-decision-queue.test.ts`（Sprint 8.2） | **36 條待教師決定題目隊列**：隊列覆蓋 36 條且 ID 不重複，每條都有問題描述、現行教材證據、建議行動及影響評估，四類數量為 4／7／11／14，建議行動分佈為更正答案 7／教師決定 3／改寫 16／停用 10；建議改寫者必須附建議題目及答案文字；每條都有處理結果（31 條改寫並附新版本號、5 條刪除），學生端維持 fail-closed 的原始狀態已記錄於 `state` |
 | `tests/material-question-queue-actions.test.ts`（Sprint 8.2 後續；8.3 擴充） | **題目修正動作清單套用器**：36 條隊列清單（31 改寫＋5 刪除）覆蓋隊列全部題目、23 條用詞對齊清單完整、10 條校內試題的教材依據連結清單只改依據；套用器只在節錄逐字相符時改寫、指紋不符（教師改過）不套用、同一段落不會被重複引用（否則學生端會 fail-closed）、證據位置歧義時拒絕套用、`link-evidence` 只改教材依據且題目內容不變、刪除可重複執行且內容已改時拒絕刪除、模擬模式不寫入、`--require-open` 擋下未開放的證據段落，且不建立任何人工覆核紀錄 |
-| `tests/practice-flow.test.ts` | 完整練習流程：組題 → 作答 → 答案回饋 → 成績 → 重做錯題 → 短答自我檢查 → 練習記錄留檔及 CSV 匯出 |
+| `tests/practice-flow.test.ts` | 完整練習流程：組題 → 作答 → 答案回饋 → 成績 → 重做錯題 → 短答自我檢查 → 練習記錄留檔及 CSV 匯出；**題目快照題數不完整時明確回報 409**；教師端學習者清單按名冊電郵配對姓名、班別及學號 |
+| `tests/roster-identities.test.ts`（2026-10-21） | **名冊身分快照**：每次成功載入名冊時整體替換（已離校學生不會殘留）、沒有快照時回傳空清單（教師端如實提示未能配對） |
+| `tests/api-client.test.ts`（2026-10-21） | **回應解析容錯**：伺服器回傳非 JSON（例如反向代理錯誤頁）時顯示可理解的 `ApiError`，不會以 JSON 解析錯誤文字淹沒畫面 |
 | `tests/practice-difficulty.test.ts` | **選擇題難度跟隨選擇**（2026-10-21）：題庫有足夠所選難度時全部符合、不足時先按所選難度生成、生成不足才以其他難度補足並如實說明；填充題不設難度，沿用原有次序 |
 | `tests/student-journey-audit.test.ts`（2026-10-16） | **學生旅程模擬審計**（真實 route handler ＋真資料庫 ＋ mock provider）：六個 persona（認真高分、一般中三、基礎較弱、照字面理解、會回報問題、回到既有練習）逐項核對題目品質、批改公平性、版本綁定及歷史記錄完整性；**不是**真實瀏覽器旅程 |
 | `tests/practice-ai-mode.test.ts` | AI 即時出題：題數分配、題目只存在於練習快照（不寫入題庫）、不在題庫的題目也可重做錯題、分節可用性（教材段落數、`isSectionPractisable`、主題數計算）、**教材未開放時路由回 `409` 及可行動說明且不建立練習記錄** |
@@ -2193,7 +2211,7 @@ node scripts/e2e-flow.mjs --start   # 端對端檢查全部通過（含版權閘
 | `tests/teacher-student-flow.test.ts` | 教師以學生身分完成完整流程（出題 → 作答 → 回饋 → 成績 → 重做錯題）、教師與學生記錄分開、教師端記錄檢視清楚區分教師（測試）與學生 |
 | `tests/reports.test.ts` | 題目回報：寫入及待覆核標示、重複回報不重複記錄、不可回報他人練習的題目、教師可處理回報且不改動題目、學生不可呼叫教師回報 API、**AI 即時生成題目（只存在於練習快照）亦可回報並標示不在題庫** |
 | `tests/storage-and-config.test.ts` | 儲存抽象（本機寫入／讀取／刪除、拒絕跳出目錄的路徑、GCS 未實作的清楚錯誤）及設定驗證（缺少憑證、OCR 設定、未啟用登入、Cloud Run 偵測、版本讀取、**教材檔案缺失警告 `materials-bundle-missing`**）；健康檢查不洩漏資料庫路徑或憑證 |
-| `tests/roster.test.ts` | 學生名冊：CSV 解析（引號／BOM／CRLF）、中英文欄名自動偵測及覆寫、以學號推導電郵、來源 provider（本機檔案、CSV 網址、**Sheets API 服務帳戶 JWT 簽章驗證**）、快取與失效沿用舊快照、登入欄位對應、狀態不含學生個資 |
+| `tests/roster.test.ts` | 學生名冊：CSV 解析（引號／BOM／CRLF）、中英文欄名自動偵測及覆寫、以學號推導電郵、來源 provider（本機檔案、CSV 網址、**Sheets API 服務帳戶 JWT 簽章驗證**）、快取與失效沿用舊快照、登入欄位對應、狀態不含學生個資；載入成功後會更新 `roster_students` 身分快照（只限開放班別） |
 | `tests/login-roster.test.ts` | 學生登入流程（以本機 stub 取代 Google 端點）：名冊內學生取得班別／學號／姓名、名冊外被拒絕並導向 `/login?error=not_in_roster`、名冊無法讀取時預設拒絕（`FAIL_OPEN=true` 才放行）、教師不受名冊限制、`state` 不符及電郵未驗證不會建立工作階段；**全校教職員政策**：校內職員不受名冊限制但學號形式帳戶仍受名冊強制核對（名冊服務失敗時 fail-closed，不會變成教師）、政策關閉時校內別名帳戶仍是學生 |
 | `tests/question-warnings.test.ts` | 品質警告（未見於教材的人名／條約名）寫入資料庫、讀回及學生端不外洩 |
 | `tests/question-bank-import.test.ts` | 校內試題解析與匯入：兩種排版（`[[ … ]]` 與 `\|!\|題號\|!\|`）、七種題型、答案忠實取自答案區、平台未支援的題型會略過、匯入為草稿、重複匯入更新同一題、課題1 不考核範圍（新月沃土／黃河、長江流域／印度河）略過、古埃及文明題目可匯入、需圖片作答加上品質警告 |
@@ -2233,7 +2251,7 @@ node scripts/e2e-flow.mjs --start   # 端對端檢查全部通過（含版權閘
 20. **Google Cloud Storage provider 尚未實作**：`STORAGE_PROVIDER=gcs` 時會回報清楚的錯誤；本機仍使用 `data/uploads/`。Cloud Run 部署前必須完成 `src/server/storage/gcs.ts`。
 21. **SQLite 仍有限制**：單一寫入者、不適合多執行個體同時寫入；Cloud Run 多執行個體部署前必須改用 Cloud SQL，SQLite 專屬語法（`PRAGMA`、`node:sqlite` API、以 `TEXT` 儲存 JSON）需要在該階段一併處理。
 22. **教師學習記錄與舊版不同**：教師的學習者身分由 `school:` 改為 `teacher:`（避免與學生記錄混用），因此升級前教師留下的匿名／帳戶練習記錄不會再顯示；資料仍保留在資料庫中。
-23. **學生名冊的姓名以名冊為準**：若名冊的「姓名」欄留空，會沿用 Google 帳戶的顯示名稱；名冊更新後最長需 `STUDENT_ROSTER_CACHE_TTL_SECONDS`（預設 600 秒）才會生效。學生改班或退選時，教師需更新 Google Sheet。
+23. **學生名冊的姓名以名冊為準**：若名冊的「姓名」欄留空，會沿用 Google 帳戶的顯示名稱；名冊更新後最長需 `STUDENT_ROSTER_CACHE_TTL_SECONDS`（預設 600 秒）才會生效。學生改班或退選時，教師需更新 Google Sheet；教師端（`/teacher/records`）會在名冊重新載入後同步更新 `roster_students` 身分快照（只限開放班別）。
 24. **名冊只能以「學號／電郵」核對**：系統不會以姓名比對（同名學生無法區分）。名冊若同時缺少學號及電郵欄，登入會被拒絕並在管理員端顯示設定提示。
 25. **部署到 Cloud Run 後資料仍是暫時性的（但有備份）**：映像檔預設把資料庫、上載教材及 OCR 快取放在 `/tmp/data`（Cloud Run 唯一可寫位置），**重新部署、擴容或閒置回收後會清空**。已內建 Cloud Storage 備份（第十節「資料持久化」）：設定 `BACKUP_BUCKET` 後，重新部署會自動還原最近的快照，實測 27 MB 資料庫可正常往返。**未經備份的上載教材檔案**（`data/uploads/`）仍會遺失；如要完全消除此問題，需改用 Cloud SQL／Filestore 或掛載 GCS volume。試行階段請保持 `--max-instances=1`。
 26. **容器映像檔體積約 750MB**：包含 Next.js 執行環境、`materials/`（52MB，2026-10-16 更新版）及 OCR 語言資料（2.4MB）。若不需要在容器內批次匯入教材，可從 [Dockerfile](Dockerfile) 移除 `COPY materials` 以縮小映像檔。
@@ -2358,7 +2376,7 @@ node scripts/e2e-flow.mjs --start   # 端對端檢查全部通過（含版權閘
     - **取代的舊資料**：正式環境原有 3,994 題（已發布 49）、96 份教材文件及 15 筆作答（全部屬擁有者自己的測試帳戶，沒有學生資料）；上述舊資料保留在回滾快照內。**瀏覽器自動化仍未執行**（專案沒有支援框架）。
 55. **正式上線：題型單選、難度跟隨選擇與題庫補齊（2026-10-21，擁有者指示）**：commit `cd82ea8`（已 push 至 `main`）把「練習設定一次只可選一種題型」及「選擇題難度真正跟隨學生選擇」帶到正式環境，並在同一輪把各分節的選擇題補至三個難度各 3 條（37 個分節中 36 個達成，餘下一個見下方「唯一未達標的分節」）。
     - **程式碼**：`PracticeSetupForm.tsx` 改為單一 `questionType`，難度區塊**只在選擇題出現**（填充題一律以「基礎」送出，分節編號亦隨之調整）；`PracticeRunner.tsx` 對填充題隱藏難度標籤；`practice-service.ts` 的 `strictDifficulty` 先按所選難度生成，仍然不足才改用其他難度並如實說明；題庫補題會預留 AI 配額，`429` 時降級為提示；`question-bank.ts` 的 `countsTowardBankTarget` 令**草稿及待教師確認的題目不再計入**每難度 3 題的目標（否則分節看似達標但學生無題可做）；AI 批改收緊錯別字邊界（只接受同音／形近／繁簡／明顯手誤）並加入 `hasAttachedLatinJunk` 守門（`grading.ts`／`ai-grading.ts`），「正確答案 + 英文雜訊」不再判為正確。
-    - **題庫為甚麼在正式快照上重新生成**：本機與正式環境的教材段落屬**不同譜系**（`blk_*` 不通用：本機 23,916 段、正式環境 23,925 段，只有 168 個段落能以原文一對一對應，另有 1 個歧義、16 個在正式環境不存在）。本機 251 條批次生成的題目全部引用本機段落 ID，**直接複製會令教材依據指向不存在的段落**，因此改為：下載 `gs://pccss-ai-history-history-backup/history/data/app.db` → `data/exports/production-current.db` → 複製為 `production-next.db` → 套用 IMF 修正（第 3 節記錄，`revision` 4）→ 以 `npm run generate:questions -- --count 9 --types mc` 執行 5 輪（依序 +217／+25／+11／+6／+1，合共 **260** 條新選擇題）。
+    - **題庫為甚麼在正式快照上重新生成**：本機與正式環境的教材段落屬**不同譜系**（`blk_*` 不通用：本機 23,916 段、正式環境 23,925 段，只有 168 個段落能以原文一對一對應，另有 1 個歧義、16 個在正式環境不存在）。本機 251 條批次生成的題目全部引用本機段落 ID，**直接複製會令教材依據指向不存在的段落**，因此改為：下載 `gs://pccss-ai-history-history-backup/history/data/app.db` → `data/exports/production-current.db` → 複製為 `production-next.db` → 套用 IMF 修正（第 3 節記錄，`revision` 4）→ 以 `npm run generate:questions -- --count 9 --types mc` 執行 5 輪（依序 +217／+25／+11／+6／+1，合共 **260** 條新選擇題）。（中間檔 `production-current.db` 已於 2026-10-21 清理；它與 bucket 的 `app.db.pre-20261021T0650Z` 逐位元相同，可隨時重新下載。）
     - **上載前快照狀態**：題目 **2,082**（已發布 2,056、草稿 26）；可派發選擇題 basic 929／advanced 113／challenge 111、填充 basic 902（另有 1 條 advanced 填充）；練習 **3** 場、作答 **15** 筆**不變**——即沒有覆寫任何真實學生記錄。`PRAGMA integrity_check = ok`。
     - **部署順序（先資料、後程式）**：① 先把 bucket 物件備份為 `gs://…/history/data/app.db.pre-20261021T0650Z`（12,763,136 bytes）；② 上載 `production-next.db`（13,565,952 bytes）並以同一映像檔重啟（revision `history-self-study-00029-89l`，日誌顯示「已由雲端還原（13248 KB）」）；③ 執行 `scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply -StaffAccessPolicy school-domain -StaffDomains pochiu.edu.hk -AdminEmails ipwh@pochiu.edu.hk -ReviewerEmails ipwh@pochiu.edu.hk -RosterSheetId 1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM` 建置新映像檔（build `7e0e539f-69d9-4003-89d3-56d43ee9559e` SUCCESS；digest `sha256:effbc48c56bfdac28413e0a1500af64fe9de47b5eb842240054dc361d23ea257`），revision **`history-self-study-00030-4f6`** 取得 100% 流量，`00029-89l` 保留作回滾。這個順序避免舊執行個體在重啟前把舊資料寫回 bucket。
     - **上線後核對（以登入工作階段直接讀取正式 API，非只看部署輸出）**：`/api/topics` 及各課題 `/api/teacher/questions` 合共 **2,082** 題（已發布 2,056、草稿 26；選擇題 basic 929／advanced 113／challenge 111，填充 902／1）；`qb-NJCFN0110000026` 題幹為「……成立於1944年……」、`revision` 4、已發布；部署的 JS chunk 亦已包含新的單一題型文案。**37 個分節之中 36 個**在選擇題三個難度均有 ≥3 條可派發題目。
@@ -2432,8 +2450,9 @@ STUDENT_ROSTER_ENABLED=true
 STUDENT_ROSTER_ENFORCE=true
 STUDENT_ROSTER_SOURCE=sheets-api
 STUDENT_ROSTER_SHEET_ID=你的試算表 ID
-STUDENT_ROSTER_SHEET_NAME=名冊
-STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=./secrets/roster-sa.json
+# 留空 = 第一張工作表（此校名冊為「工作表1」）
+STUDENT_ROSTER_SHEET_NAME=
+STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=./secrets/roster-service-account.json
 ```
 
 並把該 Google Sheet 分享給服務帳戶電郵（檢視者權限）。名冊欄名會自動偵測（班別／學號／姓名／電郵）；若表頭寫法特殊，可用 `STUDENT_ROSTER_COLUMN_*` 指定。想先試用而不影響登入，可設 `STUDENT_ROSTER_ENFORCE=false`。
@@ -2500,4 +2519,3 @@ AI 只作練習回饋：填充題用字不同但意思相同會當作正確。�
 
 **Q：可否用英文或其他語言？**
 目前介面及題目均以繁體中文為主；介面文字集中在 `src/components/`，種子內容在 `src/server/seed/`，OCR 語言可用 `OCR_LANGUAGES` 調整（例如 `chi_tra+eng`）。
-
