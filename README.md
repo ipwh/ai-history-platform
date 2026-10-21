@@ -1836,7 +1836,12 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 | 名冊服務帳戶 | `history-roster-reader@pccss-ai-history.iam.gserviceaccount.com` |
 | 執行身分 | `history-run@pccss-ai-history.iam.gserviceaccount.com` |
 
-> **最近部署**：2026-10-21 07:5x UTC，revision `history-self-study-00022-52v`（commit `fae11e2`）。
+> **最近部署**：2026-10-21 06:51 UTC，revision **`history-self-study-00030-4f6`**（commit `cd82ea8`），100% 流量；
+> 資料快照於 06:45 UTC 上載，由 revision `history-self-study-00029-89l` 啟動時還原。`/api/health` 200；
+> 正式題庫 **2,082** 題（已發布 2,056、草稿 26），`qb-NJCFN0110000026` 題幹已為 1944 年（revision 4）。
+> 記錄見第十二節第 55 項。
+
+> **2026-10-21 較早的部署（已被 `00030-4f6` 取代）**：revision `history-self-study-00022-52v`（commit `fae11e2`）。
 > 已驗證：`/api/health` 200（ok、資料庫、LLM、登入已啟用、`staffApiOpen=false`）、資料庫由 Cloud Storage 快照還原、
 > 未登入存取會轉到 `/login`。**已確認 `HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk` 已寫入執行中的 revision**
 > （在此之前該變數從未設定，因此連擁有者都無法核准 Golden 或「已修復並核准」）。
@@ -2351,6 +2356,14 @@ node scripts/e2e-flow.mjs --start   # 端對端檢查全部通過（含版權閘
     - **部署方式**：沒有使用 `cloudbuild.yaml` 的 `--set-env-vars`（會以空白值覆蓋正式設定），改為 `gcloud run deploy --image=… --no-traffic --tag=review` 先驗證再切換流量；既有 `AUTH_TEACHER_EMAILS`、`AUTH_ADMIN_EMAILS`、`AUTH_STAFF_ACCESS_POLICY`、`STUDENT_ROSTER_*`、`BACKUP_*` 全部保留。
     - **部署後檢查**：`/login` 200；`/api/health` 回 `ok:true`、`database.status:"ok"`、`persistence.restore:"restored"`、`authEnabled:true`、`staffApiOpen:false`、`roster.enforce:true`、`backupEnabled:true`、`lastError:null`。
     - **取代的舊資料**：正式環境原有 3,994 題（已發布 49）、96 份教材文件及 15 筆作答（全部屬擁有者自己的測試帳戶，沒有學生資料）；上述舊資料保留在回滾快照內。**瀏覽器自動化仍未執行**（專案沒有支援框架）。
+55. **正式上線：題型單選、難度跟隨選擇與題庫補齊（2026-10-21，擁有者指示）**：commit `cd82ea8`（已 push 至 `main`）把「練習設定一次只可選一種題型」及「選擇題難度真正跟隨學生選擇」帶到正式環境，並在同一輪把各分節的選擇題補至三個難度各 3 條（37 個分節中 36 個達成，餘下一個見下方「唯一未達標的分節」）。
+    - **程式碼**：`PracticeSetupForm.tsx` 改為單一 `questionType`，難度區塊**只在選擇題出現**（填充題一律以「基礎」送出，分節編號亦隨之調整）；`PracticeRunner.tsx` 對填充題隱藏難度標籤；`practice-service.ts` 的 `strictDifficulty` 先按所選難度生成，仍然不足才改用其他難度並如實說明；題庫補題會預留 AI 配額，`429` 時降級為提示；`question-bank.ts` 的 `countsTowardBankTarget` 令**草稿及待教師確認的題目不再計入**每難度 3 題的目標（否則分節看似達標但學生無題可做）；AI 批改收緊錯別字邊界（只接受同音／形近／繁簡／明顯手誤）並加入 `hasAttachedLatinJunk` 守門（`grading.ts`／`ai-grading.ts`），「正確答案 + 英文雜訊」不再判為正確。
+    - **題庫為甚麼在正式快照上重新生成**：本機與正式環境的教材段落屬**不同譜系**（`blk_*` 不通用：本機 23,916 段、正式環境 23,925 段，只有 168 個段落能以原文一對一對應，另有 1 個歧義、16 個在正式環境不存在）。本機 251 條批次生成的題目全部引用本機段落 ID，**直接複製會令教材依據指向不存在的段落**，因此改為：下載 `gs://pccss-ai-history-history-backup/history/data/app.db` → `data/exports/production-current.db` → 複製為 `production-next.db` → 套用 IMF 修正（第 3 節記錄，`revision` 4）→ 以 `npm run generate:questions -- --count 9 --types mc` 執行 5 輪（依序 +217／+25／+11／+6／+1，合共 **260** 條新選擇題）。
+    - **上載前快照狀態**：題目 **2,082**（已發布 2,056、草稿 26）；可派發選擇題 basic 929／advanced 113／challenge 111、填充 basic 902（另有 1 條 advanced 填充）；練習 **3** 場、作答 **15** 筆**不變**——即沒有覆寫任何真實學生記錄。`PRAGMA integrity_check = ok`。
+    - **部署順序（先資料、後程式）**：① 先把 bucket 物件備份為 `gs://…/history/data/app.db.pre-20261021T0650Z`（12,763,136 bytes）；② 上載 `production-next.db`（13,565,952 bytes）並以同一映像檔重啟（revision `history-self-study-00029-89l`，日誌顯示「已由雲端還原（13248 KB）」）；③ 執行 `scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply -StaffAccessPolicy school-domain -StaffDomains pochiu.edu.hk -AdminEmails ipwh@pochiu.edu.hk -ReviewerEmails ipwh@pochiu.edu.hk -RosterSheetId 1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM` 建置新映像檔（build `7e0e539f-69d9-4003-89d3-56d43ee9559e` SUCCESS；digest `sha256:effbc48c56bfdac28413e0a1500af64fe9de47b5eb842240054dc361d23ea257`），revision **`history-self-study-00030-4f6`** 取得 100% 流量，`00029-89l` 保留作回滾。這個順序避免舊執行個體在重啟前把舊資料寫回 bucket。
+    - **上線後核對（以登入工作階段直接讀取正式 API，非只看部署輸出）**：`/api/topics` 及各課題 `/api/teacher/questions` 合共 **2,082** 題（已發布 2,056、草稿 26；選擇題 basic 929／advanced 113／challenge 111，填充 902／1）；`qb-NJCFN0110000026` 題幹為「……成立於1944年……」、`revision` 4、已發布；部署的 JS chunk 亦已包含新的單一題型文案。**37 個分節之中 36 個**在選擇題三個難度均有 ≥3 條可派發題目。
+    - **唯一未達標的分節（如實記錄）**：`topic-1-stone-age`（石器時代的演進）的進階選擇題只有 **1** 條已發布，另有 **12** 條草稿**待教師確認**。這 12 條並非生成失敗：品質閘門把它們列為 `unsupported-causation`（該分節教材沒有交代因果關係，題目／答案／解釋出現「因此／因為／由於」即暫緩自動發布），屬 fail-closed 的設計，只有教師的人工覆核可以放行。待辦：教師在 `/teacher/questions`（課題1 → 石器時代的演進）覆核這 12 條，或改寫後重新生成；在此之前學生在該分節選「進階」選擇題時，平台會即時生成新題目補足（會顯示需時提示）。
+    - **本機與正式環境仍然是兩份資料**：本機 `data/app.db` 為本機譜系（2,126 題、91 場測試練習），正式環境為 2,082 題、3 場練習。**不要**把本機資料庫上載到正式環境（會刪除真實練習紀錄並令題目引用錯段落）；如需令本機與線上完全一致，可停止本機服務後以 `data/exports/production-next.db` 取代 `data/app.db`（本機測試練習紀錄會一併消失）。
 
 ---
 
