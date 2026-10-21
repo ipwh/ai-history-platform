@@ -1,0 +1,380 @@
+{
+  "generatedAt": "2026-10-21T01:28:48.127Z",
+  "scope": {
+    "database": "../../../AppData/Local/Temp/prod-work/app.db",
+    "publishedQuestions": 1822
+  },
+  "sampling": {
+    "method": "stratified-by-topic",
+    "seed": 20261021,
+    "requested": 20,
+    "picked": 20
+  },
+  "note": "隨機抽樣清單，只讀取資料庫。`publishedWithoutHumanReview: true` 表示題目由擁有者授權批次發布，平台內沒有該版本的人工覆核紀錄。",
+  "entries": [
+    {
+      "questionId": "qb-JTH2ndEdMCQ01018",
+      "topicId": "topic-1",
+      "questionType": "mc",
+      "stem": "下列哪些是對新石器時代的正確描述？ i. 新石器時代人類開始學懂生火。 ii. 新石器時代人類不懂得畜牧。 iii. 新石器時代人類懂得製造衣服。 iv. 新石器時代人類定居生活。",
+      "options": [
+        "i和ii",
+        "i和iv",
+        "ii和iii",
+        "iii和iv"
+      ],
+      "correctAnswer": "iii和iv",
+      "explanation": "生火在舊石器時代已學會（i 錯），新石器時代人類亦已懂得飼養禽畜（ii 錯）。他們學會製造衣服，並定居建立村落，所以 iii 和 iv 正確。",
+      "sourceLocation": "課題1人類的需要 古與今_MCQ.docx · 第 18 題 · A. 石器時代的演進",
+      "sourceExcerpt": "下列哪些是對新石器時代的正確描述？ i. 新石器時代人類開始學懂生火。 ii. 新石器時代人類不懂得畜牧。 iii. 新石器時代人類懂得製造衣服。 iv. 新石器時代人類定居生活。",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ10108",
+      "topicId": "topic-10",
+      "questionType": "mc",
+      "stem": "以下哪項是有關《赫爾辛基協定》的正確描述？",
+      "options": [
+        "簽署國確認蘇聯在西歐的勢力",
+        "簽署國同意限制部分導彈及核武數目",
+        "簽署國確認二戰後的歐洲邊界",
+        "簽署國承諾結束資本主義與社會主義陣營之間的對抗"
+      ],
+      "correctAnswer": "簽署國確認二戰後的歐洲邊界",
+      "explanation": "《赫爾辛基協定》確認二戰後的歐洲邊界，是冷戰緩和的重要成果；限制導彈及核武數目的是《限制戰略武器條約》。",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 1693 段（段落）",
+      "sourceExcerpt": "以下哪項是有關《赫爾辛基協定》的正確描述？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCMN0110000001",
+      "topicId": "topic-11",
+      "questionType": "mc",
+      "stem": "下列誰人倡議成立國際聯盟？",
+      "options": [
+        "羅斯福",
+        "邱吉爾",
+        "古特雷斯",
+        "威爾遜"
+      ],
+      "correctAnswer": "威爾遜",
+      "explanation": "一戰後美國總統威爾遜倡議成立國際組織維持和平，促成國際聯盟於1920年成立。",
+      "sourceLocation": "課題11 20世紀以來的國際合作_MCQ.docx · 第 1 題",
+      "sourceExcerpt": "下列誰人倡議成立國際聯盟？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCMN0120000031",
+      "topicId": "topic-12",
+      "questionType": "mc",
+      "stem": "1950年代以前，香港經濟以甚麼為主？",
+      "options": [
+        "輕工業",
+        "重工業",
+        "轉口貿易",
+        "金融服務業"
+      ],
+      "correctAnswer": "轉口貿易",
+      "explanation": "1950年代以前香港經濟以轉口貿易為主，至1950年代因禁運打擊轉口，才轉向發展工業。",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 50 題",
+      "sourceExcerpt": "1950年代以前，香港經濟以甚麼為主？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCMN0020000047",
+      "topicId": "topic-2",
+      "questionType": "mc",
+      "stem": "「教會大分裂」於何時發生？",
+      "options": [
+        "公元45年",
+        "公元313年",
+        "公元395年",
+        "公元1054年"
+      ],
+      "correctAnswer": "公元1054年",
+      "explanation": "公元1054年，基督宗教發生「教會大分裂」，教會內部分裂為東西兩支，是中古時代基督宗教世界的重大事件。",
+      "sourceLocation": "課題2 歐洲文明的發展_MCQ.docx · 第 46 題",
+      "sourceExcerpt": "「教會大分裂」於何時發生？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCFN0030000012",
+      "topicId": "topic-3",
+      "questionType": "fill",
+      "stem": "伊斯蘭哲學被視為現代哲學思想先驅，伊斯蘭哲學家_________________更被稱為「西歐世俗思想之父」。",
+      "options": [],
+      "correctAnswer": "伊本․魯世德",
+      "explanation": "伊斯蘭哲學家伊本．魯世德的理論深遠影響歐洲的哲學教育，他更被譽為「西歐世俗思想之父」，是伊斯蘭哲學成為現代哲學思想先驅的例子。",
+      "sourceLocation": "課題3 伊斯蘭文明的興起_填充題.docx · 第 58 段（段落）",
+      "sourceExcerpt": "伊斯蘭哲學被視為現代哲學思想先驅，伊斯蘭哲學家_________________更被稱為「西歐世俗思想之父」。",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCMN0040000002",
+      "topicId": "topic-4",
+      "questionType": "mc",
+      "stem": "下列哪個民系不是香港的四大民系之一？",
+      "options": [
+        "潮州人",
+        "水上人",
+        "福佬",
+        "廣府人"
+      ],
+      "correctAnswer": "潮州人",
+      "explanation": "香港的「四大民系」是廣府人、客家人、水上人與福佬；潮州人不在其中，雖然香港亦有潮籍人士聚居並舉辦潮人盂蘭勝會。",
+      "sourceLocation": "課題4 早期香港地區的歷史_MCQ.docx · 第 2 題",
+      "sourceExcerpt": "下列哪個民系不是香港的四大民系之一？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ05006",
+      "topicId": "topic-5",
+      "questionType": "fill",
+      "stem": "______________主義在文藝復興時期出現，它強調人的價值比宗教更重要。",
+      "options": [],
+      "correctAnswer": "人文",
+      "explanation": "人文主義在文藝復興時期出現，它強調人的價值比宗教更重要，主張重視現世生活與個人的才能，而非只以神為中心。",
+      "sourceLocation": "課題5 近代歐洲的興起_填充題.docx · 第 50 段（段落）",
+      "sourceExcerpt": "______________主義在文藝復興時期出現，它強調人的價值比宗教更重要。",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCMN0060000022-2",
+      "topicId": "topic-6",
+      "questionType": "mc",
+      "stem": "下列哪項有關歐洲國家的保護國的描述並不正確？",
+      "options": [
+        "保護國的統治者需要遵從宗主國的命令。",
+        "保護國是受歐洲殖民國家保護的國家。",
+        "馬爾代夫曾是英國的保護國。",
+        "保護國的主權由宗主國擁有。"
+      ],
+      "correctAnswer": "保護國的主權由宗主國擁有。",
+      "explanation": "保護國只是在外國「保護」名義下被迫簽約、放棄大部分主權，名義上仍保留本身政府；主權完全由宗主國擁有、並被視為宗主國領土一部分的是殖民地。",
+      "sourceLocation": "課題6 歐洲國家的殖民擴張_MCQ.docx · 第 31 題 · C. 歐洲殖民擴張的方式及影響",
+      "sourceExcerpt": "下列哪項有關歐洲國家的保護國的描述並不正確？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCMN0070000054",
+      "topicId": "topic-7",
+      "questionType": "mc",
+      "stem": "下列哪項有關《密蘇里妥協案》的描述不正確？",
+      "options": [
+        "該法案於1840年代被國會通過的新法案推翻。",
+        "該法案由南、北方共同達成。",
+        "該法案在西部新領土上劃設了一道分界線，禁止將來於界線以北的新建州分實行蓄奴制。",
+        "該法案在1820年簽署。"
+      ],
+      "correctAnswer": "該法案於1840年代被國會通過的新法案推翻。",
+      "explanation": "推翻《密蘇里妥協案》的是1854年通過的《堪薩斯—內布拉斯加法案》，而非1840年代的法案。",
+      "sourceLocation": "課題7 美國的成立及發展_MCQ.docx · 第 54 題",
+      "sourceExcerpt": "下列哪項有關《密蘇里妥協案》的描述不正確？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ08048",
+      "topicId": "topic-8",
+      "questionType": "mc",
+      "stem": "下列哪所學校是香港的第一所官立中學？",
+      "options": [
+        "中央女子書院",
+        "中央書院",
+        "英華書院",
+        "聖保羅書院"
+      ],
+      "correctAnswer": "中央書院",
+      "explanation": "中央書院於1862年創立，是香港第一所官立中學；英華書院與聖保羅書院則屬教會學校。",
+      "sourceLocation": "課題8 直至二十世紀初香港的成長與發展_MCQ.docx · 第 48 題 · B. 經濟與社會民生狀況",
+      "sourceExcerpt": "下列哪所學校是香港的第一所官立中學？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-JTH2ndEdFBQ09199",
+      "topicId": "topic-9",
+      "questionType": "fill",
+      "stem": "在一戰後的德國，部分＿＿＿經濟較為富裕，與大部分德國人的失業與貧困生活形成鮮明對比，成為納粹宣傳的口實。",
+      "options": [],
+      "correctAnswer": "猶太人",
+      "explanation": "一戰後部分猶太人經濟較富裕，與大部分德國人的失業貧困形成強烈對比，成為納粹宣傳的口實。",
+      "sourceLocation": "課題9 20 世紀的國際紛爭及危機 (I) — 兩次世界大戰_填充題.docx · 第 98 題 · E. 種族滅絕：二戰期間的「猶太大屠殺」",
+      "sourceExcerpt": "在一戰後的德國，部分＿＿＿經濟較為富裕，與大部分德國人的失業與貧困生活形成鮮明對比，成為納粹宣傳的口實。",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": [
+        "原題有 2 個空格，平台已把其餘空格的答案（失業）填入題幹，只考核第 1 個空格（考核答案不變）；請教師核對是否與原卷一致。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ01011",
+      "topicId": "topic-1",
+      "questionType": "mc",
+      "stem": "2019年是屬於哪一個世紀？",
+      "options": [
+        "十九世紀",
+        "二十世紀",
+        "二十一世紀",
+        "以上皆否"
+      ],
+      "correctAnswer": "二十一世紀",
+      "explanation": "計算公元年份所屬的世紀，可把百位數字加 1：2019 的百位是 20，20+1=21，所以屬二十一世紀。只有剛好以「00」結尾的年份才直接取百位數字。",
+      "sourceLocation": "課題1人類的需要 古與今_MCQ.docx · 第 11 題 · A. 石器時代的演進",
+      "sourceExcerpt": "2019年是屬於哪一個世紀？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ10134",
+      "topicId": "topic-10",
+      "questionType": "mc",
+      "stem": "在二十世紀末，以下哪一個東歐國家率先成立非社會主義政府？",
+      "options": [
+        "捷克",
+        "東德",
+        "匈牙利",
+        "波蘭"
+      ],
+      "correctAnswer": "波蘭",
+      "explanation": "1989年，波蘭率先成立東歐自冷戰以來首個非社會主義政府。",
+      "sourceLocation": "課題10 20 世紀的國際紛爭及危機 (II) — 冷戰及後冷戰時代_MCQ.docx · 第 2108 段（段落）",
+      "sourceExcerpt": "在二十世紀末，以下哪一個東歐國家率先成立非社會主義政府？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCMN0110000051",
+      "topicId": "topic-11",
+      "questionType": "mc",
+      "stem": "欠發達國家主要出口以下哪項來賺取外匯？ i. 勞動力 ii. 農業產品 iii. 天然資源 iv. 科技產品",
+      "options": [
+        "i及ii",
+        "i及iv",
+        "ii及iii",
+        "iii及iv"
+      ],
+      "correctAnswer": "ii及iii",
+      "explanation": "欠發達國家主要依賴出口農產品與天然資源賺取收入，收入易受國際市場需求波動影響。",
+      "sourceLocation": "課題11 20世紀以來的國際合作_MCQ.docx · 第 50 題",
+      "sourceExcerpt": "欠發達國家主要出口以下哪項來賺取外匯？ i. 勞動力 ii. 農業產品 iii. 天然資源 iv. 科技產品",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCMN0120000009",
+      "topicId": "topic-12",
+      "questionType": "mc",
+      "stem": "下列哪一項有關先施公司的描述並不正確？",
+      "options": [
+        "先施公司是香港首家華資百貨公司",
+        "馬應彪是先施公司的創辦人",
+        "先施公司首創「明碼實價」的銷售模式",
+        "先施公司於1930年開業"
+      ],
+      "correctAnswer": "先施公司於1930年開業",
+      "explanation": "先施於1900年開業，1932年開業的是中華百貨公司，故這項描述並不正確。",
+      "sourceLocation": "課題12 二十世紀香港的成長與蛻變_MCQ.docx · 第 20 題",
+      "sourceExcerpt": "下列哪一項有關先施公司的描述並不正確？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCMN0020000009",
+      "topicId": "topic-2",
+      "questionType": "mc",
+      "stem": "以下哪項是羅馬帝國歷史事件的正確順序？",
+      "options": [
+        "屋大維接受元老院「奧古斯都」的封號→羅馬帝國和平時期結束→西羅馬帝 國滅亡→東羅馬帝國滅亡",
+        "羅馬帝國和平時期結束→東羅馬帝國滅亡→西羅馬帝國滅亡→屋大維接受元老院「奧古斯都」的封號",
+        "東羅馬帝國滅亡→羅馬帝國和平時期結束→屋大維接受元老院「奧古斯都」的封號→西羅馬帝國滅亡",
+        "西羅馬帝國滅亡→屋大維接受元老院「奧古斯都」的封號→羅馬帝國和平時期結束→東羅馬帝國滅亡"
+      ],
+      "correctAnswer": "屋大維接受元老院「奧古斯都」的封號→羅馬帝國和平時期結束→西羅馬帝 國滅亡→東羅馬帝國滅亡",
+      "explanation": "正確次序是：公元前27年屋大維接受「奧古斯都」封號；公元180年羅馬和平時期結束；公元476年西羅馬帝國滅亡；公元1453年東羅馬帝國滅亡。",
+      "sourceLocation": "課題2 歐洲文明的發展_MCQ.docx · 第 14 題",
+      "sourceExcerpt": "以下哪項是羅馬帝國歷史事件的正確順序？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCMN0030000016",
+      "topicId": "topic-3",
+      "questionType": "mc",
+      "stem": "下列哪人是《羅傑之書》的作者？",
+      "options": [
+        "伊德里西",
+        "比魯尼",
+        "伊本‧魯世德",
+        "扎哈拉維"
+      ],
+      "correctAnswer": "伊德里西",
+      "explanation": "《羅傑之書》的作者是伊德里西。他繪製的地圖能描繪非洲、印度等地的海岸線，反映伊斯蘭世界的地理知識在當時相當先進。",
+      "sourceLocation": "課題3 伊斯蘭文明的興起_MCQ.docx · 第 16 題",
+      "sourceExcerpt": "下列哪人是《羅傑之書》的作者？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    },
+    {
+      "questionId": "qb-NJCFN0040000016",
+      "topicId": "topic-4",
+      "questionType": "fill",
+      "stem": "長洲太平清醮的醮期自2001年起固定，不在＿＿＿前問卜決定。 長洲島上原本必須齋戒，但現在當地食肆會售賣肉食。",
+      "options": [],
+      "correctAnswer": "北帝",
+      "explanation": "為順應時代變遷，長洲太平清醮對傳統作出調整：自2001年起醮期不再經問卜北帝決定，改為固定於農曆四月初八佛誕舉行會景巡遊，宗教色彩亦逐漸淡化。",
+      "sourceLocation": "課題4 早期香港地區的歷史_填充題.docx · 第 16 題",
+      "sourceExcerpt": "長洲太平清醮的醮期自2001年起固定，不在＿＿＿前問卜決定。 長洲島上原本必須齋戒，但現在當地食肆會售賣肉食。",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": [
+        "原題有 2 個空格，平台已把其餘空格的答案（齋戒）填入題幹，只考核第 1 個空格（考核答案不變）；請教師核對是否與原卷一致。"
+      ]
+    },
+    {
+      "questionId": "qb-JTH2ndEdMCQ05002",
+      "topicId": "topic-5",
+      "questionType": "mc",
+      "stem": "文藝復興發生在下列哪個時期？",
+      "options": [
+        "古希臘時期",
+        "古羅馬時期",
+        "中古時代中期",
+        "中古時代後期"
+      ],
+      "correctAnswer": "中古時代後期",
+      "explanation": "文藝復興發生於中古時代後期（十四至十七世紀），並非古希臘、古羅馬時期；它雖以復興古典文明為名，實際上是邁向近代的文化革新。",
+      "sourceLocation": "課題5 近代歐洲的興起_MCQ.docx · 第 2 題",
+      "sourceExcerpt": "文藝復興發生在下列哪個時期？",
+      "status": "published",
+      "publishedWithoutHumanReview": true,
+      "qualityWarnings": []
+    }
+  ]
+}

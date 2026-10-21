@@ -684,3 +684,37 @@ P1 與 P3 各有核對清單；**P3 只代表排序較後，不代表核准**；
 
 **仍需真人教師試用**：按鈕文字與理由句是否貼近校內說法，只能在真實審題時驗證；如果不合用，只需改 `review-workbench-labels.ts`，不需要改動任何裁決邏輯。
 
+## 17. 擁有者授權的批次發布與「待教師確認」解除（2026-10-21）
+
+完整紀錄：[owner-decision-2026-10-21.md](owner-decision-2026-10-21.md)。
+
+擁有者在 2026-10-21 指示「全部發布及套用，不用教師逐題覆核」。以下三支 CLI 是這次用到的工具，
+全部**預設模擬（dry-run）**、**拒絕在正式環境執行**、**不建立任何覆核紀錄**：
+
+| 工具 | 用途 | 安全界線 |
+| --- | --- | --- |
+| `npm run publish:drafts -- --owner-email … --reason … [--apply]` | 批次發布草稿（擁有者授權，繞過「每題都要有目前版本覆核」的關卡） | 不處理 `teacherConfirmationRequired` 或結構不可作答的題目；授權紀錄寫入 [owner-publication-overrides.json](owner-publication-overrides.json) |
+| `npm run resolve:teacher-confirmation -- --plan <json> --owner-email … [--apply]` | 依逐題決定解除 `teacher_confirmation_required`（例如原卷多個空格、答案黏連） | 每題必須有理由；必須通過可作答性檢查；答案修正只限「修正匯入黏連」（須同時提供現值與修正值）；判斷邏輯在 [teacher-confirmation-override.ts](../../src/server/services/teacher-confirmation-override.ts)，由 [tests/teacher-confirmation-override.test.ts](../../tests/teacher-confirmation-override.test.ts) 守住 |
+| `npx tsx scripts/build-owner-spot-check-sample.ts --count 20` | 產生隨機抽樣題目清單（Markdown + JSON）供擁有者檢查 | 只讀取資料庫；固定種子，可重複得出同一批題目 |
+
+決定檔格式（`resolve:teacher-confirmation`）：
+
+```json
+{
+  "decidedBy": "you@school.edu.hk",
+  "authorization": "擁有者指示原文",
+  "items": [
+    { "questionId": "qb-…", "reason": "題幹只有一個空格，答案與題幹一致（至少 10 字）" },
+    {
+      "questionId": "qb-…",
+      "reason": "匯入時答案黏連了下一題文字",
+      "correctAnswer": { "from": "（現值，必須完全相符）", "to": "（修正值）" }
+    }
+  ]
+}
+```
+
+**這些工具不會令題目變成「已覆核」**：解除標記只令題目可以派發給學生，教師端仍標示
+「已發布（未經人工覆核）」，`quality_warnings_json` 亦保留原暫緩理由並附上決定紀錄。
+
+

@@ -1,0 +1,39 @@
+{
+  "decisions": [
+    {
+      "decision": "owner-authorized-teacher-confirmation-override",
+      "decidedBy": "ipwh@pochiu.edu.hk",
+      "authorization": "擁有者指示：全部發布及套用，不用教師逐題覆核，若有任何不當，請根據教材內容及歷史知識自行處理。",
+      "plan": "docs/teacher-review/owner-content-repairs-2026-10-21.json",
+      "target": "production-snapshot（備份 gs://pccss-ai-history-history-backup/history/data/app.db，2026-10-21T01:13:49Z）",
+      "appliedAt": "2026-10-21T01:26:35.089Z",
+      "questionIds": [
+        "qb-JTH2ndEdFBQ05113",
+        "qb-JTH2ndEdFBQ05161",
+        "qb-JTH2ndEdFBQ08014",
+        "qb-JTH2ndEdFBQ08028",
+        "qb-JTH2ndEdFBQ09015",
+        "qb-JTH2ndEdFBQ09016",
+        "qb-JTH2ndEdFBQ09028",
+        "qb-JTH2ndEdFBQ10014",
+        "qb-JTH2ndEdFBQ10078",
+        "qb-JTH2ndEdFBQ10113",
+        "qb-JTH2ndEdFBQ10125",
+        "qb-JTH2ndEdFBQ10140",
+        "qb-JTH2ndEdFBQ10156",
+        "qb-NJCFN0060000057",
+        "qb-NJCFN0070000033",
+        "qb-NJCFN0110000009",
+        "qb-NJCFN0110000060",
+        "qb-NJCFN0120000013"
+      ],
+      "correctAnswerRepairs": [
+        {
+          "questionId": "qb-JTH2ndEdFBQ09028",
+          "to": "阿爾薩斯—洛林"
+        }
+      ],
+      "note": "本決定解除品質閘門的「待教師確認」標記，**沒有**寫入任何覆核紀錄；題目在教師端仍標示為「已發布（未經人工覆核）」，歷史準確性仍待歷史科教師覆核。"
+    }
+  ]
+}
