@@ -14,11 +14,15 @@
  *   4. 匯入後依 `MATERIAL_AUTO_OPEN_POLICY` 自動開放課文／筆記（見 material-distribution.ts）。
  */
 import { getServerConfig } from "../config";
+import { getDb } from "../db/connection";
 import { collectMaterialFiles } from "../materials/material-files";
 import { isRetiredQuestionBankFileName } from "../materials/question-bank";
 import { listDocuments } from "../repositories/materials";
 import { importMaterialFromDisk } from "../services/material-service";
 import { autoOpenAllLessonDocuments } from "../services/material-distribution";
+
+/** 進度寫入 `maintenance_runs`（既有資料表，跨模組實例共享；見下方說明） */
+const STATUS_KIND = "materials-auto-import";
 
 export interface MaterialsAutoImportStatus {
   /** 是否已嘗試（避免重複執行） */
@@ -50,8 +54,104 @@ let status: MaterialsAutoImportStatus = {
 
 let running: Promise<MaterialsAutoImportStatus> | null = null;
 
+/**
+ * 讀取狀態。
+ *
+ * 為甚麼要寫入資料庫而不是只用程序內記憶：Next.js 的 instrumentation（啟動掛勾）
+ * 與 route handler 可能各自載入同一份模組（實測 2026-10-21 正式環境就是這樣），
+ * 用模組變數會令 `/api/health` 永遠顯示 idle，即使教材其實已自動匯入完成。
+ * `maintenance_runs` 是既有資料表（`kind` 為主鍵），適合存放這種「一次性執行結果」，
+ * 亦令狀態跨容器重啟保留。
+ */
 export function materialsAutoImportStatus(): MaterialsAutoImportStatus {
-  return { ...status };
+  const persisted = readPersistedStatus();
+  return persisted ?? { ...status };
+}
+
+function readPersistedStatus(): MaterialsAutoImportStatus | null {
+  try {
+    const row = getDb()
+      .prepare("SELECT * FROM maintenance_runs WHERE kind = ?")
+      .get(STATUS_KIND) as unknown as
+      | { last_started_at: string; last_finished_at: string | null; last_status: string; last_detail: string | null }
+      | undefined;
+    if (!row) return null;
+    const detail = row.last_detail ? (JSON.parse(row.last_detail) as Partial<MaterialsAutoImportStatus>) : {};
+    const stateMap: Record<string, MaterialsAutoImportStatus["state"]> = {
+      running: "running",
+      ok: "done",
+      skipped: "skipped",
+      failed: "failed",
+    };
+    return {
+      attempted: true,
+      state: stateMap[row.last_status] ?? "failed",
+      message: detail.message ?? null,
+      documents: detail.documents ?? 0,
+      ready: detail.ready ?? 0,
+      failed: detail.failed ?? 0,
+      openedForStudents: detail.openedForStudents ?? 0,
+      startedAt: row.last_started_at,
+      finishedAt: row.last_finished_at,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** 把狀態寫入 `maintenance_runs`（失敗不應影響匯入本身） */
+function persistStatus(next: MaterialsAutoImportStatus): void {
+  const statusCode =
+    next.state === "done"
+      ? "ok"
+      : next.state === "running"
+        ? "running"
+        : next.state === "skipped"
+          ? "skipped"
+          : next.state === "failed"
+            ? "failed"
+            : "running";
+  const detail = JSON.stringify({
+    message: next.message,
+    documents: next.documents,
+    ready: next.ready,
+    failed: next.failed,
+    openedForStudents: next.openedForStudents,
+  });
+  try {
+    const db = getDb();
+    const existing = db.prepare("SELECT 1 FROM maintenance_runs WHERE kind = ?").get(STATUS_KIND);
+    if (existing) {
+      db.prepare(
+        `UPDATE maintenance_runs SET last_started_at = ?, last_finished_at = ?, last_status = ?,
+          last_detail = ?, runs = runs + 1, failures = failures + ? WHERE kind = ?`,
+      ).run(
+        next.startedAt ?? new Date().toISOString(),
+        next.finishedAt,
+        statusCode,
+        detail,
+        next.state === "failed" ? 1 : 0,
+        STATUS_KIND,
+      );
+    } else {
+      db.prepare(
+        `INSERT INTO maintenance_runs (kind, last_started_at, last_finished_at, last_status, last_detail, runs, failures)
+         VALUES (?, ?, ?, ?, ?, 1, ?)`,
+      ).run(
+        STATUS_KIND,
+        next.startedAt ?? new Date().toISOString(),
+        next.finishedAt,
+        statusCode,
+        detail,
+        next.state === "failed" ? 1 : 0,
+      );
+    }
+  } catch (error) {
+    console.warn(
+      "[materials] 無法記錄自動匯入狀態：",
+      error instanceof Error ? error.message : error,
+    );
+  }
 }
 
 /**
@@ -72,6 +172,7 @@ export function ensureMaterialsImported(): Promise<MaterialsAutoImportStatus> {
 
   running = (async () => {
     const { materialsDir } = getServerConfig();
+    persistStatus(status);
 
     // 已有教材：不覆寫（保留使用者在瀏覽器上載／匯入的版本）
     if (listDocuments().length > 0) {
@@ -81,6 +182,7 @@ export function ensureMaterialsImported(): Promise<MaterialsAutoImportStatus> {
         message: "資料庫內已有教材，因此沒有自動匯入（不會覆寫既有教材）。",
         finishedAt: new Date().toISOString(),
       };
+      persistStatus(status);
       return materialsAutoImportStatus();
     }
 
@@ -96,6 +198,7 @@ export function ensureMaterialsImported(): Promise<MaterialsAutoImportStatus> {
           "請確認部署時 materials/ 已包含教材，或由管理員上載教材。",
         finishedAt: new Date().toISOString(),
       };
+      persistStatus(status);
       return materialsAutoImportStatus();
     }
 
@@ -131,6 +234,7 @@ export function ensureMaterialsImported(): Promise<MaterialsAutoImportStatus> {
       openedForStudents: openResult.opened + openResult.alreadyOpen,
       finishedAt: new Date().toISOString(),
     };
+    persistStatus(status);
     console.log(
       `[materials] 自動匯入完成：成功 ${ready}、失敗 ${failed}、已開放給學生 ${status.openedForStudents} 份`,
     );
@@ -143,6 +247,7 @@ export function ensureMaterialsImported(): Promise<MaterialsAutoImportStatus> {
         message: `自動匯入教材時發生未預期的錯誤：${error instanceof Error ? error.message : String(error)}`,
         finishedAt: new Date().toISOString(),
       };
+      persistStatus(status);
       console.error("[materials] 自動匯入失敗：", error);
       return materialsAutoImportStatus();
     })
