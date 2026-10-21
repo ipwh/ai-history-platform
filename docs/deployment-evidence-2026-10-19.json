@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-21T00:25:00.000Z",
+  "generatedAt": "2026-10-21T01:45:00.000Z",
   "notice": "只記錄實際執行並觀察到的部署證據；未執行或未通過的項目明確列在 unverified，不會當作已驗證。",
   "target": {
     "provider": "Google Cloud Run",
@@ -7,7 +7,7 @@
     "region": "asia-east2",
     "service": "history-self-study",
     "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
-    "revision": "history-self-study-00023-nft",
+    "revision": "history-self-study-00026-nb9",
     "image": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study",
     "deployedWith": "./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply -RosterSheetId <已設定> -AdminEmails ipwh@pochiu.edu.hk -ReviewerEmails ipwh@pochiu.edu.hk -StaffAccessPolicy school-domain -StaffDomains pochiu.edu.hk",
     "maxInstances": 1,
@@ -15,21 +15,24 @@
   },
   "source": {
     "branch": "main",
-    "commit": "305e5cf",
-    "commitSubject": "fix(review): 佇列不再列出已刪除的題目；feat(materials): 自動開放全部課文給學生"
+    "commit": "98ba3f2",
+    "commitSubject": "feat(content): publish all questions and apply explanation rewrites in production"
   },
   "notes": [
-    "2026-10-21 共部署四次（00020-c64、00021-4c4、00022-52v、00023-nft）；最後一次為 commit 305e5cf。",
+    "2026-10-21 共部署五次（00020-c64、00021-4c4、00022-52v、00023-nft、00026-nb9）；最後一次為 commit 98ba3f2（內容資料變更，程式碼與 commit 同步）。",
     "2026-10-21 實測：GET /api/health 200；執行中 revision 已含 HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk 及 MATERIAL_AUTO_OPEN_POLICY=lesson-content。",
     "2026-10-21 實測：POST /api/admin/materials/open-all 未登入回 401（新端點受 requireAdmin 保護）。",
-    "2026-10-21 實測：正式資料庫 materials = {documents:0, blocks:0, studentVisibleDocuments:0}——教材仍**未匯入**正式資料庫；匯入需管理員在 /admin/materials 按「匯入全部課程教材」（匯入後會依政策自動開放）。",
+    "2026-10-21 實測：正式資料庫 materials = {documents:36, blocks:23925, studentVisibleDocuments:12}——教材已隨還原快照導入，health.materialsAutoImport.state=skipped（不覆寫既有教材）。",
+    "2026-10-21 內容資料更新（擁有者授權）：上載修改後的 app.db 到 gs://pccss-ai-history-history-backup/history/data/app.db，回滾快照為同目錄 app.db.pre-20261021T0120Z。部署後重新下載 bucket 物件核對：questions=1822 全部 published、佔位解釋 0、待教師確認 0、question_reviews 仍為 2 筆、explanation_rewritten 標記 1785 筆；qb-JTH2ndEdFBQ09028 的匯入黏連答案已修正為「阿爾薩斯—洛林」。紀錄見 docs/teacher-review/owner-decision-2026-10-21.md。",
     "資料庫還原：health.persistence.restore=restored；備份已上載。",
-    "公開存取：allUsers 具 roles/run.invoker；AUTH_REQUIRE_SIGN_IN=true，未登入存取 / 會 307 轉 /login。"
+    "公開存取：allUsers 具 roles/run.invoker；AUTH_REQUIRE_SIGN_IN=true，未登入存取 / 會 307 轉 /login（實測 /api/topics 未登入回 401）。"
   ],
   "unverified": [
-    "教師／學生實際登入流程未在本輪以真實 Google 帳戶完成（只驗證未登入時被轉到 /login）。",
+    "教師／學生實際登入流程未在本輪以真實 Google 帳戶完成（只驗證未登入時被轉到 /login、API 回 401）。",
     "學生名冊載入：部署後 health.roster.loaded=false（未觸發載入），未核對班別／學號對應。",
-    "教材尚未在正式資料庫匯入，因此「匯入並自動開放後學生端可出題」未經線上驗證。",
+    "1,822 題的歷史準確性**沒有**逐題人工覆核紀錄；教師端會顯示「已發布（未經人工覆核）」，仍需歷史科教師抽樣或逐題覆核。",
+    "1,293 題的教材依據仍未逐題核對（source traceability pending_verification）。",
+    "技能標籤仍全部空白（擁有者決定暫緩）。",
     "多執行個體、冷啟動時間、配額與成本未量度。"
   ]
 }
