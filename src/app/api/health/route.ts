@@ -41,6 +41,8 @@ export async function GET() {
         roster,
         // 教材庫概況（只有數量）：診斷「學生端為甚麼沒有教材」
         materials: materialLibrarySummary(),
+        // 啟動時自動匯入教材的狀態（首次部署會自動匯入映像檔內的教材）
+        materialsAutoImport: (await import("@/server/materials/auto-import")).materialsAutoImportStatus(),
         // 定期維護狀態（只有類別、時間及次數，不含任何學習者資料）
         maintenance: maintenanceStatus().map((entry) => ({
           kind: entry.kind,

@@ -30,6 +30,19 @@ export async function register(): Promise<void> {
     console.warn("[backup] 初始化失敗：", error instanceof Error ? error.message : error);
   }
 
+  // 教材自動匯入：教材檔隨映像檔部署，但「匯入」是寫入資料庫的另一步。
+  // 若資料庫沒有教材（全新部署或舊備份），這裡自動匯入一次，令學生端不用等待
+  // 人手按「匯入全部課程教材」。背景執行，不阻塞啟動。
+  try {
+    const { ensureMaterialsImported } = await import("./server/materials/auto-import");
+    void ensureMaterialsImported();
+  } catch (error) {
+    console.error(
+      "[materials] 無法啟動教材自動匯入：",
+      error instanceof Error ? error.message : error,
+    );
+  }
+
   // 定期維護（資料保留期清理）：在啟動時強制執行一次，令保留期有明確的執行保證，
   // 而不只是「剛好有請求時才順帶清理」。還原資料庫之後才執行，確保作用於正式資料。
   try {

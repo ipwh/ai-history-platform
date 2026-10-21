@@ -390,8 +390,18 @@ materials/
 > 校內試題檔（題目與答案）**永不自動開放**；檔名標示教師版／答案的材料**不會**代為完成內容安全覆核
 > （該項仍須管理員人手確認，fail-closed）。管理員亦可在教材管理按「開放全部課文給學生」
 > （`POST /api/admin/materials/open-all`）補開放政策生效前已匯入的教材；逐份關閉仍然有效，隨時可收回。
-> 實作見 [src/server/services/material-distribution.ts](src/server/services/material-distribution.ts)，
-> 測試見 [tests/material-auto-open.test.ts](tests/material-auto-open.test.ts)。
+>
+> **同時：教材會在容器啟動時自動匯入。** 教材檔（`materials/`）本來就隨 Docker 映像檔部署，
+> 但「匯入」（把內容寫入資料庫）以往是管理員在瀏覽器按的一步，導致全新部署後學生端一律顯示
+> 「尚未匯入教材」，而每次重建容器都要人手重做。現在啟動時若資料庫**完全沒有**教材，會在背景
+> 匯入映像檔內的教材並依政策開放（`server/materials/auto-import.ts`）；已有教材的資料庫
+> （包括使用者上載的）不會被覆寫。進度及結果可從 `GET /api/health` 的 `materials` 及
+> `materialsAutoImport` 查看（首次約需 30 秒）。
+>
+> 實作見 [src/server/services/material-distribution.ts](src/server/services/material-distribution.ts)
+> 及 [src/server/materials/auto-import.ts](src/server/materials/auto-import.ts)，
+> 測試見 [tests/material-auto-open.test.ts](tests/material-auto-open.test.ts) 及
+> [tests/materials-auto-import.test.ts](tests/materials-auto-import.test.ts)。
 
 教材內容會以**題目來源節錄**的形式顯示給學生（另會作為 AI 出題依據），等同在平台內向學生發布該內容；平台已於 2026-10-20 移除學生閱讀教材全文的頁面。教材可能來自出版社課本或第三方材料，而**本專案沒有任何授權、發行權或使用條款的紀錄**，因此無法確認學校是否有權在平台展示這些內容。
 
@@ -599,7 +609,7 @@ scripts/deploy-cloud-run.ps1      Cloud Build + Cloud Run 部署（見第十節�
 
 | 方法及路徑 | 用途 |
 | --- | --- |
-| `GET /api/health` | 健康檢查：版本、資料庫狀態（不含路徑）、LLM／OCR provider、登入及後台保護狀態、資料備份狀態（是否啟用、上次備份時間）、**定期維護（資料保留期清理）狀態**、**教材庫概況（文件／段落／可向學生發布的文件數，只有數字）** |
+| `GET /api/health` | 健康檢查：版本、資料庫狀態（不含路徑）、LLM／OCR provider、登入及後台保護狀態、資料備份狀態（是否啟用、上次備份時間）、**定期維護（資料保留期清理）狀態**、**教材庫概況及啟動自動匯入狀態（文件／段落／可向學生發布的文件數，只有數字）** |
 | `GET /api/auth/session` | 目前登入狀態及學校帳戶（未啟用登入時 `enabled: false`） |
 | `GET /api/auth/google/start` | 開始 Google 登入（導向 Google 同意頁） |
 | `GET /api/auth/google/callback` | Google 回呼：建立工作階段 cookie |

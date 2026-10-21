@@ -1189,6 +1189,35 @@ export const healthSchema = z.object({
     })
     .default({ documents: 0, blocks: 0, studentVisibleDocuments: 0 }),
   /**
+   * 啟動時自動匯入教材的狀態（只有數量及原因，不含檔名或內容）。
+   *
+   * `state` 為 `running` 時表示仍在匯入（首次部署約需 30 秒）；
+   * `done` 表示已成功匯入並依政策開放；`skipped` 表示已有教材或映像檔內沒有教材。
+   */
+  materialsAutoImport: z
+    .object({
+      attempted: z.boolean().default(false),
+      state: z.enum(["idle", "running", "done", "skipped", "failed"]).default("idle"),
+      message: z.string().nullable().default(null),
+      documents: z.number().int().nonnegative().default(0),
+      ready: z.number().int().nonnegative().default(0),
+      failed: z.number().int().nonnegative().default(0),
+      openedForStudents: z.number().int().nonnegative().default(0),
+      startedAt: z.string().nullable().default(null),
+      finishedAt: z.string().nullable().default(null),
+    })
+    .default({
+      attempted: false,
+      state: "idle",
+      message: null,
+      documents: 0,
+      ready: 0,
+      failed: 0,
+      openedForStudents: 0,
+      startedAt: null,
+      finishedAt: null,
+    }),
+  /**
    * 定期維護（資料保留期清理）的執行狀態。
    *
    * 只有類別、時間及次數，不含任何學習者資料；用途是證明保留期真的有在執行，
