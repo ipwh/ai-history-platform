@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-21T02:05:00.000Z",
+  "generatedAt": "2026-10-21T03:10:00.000Z",
   "notice": "只記錄實際執行並觀察到的部署證據；未執行或未通過的項目明確列在 unverified，不會當作已驗證。",
   "target": {
     "provider": "Google Cloud Run",
@@ -7,7 +7,7 @@
     "region": "asia-east2",
     "service": "history-self-study",
     "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
-    "revision": "history-self-study-00027-vcz",
+    "revision": "history-self-study-00028-27f",
     "image": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study",
     "deployedWith": "./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply -RosterSheetId <已設定> -AdminEmails ipwh@pochiu.edu.hk -ReviewerEmails ipwh@pochiu.edu.hk -StaffAccessPolicy school-domain -StaffDomains pochiu.edu.hk",
     "maxInstances": 1,
@@ -15,24 +15,25 @@
   },
   "source": {
     "branch": "main",
-    "commit": "98ba3f2",
-    "commitSubject": "feat(content): publish all questions and apply explanation rewrites in production"
+    "commit": "f92d7cc",
+    "commitSubject": "feat(quality): verify every provenance-queue question and clear the queue"
   },
   "notes": [
-    "2026-10-21 共部署六次（00020-c64、00021-4c4、00022-52v、00023-nft、00026-nb9、00027-vcz）；最後一次為 commit（內容資料變更：2 條示範題解釋補寫 + 擁有者風險接受紀錄）。",
+    "2026-10-21 共部署七次（00020-c64、00021-4c4、00022-52v、00023-nft、00026-nb9、00027-vcz、00028-27f）；最後一次為 commit f92d7cc。",
     "2026-10-21 實測：GET /api/health 200；執行中 revision 已含 HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk 及 MATERIAL_AUTO_OPEN_POLICY=lesson-content。",
-    "2026-10-21 實測：POST /api/admin/materials/open-all 未登入回 401（新端點受 requireAdmin 保護）。",
-    "2026-10-21 實測：正式資料庫 materials = {documents:36, blocks:23925, studentVisibleDocuments:12}——教材已隨還原快照導入，health.materialsAutoImport.state=skipped（不覆寫既有教材）。",
-    "2026-10-21 內容資料更新（擁有者授權）：上載修改後的 app.db 到 gs://pccss-ai-history-history-backup/history/data/app.db，回滾快照為同目錄 app.db.pre-20261021T0120Z。部署後重新下載 bucket 物件核對：questions=1822 全部 published、可派發 1822、佔位解釋 0、短於 25 字的解釋 0、待教師確認 0、question_reviews 仍為 2 筆、explanation_rewritten 標記 1787 筆；qb-JTH2ndEdFBQ09028 的匯入黏連答案已修正為「阿爾薩斯—洛林」；2 條示範題（demo）解釋由 14／22 字補寫至 70 字以上。紀錄見 docs/teacher-review/owner-decision-2026-10-21.md。",
-    "2026-10-21 09:59 擁有者風險接受：閱覽 20 題隨機樣本後表示沒有問題，決定 1,822 題不逐條覆核、1,293 題教材依據不逐題核對（兩者維持全部發布）、技能標籤繼續空白；紀錄 docs/teacher-review/owner-acceptance-2026-10-21.json（reviewRecordsCreated=0）。",
+    "2026-10-21 實測：正式資料庫 materials = {documents:36, blocks:23925, studentVisibleDocuments:12}；health.materialsAutoImport.state=skipped（不覆寫既有教材）。",
+    "2026-10-21 內容資料更新（擁有者授權）：上載 app.db 到 gs://pccss-ai-history-history-backup/history/data/app.db 後部署，令新 revision 還原該快照。部署後重新下載核對：questions=1822 全部 published、可派發 1822、佔位解釋 0、短於 25 字解釋 0、待教師確認 0、question_reviews 40 筆（擁有者本人在教師端逐題核准，全部保留）。",
+    "2026-10-21「需核對課本依據」佇列清空：623 題來源清單中 602 題已按現時版本逐題核對並移出佇列、21 題已不在題庫、0 題待教師決定；manifest（會打包進映像檔）rows=0。",
+    "2026-10-21 內容修正（有逐題理由）：qb-JTH2ndEdFBQ05044、qb-JTH2ndEdFBQ09211 題幹錯字；qb-NJCFN0120000063 答案由「市政局與區域市政局」改為「市政局」（區域市政局 1986 年才成立）。這 3 題原本沒有任何覆核紀錄，因此沒有令任何教師核准失效。",
     "資料庫還原：health.persistence.restore=restored；備份已上載。",
     "公開存取：allUsers 具 roles/run.invoker；AUTH_REQUIRE_SIGN_IN=true，未登入存取 / 會 307 轉 /login（實測 /api/topics 未登入回 401）。"
   ],
   "unverified": [
-    "教師／學生實際登入流程未在本輪以真實 Google 帳戶完成（只驗證未登入時被轉到 /login、API 回 401）。",
+    "教師／學生實際登入流程未在本輪以真實 Google 帳戶完成（只驗證未登入時被轉到 /login、API 回 401）。註：擁有者本人已在教師端完成 40 筆逐題核准，代表登入與覆核流程實際可用。",
+    "provenance 佇列「0 項」未以登入工作階段在畫面上截取；已以下列方式核對：manifest rows=0、tests/review-queue.test.ts 斷言佇列為 0 且說明文字包含已核對題數、映像檔由同一 commit 建置。",
     "學生名冊載入：部署後 health.roster.loaded=false（未觸發載入），未核對班別／學號對應。",
-    "1,822 題的歷史準確性**沒有**逐題人工覆核紀錄；教師端會顯示「已發布（未經人工覆核）」。擁有者已於 2026-10-21 以 20 題隨機樣本接受現有內容（docs/teacher-review/owner-acceptance-2026-10-21.json），並明確決定不做逐題覆核。",
-    "1,293 題的教材依據仍未逐題核對（source traceability pending_verification）；擁有者已於 2026-10-21 明確決定不做逐題核對，題目維持全部發布。",
+    "擁有者 40 筆核准中有 2 筆（qb-JTH2ndEdFBQ01001、qb-JTH2ndEdFBQ01002）綁定舊版本（rev 2），在本輪改動前已失效，需教師重新核准。",
+    "1,293 題教材依據未逐題核實（擁有者 2026-10-21 已明確接受，維持全部發布）。",
     "技能標籤仍全部空白（擁有者 2026-10-21 決定繼續空白）。",
     "多執行個體、冷啟動時間、配額與成本未量度。"
   ]
