@@ -1,7 +1,7 @@
 ﻿import { describe, expect, it } from "vitest";
 
 import { HISTORY_CONCEPTS, HISTORY_SKILLS } from "@/lib/types";
-import { buildUserPrompt, SYSTEM_PROMPT } from "@/server/llm/prompt";
+import { buildGradingPrompt, buildUserPrompt, GRADING_SYSTEM_PROMPT, SYSTEM_PROMPT } from "@/server/llm/prompt";
 import { topicLearningFocusText } from "@/server/seed/curriculum-focus";
 import type { QuestionGenerationInput } from "@/server/llm/provider";
 
@@ -114,5 +114,55 @@ describe("出題提示詞的歷史科要求", () => {
 
     expect(prompt).not.toContain("課程學習重點");
     expect(prompt).not.toContain("不是史實依據");
+  });
+});
+
+
+/**
+ * 批改提示詞的界線（2026-10-21 模擬學生使用時發現）：
+ * 真實 DeepSeek 會把「國際貨幣基金組織」寫成「國際貨幣基金組甲」的答案判為 correct，
+ * 理由是「組甲應為組織的錯別字」。錯別字容忍原本只為同音字、形近字及繁簡差異而設，
+ * 但提示詞沒有寫清楚界線，模型便把任何換字都當成筆誤，令明顯未掌握詞語的答案得分。
+ */
+describe("語意批改提示詞的錯別字界線", () => {
+  it("只容許同音字、形近字、繁簡異體及明顯筆誤", () => {
+    expect(GRADING_SYSTEM_PROMPT).toContain("同音字、形近字、繁簡異體字或明顯筆誤");
+    expect(GRADING_SYSTEM_PROMPT).toContain("讀音及字形都");
+  });
+
+  it("列明隨意換字不屬錯別字，須判 partial 或 incorrect", () => {
+    expect(GRADING_SYSTEM_PROMPT).toContain("「組織」寫成「組甲」");
+    expect(GRADING_SYSTEM_PROMPT).toContain("「阿拉伯語」寫成「阿拉伯甲」");
+    expect(GRADING_SYSTEM_PROMPT).toContain("不可判 correct");
+  });
+
+  it("保留「用字不同不判錯」及「同義補充可判正確」的容忍度", () => {
+    expect(GRADING_SYSTEM_PROMPT).toContain("不要因為用字、詞序、繁簡體");
+    expect(GRADING_SYSTEM_PROMPT).toContain("即當作正確（verdict = \"correct\"）");
+    expect(GRADING_SYSTEM_PROMPT).toContain("含有否定／相反的詞語");
+  });
+
+  it("在正確答案後加無意義字串不可判為正確", () => {
+    expect(GRADING_SYSTEM_PROMPT).toContain("「國際貨幣基金組織XYZ」");
+    expect(GRADING_SYSTEM_PROMPT).toContain("「3500XYZ」");
+    expect(GRADING_SYSTEM_PROMPT).toContain("不可判 correct");
+  });
+
+  it("批改提示把學生答案放在固定界線內，並要求只輸出 JSON", () => {
+    const prompt = buildGradingPrompt({
+      topicTitle: "課題1",
+      questionType: "fill",
+      question: "最早期的人類約在＿＿＿出現。",
+      referenceAnswer: "非洲",
+      acceptedAnswers: [],
+      gradingPoints: [],
+      knowledgePoint: "人類起源",
+      explanation: "古人類最早在非洲出現。",
+      studentAnswer: "非洲",
+    });
+
+    expect(prompt).toContain("<<<學生答案開始>>>");
+    expect(prompt).toContain("<<<學生答案結束>>>");
+    expect(prompt).toContain("只輸出 JSON");
   });
 });

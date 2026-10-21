@@ -572,23 +572,23 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
     const sameDifficulty = shuffle(bankAll.filter((item) => item.difficulty === parsed.difficulty));
     selected = sameDifficulty.slice(0, parsed.questionCount);
 
-    if (selected.length < parsed.questionCount) {
-      const others = shuffle(
-        bankAll.filter(
-          (item) =>
-            item.difficulty !== parsed.difficulty &&
-            !selected.some((chosen) => chosen.id === item.id),
-        ),
-      );
-      const supplement = others.slice(0, parsed.questionCount - selected.length);
-      if (supplement.length > 0) {
-        selected = [...selected, ...supplement];
-        notices.push(`所選難度的題目不足，已加入其他難度的題目補足。`);
+    /**
+     * 以即時生成補足題目（只用於題庫不足時）。
+     *
+     * 會先保留 AI 用量：這條路徑以往不受用量上限約束，令學生在題庫練習中可無限觸發
+     * 模型呼叫；現在與「AI 即時生成」模式一致，達到上限時如實告知並沿用題庫結果。
+     */
+    const topUpWithGeneration = async (missing: number): Promise<void> => {
+      try {
+        reserveAiOperation(parsed.learnerId, "generation");
+      } catch (error) {
+        if (error instanceof ApiRouteError && error.status === 429) {
+          notices.push("短時間內的 AI 出題次數已達上限，這次未有即時生成額外題目。");
+          return;
+        }
+        throw error;
       }
-    }
 
-    if (selected.length < parsed.questionCount) {
-      const missing = parsed.questionCount - selected.length;
       try {
         const generated = await generateQuestions({
           topicId: topic.id,
@@ -633,6 +633,40 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
           "未能即時生成額外題目，這次只提供題庫中已有的題目。教師可在「題目管理」補充題目或設定 AI provider。",
         );
       }
+    };
+
+    /**
+     * 選擇題的難度必須跟隨學生選擇（介面一次只提供一種題型）：題庫該難度不足時，
+     * 先以**所選難度**即時生成，生成不足才用其他難度補足，並如實說明。
+     * 填充題不設難度（介面不提供），沿用「先用題庫其他難度、最後才生成」的次序。
+     */
+    const strictDifficulty = parsed.questionTypes.length === 1 && parsed.questionTypes[0] === "mc";
+
+    if (selected.length < parsed.questionCount && strictDifficulty) {
+      await topUpWithGeneration(parsed.questionCount - selected.length);
+    }
+
+    if (selected.length < parsed.questionCount) {
+      const others = shuffle(
+        bankAll.filter(
+          (item) =>
+            item.difficulty !== parsed.difficulty &&
+            !selected.some((chosen) => chosen.id === item.id),
+        ),
+      );
+      const supplement = others.slice(0, parsed.questionCount - selected.length);
+      if (supplement.length > 0) {
+        selected = [...selected, ...supplement];
+        notices.push(
+          strictDifficulty
+            ? "所選難度的題目仍然不足，已加入其他難度的題目補足；可稍後再試以取得所選難度的新題目。"
+            : "所選難度的題目不足，已加入其他難度的題目補足。",
+        );
+      }
+    }
+
+    if (selected.length < parsed.questionCount && !strictDifficulty) {
+      await topUpWithGeneration(parsed.questionCount - selected.length);
     }
 
     if (selected.length === 0) {

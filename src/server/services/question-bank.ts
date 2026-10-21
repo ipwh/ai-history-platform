@@ -15,7 +15,7 @@
  *   - 示範模式（`DEMO_AUTO_PUBLISH_QUESTIONS=true`，僅限非正式環境）仍會額外發布
  *     本地示範生成的題目，令沒有教師在場時仍可試用。
  */
-import { DIFFICULTY_LABELS, type Difficulty } from "../../lib/types";
+import { DIFFICULTY_LABELS, type Difficulty, type Question, type QuestionType } from "../../lib/types";
 import { getServerConfig, isProductionRuntime } from "../config";
 import { describeLlm } from "../llm";
 import { countQuestions, getQuestion, listQuestions } from "../repositories/questions";
@@ -34,6 +34,14 @@ export interface QuestionBankOptions {
   topicId?: string | null;
   /** 每個分節的目標題數（會平均分配到基礎／進階／挑戰三個難度） */
   perSection?: number;
+  /**
+   * 要補齊的題型（預設選擇題及填充題）。
+   *
+   * 2026-10-21 新增：學生介面改為一次只練一種題型，選擇題可按難度調節，
+   * 因此需要一個「只補選擇題、三個難度都要」的批次模式（`--types mc`）。
+   * 目標題數及「現有題數」都只計算指定題型，避免填充題的存量令選擇題被誤判為已達標。
+   */
+  questionTypes?: QuestionType[];
   /** 只建立草稿，不自動發布 */
   draftOnly?: boolean;
   /** 進度回報 */
@@ -82,11 +90,29 @@ export function allocateByDifficulty(total: number): Map<Difficulty, number> {
   return allocation;
 }
 
+/**
+ * 這個難度／題型是否已達目標。
+ *
+ * 只有**可派發**的題目才計入：草稿及「待教師確認」的題目學生拿不到，
+ * 若把它們計入目標，題庫會看似齊備，但學生實際上只有不足的題目可用
+ * （2026-10-21：多個分節因為 1 題待確認草稿而被誤判為「已達每難度 3 題」）。
+ */
+export function countsTowardBankTarget(
+  question: Pick<Question, "status" | "teacherConfirmationRequired">,
+): boolean {
+  return question.status === "published" && !question.teacherConfirmationRequired;
+}
+
 export async function generateQuestionBank(
   options: QuestionBankOptions = {},
 ): Promise<QuestionBankReport> {
   const config = getServerConfig();
   const perSection = options.perSection ?? 5;
+  // 只補指定題型時，目標題數及現有題數都只計算該題型（避免另一題型的存量掩蓋不足）。
+  const questionTypes: QuestionType[] =
+    options.questionTypes && options.questionTypes.length > 0
+      ? options.questionTypes
+      : ["mc", "fill"];
   const llm = describeLlm();
   const autoPublishRequested =
     !options.draftOnly && config.autoPublishMockQuestions && llm.provider === "mock";
@@ -127,8 +153,9 @@ export async function generateQuestionBank(
         const existing = listQuestions({
           topicId: topic.id,
           sectionIds: [section.id],
+          questionTypes,
           difficulties: [difficulty],
-        }).length;
+        }).filter(countsTowardBankTarget).length;
         if (existing >= target) continue;
 
         let generated: Awaited<ReturnType<typeof generateQuestions>>;
@@ -136,7 +163,7 @@ export async function generateQuestionBank(
           generated = await generateQuestions({
             topicId: topic.id,
             sectionIds: [section.id],
-            questionTypes: ["mc", "fill"],
+            questionTypes,
             difficulty,
             questionCount: target - existing,
           });

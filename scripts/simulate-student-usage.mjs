@@ -13,8 +13,10 @@
  *   2. 題目內容契約：題型、分節歸屬、選項、空格、是否派發未發布／待教師確認的題目。
  *   3. 評分契約：正確答案必須判為正確、錯誤答案不可判為正確、重複提交不可改變分數、
  *      空白答案不可提交、不可提交不屬於這次練習的題目、不可讀取他人的練習。
- *   4. 重做錯題、學生回報、學習進度、重溫佇列、閱讀教材。
- *   5. 邊界與錯誤輸入：題數 0／31、不存在的題型／難度／課題／分節、沒有題目的分節。
+ *      等價寫法（前後空白、全角空格、句號、全形英數）同樣必須判為正確。
+ *   4. 重做錯題（題庫練習及即時生成練習之後）、學生回報（全部原因）、學習進度、重溫佇列。
+ *   5. 部分作答後完成（未作答題目不可當成答錯）、併發重複提交（只可記錄一次且分數一致）。
+ *   6. 邊界與錯誤輸入：題數 0／31、不存在的題型／難度／課題／分節、沒有題目的分節。
  *
  * 任何異常都會列印原因及相關詳情，並以非零狀態結束；完整報告寫入 --report。
  *
@@ -513,6 +515,187 @@ async function runPractice(topic, setup, options = {}) {
 }
 
 /* ------------------------------------------------------------------ */
+/* 答案寫法、部分作答及併發提交                                        */
+/* ------------------------------------------------------------------ */
+
+/** 全形化英文字母及數字（模擬學生用全形輸入法作答） */
+function toFullWidth(value) {
+  return value.replace(/[!-~]/g, (char) =>
+    String.fromCharCode(char.charCodeAt(0) + 0xfee0),
+  );
+}
+
+/**
+ * 與正規化結果相同的答案寫法（前後空白、全角空格、句號、全形英數）。
+ * 這些寫法在 `grading.ts` 的正規化下與標準答案相同，必須判為正確；
+ * 任何一項被判錯，都是學生用正常輸入法作答卻被扣分。
+ */
+function equivalentAnswerVariants(answer) {
+  const variants = [
+    { label: "原樣", value: answer },
+    { label: "前後空白", value: `   ${answer}\u3000` },
+    { label: "加句號", value: `${answer}。` },
+  ];
+  if (/[A-Za-z0-9]/.test(answer)) {
+    variants.push({ label: "全形英數", value: toFullWidth(answer) });
+  }
+  return variants;
+}
+
+/** 學生以不同但等價的寫法作答（每題用一種寫法） */
+async function checkAnswerFormats(topic) {
+  console.log("\n[G] 答案寫法差異（等價寫法必須判為正確）");
+  const created = await call("POST", "/api/practice", {
+    learnerId: LEARNER,
+    topicId: topic.id,
+    sectionIds: pickSections(topic, "single"),
+    questionTypes: ["mc", "fill"],
+    difficulty: "basic",
+    questionCount: 10,
+  });
+  if (created.status !== 201) {
+    anomaly("answer-format", `建立練習失敗（HTTP ${created.status}）：${topic.id}`, {
+      error: textOf(created.payload?.error) || created.text,
+    });
+    return;
+  }
+  const practice = created.payload;
+  const snapshotById = new Map(
+    (snapshotOf(practice.session.id) ?? []).map((question) => [question.id, question]),
+  );
+  let variantIndex = 0;
+
+  for (const studentQuestion of practice.questions) {
+    const correctAnswer = textOf(snapshotById.get(studentQuestion.id)?.correctAnswer);
+    if (!correctAnswer) continue;
+    const variants = equivalentAnswerVariants(correctAnswer);
+    const variant = variants[variantIndex % variants.length];
+    variantIndex += 1;
+
+    const submitted = await call("POST", `/api/practice/${practice.session.id}/answers`, {
+      learnerId: LEARNER,
+      questionId: studentQuestion.id,
+      answer: variant.value,
+    });
+    answersRun += 1;
+    if (submitted.status !== 200) {
+      anomaly(
+        "answer-format",
+        `「${variant.label}」提交失敗（HTTP ${submitted.status}）：${studentQuestion.id}`,
+        { answer: variant.value, error: textOf(submitted.payload?.error) || submitted.text },
+      );
+      continue;
+    }
+    check(
+      submitted.payload?.feedback?.isCorrect === true,
+      "answer-format",
+      `「${variant.label}」被判為錯誤（${studentQuestion.questionType}）：${variant.value}`,
+      { correctAnswer },
+    );
+  }
+  await call("POST", `/api/practice/${practice.session.id}/complete`, { learnerId: LEARNER });
+}
+
+/** 只作答部分題目便完成練習：成績須只計已作答的題目 */
+async function checkPartialCompletion(topic) {
+  console.log("\n[H] 部分作答後完成");
+  const created = await call("POST", "/api/practice", {
+    learnerId: LEARNER,
+    topicId: topic.id,
+    sectionIds: pickSections(topic, "single"),
+    questionTypes: ["mc"],
+    difficulty: "basic",
+    questionCount: 5,
+  });
+  if (created.status !== 201) {
+    anomaly("partial-completion", `建立練習失敗（HTTP ${created.status}）：${topic.id}`);
+    return;
+  }
+  const practice = created.payload;
+  const snapshotById = new Map(
+    (snapshotOf(practice.session.id) ?? []).map((question) => [question.id, question]),
+  );
+  for (const studentQuestion of practice.questions.slice(0, 2)) {
+    await call("POST", `/api/practice/${practice.session.id}/answers`, {
+      learnerId: LEARNER,
+      questionId: studentQuestion.id,
+      answer: textOf(snapshotById.get(studentQuestion.id)?.correctAnswer),
+    });
+    answersRun += 1;
+  }
+  const completed = await call("POST", `/api/practice/${practice.session.id}/complete`, {
+    learnerId: LEARNER,
+  });
+  if (completed.status !== 200) {
+    anomaly("partial-completion", `完成練習失敗（HTTP ${completed.status}）`);
+    return;
+  }
+  const result = completed.payload;
+  check(result.answeredCount === 2, "partial-completion", `已作答 ${result.answeredCount} 題（應為 2）`);
+  check(result.correctCount === 2, "partial-completion", `答對 ${result.correctCount} 題（應為 2）`);
+  const unanswered = (result.feedback ?? []).filter((item) => item.isCorrect === null);
+  check(unanswered.length === 3, "partial-completion", `未作答題目 ${unanswered.length} 題（應為 3）`);
+}
+
+/**
+ * 併發重複提交：學生連按兩次「提交答案」時，兩次請求幾乎同時到達。
+ * 只可記錄一次，而且兩次回傳的分數必須一致（否則畫面會前後矛盾）。
+ */
+async function checkConcurrentSubmit(topic) {
+  console.log("\n[I] 併發重複提交");
+  const created = await call("POST", "/api/practice", {
+    learnerId: LEARNER,
+    topicId: topic.id,
+    sectionIds: pickSections(topic, "single"),
+    questionTypes: ["mc"],
+    difficulty: "basic",
+    questionCount: 5,
+  });
+  if (created.status !== 201) {
+    anomaly("concurrency", `建立練習失敗（HTTP ${created.status}）：${topic.id}`);
+    return;
+  }
+  const practice = created.payload;
+  const question = practice.questions[0];
+  const snapshotById = new Map(
+    (snapshotOf(practice.session.id) ?? []).map((item) => [item.id, item]),
+  );
+  const correctAnswer = textOf(snapshotById.get(question.id)?.correctAnswer);
+  const wrongAnswer =
+    (question.options ?? []).find((option) => textOf(option) !== correctAnswer) ?? "錯誤答案";
+
+  const [first, second] = await Promise.all([
+    call("POST", `/api/practice/${practice.session.id}/answers`, {
+      learnerId: LEARNER,
+      questionId: question.id,
+      answer: correctAnswer,
+    }),
+    call("POST", `/api/practice/${practice.session.id}/answers`, {
+      learnerId: LEARNER,
+      questionId: question.id,
+      answer: wrongAnswer,
+    }),
+  ]);
+  answersRun += 2;
+  check(
+    first.status === 200 && second.status === 200,
+    "concurrency",
+    `併發提交回應 ${first.status}／${second.status}`,
+    { first: textOf(first.payload?.error), second: textOf(second.payload?.error) },
+  );
+  if (first.status === 200 && second.status === 200) {
+    const recorded = [first, second].filter((item) => item.payload?.recorded !== false).length;
+    check(recorded === 1, "concurrency", `兩次併發提交中記錄了 ${recorded} 次（應為 1）`);
+    check(
+      first.payload?.feedback?.isCorrect === second.payload?.feedback?.isCorrect,
+      "concurrency",
+      "兩次併發提交回傳不同分數",
+    );
+  }
+  await call("POST", `/api/practice/${practice.session.id}/complete`, { learnerId: LEARNER });
+}
+
+/* ------------------------------------------------------------------ */
 /* 情境                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -640,18 +823,72 @@ async function main() {
     }
   }
 
+  // 即時生成的題目只存在於練習快照內（persist = false），重做錯題時必須由快照取回，
+  // 不能因為題庫沒有這些題目而當成「沒有錯題」。
+  if (INCLUDE_AI) {
+    const aiBase = await runPractice(
+      firstTopic,
+      {
+        topicId: firstTopic.id,
+        sectionIds: pickSections(firstTopic, "single"),
+        questionTypes: ["mc", "fill"],
+        difficulty: "basic",
+        questionCount: 5,
+        questionSource: "ai",
+      },
+      { answerMode: "wrong" },
+    );
+    if (aiBase) {
+      const aiRetry = await runPractice(firstTopic, {
+        topicId: firstTopic.id,
+        sectionIds: pickSections(firstTopic, "single"),
+        questionTypes: ["mc", "fill"],
+        difficulty: "basic",
+        questionCount: 5,
+        mode: "wrong-only",
+        sourceSessionId: aiBase.sessionId,
+      });
+      if (aiRetry) {
+        const wrongSet = new Set(aiBase.wrongIds);
+        const outside = aiRetry.questions.filter((question) => !wrongSet.has(question.id));
+        if (outside.length > 0) {
+          anomaly("wrong-only", `AI 練習後重做錯題出現 ${outside.length} 題不是之前答錯的`, {
+            ids: outside.map((question) => question.id).slice(0, 5),
+          });
+        }
+      }
+    }
+  }
+
   console.log("\n[D] 學生回報題目");
   const reportTarget = base?.questions?.[0];
   if (reportTarget) {
-    const report = await call("POST", "/api/reports", {
+    // 每一種回報原因學生都可能用到；原因清單由介面提供，伺服器必須全部接受。
+    for (const reason of ["unclear", "answer-disputed", "explanation-unclear", "source-problem", "other"]) {
+      const report = await call("POST", "/api/reports", {
+        learnerId: LEARNER,
+        questionId: reportTarget.id,
+        sessionId: base.sessionId,
+        attemptId: null,
+        reason,
+        detail: `模擬測試回報（${reason}）`,
+      });
+      check(
+        [200, 201].includes(report.status),
+        "report",
+        `回報原因 ${reason} 回應 ${report.status}`,
+        report.payload,
+      );
+    }
+    const invalid = await call("POST", "/api/reports", {
       learnerId: LEARNER,
       questionId: reportTarget.id,
       sessionId: base.sessionId,
       attemptId: null,
-      reason: "unclear",
-      detail: "模擬測試回報",
+      reason: "not-a-real-reason",
+      detail: "模擬測試：無效原因",
     });
-    check([200, 201].includes(report.status), "report", `回報題目回應 ${report.status}`, report.payload);
+    check(invalid.status === 400, "report", `無效回報原因回應 ${invalid.status}（應為 400）`);
   }
 
   console.log("\n[E] 進度、重溫及閱讀教材");
@@ -694,6 +931,10 @@ async function main() {
     const response = await call("GET", `${page}${page.includes("?") ? "&" : "?"}learnerId=${LEARNER}`);
     check(response.status === 200, "pages", `學生頁面 ${page} 回應 ${response.status}`);
   }
+
+  await checkAnswerFormats(firstTopic);
+  await checkPartialCompletion(firstTopic);
+  await checkConcurrentSubmit(firstTopic);
 
   console.log("\n[F] 邊界與錯誤輸入");
   const boundary = [

@@ -137,7 +137,10 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
         </div>
         <div className="flex flex-wrap gap-2">
           <span className="badge">{QUESTION_TYPE_LABELS[current.questionType]}</span>
-          <span className="badge">{DIFFICULTY_LABELS[current.difficulty]}</span>
+          {/* 填充題不設難度（練習設定不提供），因此不顯示難度標籤，避免顯示一個學生沒有選過的難度。 */}
+          {current.questionType === "mc" ? (
+            <span className="badge">{DIFFICULTY_LABELS[current.difficulty]}</span>
+          ) : null}
           <span className="badge badge-accent">{QUESTION_ORIGIN_LABELS[current.origin]}</span>
         </div>
       </div>

@@ -206,17 +206,22 @@ describe("自動驗證不會繞過教材發行權與來源可見性", () => {
     });
     const question = generated.questions[0];
 
-    const assembled = await practice.createPractice({
-      learnerId: LEARNER,
-      topicId: "topic-5",
-      sectionIds: [SECTION],
-      questionTypes: ["mc"],
-      difficulty: "basic",
-      questionCount: 20,
-      mode: "standard",
-      questionSource: "bank",
-      sourceSessionId: null,
-    });
+    // 直接建立只含這一題的練習：`createPractice` 會隨機抽取 20 題，題目未必入選，
+    // 令測試偶然失敗（組題邏輯由其他測試覆蓋；這裡只驗證版本標示）。
+    const assembled = {
+      session: practiceRepo.createSession({
+        learnerId: LEARNER,
+        topicId: "topic-5",
+        sectionIds: [SECTION],
+        questionTypes: ["mc"],
+        difficulty: "basic",
+        mode: "standard",
+        sourceSessionId: null,
+        origin: "bank",
+        questions: [questionsRepo.getQuestion(question.id)!],
+        notice: null,
+      }),
+    };
     await practice.submitAnswer(assembled.session.id, LEARNER, question.id, "錯的答案");
 
     // 作答當時的版本會被記錄下來

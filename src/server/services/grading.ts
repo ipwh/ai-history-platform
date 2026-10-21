@@ -36,6 +36,44 @@ export function answerAlternatives(correctAnswer: string): string[] {
     .filter((candidate) => candidate.length > 0);
 }
 
+/** 緊貼英文字組前後的字元類別：中文、數字或英文字母（代表英文字組是黏在答案上，不是補充說明） */
+const ATTACHED_CHARACTER = /[\u3400-\u9fff0-9A-Za-z]/;
+
+/**
+ * 學生是否在答案後面直接黏上無法解釋的英文字母（例如「3500XYZ」「文字abc」）。
+ *
+ * 語意批改可以把逐字比對判錯的填充題升級為正確，但真實模型對「標準答案 + XYZ」這類
+ * 寫法並不穩定（2026-10-21 模擬學生使用：同一句式有時判 correct、有時判 partial）。
+ * 學生在答案後面加上隨機字母並不是補充史實，不應因此得分，所以這裡以固定規則否決
+ * 「正確」的判斷：
+ *
+ *   - 「3500XYZ」「文字abc」「XYZ文字」→ 英文字組緊貼中文／數字 → 視為無關字元
+ *   - 「國際貨幣基金組織（IMF）」「文藝復興 Renaissance」→ 有括號或空格分隔 → 交由模型判斷
+ *   - 標準答案本身含英文字母（例如 IMF）時，只有超出標準答案的字母才算無法解釋
+ *
+ * 中文補充說明（例如「文藝復興時期」）不含英文字母，不受此規則影響。
+ */
+export function hasAttachedLatinJunk(answer: string, acceptedAnswers: string[]): boolean {
+  const referenceLetters = new Set(
+    acceptedAnswers.join("").toLowerCase().match(/[a-z]/g) ?? [],
+  );
+  const pattern = /[A-Za-z]{2,}/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(answer)) !== null) {
+    const run = match[0].toLowerCase();
+    if ([...run].every((letter) => referenceLetters.has(letter))) continue;
+    const before = answer[match.index - 1];
+    const after = answer[match.index + match[0].length];
+    if (
+      (before !== undefined && ATTACHED_CHARACTER.test(before)) ||
+      (after !== undefined && ATTACHED_CHARACTER.test(after))
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export interface GradeOutcome {
   autoGraded: boolean;
   isCorrect: boolean | null;

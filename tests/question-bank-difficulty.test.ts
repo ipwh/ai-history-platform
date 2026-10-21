@@ -59,6 +59,13 @@ beforeAll(async () => {
 });
 
 describe("題庫難度分配", () => {
+  it("目標只計算可派發的題目（已發布且未待教師確認）", () => {
+    expect(bank.countsTowardBankTarget({ status: "published", teacherConfirmationRequired: false })).toBe(true);
+    expect(bank.countsTowardBankTarget({ status: "published", teacherConfirmationRequired: true })).toBe(false);
+    expect(bank.countsTowardBankTarget({ status: "draft", teacherConfirmationRequired: false })).toBe(false);
+    expect(bank.countsTowardBankTarget({ status: "draft", teacherConfirmationRequired: true })).toBe(false);
+  });
+
   it("把每個分節的目標題數平均分配到三個難度", () => {
     expect([...bank.allocateByDifficulty(6).entries()]).toEqual([
       ["basic", 2],
@@ -102,5 +109,27 @@ describe("題庫難度分配", () => {
     expect(difficulties.has("basic")).toBe(true);
     expect(difficulties.has("advanced")).toBe(true);
     expect(difficulties.has("challenge")).toBe(true);
+  });
+
+  it("只補選擇題（--types mc）時只會新增選擇題，填充題存量不會令目標被誤判為已達標", async () => {
+    const fillBefore = questionsRepo.listQuestions({ topicId: "topic-5", questionTypes: ["fill"] }).length;
+    const mcBefore = questionsRepo.listQuestions({ topicId: "topic-5", questionTypes: ["mc"] }).length;
+
+    // 目標提高至每個難度 2 題：上一個測試已為每個難度生成 1 題，
+    // 因此這次必須再補選擇題；若誤把填充題計算在內，就會回報「已達標」而 0 題。
+    const report = await bank.generateQuestionBank({
+      topicId: "topic-5",
+      perSection: 6,
+      questionTypes: ["mc"],
+    });
+
+    expect(
+      report.created,
+      `只補選擇題時應有新題目（已達標：${report.duplicateSections.length}；教材不足：${report.insufficientSections.length}）`,
+    ).toBeGreaterThan(0);
+    const fillAfter = questionsRepo.listQuestions({ topicId: "topic-5", questionTypes: ["fill"] }).length;
+    const mcAfter = questionsRepo.listQuestions({ topicId: "topic-5", questionTypes: ["mc"] }).length;
+    expect(fillAfter).toBe(fillBefore);
+    expect(mcAfter - mcBefore).toBe(report.created);
   });
 });

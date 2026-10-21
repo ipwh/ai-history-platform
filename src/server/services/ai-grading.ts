@@ -12,6 +12,7 @@ import type { AiGrading, Question } from "../../lib/types";
 import { getServerConfig } from "../config";
 import { resolveGrader } from "../llm";
 import { buildGradingInput, parseGradingResult } from "../llm/grader";
+import { hasAttachedLatinJunk } from "./grading";
 import { categorizeLlmError, logGradingAttempt, logLlmUsage } from "./llm-usage";
 
 /** 需要批改時使用的題目資訊（避免服務層再查一次快照） */
@@ -131,6 +132,43 @@ export async function gradeWithAi(context: AiGradingContext): Promise<AiGrading 
         missingPoints: [],
         feedback: "",
         note: "答案中出現類似系統指令的文字，這次只以字詞比對及參考答案判斷，並交由教師覆核。",
+      };
+    }
+
+    // 答案在正確答案後直接黏上英文字母（例如「3500XYZ」）不是同義補充，而是無關字元。
+    // 模型對這類寫法的判斷不穩定（見 hasAttachedLatinJunk 的說明），因此以固定規則
+    // 否決「正確」的判斷；中文補充說明不受影響。
+    if (
+      parsed.verdict === "correct" &&
+      hasAttachedLatinJunk(context.studentAnswer, [
+        context.question.correctAnswer,
+        ...context.question.acceptedAnswers,
+      ])
+    ) {
+      logGradingAttempt({
+        ...baseLog,
+        success: false,
+        fellBack: true,
+        durationMs,
+        errorType: "attached-junk",
+      });
+      logLlmUsage({
+        requestType: "grading",
+        provider: grader.providerName,
+        model,
+        topicId: context.topicId ?? null,
+        success: false,
+        durationMs,
+        usage: outcome.usage,
+        errorType: "attached-junk",
+      });
+      console.warn("[ai-grading] 答案附有無關英文字元，不採用 AI 的「正確」判斷", context.question.id);
+      return {
+        verdict: "partial",
+        hitPoints: parsed.hitPoints,
+        missingPoints: parsed.missingPoints,
+        feedback: "答案的關鍵字正確，但後面附有與題目無關的字元，因此只作部分正確。請只填寫關鍵答案。",
+        note: null,
       };
     }
 

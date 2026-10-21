@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { questionSchema, type Question } from "@/lib/types";
-import { calculateAccuracy, gradeAnswer, normalizeAnswer } from "@/server/services/grading";
+import {
+  calculateAccuracy,
+  gradeAnswer,
+  hasAttachedLatinJunk,
+  normalizeAnswer,
+} from "@/server/services/grading";
 
 function buildQuestion(overrides: Partial<Question>): Question {
   return questionSchema.parse({
@@ -148,5 +153,39 @@ describe("填充題的近似答案標示為不確定", () => {
   it("選擇題不會標示為不確定", () => {
     const question = buildQuestion({});
     expect(gradeAnswer(question, "選項乙").uncertain).toBeUndefined();
+  });
+});
+
+/**
+ * 「標準答案 + XYZ」的寫法（2026-10-21 模擬學生使用時發現）：
+ * 練習模擬把這類答案定義為錯誤，但真實模型有時判 correct（理由為「額外的英文字母不影響意思」），
+ * 令錯誤答案得分。這裡以固定規則否決這種「正確」判斷，同時不可誤傷中文補充說明或括號內的英文全名。
+ */
+describe("緊貼答案的無關英文字元", () => {
+  it("標準答案後面直接黏上英文字母視為無關字元", () => {
+    expect(hasAttachedLatinJunk("3500XYZ錯誤", ["3500"])).toBe(true);
+    expect(hasAttachedLatinJunk("文字abc", ["文字"])).toBe(true);
+    expect(hasAttachedLatinJunk("XYZ文字", ["文字"])).toBe(true);
+    expect(hasAttachedLatinJunk("國際貨幣基金組織XYZ", ["國際貨幣基金組織"])).toBe(true);
+  });
+
+  it("中文補充說明不含英文字母，不算無關字元", () => {
+    expect(hasAttachedLatinJunk("文藝復興時期", ["文藝復興"])).toBe(false);
+    expect(hasAttachedLatinJunk("文藝復興（歐洲歷史時期）", ["文藝復興"])).toBe(false);
+  });
+
+  it("以括號或空格分隔的英文全名屬補充說明，交由模型判斷", () => {
+    expect(hasAttachedLatinJunk("國際貨幣基金組織（IMF）", ["國際貨幣基金組織"])).toBe(false);
+    expect(hasAttachedLatinJunk("文藝復興 Renaissance", ["文藝復興"])).toBe(false);
+  });
+
+  it("標準答案本身含英文字母時，只有超出標準答案的字母才算無關", () => {
+    expect(hasAttachedLatinJunk("IMF", ["IMF"])).toBe(false);
+    expect(hasAttachedLatinJunk("IMF（國際貨幣基金組織）", ["IMF"])).toBe(false);
+  });
+
+  it("完全沒有英文字母的答案不受影響", () => {
+    expect(hasAttachedLatinJunk("馬丁路德", ["馬丁路德"])).toBe(false);
+    expect(hasAttachedLatinJunk("", ["文字"])).toBe(false);
   });
 });

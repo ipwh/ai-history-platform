@@ -150,7 +150,8 @@ export function PracticeSetupForm() {
   const [topic, setTopic] = useState<TopicOverview | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
-  const [questionTypes, setQuestionTypes] = useState<QuestionType[]>(["mc"]);
+  // 一次只練一種題型：選擇題可按難度調節；填充題以課本關鍵詞作答，不設難度。
+  const [questionType, setQuestionType] = useState<QuestionType>("mc");
   const [difficulty, setDifficulty] = useState<Difficulty>("basic");
   const [questionCount, setQuestionCount] = useState(5);
   const [mode, setMode] = useState<"standard" | "wrong-only">("standard");
@@ -285,10 +286,8 @@ export function PracticeSetupForm() {
     setSelectedSections([]);
   }
 
-  function toggleType(type: QuestionType) {
-    setQuestionTypes((current) =>
-      current.includes(type) ? current.filter((item) => item !== type) : [...current, type],
-    );
+  function selectType(type: QuestionType) {
+    setQuestionType(type);
   }
 
   async function startPractice(
@@ -300,10 +299,6 @@ export function PracticeSetupForm() {
       setStartError(new Error("請至少選擇一個主題。"));
       return;
     }
-    if (questionTypes.length === 0) {
-      setStartError(new Error("請至少選擇一種題型。"));
-      return;
-    }
 
     setStarting(true);
     setStartError(null);
@@ -313,8 +308,9 @@ export function PracticeSetupForm() {
         learnerId: getLearnerId(),
         topicId: topic.id,
         sectionIds: selectedSections,
-        questionTypes,
-        difficulty,
+        questionTypes: [questionType],
+        // 填充題不設難度：一律以「基礎」送出，避免留下一個學生無法選擇的難度值。
+        difficulty: questionType === "mc" ? difficulty : "basic",
         questionCount,
         mode: attemptMode,
         questionSource: source,
@@ -426,8 +422,8 @@ export function PracticeSetupForm() {
 
       <section className="card flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold">2. 選擇題型（可多選）</h2>
-          <span className="text-xs text-gray-600">已選 {questionTypes.length} 種題型</span>
+          <h2 className="font-semibold">2. 選擇題型（一次一種）</h2>
+          <span className="text-xs text-gray-600">已選：{QUESTION_TYPE_LABELS[questionType]}</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {QUESTION_TYPES.map((type) => (
@@ -435,39 +431,43 @@ export function PracticeSetupForm() {
               key={type}
               type="button"
               className="chip"
-              data-selected={questionTypes.includes(type)}
-              onClick={() => toggleType(type)}
+              data-selected={questionType === type}
+              onClick={() => selectType(type)}
             >
               {QUESTION_TYPE_LABELS[type]}
             </button>
           ))}
         </div>
         <p className="text-xs text-gray-500">
-          AI 會按你選取的題型出題（至少要選一種）；題型可多選，想只練一種題型，請把其他已選的題型再按一下取消
-          （例如只想練填充題，請取消「選擇題」）。
+          一次只練一種題型。選擇題可調節難度；填充題以課本關鍵詞作答，不設難度。
           填充題提交後會由 AI 按意思批改，用字不同不會直接判錯。
         </p>
       </section>
 
-      <section className="card flex flex-col gap-2">
-        <h2 className="font-semibold">3. 選擇難度</h2>
-        <div className="flex flex-wrap gap-2">
-          {DIFFICULTIES.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className="chip"
-              data-selected={difficulty === item}
-              onClick={() => setDifficulty(item)}
-            >
-              {DIFFICULTY_LABELS[item]}
-            </button>
-          ))}
-        </div>
-      </section>
+      {questionType === "mc" ? (
+        <section className="card flex flex-col gap-2">
+          <h2 className="font-semibold">3. 選擇難度</h2>
+          <div className="flex flex-wrap gap-2">
+            {DIFFICULTIES.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className="chip"
+                data-selected={difficulty === item}
+                onClick={() => setDifficulty(item)}
+              >
+                {DIFFICULTY_LABELS[item]}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500">
+            所選難度會用於出題；題庫該難度不足時，系統會按所選難度即時生成，不會直接改用其他難度。
+          </p>
+        </section>
+      ) : null}
 
       <section className="card flex flex-col gap-2">
-        <h2 className="font-semibold">4. 題目數量</h2>
+        <h2 className="font-semibold">{questionType === "mc" ? 4 : 3}. 題目數量</h2>
         <div className="flex flex-wrap gap-2">
           {QUESTION_COUNTS.map((count) => (
             <button
@@ -484,7 +484,7 @@ export function PracticeSetupForm() {
       </section>
 
       <section className="card flex flex-col gap-2">
-        <h2 className="font-semibold">5. 出題方式</h2>
+        <h2 className="font-semibold">{questionType === "mc" ? 5 : 4}. 出題方式</h2>
         <div className="flex flex-wrap gap-2">
           {(["ai", "bank"] as const).map((source) => (
             <button
@@ -510,13 +510,14 @@ export function PracticeSetupForm() {
           </p>
         ) : (
           <p className="text-xs text-gray-500">
-            使用題庫中已發布的題目；若題目不足，系統會按教材內容即時生成補足。
+            使用題庫中已發布的題目；所選難度（選擇題）的題目不足時，系統會按該難度即時生成補足
+            （需時約 10 至 60 秒），仍然不足才加入其他難度並如實說明。
           </p>
         )}
       </section>
 
       <section className="card flex flex-col gap-2">
-        <h2 className="font-semibold">6. 練習模式</h2>
+        <h2 className="font-semibold">{questionType === "mc" ? 6 : 5}. 練習模式</h2>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
