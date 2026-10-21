@@ -4,7 +4,7 @@
  * 契約：
  *   - 未登入 401、學生 403；教師／管理員可讀（唯讀佇列）。
  *   - 佇列分批（pageSize 上限 25），不一次送回全部資料。
- *   - 內容來自既有稽核報告：servability 97、provenance 623、golden 42。
+ *   - 內容來自既有稽核報告：servability 97、provenance（2026-10-21 起為 0，已逐題核對）、golden 42。
  *   - 不存在的 queue 回 400；報告缺失時 available=false（不推測）。
  */
 import { beforeAll, describe, expect, it } from "vitest";
@@ -152,18 +152,19 @@ describe("審核佇列：內容與分批", () => {
     expect((await callQueue("queue=servability&pageSize=100", cookieFor(TEACHER))).status).toBe(400);
   });
 
-  it("provenance：報告與資料庫不符時 fail-closed，不會當成「沒有待處理項目」", async () => {
-    // 測試資料庫是新鮮的示範題庫，不含 manifest 內的校內試題，因此全部對不上。
-    // 這正是「指向另一個資料庫」的情況：必須回報 available=false 及原因，
-    // 而不是顯示 0 項（否則會誤導教師以為沒有工作）。
+  it("provenance：全部題目已按現時版本核對，佇列如實顯示 0 項並說明原因", async () => {
+    // 2026-10-21：623 題已逐題核對（602 題在資料庫內並已移出佇列，21 題已不在題庫），
+    // manifest 因此沒有待處理題目。畫面必須如實說明「已核對多少題」，
+    // 而不是靜靜顯示 0 項令人以為從來沒有人檢查過。
     const body = (await (
       await callQueue("queue=provenance&pageSize=25", cookieFor(TEACHER))
     ).json()) as QueueResponse & { skippedMissing?: number };
     expect(body.total).toBe(0);
-    expect(body.skippedMissing).toBe(623);
-    expect(body.available).toBe(false);
-    expect(body.limitation ?? "").toContain("完全找不到");
-    expect(body.limitation ?? "").toContain("audit:review-manifest");
+    expect(body.available).toBe(true);
+    expect(body.limitation ?? "").toContain("已");
+    expect(body.limitation ?? "").toContain("602");
+    expect(body.limitation ?? "").toContain("不是");
+    expect(body.limitation ?? "").toContain("覆核紀錄");
   });
 
   it("golden：候選與資料庫不符時同樣 fail-closed", async () => {
@@ -175,5 +176,28 @@ describe("審核佇列：內容與分批", () => {
     expect(body.available).toBe(false);
     expect(body.limitation ?? "").toContain("完全找不到");
     expect(body.limitation ?? "").toContain("golden:candidates");
+  });
+});
+
+/**
+ * `matchReportToDatabase` 的 fail-closed 規則（2026-10-21 抽出成可測試函式）。
+ *
+ * 這條規則沒有因為 provenance 佇列被清空而消失：任何報告若整份都對不上資料庫
+ * （例如指向另一個資料庫），佇列必須回報 `available:false`，不可顯示「0 項」假裝沒有工作。
+ */
+describe("matchReportToDatabase", () => {
+  it("全部找不到時標示 databaseMismatch", async () => {
+    const { matchReportToDatabase } = await import("@/server/services/review-queue");
+    const result = matchReportToDatabase([{ id: "qb-not-in-db-1" }, { id: "qb-not-in-db-2" }]);
+    expect(result.items).toHaveLength(0);
+    expect(result.skipped).toBe(2);
+    expect(result.databaseMismatch).toBe(true);
+  });
+
+  it("空報告不算 databaseMismatch（真的沒有待處理項目）", async () => {
+    const { matchReportToDatabase } = await import("@/server/services/review-queue");
+    const result = matchReportToDatabase([]);
+    expect(result.databaseMismatch).toBe(false);
+    expect(result.skipped).toBe(0);
   });
 });

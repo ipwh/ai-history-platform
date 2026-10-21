@@ -735,5 +735,54 @@ P1 與 P3 各有核對清單；**P3 只代表排序較後，不代表核准**；
 界線由 [tests/owner-acceptance-record.test.ts](../../tests/owner-acceptance-record.test.ts) 守住：
 紀錄檔必須明示 `reviewRecordsCreated: 0`，文件不得把「樣本沒有問題」寫成「已逐題覆核」。
 
+### 17.2 「需核對課本依據的題目」佇列已清空（2026-10-21）
+
+擁有者指示：「替我根據教材或歷史知識核對題目，不用人手核對課本依據，完成後清空『需核對課本依據的題目』。」
+
+原本的 623 題全部是**自動修復改動過題幹或選項**的題目（530 題補回其餘空格的答案、93 題只移除項目符號）。
+處理方式與結果：
+
+| 項目 | 數量 | 說明 |
+| --- | --- | --- |
+| 來源清單 | 623 | `docs/quality/provenance-risk-2026-10-19.json` |
+| 逐題核對並移出佇列 | **602** | 紀錄：[provenance-verification-2026-10-21.json](../../docs/quality/provenance-verification-2026-10-21.json) |
+| 已在題庫中不存在 | 21 | 匯入時被合併／刪除，`matchReportToDatabase` 本來就會略過 |
+| 仍需教師決定 | 0 | 沒有 `needs-teacher` 的題目 |
+| **佇列現況** | **0** | [manifest](../../docs/quality/review-priority-manifest-2026-10-19.md) 仍如實記錄 623→602→0 的過程 |
+
+核對方法分兩類，紀錄中逐題標明：
+
+- **manual-review（530 題）**：逐題閱讀題幹、填回的答案及記錄的答案，對照課本段落及史實判斷；每題都寫**獨立理由**（同一句手寫理由最多可用 6 次，超過即拒絕寫入）。
+- **automated-diff（72 題）**：只移除項目符號、全形空白及空格標記，以程式比對「正規化後與原卷完全相同」並記錄 `checks`。
+
+核對時發現並修正的**三處內容錯誤**（工具：[fix-question-content.ts](../../scripts/fix-question-content.ts)，
+清單與紀錄：[content-fixes-2026-10-21.json](../../docs/quality/content-fixes-2026-10-21.json)）：
+
+| 題目 | 問題 | 修正 |
+| --- | --- | --- |
+| `qb-JTH2ndEdFBQ05044` | 題幹「抨擊教會及教士的**腐章運動**」為匯入漏字黏連 | 改為「腐敗」（答案不變：馬丁路德） |
+| `qb-JTH2ndEdFBQ09211` | 題幹「被判處**罪**終身監禁」多字 | 改為「被判處終身監禁」（答案不變：種族滅絕） |
+| `qb-NJCFN0120000063` | 答案「市政局與區域市政局」，但區域市政局 1986 年才成立，1983 年不可能已舉行首次分區直選 | 答案改為「市政局」 |
+
+**紀錄綁定版本**：每筆核對都寫入當時的 `revision` 及 `fingerprint`。題目日後再被任何方式修改，
+該筆紀錄立即失效，題目會**自動重回佇列**（[tests/provenance-verification.test.ts](../../tests/provenance-verification.test.ts) 守住）。
+因此「清空」不是永久豁免，而是「這個版本已經核對過」。
+
+**不是教師覆核**：紀錄的 `verifiedBy` 是 `ai-textbook-verification`，`question_reviews` 沒有新增任何一筆；
+教師端仍顯示「已發布（未經人工覆核）」，`release:gate` 的 `review-provenance` 仍然 FAIL。
+佇列清空只代表「自動修復造成的差異已逐題核對」，不代表題目的歷史準確性已由教師確認。
+
+重做方式：
+
+```powershell
+# 1. 匯出待核對批次（唯讀）
+npx tsx scripts/verify-provenance-manifest.ts --database <正式快照.db> --export tmp/batches
+# 2. 撰寫核對結果（id|理由）後轉成 verdicts JSON，再寫入紀錄
+npx tsx scripts/verify-provenance-manifest.ts --database <正式快照.db> --verdicts <verdicts.json> --apply
+# 3. 重新產生 manifest（已核對的題目自動移出）
+npx tsx scripts/audit-review-priority-manifest.ts --database <正式快照.db>
+```
+
+
 
 

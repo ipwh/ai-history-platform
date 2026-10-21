@@ -239,7 +239,7 @@ describe("Sprint 14 唯讀報告不寫資料庫", () => {
     expect(hashMain(dbPath)).toBe(beforeHash);
   });
 
-  it("覆核優先次序 manifest：623 題唯一、重疊 124，且資料庫不變（Sprint 15）", () => {
+  it("覆核優先次序 manifest：只列未核對的題目，且資料庫不變（Sprint 15／2026-10-21）", () => {
     const dbPath = makeMigratedDatabase(true);
     const outBase = path.join(path.dirname(dbPath), "review-manifest");
     const before = snapshot(dbPath);
@@ -249,16 +249,23 @@ describe("Sprint 14 唯讀報告不寫資料庫", () => {
     expect(run.status).toBe(0);
     const report = JSON.parse(fs.readFileSync(`${outBase}.json`, "utf8")) as {
       totals: {
+        sourceRows: number;
+        clearedByVerification: number;
+        notInDatabase: number;
+        rows: number;
         uniqueQuestions: number;
         duplicateRows: number;
-        overlappingWithSourcePending: number;
-        byTier: Record<string, number>;
       };
     };
-    expect(report.totals.uniqueQuestions).toBe(623);
+    // 2026-10-21：manifest 只列出**尚未按現時版本核對**的題目。
+    // 測試資料庫是新鮮的示範題庫，不含來源清單內的校內試題，因此全部落在 notInDatabase，
+    // 佇列為 0；已核對的題目不會重生（核對紀錄綁定 revision 及 fingerprint）。
+    expect(report.totals.sourceRows).toBe(623);
+    expect(report.totals.notInDatabase).toBe(623);
+    expect(report.totals.clearedByVerification).toBe(0);
+    expect(report.totals.rows).toBe(0);
+    expect(report.totals.uniqueQuestions).toBe(0);
     expect(report.totals.duplicateRows).toBe(0);
-    expect(report.totals.overlappingWithSourcePending).toBe(124);
-    expect(report.totals.byTier).toEqual({ P1: 530, P3: 93 });
 
     const after = snapshot(dbPath);
     expect(after.tables).toEqual(before.tables);

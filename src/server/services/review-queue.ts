@@ -79,7 +79,7 @@ function paginate<T>(items: T[], page: number, pageSize: number): T[] {
  *     這種情況**不可**當成「沒有待處理項目」，因此回報 `available: false` 及原因。
  *     這是本專案一貫的 fail-closed 原則：空資料不可當作沒有問題。
  */
-function matchReportToDatabase<T extends { id: string }>(items: T[]): {
+export function matchReportToDatabase<T extends { id: string }>(items: T[]): {
   items: T[];
   skipped: number;
   databaseMismatch: boolean;
@@ -114,6 +114,11 @@ interface ServabilityReport {
 
 interface ManifestReport {
   generatedAt: string;
+  totals?: {
+    sourceRows?: number;
+    clearedByVerification?: number;
+    notInDatabase?: number;
+  };
   rows: Array<{
     questionId: string;
     revision: number | null;
@@ -127,8 +132,25 @@ interface ManifestReport {
   }>;
 }
 
-export function listReviewQueue(
-  queue: ReviewQueue,
+/**
+ * provenance 佇列的說明文字：除了原本的「不是裁決」提醒，還要如實說明已經逐題核對了多少題，
+ * 否則畫面顯示「沒有項目」會被誤讀成「從來沒有人檢查過」或「系統壞了」。
+ */
+function provenanceLimitation(data: ManifestReport): string {
+  const base =
+    "佇列來自唯讀 manifest（`npm run audit:review-manifest`）。此清單沒有逐題教師裁決，P3 不代表核准。";
+  const cleared = data.totals?.clearedByVerification ?? 0;
+  const missing = data.totals?.notInDatabase ?? 0;
+  if (cleared === 0 && missing === 0) return base;
+  return (
+    `${base} 已有 ${cleared} 題按現時版本完成逐題核對並移出佇列（AI 依教材及史實核對，` +
+    "**不是**教師覆核，沒有寫入覆核紀錄）；" +
+    (missing > 0 ? `另有 ${missing} 題已不在題庫。` : "") +
+    "題目日後再被修改，核對紀錄會自動失效並重回佇列。"
+  );
+}
+
+export function listReviewQueue(  queue: ReviewQueue,
   options: { page?: number; pageSize?: number } = {},
 ): QueuePage {
   const page = Math.max(1, Math.floor(options.page ?? 1));
@@ -274,8 +296,7 @@ export function listReviewQueue(
     return {
       queue,
       available: true,
-      limitation:
-        "佇列來自唯讀 manifest（`npm run audit:review-manifest`）。此清單沒有逐題教師裁決，P3 不代表核准。",
+      limitation: provenanceLimitation(data),
       asOf: data.generatedAt,
       total: items.length,
       page,

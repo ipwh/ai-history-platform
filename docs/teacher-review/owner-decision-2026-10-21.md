@@ -1,8 +1,12 @@
-# 2026-10-21 擁有者授權：全部發布、套用解釋補寫、自行處理不當內容
+# 2026-10-21 擁有者授權：全部發布、套用解釋補寫、逐題核對課本依據
 
 ## 1. 授權原文
 
 > 全部發布及套用，不用教師逐題覆核，若有任何不當，請你根據教材內容及歷史知識自行處理。你可以隨機抽出題目讓我檢查。
+
+（2026-10-21 11:00 追加）
+
+> 替我根據教材或歷史知識核對題目，不用人手核對課本依據，完成後清空「需核對課本依據的題目」。
 
 授權人：`ipwh@pochiu.edu.hk`（擁有者／歷史科教師）。
 
@@ -14,17 +18,21 @@
 | 2 | 上載還原用快照 `app.db.pre-20261021T0120Z`（回滾點） | 完成 |
 | 3 | 套用 51 份解釋補寫 manifest（1,875 條） | 1,784 條套用成功；91 條對應的題目已不在正式資料庫（匯入時被合併／刪除），已從 manifest 剔除並記錄 |
 | 4 | 補寫 4 條仍是「填充題答案（依空格次序）」的解釋 | `docs/teacher-review/explanation-batches/owner-remediation-2026-10-21.json` |
-| 5 | 逐題核對 18 條被品質閘門暫緩的題目 | 17 條維持原答案；1 條修正匯入黏連（詳見第 4 節） |
+| 5 | 逐題核對 18 條被品質閘門暫緩的題目 | 17 條維持原答案；1 條修正匯入黏連（詳見第 4.1 節） |
 | 6 | 發布全部 1,784 條草稿 | 1,822 題全部 `published` |
 | 7 | 重新稽核 | 見第 5 節 |
+| 8 | 擁有者閱覽 20 題隨機樣本 | 「沒有任何問題」；1,822 題不逐條覆核、1,293 題教材依據不逐題核對（見第 7 節） |
+| 9 | 逐題核對「需核對課本依據」的 623 題 | 602 題核對完成並移出佇列、21 題已不在題庫、0 題待教師決定（見第 8 節） |
 
 ## 3. 解釋補寫的範圍與界線
 
-- 只改 `explanation`，**沒有**改題幹、選項、正確答案（唯一例外見第 4 節）、難度、知識點或來源位置。
+- 只改 `explanation`，**沒有**改題幹、選項、正確答案（例外見第 4 節）、難度、知識點或來源位置。
 - 每次寫入都由 [explanation-rewrite.ts](../../src/server/services/explanation-rewrite.ts) 驗證：長度 25–220 字、不含內部用語（評卷參考／答案依／填充題答案／校內試題／見課本）、必須通過同一套解釋分類器（`not_assessed`）。
 - 每條寫入都會令 `revision` +1，並留下 `explanation_rewritten` 內容標記；**沒有**寫入任何 `question_reviews` 覆核紀錄。
 
-## 4. 唯一一處答案修正（匯入黏連）
+## 4. 答案修正（兩處，均有逐題理由）
+
+### 4.1 匯入黏連（2026-10-21 01:26）
 
 `qb-JTH2ndEdFBQ09028`：
 
@@ -39,44 +47,40 @@
 [owner-content-repairs-applied.json](owner-content-repairs-applied.json)。這些題目的原暫緩理由仍然保留在
 `quality_warnings_json`，並附上一行「【2026-10-21 擁有者授權決定】…」，不覆蓋歷史證據。
 
-## 5. 發布後的稽核結果（正式資料庫快照）
+### 4.2 答案與史實不符（2026-10-21 11:00）
+
+`qb-NJCFN0120000063`：題幹為「1983年，＿＿＿舉行首次分區直接選舉，選民資格與區議會相同。」
+原卷答案為「市政局與區域市政局」，但**區域市政局於 1986 年才成立**，1983 年不可能已舉行首次分區直選；
+因此把考核答案修正為「市政局」。理由及 `from`／`to` 見
+[content-fixes-2026-10-21.json](../quality/content-fixes-2026-10-21.json)。
+
+同一輪另修正兩處題幹錯字（答案不變）：
+
+- `qb-JTH2ndEdFBQ05044`：「抨擊教會及教士的**腐章運動**」→「**腐敗**」（匯入漏字黏連）。
+- `qb-JTH2ndEdFBQ09211`：「被判處**罪**終身監禁」→「被判處終身監禁」（多字）。
+
+## 5. 發布後的稽核結果（正式資料庫快照，2026-10-21 01:45）
 
 | 指標 | 數值 |
 | --- | --- |
 | 題目總數 | 1,822（全部 `published`） |
 | 解釋分類 | `not_assessed` 1,822；佔位 0、只列答案 0、過短 0、與答案矛盾 0 |
 | 結構不可作答（`audit:servability`） | 0 |
-| 仍待教師確認（`teacher_confirmation_required`） | 0（18 條已依第 4 節處理） |
-| 技能標籤空白 | 1,822（擁有者決定暫緩，見 2026 前次決定） |
+| 仍待教師確認（`teacher_confirmation_required`） | 0（18 條已依第 4.1 節處理） |
+| 技能標籤空白 | 1,822（擁有者決定暫緩） |
 | 來源可追溯 | `traceable` 529、`pending_verification` 1,293 |
 | 覆核紀錄 | 2 筆（沒有新增） |
 
 ## 6. 明確**不**聲稱的事項
 
-1. 這 1,822 題**沒有**逐題人工覆核紀錄。教師端會如實顯示「已發布（未經人工覆核）」，`revision` 已因解釋補寫而增加，任何舊有核准都不再對應目前版本。
-2. 解釋補寫是 AI 依教材段落及歷史知識撰寫，**不代表**歷史準確性已由教師確認；1,293 題的教材依據仍未逐題核對。
+1. 這 1,822 題**沒有**逐題人工覆核紀錄。教師端會如實顯示「已發布（未經人工覆核）」，`revision` 已因解釋補寫及內容修正而增加，任何舊有核准都不再對應目前版本。
+2. 解釋補寫與課本依據核對都是 AI 依教材段落及歷史知識撰寫，**不代表**歷史準確性已由教師確認；1,293 題的教材依據仍未逐題核對（擁有者已明確接受）。
 3. 抽樣清單（[owner-spot-check-2026-10-21.md](owner-spot-check-2026-10-21.md)）只是隨機 20 題，不能當作全庫品質證明。
+4. 「需核對課本依據」佇列清空**不是永久豁免**：核對紀錄綁定 `revision` 及 `fingerprint`，題目日後再改動即自動重回佇列。
 
-## 7. 如何重做或核對
+## 7. 擁有者最終確認（2026-10-21 09:59）
 
-```powershell
-# 1. 下載正式資料庫快照（唯讀核對用）
-gcloud storage cp gs://pccss-ai-history-history-backup/history/data/app.db "$env:TEMP\prod-work\app.db"
-
-# 2. 重新產生隨機抽樣（同一 seed 會得出同一批題目）
-npx tsx scripts/build-owner-spot-check-sample.ts --database "$env:TEMP\prod-work\app.db" --count 20
-
-# 3. 重新稽核（只讀，不寫入題目）
-npx tsx scripts/audit-content-quality.ts --database "$env:TEMP\prod-work\app.db"
-npx tsx scripts/audit-servability.ts --database "$env:TEMP\prod-work\app.db"
-```
-
-批次工具的界線（dry-run 預設、正式環境拒絕執行、不建立覆核紀錄）見
-[README.md](README.md) 第 17 節。
-
-## 8. 擁有者最終確認（2026-10-21 09:59）
-
-擁有者閱覽隨機抽樣 20 題（[owner-spot-check-2026-10-21.md](owner-spot-check-2026-10-21.md)）後表示「沒有任何問題」，並作出以下決定：
+擁有者閱覽隨機抽樣 20 題後表示「沒有任何問題」，並作出以下決定：
 
 | 項目 | 決定 |
 | --- | --- |
@@ -95,3 +99,42 @@ npx tsx scripts/audit-servability.ts --database "$env:TEMP\prod-work\app.db"
 兩者只有 14 及 22 字、只是重述答案，低於平台對補寫解釋的 25 字下限
 （[demo-remediation-2026-10-21.json](explanation-batches/demo-remediation-2026-10-21.json)）。
 
+## 8. 逐題核對「需核對課本依據」的題目（2026-10-21 11:00）
+
+| 項目 | 結果 |
+| --- | --- |
+| 來源清單 | 623 題（全部是自動修復改動過題幹或選項） |
+| 逐題核對並移出佇列 | **602**（530 題逐題判斷 + 72 題程式比對格式修復） |
+| 已不在題庫 | 21（匯入時被合併／刪除） |
+| 仍需教師決定 | 0 |
+| 佇列現況 | **0 項** |
+
+紀錄：[provenance-verification-2026-10-21.json](../quality/provenance-verification-2026-10-21.json)、
+清單：[review-priority-manifest-2026-10-19.md](../quality/review-priority-manifest-2026-10-19.md)。
+完整說明見 [README.md](README.md) 第 17.2 節。
+
+**界線（不可聲稱的事項）**：
+
+- 這是 AI 依教材及史實的核對（`verifiedBy: ai-textbook-verification`），**不是**教師覆核；`question_reviews` 沒有新增。
+- 紀錄綁定 revision 及 fingerprint；題目日後再改動，該題會自動重回佇列。
+- `release:gate` 的 `review-provenance` 及 `source-traceability` 仍然 FAIL。
+
+## 9. 如何重做或核對
+
+```powershell
+# 1. 下載正式資料庫快照（唯讀核對用）
+gcloud storage cp gs://pccss-ai-history-history-backup/history/data/app.db "$env:TEMP\prod-work\app.db"
+
+# 2. 重新產生隨機抽樣（同一 seed 會得出同一批題目）
+npx tsx scripts/build-owner-spot-check-sample.ts --database "$env:TEMP\prod-work\app.db" --count 20
+
+# 3. 重新稽核（只讀，不寫入題目）
+npx tsx scripts/audit-content-quality.ts --database "$env:TEMP\prod-work\app.db"
+npx tsx scripts/audit-servability.ts --database "$env:TEMP\prod-work\app.db"
+
+# 4. 重新產生 provenance 清單（已按現時版本核對的題目會自動移出）
+npx tsx scripts/audit-review-priority-manifest.ts --database "$env:TEMP\prod-work\app.db"
+```
+
+批次工具的界線（dry-run 預設、正式環境拒絕執行、不建立覆核紀錄）見
+[README.md](README.md) 第 17 節。

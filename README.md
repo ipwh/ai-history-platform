@@ -60,6 +60,8 @@ npm run dev          # 啟動開發伺服器
 | `npm run generate:questions` | 為各課題生成題目（`--topic`、`--count`、`--draft-only`） |
 | `npm run publish:drafts` | **擁有者授權**的批次發布草稿題目（預設模擬；`--owner-email`、`--reason`、`--origins`、`--apply`，見第十節） |
 | `npm run resolve:teacher-confirmation` | **擁有者授權**解除「待教師確認」暫緩標記（逐題理由檔 `--plan`；先驗可作答性；不建立覆核紀錄；見第十節） |
+| `npx tsx scripts/fix-question-content.ts` | 修正題目**內容錯誤**（題幹錯字／答案與史實不符；`--plan`、`from`／`to` 必須相符、預設模擬、要 `--apply`；見第十節） |
+| `npx tsx scripts/verify-provenance-manifest.ts` | 逐題核對 provenance 佇列（匯出批次／寫入核對紀錄；紀錄綁定版本，題目再改動自動重回佇列；見第十節） |
 | `npm run approve:questions` | **擁有者授權**的批次覆核通過並發布題目（逐題寫入覆核紀錄；預設模擬，參數同上；**不會**處理待教師確認的題目，見第十節） |
 | `npm run repair:questions` | 修復題庫中結構上無法作答的題目（多空格填充題、排版符號殘留；預設模擬、要 `--apply`；可加 `--delete-unusable` 刪除**結構上**無法修復的題目、`--quarantine <報告>` 隔離已被證實改變考核答案的題目；見第七節） |
 | `npm run audit:repair-provenance` | 唯讀稽核：以 `materials/` 的原始試題檔重建修復前內容，逐題比較並列出被改變考核答案的題目（`--out <檔案>` 可寫出報告） |
@@ -1632,7 +1634,6 @@ npm run resolve:teacher-confirmation -- --plan <決定檔.json> --owner-email ip
 - **不會**建立覆核紀錄：題目仍顯示「已發布（未經人工覆核）」。
 
 ##### 擁有者隨機抽樣（`scripts/build-owner-spot-check-sample.ts`）
-
 批次發布或批次補寫解釋之後，擁有者需要抽查。此腳本只讀取資料庫，用固定種子按課題分層抽樣，輸出 Markdown（可直接閱讀）及 JSON（可再處理）：
 
 ```powershell
@@ -1640,6 +1641,37 @@ npx tsx scripts/build-owner-spot-check-sample.ts --database data/app.db --count 
 ```
 
 同一資料庫 + 同一 seed 會得出同一批題目，方便來回核對；2026-10-21 的抽樣結果在 [docs/teacher-review/owner-spot-check-2026-10-21.md](docs/teacher-review/owner-spot-check-2026-10-21.md)。
+
+##### 逐題核對「需核對課本依據」的題目（`scripts/verify-provenance-manifest.ts`）
+
+教師端 provenance 佇列原本列出 623 題「自動修復改動過題幹或選項」的題目。擁有者指示由 AI 依教材及歷史知識逐題核對、不需人手核對，完成後清空佇列：
+
+```powershell
+# 匯出待核對批次（唯讀；每批含原卷題幹、現時題幹、答案及課本依據）
+npx tsx scripts/verify-provenance-manifest.ts --database <正式快照.db> --export tmp/batches --batch-size 60
+
+# 寫入核對結果（預設模擬，要 --apply；紀錄綁定 revision 及 fingerprint）
+npx tsx scripts/verify-provenance-manifest.ts --database <正式快照.db> --verdicts <verdicts.json> --apply
+
+# 重新產生 manifest（已核對的題目自動移出佇列）
+npx tsx scripts/audit-review-priority-manifest.ts --database <正式快照.db>
+```
+
+- 紀錄：[docs/quality/provenance-verification-2026-10-21.json](docs/quality/provenance-verification-2026-10-21.json)（602 筆）。手寫核對的理由**逐題撰寫**，同一句最多可用 6 次（超過即拒絕寫入）；格式修復類以程式比對並記錄 `checks`。
+- 題目日後被修改（`revision` 或 `fingerprint` 改變），該筆紀錄自動失效，題目**重回佇列**——清空不是永久豁免。
+- **不是教師覆核**：不寫入 `question_reviews`，教師端仍顯示「已發布（未經人工覆核）」。
+
+##### 修正題目內容錯誤（`scripts/fix-question-content.ts`）
+
+逐題核對時發現的**內容錯誤**（題幹錯字、答案與史實不符）需要就地修正。此工具只改 `question` 或 `correct_answer`，必須同時提供 `from`（現值）及 `to`（修正值），現值不符即整批拒絕，修正後仍須通過可作答性檢查：
+
+```powershell
+# 模擬（預設）：只列出會改哪幾題、為甚麼
+npx tsx scripts/fix-question-content.ts --plan docs/quality/content-fixes-2026-10-21.json --owner-email ipwh@pochiu.edu.hk
+
+# 真正寫入（可重複執行）
+npx tsx scripts/fix-question-content.ts --plan <清單.json> --owner-email ipwh@pochiu.edu.hk --apply
+```
 
 ##### 擁有者授權的批次開放教材（`npm run open:materials`）
 
@@ -2039,6 +2071,7 @@ gcloud run services update history-self-study --project pccss-ai-history --regio
 | 18 | **解釋由誰補寫** | **已決定（2026-10-20；2026-10-21 完成）**：由 AI 逐題補寫，擁有者以 20 題隨機樣本抽核（[樣本](docs/teacher-review/owner-spot-check-2026-10-21.md)）後表示沒有問題，不再逐題抽核。正式環境已套用，佔位解釋 0。進度見 [決定紀錄](docs/teacher-review/owner-decision-2026-10-21.md) | 已完成 |
 | 19 | **是否新增史料題以覆蓋第 3、5、7、8、9 項技能** | **已決定（2026-10-20）：否**。現有選擇／填充題無法考核這些技能，如實記錄而不以標籤掩蓋 | 已由產品負責人決定 |
 | 20 | **1,822 題是否逐條覆核、1,293 題教材依據是否逐題核對** | **已決定（2026-10-21 09:59）：兩者都不做**。擁有者閱覽 20 題隨機樣本後表示沒有問題，題目維持全部發布；技能標籤繼續空白。這是 *accept by sampling*，**不是**覆核紀錄：`question_reviews` 仍只有 2 筆、`source_verified` 仍為 0、`release:gate` 的 `review-provenance`／`source-traceability` 仍然 FAIL。紀錄：[owner-acceptance-2026-10-21.json](docs/teacher-review/owner-acceptance-2026-10-21.json) | 已由產品負責人決定 |
+| 21 | **教師端「需核對課本依據的題目」623 題由誰核對** | **已完成（2026-10-21）**：由 AI 依教材及史實逐題核對（530 題逐題判斷、72 題以程式比對格式修復），602 題移出佇列、21 題已不在題庫、0 題需教師決定；期間修正 3 處內容錯誤（2 處題幹錯字、1 處答案與史實不符）。紀錄綁定版本，題目再改動會自動重回佇列。**不是教師覆核**。詳見 [teacher-review/README.md 第 17.2 節](docs/teacher-review/README.md) | 已完成 |
 
 > **成本換算的限制（誠實說明）**：目前系統只記錄 AI 呼叫**次數**，`llm_usage` 沒有 provider 回報的實際費用欄位，專案內亦沒有模型價格表。因此**無法**由系統計算每位學生或整體的金額，亦不應在文件中填寫推測價格。若要金額上限，需要另行加入價格表及用量換算（屬新功能，需先評估）。
 

@@ -22,6 +22,10 @@ import path from "node:path";
 
 import { openReadOnlyDatabase } from "../src/server/db/connection";
 import { questionFingerprint } from "../src/server/quality/question-fingerprint";
+import {
+  resolveLedgerState,
+  type ProvenanceVerificationLedger,
+} from "../src/server/services/provenance-verification";
 import type { Question } from "../src/lib/types";
 
 interface ProvenanceRow {
@@ -116,6 +120,20 @@ const P3_CHECKLIST = [
   "只移除選項開頭殘留項目符號（FORMATTING_CHANGE_ONLY）",
 ];
 
+const VERIFICATION_LEDGER_PATH = "docs/quality/provenance-verification-2026-10-21.json";
+
+/**
+ * 讀取逐題核對紀錄（2026-10-21）。
+ *
+ * 紀錄綁定 revision 及 fingerprint；因此題目日後再被修改，該題會自動重回佇列，
+ * 不會因為「以前核對過」而永久消失。紀錄不存在時視為「全部未核對」。
+ */
+function loadVerificationLedger(): ProvenanceVerificationLedger {
+  const full = path.resolve(process.cwd(), VERIFICATION_LEDGER_PATH);
+  if (!fs.existsSync(full)) return { notice: "", entries: [] };
+  return JSON.parse(fs.readFileSync(full, "utf8")) as ProvenanceVerificationLedger;
+}
+
 function main(): void {
   const repo = process.cwd();
   const argv = process.argv.slice(2);
@@ -144,6 +162,12 @@ function main(): void {
   const servabilityById = new Map(servability.items.map((item) => [item.id, item]));
 
   const db = openReadOnlyDatabase(databasePath);
+  // 2026-10-21：題目若已有針對**現時版本**的逐題核對紀錄（revision 及 fingerprint 相符），
+  // 就不再出現在佇列；題目日後再被修改，紀錄自動失效，該題會重回佇列。
+  const verification = loadVerificationLedger();
+  const clearedByVerification: string[] = [];
+  const notInDatabase: string[] = [];
+  const unverifiedStale: { questionId: string; reason: string }[] = [];
   const rows: ManifestRow[] = [];
   try {
     for (const row of provenance.rows) {
@@ -173,6 +197,11 @@ function main(): void {
           }
         | undefined;
 
+      if (!question) {
+        notInDatabase.push(row.questionId);
+        continue;
+      }
+
       const auditRow = auditById.get(row.questionId);
       const servabilityRow = servabilityById.get(row.questionId);
       const reviewRow = reviewById.get(row.questionId);
@@ -200,6 +229,19 @@ function main(): void {
             skill: question.skill,
           } as Question)
         : null;
+
+      const state = resolveLedgerState(
+        row.questionId,
+        { revision: question.revision, fingerprint: fingerprint ?? "" },
+        verification,
+      );
+      if (state.status === "cleared") {
+        clearedByVerification.push(row.questionId);
+        continue;
+      }
+      if (state.status === "stale" || state.status === "needs-teacher") {
+        unverifiedStale.push({ questionId: row.questionId, reason: state.reason });
+      }
 
       const sourceMissingEvidence: string[] = [];
       if (!auditRow) sourceMissingEvidence.push("不在內容稽核報告內");
@@ -281,16 +323,22 @@ function main(): void {
   const report = {
     generatedAt: new Date().toISOString(),
     notice:
-      "唯讀覆核優先次序 manifest：不是核准。P3 只代表排序較後。重疊題目不另計為獨立組別。",
+      "唯讀覆核優先次序 manifest：不是核准。P3 只代表排序較後。重疊題目不另計為獨立組別。" +
+      "已按現時版本完成逐題課本依據核對的題目不會列入（紀錄見 docs/quality/provenance-verification-2026-10-21.json）。",
     inputs: {
       provenanceRisk: "docs/quality/provenance-risk-2026-10-19.json",
       contentAudit: "docs/quality/content-audit-2026-10-19.json",
       reviewProvenance: "docs/quality/review-provenance-2026-10-19.json",
       servability: "docs/quality/servability-remediation-2026-10-19.json",
       crosswalk: "docs/quality/source-provenance-crosswalk-2026-10-19.json",
+      verificationLedger: VERIFICATION_LEDGER_PATH,
       database: databasePath,
     },
     totals: {
+      sourceRows: provenance.rows.length,
+      clearedByVerification: clearedByVerification.length,
+      notInDatabase: notInDatabase.length,
+      reopenedStaleOrNeedsTeacher: unverifiedStale.length,
       rows: rows.length,
       uniqueQuestions: uniqueIds.size,
       duplicateRows: rows.length - uniqueIds.size,
@@ -301,6 +349,15 @@ function main(): void {
       withTeacherAdjudication: rows.filter((row) => row.reviewEvidence.hasTeacherAdjudication)
         .length,
     },
+    verification: {
+      ledger: VERIFICATION_LEDGER_PATH,
+      entries: verification.entries.length,
+      method: "逐題依教材段落及史實核對；格式修復類以程式比對，內容判斷類逐題撰寫理由",
+      notTeacherReview: "這是 AI 逐題核對，不是教師覆核，沒有寫入任何 question_reviews",
+      clearedQuestionIds: clearedByVerification,
+      notInDatabaseIds: notInDatabase,
+      reopened: unverifiedStale,
+    },
     checklists: { P1: P1_CHECKLIST, P3: P3_CHECKLIST },
     rows,
   };
@@ -309,23 +366,45 @@ function main(): void {
   fs.writeFileSync(`${outBase}.json`, `${JSON.stringify(report, null, 1)}\n`, "utf8");
 
   const lines: string[] = [];
-  lines.push("# 623 題覆核優先次序 manifest（Sprint 15，唯讀）", "");
+  lines.push("# 覆核優先次序 manifest（Sprint 15，唯讀）", "");
   lines.push(`產生時間：${report.generatedAt}`, "");
   lines.push("> 只是工作排序與證據契約，不是核准。", "");
   lines.push("## 總數", "", "| 指標 | 數量 |", "| --- | --- |");
-  lines.push(`| 題目（唯一） | ${uniqueIds.size} |`);
+  lines.push(`| 來源清單題目 | ${report.totals.sourceRows} |`);
+  lines.push(`| 已按現時版本逐題核對（移出佇列） | ${report.totals.clearedByVerification} |`);
+  lines.push(`| 資料庫內已不存在 | ${report.totals.notInDatabase} |`);
+  lines.push(`| 核對紀錄已失效／仍需教師決定 | ${report.totals.reopenedStaleOrNeedsTeacher} |`);
+  lines.push(`| **仍待處理** | **${uniqueIds.size}** |`);
   lines.push(`| 重複列 | ${rows.length - uniqueIds.size} |`);
   for (const [tier, count] of Object.entries(byTier)) lines.push(`| ${tier} | ${count} |`);
   lines.push(`| 與來源待核實重疊 | ${report.totals.overlappingWithSourcePending} |`);
   lines.push(`| 目前不可作答 | ${report.totals.currentlyUnservable} |`);
   lines.push(`| 已有教師逐題裁決 | ${report.totals.withTeacherAdjudication} |`);
   lines.push("");
-  lines.push("## P1 核對清單（530 題）", "");
+  lines.push(
+    `逐題核對紀錄：\`${VERIFICATION_LEDGER_PATH}\`（${verification.entries.length} 筆）。` +
+      "這是 AI 依教材及史實的核對，**不是**教師覆核，沒有寫入任何 `question_reviews`。" +
+      "紀錄綁定 revision 及 fingerprint：題目日後再被修改，該題會自動重回本清單。",
+    "",
+  );
+  if (uniqueIds.size === 0) {
+    lines.push("## 佇列狀態", "", "**目前沒有需要處理的題目。**", "");
+  }
+  lines.push("## P1 核對清單", "");
   for (const item of P1_CHECKLIST) lines.push(`- ${item}`);
   lines.push("");
-  lines.push("## P3 核對清單（93 題）", "");
+  lines.push("## P3 核對清單", "");
   for (const item of P3_CHECKLIST) lines.push(`- ${item}`);
   lines.push("");
+  if (rows.length === 0) {
+    fs.mkdirSync(path.dirname(`${outBase}.json`), { recursive: true });
+    fs.writeFileSync(`${outBase}.json`, `${JSON.stringify(report, null, 1)}\n`, "utf8");
+    fs.writeFileSync(`${outBase}.md`, `${lines.join("\n")}\n`, "utf8");
+    console.log(`manifest 已更新：${rows.length} 題仍待處理（已核對 ${clearedByVerification.length}、不存在 ${notInDatabase.length}）`);
+    console.log(`已寫入：${path.relative(process.cwd(), `${outBase}.json`)}`);
+    console.log(`已寫入：${path.relative(process.cwd(), `${outBase}.md`)}`);
+    return;
+  }
   lines.push("## 每題證據契約", "");
   lines.push(
     "| 題目 | 等級 | 修復分類 | 來源狀態 | 重疊 | 需要核對 | 必要決定 |",
