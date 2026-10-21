@@ -9,6 +9,15 @@ import {
   type ExplanationHoldPolicy,
 } from "./quality/explanation-quality";
 
+/**
+ * 教材匯入後的自動開放政策（見 `ServerConfig.materialAutoOpenPolicy`）。
+ *
+ *   - `lesson-content`：匯入課文／筆記後自動確認版權並開放給學生（擁有者指示）；
+ *   - `off`：回復逐份人手確認。
+ */
+export const MATERIAL_AUTO_OPEN_POLICIES = ["lesson-content", "off"] as const;
+export type MaterialAutoOpenPolicy = (typeof MATERIAL_AUTO_OPEN_POLICIES)[number];
+
 export type LlmProviderName = "mock" | "openai-compatible" | "deepseek" | "gemini";
 export type OcrProviderName = "none" | "tesseract" | "google-vision";
 
@@ -90,6 +99,23 @@ export interface ServerConfig {
    * 配置而非硬編碼。設定後 `describeConfigIssues()` 會提出警告並顯示影響範圍。
    */
   explanationHoldPolicy: ExplanationHoldPolicy;
+  /**
+   * 教材匯入後是否自動開放給學生使用（AI 即時出題的教材依據）。
+   *
+   * 由環境變數 `MATERIAL_AUTO_OPEN_POLICY` 設定（2026-10-21 擁有者指示：
+   * 「往後自動開放所有教材，讓用家順利使用 AI 生成題目自學」）。
+   *
+   *   - `lesson-content`（預設）：匯入課文／筆記後自動完成「版權確認 + 開放」，
+   *     學生可即時以此教材出題；`rights_confirmed_by` 會如實記錄為
+   *     `owner-policy:auto-open-all-materials`（不是假裝某位教師逐份確認）。
+   *   - `off`：回復逐份人手確認（舊行為）。
+   *
+   * 兩者都**不會**開放校內試題檔（`kind = 'question-bank'`，含題目與答案），
+   * 亦**不會**自動為檔名標示教師版／答案的材料完成「內容安全覆核」——
+   * 那一項是「是否已逐段核對答案沒有外洩」，由機器代答就是偽造紀錄，
+   * 因此仍要求管理員人手確認（fail-closed）。
+   */
+  materialAutoOpenPolicy: MaterialAutoOpenPolicy;
   /** AI 用量上限（避免個別帳戶或整體用量失控） */
   aiLimits: AiLimitConfig;
   /** 資料庫備份（把 SQLite 檔案備份到 Cloud Storage，令容器重建後仍保留資料） */
@@ -317,8 +343,23 @@ function readExplanationHoldPolicy(): ExplanationHoldPolicy {
     : "off";
 }
 
-/** 讀取正整數；可設為 off／none／0 表示不使用（回傳 null） */
-function readOptionalPositiveInt(name: string, fallback: number | null): number | null {
+/**
+ * 讀取「教材匯入後是否自動開放給學生」的政策值。
+ *
+ * 未設定或空白 → `lesson-content`（2026-10-21 擁有者指示：自動開放所有教材）。
+ * 無效值 → `lesson-content` 會令學生看不到教材，因此無效值一律回 `lesson-content`
+ * 以符合指示，並由 `describeConfigIssues()` 產生 warning 說明設定值不被識別。
+ */
+function readMaterialAutoOpenPolicy(): MaterialAutoOpenPolicy {
+  const raw = readEnv("MATERIAL_AUTO_OPEN_POLICY");
+  if (raw === null) return "lesson-content";
+  const normalised = raw.toLowerCase();
+  return (MATERIAL_AUTO_OPEN_POLICIES as readonly string[]).includes(normalised)
+    ? (normalised as MaterialAutoOpenPolicy)
+    : "lesson-content";
+}
+
+/** 讀取正整數；可設為 off／none／0 表示不使用（回傳 null） */function readOptionalPositiveInt(name: string, fallback: number | null): number | null {
   const raw = readEnv(name);
   if (raw === null) return fallback;
   if (["off", "none", "0", "false"].includes(raw.toLowerCase())) return null;
@@ -612,6 +653,7 @@ export function getServerConfig(): ServerConfig {
     // 不合法或空白一律回退 off（fail-open 於「維持現狀」而不是意外封鎖全部題目），
     // 並由 describeConfigIssues() 產生 error 級設定警示。
     explanationHoldPolicy: readExplanationHoldPolicy(),
+    materialAutoOpenPolicy: readMaterialAutoOpenPolicy(),
     aiLimits: readAiLimits(),
     backup: readBackupConfig(),
     maxUploadBytes: readPositiveInt("APP_MAX_UPLOAD_BYTES", DEFAULT_MAX_UPLOAD_BYTES),

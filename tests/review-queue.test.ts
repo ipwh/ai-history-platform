@@ -152,24 +152,28 @@ describe("審核佇列：內容與分批", () => {
     expect((await callQueue("queue=servability&pageSize=100", cookieFor(TEACHER))).status).toBe(400);
   });
 
-  it("provenance 佇列 623 題，P1 530、P3 93", async () => {
+  it("provenance：報告與資料庫不符時 fail-closed，不會當成「沒有待處理項目」", async () => {
+    // 測試資料庫是新鮮的示範題庫，不含 manifest 內的校內試題，因此全部對不上。
+    // 這正是「指向另一個資料庫」的情況：必須回報 available=false 及原因，
+    // 而不是顯示 0 項（否則會誤導教師以為沒有工作）。
     const body = (await (
       await callQueue("queue=provenance&pageSize=25", cookieFor(TEACHER))
-    ).json()) as QueueResponse;
-    expect(body.available).toBe(true);
-    expect(body.total).toBe(623);
-    expect(body.counts.P1).toBe(530);
-    expect(body.counts.P3).toBe(93);
-    expect(body.limitation ?? "").toContain("P3");
+    ).json()) as QueueResponse & { skippedMissing?: number };
+    expect(body.total).toBe(0);
+    expect(body.skippedMissing).toBe(623);
+    expect(body.available).toBe(false);
+    expect(body.limitation ?? "").toContain("完全找不到");
+    expect(body.limitation ?? "").toContain("audit:review-manifest");
   });
 
-  it("golden 佇列 42 候選、全部 pending，沒有 approved", async () => {
+  it("golden：候選與資料庫不符時同樣 fail-closed", async () => {
     const body = (await (
       await callQueue("queue=golden&pageSize=25", cookieFor(TEACHER))
-    ).json()) as QueueResponse;
-    expect(body.available).toBe(true);
-    expect(body.total).toBe(42);
-    expect(body.counts["pending-review"]).toBe(42);
-    expect(body.counts.approved ?? 0).toBe(0);
+    ).json()) as QueueResponse & { skippedMissing?: number };
+    expect(body.total).toBe(0);
+    expect(body.skippedMissing).toBe(42);
+    expect(body.available).toBe(false);
+    expect(body.limitation ?? "").toContain("完全找不到");
+    expect(body.limitation ?? "").toContain("golden:candidates");
   });
 });

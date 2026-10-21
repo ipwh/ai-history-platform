@@ -46,6 +46,8 @@ interface QueuePage {
   pageSize: number;
   items: QueueItem[];
   counts: Record<string, number>;
+  /** 報告引用但題庫已刪除的題目數（這些題目不會列出，避免點進去只看到錯誤） */
+  skippedMissing?: number;
 }
 
 interface ReviewRecord {
@@ -94,6 +96,11 @@ function plainSummary(queue: QueueKind, item: QueueItem): string {
 
 function isConflict(error: unknown): boolean {
   return error instanceof ApiError && error.status === 409;
+}
+
+/** 題目已不在題庫（報告是快照，題目可能已被刪除） */
+function isNotFound(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404;
 }
 
 function errorText(error: unknown): string {
@@ -237,6 +244,12 @@ export function ReviewWorkbench() {
             共 {data.total} 題
             {data.asOf ? `；清單更新時間 ${new Date(data.asOf).toLocaleString("zh-HK")}` : ""}
           </p>
+          {data.skippedMissing && data.skippedMissing > 0 ? (
+            <Notice tone="info">
+              另有 {data.skippedMissing} 題在清單產生後已被刪除，因此不再列出。
+              如需最新的清單，請重新執行對應的稽核指令。
+            </Notice>
+          ) : null}
           {data.limitation ? (
             <details className="text-sm text-gray-600">
               <summary>關於這份清單</summary>
@@ -601,6 +614,12 @@ function ServabilityPanel({
   }
 
   if (loading) return <Loading label="正在讀取題目…" />;
+  if (error && isNotFound(error))
+    return (
+      <Notice tone="warning">
+        此題已不在題庫（清單產生後可能已被刪除），無法顯示內容。請返回題目清單。
+      </Notice>
+    );
   if (error) return <ErrorNotice error={error} onRetry={load} />;
   if (!detail) return null;
 
@@ -1152,7 +1171,15 @@ function ProvenancePanel({ item }: { item: QueueItem }) {
       </article>
 
       {loading ? <Loading label="正在讀取題目…" /> : null}
-      {error ? <ErrorNotice error={error} onRetry={() => setReloadToken((n) => n + 1)} /> : null}
+      {error && isNotFound(error) ? (
+        <Notice tone="warning">
+          此題已不在題庫（清單產生後可能已被刪除），因此無法顯示內容。請返回題目清單；
+          如需最新的清單，請重新執行對應的稽核指令。
+        </Notice>
+      ) : null}
+      {error && !isNotFound(error) ? (
+        <ErrorNotice error={error} onRetry={() => setReloadToken((n) => n + 1)} />
+      ) : null}
       {question ? <QuestionCard question={question} /> : null}
 
       {question ? (

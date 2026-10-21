@@ -43,6 +43,13 @@ export interface QueuePage {
   pageSize: number;
   items: QueueItem[];
   counts: Record<string, number>;
+  /**
+   * 報告內引用但題庫已沒有的題目數（例如題目已被刪除）。
+   *
+   * 報告是某一天的快照，題目之後可能被刪除；若照樣列出，教師點進去只會看到
+   * 「找不到指定的題目」而不知道原因。這裡如實略過並回報數量，不會假裝清單完整。
+   */
+  skippedMissing: number;
 }
 
 function readReport<T>(relativePath: string): { data: T | null; error: string | null } {
@@ -61,6 +68,33 @@ function readReport<T>(relativePath: string): { data: T | null; error: string | 
 function paginate<T>(items: T[], page: number, pageSize: number): T[] {
   const start = (page - 1) * pageSize;
   return items.slice(start, start + pageSize);
+}
+
+/**
+ * 比對報告與題庫：略過題庫已不存在的題目（報告是快照；題目之後可能被刪除）。
+ *
+ * 兩種情況必須分開：
+ *   - **部分**不存在：如實略過並回報數量（教師不會點進必定 404 的項目）；
+ *   - **全部**都不存在：代表目前資料庫不是產生這份報告時的那個（例如指向另一個資料庫），
+ *     這種情況**不可**當成「沒有待處理項目」，因此回報 `available: false` 及原因。
+ *     這是本專案一貫的 fail-closed 原則：空資料不可當作沒有問題。
+ */
+function matchReportToDatabase<T extends { id: string }>(items: T[]): {
+  items: T[];
+  skipped: number;
+  databaseMismatch: boolean;
+} {
+  const kept: T[] = [];
+  let skipped = 0;
+  for (const item of items) {
+    if (getQuestion(item.id)) kept.push(item);
+    else skipped += 1;
+  }
+  return {
+    items: kept,
+    skipped,
+    databaseMismatch: items.length > 0 && kept.length === 0,
+  };
 }
 
 interface ServabilityReport {
@@ -115,11 +149,32 @@ export function listReviewQueue(
         pageSize,
         items: [],
         counts: {},
+        skippedMissing: 0,
       };
     }
     const counts: Record<string, number> = {};
     for (const item of data.items) counts[item.issueCode] = (counts[item.issueCode] ?? 0) + 1;
-    const items = data.items.map((item) => {
+    const missingServability = matchReportToDatabase(
+      data.items.map((item) => ({ ...item, id: item.id })),
+    );
+    if (missingServability.databaseMismatch) {
+      return {
+        queue,
+        available: false,
+        limitation:
+          `稽核報告列出 ${data.items.length} 題，但目前在這個資料庫完全找不到。` +
+          "這通常代表資料庫不是產生報告時的那一個（例如設定了另一個資料庫）。" +
+          "系統不會把這個情況當成「沒有待處理項目」；請確認資料庫設定後重新執行 `npm run audit:servability`。",
+        asOf: data.generatedAt,
+        total: 0,
+        page,
+        pageSize,
+        items: [],
+        counts: {},
+        skippedMissing: missingServability.skipped,
+      };
+    }
+    const items = missingServability.items.map((item) => {
       const latest = listQuestionReviews(item.id, 1)[0] ?? null;
       return {
         id: item.id,
@@ -155,6 +210,7 @@ export function listReviewQueue(
       pageSize,
       items: paginate(items, page, pageSize),
       counts,
+      skippedMissing: missingServability.skipped,
     };
   }
 
@@ -173,11 +229,32 @@ export function listReviewQueue(
         pageSize,
         items: [],
         counts: {},
+        skippedMissing: 0,
       };
     }
     const counts: Record<string, number> = {};
     for (const row of data.rows) counts[row.priority] = (counts[row.priority] ?? 0) + 1;
-    const items = data.rows.map((row) => ({
+    const missingProvenance = matchReportToDatabase(
+      data.rows.map((row) => ({ ...row, id: row.questionId })),
+    );
+    if (missingProvenance.databaseMismatch) {
+      return {
+        queue,
+        available: false,
+        limitation:
+          `覆核 manifest 列出 ${data.rows.length} 題，但目前在這個資料庫完全找不到。` +
+          "這通常代表資料庫不是產生 manifest 時的那一個。系統不會把這個情況當成「沒有待處理項目」；" +
+          "請確認資料庫設定後重新執行 `npm run audit:review-manifest`。",
+        asOf: data.generatedAt,
+        total: 0,
+        page,
+        pageSize,
+        items: [],
+        counts: {},
+        skippedMissing: missingProvenance.skipped,
+      };
+    }
+    const items = missingProvenance.items.map((row) => ({
       id: row.questionId,
       revision: row.revision,
       fingerprint: row.fingerprint,
@@ -205,10 +282,31 @@ export function listReviewQueue(
       pageSize,
       items: paginate(items, page, pageSize),
       counts,
+      skippedMissing: missingProvenance.skipped,
     };
   }
 
-  const views = listGoldenCandidateViews();
+  const missingGolden = matchReportToDatabase(
+    listGoldenCandidateViews().map((view) => ({ ...view, id: view.questionId })),
+  );
+  const views = missingGolden.items;
+  if (missingGolden.databaseMismatch) {
+    return {
+      queue,
+      available: false,
+      limitation:
+        `候選清單列出 ${missingGolden.skipped} 題，但目前在這個資料庫完全找不到。` +
+        "這通常代表資料庫不是產生候選清單時的那一個。系統不會把這個情況當成「沒有候選」；" +
+        "請確認資料庫設定後重新執行 `npm run golden:candidates`。",
+      asOf: null,
+      total: 0,
+      page,
+      pageSize,
+      items: [],
+      counts: {},
+      skippedMissing: missingGolden.skipped,
+    };
+  }
   const counts: Record<string, number> = {};
   for (const view of views) counts[view.status] = (counts[view.status] ?? 0) + 1;
   const items = views.map((view) => ({
@@ -242,6 +340,7 @@ export function listReviewQueue(
     pageSize,
     items: paginate(items, page, pageSize),
     counts,
+    skippedMissing: missingGolden.skipped,
   };
 }
 

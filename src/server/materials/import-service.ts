@@ -25,6 +25,7 @@ import {
   listBlocksByTopic,
 } from "../repositories/materials";
 import { listQuestions, updateQuestion } from "../repositories/questions";
+import { autoOpenDocument } from "../services/material-distribution";
 import { listSections, listTopics } from "../repositories/topics";
 import { listDocxImagesInDocumentOrder } from "./docx-images";
 import { filterExcludedBlocks } from "./exclusions";
@@ -235,6 +236,19 @@ export async function importMaterial(options: ImportOptions): Promise<ImportOutc
   });
 
   if (parsed.limitationNote) warnings.push(parsed.limitationNote);
+
+  // 擁有者政策（2026-10-21）：匯入課文／筆記後自動確認版權並開放給學生，
+  // 令學生可即時以該教材 AI 出題自學。校內試題檔及教師版檔名不在自動開放範圍
+  // （見 services/material-distribution.ts）。
+  {
+    const autoOpen = autoOpenDocument(document.id);
+    if (autoOpen?.status === "opened") {
+      warnings.push("已依政策自動開放給學生使用（AI 即時出題）。");
+    } else if (autoOpen?.status === "needs-teacher-edition-review" && autoOpen.reason) {
+      warnings.push(`未自動開放：${autoOpen.reason}`);
+    }
+  }
+
   if (detectedTopic === null) {
     warnings.push("未能自動判斷這份教材屬於哪個課題，請在管理介面指定課題。");
   } else if (assignment.matchedSectionIds.length === 0 && sections.length > 0) {

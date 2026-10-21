@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { getServerConfig, MIN_AUTH_SECRET_LENGTH, isProductionRuntime } from "./config";
+import { getServerConfig, MIN_AUTH_SECRET_LENGTH, MATERIAL_AUTO_OPEN_POLICIES, isProductionRuntime } from "./config";
 import { isStudentPatternEmail } from "./auth/role";
 import { EXPLANATION_HOLD_POLICIES } from "./quality/explanation-quality";
 
@@ -382,6 +382,29 @@ export function describeConfigIssues(): ConfigIssue[] {
         (config.explanationHoldPolicy === "placeholder-or-answer-only" ? "或只列答案" : "") +
         "的題目不會派給學生。以 2026-10-20 的題庫為例，1,875 題全部屬這兩類，啟用後學生將沒有題目可練習；" +
         "請確認這是刻意的產品決定，並先以 `npm run audit:explanation-worklist` 查看影響範圍。",
+    });
+  }
+
+  // 教材自動開放政策（2026-10-21 擁有者指示）
+  const autoOpenRaw = process.env.MATERIAL_AUTO_OPEN_POLICY;
+  if (
+    autoOpenRaw !== undefined &&
+    autoOpenRaw.trim().length > 0 &&
+    !(MATERIAL_AUTO_OPEN_POLICIES as readonly string[]).includes(autoOpenRaw.trim().toLowerCase())
+  ) {
+    issues.push({
+      level: "warning",
+      code: "material-auto-open-policy-invalid",
+      message: `MATERIAL_AUTO_OPEN_POLICY="${autoOpenRaw}" 不是有效值（${MATERIAL_AUTO_OPEN_POLICIES.join("／")}）；已按預設 lesson-content 處理（匯入後自動開放課文／筆記）。`,
+    });
+  }
+  if (config.materialAutoOpenPolicy === "lesson-content") {
+    issues.push({
+      level: "info",
+      code: "material-auto-open-active",
+      message:
+        "MATERIAL_AUTO_OPEN_POLICY=lesson-content（擁有者指示）：匯入課文／筆記後會自動確認版權並開放給學生，" +
+        "確認者記錄為 owner-policy:auto-open-all-materials。校內試題檔永不開放；檔名標示教師版／答案的材料仍需逐份人手確認內容。",
     });
   }
 

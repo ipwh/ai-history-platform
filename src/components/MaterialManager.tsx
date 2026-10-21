@@ -122,6 +122,8 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
   const [ocrStatus, setOcrStatus] = useState<Record<string, OcrStatusResponse>>({});
   const [ocrEngineLabel, setOcrEngineLabel] = useState<string>("");
   const [importingAll, setImportingAll] = useState(false);
+  /** 正在批次開放全部課文給學生（擁有者政策） */
+  const [openingAll, setOpeningAll] = useState(false);
 
   const refresh = useCallback(async () => {
     const [materials, topicData] = await Promise.all([
@@ -250,6 +252,39 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
       setError(caught);
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleOpenAllMaterials() {
+    setOpeningAll(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await api.post<{
+        policyEnabled: boolean;
+        opened: number;
+        alreadyOpen: number;
+        skipped: number;
+        outcomes: { fileName: string; status: string; reason: string | null }[];
+      }>("/api/admin/materials/open-all", {});
+      if (!result.policyEnabled) {
+        setMessage("自動開放政策目前為關閉（MATERIAL_AUTO_OPEN_POLICY=off），因此沒有開放任何教材。");
+      } else {
+        const skippedReasons = result.outcomes
+          .filter((entry) => entry.reason)
+          .map((entry) => `${entry.fileName}：${entry.reason}`)
+          .join("；");
+        setMessage(
+          `已開放 ${result.opened} 份課文給學生${result.alreadyOpen > 0 ? `，另有 ${result.alreadyOpen} 份原本已開放` : ""}${
+            result.skipped > 0 ? `；${result.skipped} 份未開放（${skippedReasons}）` : ""
+          }。`,
+        );
+      }
+      await refresh();
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setOpeningAll(false);
     }
   }
 
@@ -501,7 +536,20 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
             />
             匯入後執行 OCR（辨識圖片文字）
           </label>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => void handleOpenAllMaterials()}
+            disabled={uploading || openingAll}
+          >
+            {openingAll ? "正在開放…" : "開放全部課文給學生"}
+          </button>
         </div>
+
+        <p className="text-xs text-gray-500">
+          依目前政策，匯入後的課文／筆記會自動開放給學生使用（AI 即時出題）；校內試題檔永不開放，
+          檔名標示教師版／答案的材料仍需逐份人手確認。如需補開放先前已匯入的教材，可按「開放全部課文給學生」。
+        </p>
 
         {!diskLoaded ? (
           <p className="text-sm text-gray-500">正在讀取 materials 資料夾…</p>

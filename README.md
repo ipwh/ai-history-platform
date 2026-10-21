@@ -383,9 +383,19 @@ materials/
 
 ### 教材版權與學生可用範圍（P0，需擁有者決定）
 
+> **2026-10-21 擁有者決定：往後自動開放所有教材。** 政策由環境變數
+> `MATERIAL_AUTO_OPEN_POLICY` 控制（預設 `lesson-content`）：
+> 匯入課文／筆記後自動完成「版權確認 + 開放」，令學生可即時以課本內容 AI 出題自學。
+> `rights_confirmed_by` 如實記錄為 `owner-policy:auto-open-all-materials`（**不是**假裝某位教師逐份確認）。
+> 校內試題檔（題目與答案）**永不自動開放**；檔名標示教師版／答案的材料**不會**代為完成內容安全覆核
+> （該項仍須管理員人手確認，fail-closed）。管理員亦可在教材管理按「開放全部課文給學生」
+> （`POST /api/admin/materials/open-all`）補開放政策生效前已匯入的教材；逐份關閉仍然有效，隨時可收回。
+> 實作見 [src/server/services/material-distribution.ts](src/server/services/material-distribution.ts)，
+> 測試見 [tests/material-auto-open.test.ts](tests/material-auto-open.test.ts)。
+
 教材內容會以**題目來源節錄**的形式顯示給學生（另會作為 AI 出題依據），等同在平台內向學生發布該內容；平台已於 2026-10-20 移除學生閱讀教材全文的頁面。教材可能來自出版社課本或第三方材料，而**本專案沒有任何授權、發行權或使用條款的紀錄**，因此無法確認學校是否有權在平台展示這些內容。
 
-- **預設一律不採用（fail-closed）**：`material_documents.student_distribution` 預設為 `0`（不可），只有管理員**逐份文件**明確確認後，該文件的段落才會成為學生可用的出題依據及來源節錄（`PATCH /api/admin/materials/[documentId]`）。未確認的教材對學生完全不會出現。
+- **預設一律不採用（fail-closed）**：`material_documents.student_distribution` 的資料庫預設值為 `0`（不可）；實際是否開放由上述 `MATERIAL_AUTO_OPEN_POLICY` 決定（2026-10-21 起預設在匯入時自動確認並開放課文／筆記）。個別文件亦可由管理員逐份關閉（`PATCH /api/admin/materials/[documentId]`），關閉後該文件的段落立即不再成為學生的出題依據及來源節錄。未確認的教材對學生完全不會出現。
 - **「已開放」需要四個條件全部成立（Sprint 7.1 起在讀取時一併核對）**：學生端唯一判斷來源是 `documentIsStudentVisible()`／`listStudentDistributableDocumentIds()`，條件為
   1. 不是校內試題文件（`kind = 'question-bank'`）；
   2. `student_distribution = 1`（管理員想開放）；

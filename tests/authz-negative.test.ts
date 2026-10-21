@@ -259,6 +259,13 @@ const ROUTES: RouteCase[] = [
     body: { fileName: "missing.docx" },
   },
   {
+    target: "POST /api/admin/materials/open-all",
+    method: "POST",
+    adminOnly: true,
+    load: () => import("@/app/api/admin/materials/open-all/route"),
+    body: {},
+  },
+  {
     target: "GET /api/admin/materials/[documentId]",
     method: "GET",
     adminOnly: true,
