@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-21T00:00:00.000Z",
+  "generatedAt": "2026-10-21T00:25:00.000Z",
   "notice": "只記錄實際執行並觀察到的部署證據；未執行或未通過的項目明確列在 unverified，不會當作已驗證。",
   "target": {
     "provider": "Google Cloud Run",
@@ -7,30 +7,29 @@
     "region": "asia-east2",
     "service": "history-self-study",
     "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
-    "revision": "history-self-study-00022-52v",
-    "image": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:latest",
+    "revision": "history-self-study-00023-nft",
+    "image": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study",
     "deployedWith": "./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply -RosterSheetId <已設定> -AdminEmails ipwh@pochiu.edu.hk -ReviewerEmails ipwh@pochiu.edu.hk -StaffAccessPolicy school-domain -StaffDomains pochiu.edu.hk",
     "maxInstances": 1,
     "materialsInImage": 36
   },
   "source": {
     "branch": "main",
-    "commit": "fae11e2",
-    "commitSubject": "fix(auth): 歷史科審核者名單改為支援分號分隔"
+    "commit": "305e5cf",
+    "commitSubject": "fix(review): 佇列不再列出已刪除的題目；feat(materials): 自動開放全部課文給學生"
   },
   "notes": [
-    "2026-10-20 及 2026-10-21 共部署三次（00020-c64、00021-4c4、00022-52v）；最後一次為 commit fae11e2。",
-    "2026-10-21 實測：GET /api/health 200，ok=true、database.status=ok、llmConfigured=true、authEnabled=true、staffApiOpen=false。",
-    "2026-10-21 實測：執行中的 revision 已含 HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk（此前從未設定，故 Golden 核准及「已修復並核准」一律 403）。",
-    "2026-10-21 實測：正式資料庫 materials = {documents:0, blocks:0, studentVisibleDocuments:0}。這是學生端每個課題顯示「尚未匯入教材」的原因：教材從未匯入正式資料庫（「匯入全部課程教材」按鈕因 fileName=null 被 schema 拒絕而一直回 400，已修正）。",
-    "資料庫還原：health.persistence.restore=restored（由 Cloud Storage 快照還原）；備份已上載（backupsUploaded>0）。",
-    "公開存取：allUsers 具 roles/run.invoker；AUTH_REQUIRE_SIGN_IN=true，未登入存取 / 會 307 轉 /login。",
-    "機密沿用 Secret Manager 現有版本（history-auth-secret 保留原版本，避免登出所有使用者）。"
+    "2026-10-21 共部署四次（00020-c64、00021-4c4、00022-52v、00023-nft）；最後一次為 commit 305e5cf。",
+    "2026-10-21 實測：GET /api/health 200；執行中 revision 已含 HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk 及 MATERIAL_AUTO_OPEN_POLICY=lesson-content。",
+    "2026-10-21 實測：POST /api/admin/materials/open-all 未登入回 401（新端點受 requireAdmin 保護）。",
+    "2026-10-21 實測：正式資料庫 materials = {documents:0, blocks:0, studentVisibleDocuments:0}——教材仍**未匯入**正式資料庫；匯入需管理員在 /admin/materials 按「匯入全部課程教材」（匯入後會依政策自動開放）。",
+    "資料庫還原：health.persistence.restore=restored；備份已上載。",
+    "公開存取：allUsers 具 roles/run.invoker；AUTH_REQUIRE_SIGN_IN=true，未登入存取 / 會 307 轉 /login。"
   ],
   "unverified": [
     "教師／學生實際登入流程未在本輪以真實 Google 帳戶完成（只驗證未登入時被轉到 /login）。",
     "學生名冊載入：部署後 health.roster.loaded=false（未觸發載入），未核對班別／學號對應。",
-    "教材尚未在正式資料庫匯入，因此「匯入後學生端可見」未經線上驗證（依負責人指示只匯入、暫不開放）。",
+    "教材尚未在正式資料庫匯入，因此「匯入並自動開放後學生端可出題」未經線上驗證。",
     "多執行個體、冷啟動時間、配額與成本未量度。"
   ]
 }
