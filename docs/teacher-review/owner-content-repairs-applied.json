@@ -34,6 +34,44 @@
         }
       ],
       "note": "本決定解除品質閘門的「待教師確認」標記，**沒有**寫入任何覆核紀錄；題目在教師端仍標示為「已發布（未經人工覆核）」，歷史準確性仍待歷史科教師覆核。"
+    },
+    {
+      "decision": "owner-authorized-teacher-confirmation-override",
+      "decidedBy": "ipwh@pochiu.edu.hk",
+      "authorization": "2026-10-21 擁有者指示：題目太多，不可能人工覆核；用教材及網上權威資源查證題目及答案，代為覆核並發布。",
+      "plan": "docs/teacher-review/owner-overrides-ai-2026-10-21.json",
+      "target": "data/exports/production-next.db",
+      "appliedAt": "2026-10-21T08:04:22.751Z",
+      "questionIds": [
+        "q_190b1fee05d6455b",
+        "q_254a4dabfe9349cf",
+        "q_28ce7c498c8f4613",
+        "q_29559d7dcb11479d",
+        "q_38805d1c6c5c403b",
+        "q_4cd0f91d18004f45",
+        "q_53f51d75ad674d93",
+        "q_5421dd9d698b45d8",
+        "q_5a3b67a011844da4",
+        "q_5f1d7452e88a4aaa",
+        "q_664e7ed727ad4f7e",
+        "q_6b78ebe26363483c",
+        "q_825b2c9d3e924838",
+        "q_84ca843139e24e4d",
+        "q_855121edc7fc4d00",
+        "q_93651aaa1ace453f",
+        "q_983449f205744927",
+        "q_a40f9a90f7d94686",
+        "q_b16a9fa4ce1d422e",
+        "q_b4fb0c26b56e4059",
+        "q_b966ffec59404f00",
+        "q_bf9786d80cad4d37",
+        "q_c20b941c2cb64a8a",
+        "q_c7a74d84584743cf",
+        "q_f1e9b25e6a0346b8",
+        "q_f9919937813f4bf1"
+      ],
+      "correctAnswerRepairs": [],
+      "note": "本決定解除品質閘門的「待教師確認」標記，**沒有**寫入任何覆核紀錄；題目在教師端仍標示為「已發布（未經人工覆核）」，歷史準確性仍待歷史科教師覆核。"
     }
   ]
 }

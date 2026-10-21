@@ -50,7 +50,12 @@
     "e2e": "node scripts/e2e-flow.mjs",
     "review:adjudication-packet": "tsx scripts/export-adjudication-packet.ts",
     "review:package": "tsx scripts/build-review-package.ts",
-    "review:calibration": "tsx scripts/build-calibration-report.ts"
+    "review:calibration": "tsx scripts/build-calibration-report.ts",
+    "verify:answers": "node scripts/verify-question-answers.mjs",
+    "verify:answers:calibrate": "node scripts/verify-question-answers.mjs --calibrate --limit 20",
+    "show:question": "node scripts/show-question-context.mjs",
+    "search:materials": "node scripts/search-materials.mjs",
+    "build:answer-plan": "tsx scripts/build-answer-verification-plan.ts"
   },
   "dependencies": {
     "jszip": "^3.10.2",

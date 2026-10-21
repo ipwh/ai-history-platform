@@ -1,0 +1,46 @@
+{
+  "decisions": [
+    {
+      "decision": "owner-authorized-publication-without-individual-review",
+      "label": "production-snapshot",
+      "target": "data/exports/production-next.db",
+      "ownerEmail": "ipwh@pochiu.edu.hk",
+      "reason": "2026-10-21 逐題 AI 核對（教材及權威網上資源）後，全部草稿答案均與教材一致，按擁有者授權發布。",
+      "decidedAt": "2026-10-21T08:04:32.340Z",
+      "publishedCount": 26,
+      "publishedByOrigin": {
+        "material-ai": 26
+      },
+      "heldAwaitingTeacherConfirmation": 0,
+      "note": "這些題目由擁有者授權批次發布，**沒有**逐題人工覆核紀錄，因此教師端會標示為「已發布（未經人工覆核）」。`sourceVerified` 只代表節錄與教材段落相符，不代表史實正確；歷史準確性仍待合格歷史科教師覆核（見 docs/teacher-review/README.md）。品質閘門判定未確定（待教師確認）的草稿題目一律不在本授權範圍之內，沒有被本腳本發布。",
+      "questionIds": [
+        "q_190b1fee05d6455b",
+        "q_254a4dabfe9349cf",
+        "q_28ce7c498c8f4613",
+        "q_29559d7dcb11479d",
+        "q_38805d1c6c5c403b",
+        "q_4cd0f91d18004f45",
+        "q_53f51d75ad674d93",
+        "q_5421dd9d698b45d8",
+        "q_5a3b67a011844da4",
+        "q_5f1d7452e88a4aaa",
+        "q_664e7ed727ad4f7e",
+        "q_6b78ebe26363483c",
+        "q_825b2c9d3e924838",
+        "q_84ca843139e24e4d",
+        "q_855121edc7fc4d00",
+        "q_93651aaa1ace453f",
+        "q_983449f205744927",
+        "q_a40f9a90f7d94686",
+        "q_b16a9fa4ce1d422e",
+        "q_b4fb0c26b56e4059",
+        "q_b966ffec59404f00",
+        "q_bf9786d80cad4d37",
+        "q_c20b941c2cb64a8a",
+        "q_c7a74d84584743cf",
+        "q_f1e9b25e6a0346b8",
+        "q_f9919937813f4bf1"
+      ]
+    }
+  ]
+}

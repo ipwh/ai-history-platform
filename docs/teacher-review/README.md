@@ -783,6 +783,35 @@ npx tsx scripts/verify-provenance-manifest.ts --database <正式快照.db> --ver
 npx tsx scripts/audit-review-priority-manifest.ts --database <正式快照.db>
 ```
 
+## 18. 全題庫逐題 AI 核對（2026-10-21）
+
+擁有者指示：「題目太多，沒可能做人工覆核。你用教材及網上權威資源查證題目及答案，替我覆核並發布。」
+
+這是平台第一次**對全部題目**（不只是草稿或自動修復過的題目）逐題核對答案。完整紀錄：
+
+- [answer-verification-release-2026-10-21.md](answer-verification-release-2026-10-21.md)（發布、回滾、界線）
+- [answer-verification-2026-10-21.md](../quality/answer-verification-2026-10-21.md)（方法、統計、33 題修正）
+- [answer-verification-2026-10-21.jsonl](../quality/answer-verification-2026-10-21.jsonl)（逐題結果）
+- [answer-verification-2026-10-21-adjudication.json](../quality/answer-verification-2026-10-21-adjudication.json)（校準、誤報裁決、網上資源）
+
+工具（全部預設唯讀或模擬，不會在正式環境執行）：
+
+| 工具 | 用途 |
+| --- | --- |
+| `node scripts/verify-question-answers.mjs` | 逐題核對；可 `--calibrate` 做「故意改錯答案」的敏感度測試，`--ids` 只重核指定題目 |
+| `node scripts/show-question-context.mjs` | 印出題目、教材段落及核對結果，供逐題裁決 |
+| `node scripts/search-materials.mjs <字詞>` | 在課文／筆記搜尋依據 |
+| `npx tsx scripts/build-answer-verification-plan.ts` | 由裁決檔產生修正清單（補上資料庫現值及指紋） |
+| `npx tsx scripts/fix-question-content.ts` | 套用修正；現已支援題幹、選項、標準答案、可接受答案及解釋 |
+| `node scripts/build-answer-verification-report.mjs` | 由裁決檔及資料庫重新產生報告 |
+
+結果：2,082 題全部核對（校準 20/20），33 題修正、2 題刪除（平台無法顯示附圖）、3 題模型誤報維持原答案；
+修正後 33 題全部重核為正確。26 條原本待教師確認的草稿逐題核對後解除暫緩並發布，
+正式題庫 2,080 題全部已發布、0 條待教師確認。
+
+**仍然不是教師覆核**：`question_reviews` 沒有新增（仍為 40 筆），教師端顯示「已發布（未經人工覆核）」，
+`release:gate` 的 `review-provenance` 及 `source-traceability` 仍然 FAIL。
+
 
 
 

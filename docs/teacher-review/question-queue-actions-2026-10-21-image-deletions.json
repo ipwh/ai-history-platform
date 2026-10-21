@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "title": "2026-10-21 逐題核對：刪除平台無法顯示附圖的題目",
+  "purpose": "題幹只寫『圖中…』，但平台沒有題目附圖功能，來源試卷圖片亦未匯入，學生無法作答；刪除前已確認作答、回報及覆核紀錄均為 0。",
+  "sourceMaterials": "課題4 早期香港地區的歷史_MCQ.docx",
+  "generatedFrom": {
+    "decisions": "docs/quality/answer-fixes-2026-10-21-decisions.json",
+    "database": "data/exports/production-next.db",
+    "generatedAt": "2026-10-21T08:02:17.187Z"
+  },
+  "entries": [
+    {
+      "questionId": "qb-NJCMN0040000014",
+      "action": "delete",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "mc",
+      "beforeFingerprint": "188ccfe4fe367ac0cf31664ae770a7f1776ce0d00081a20b167286b43ecc89a7",
+      "beforeQuestion": "圖中的建築物的主要用途是甚麼？",
+      "beforeCorrectAnswer": "教育",
+      "reason": "題幹只寫『圖中的建築物』，但平台沒有題目附圖，學生無法作答；來源試卷的圖片未匯入，作答、回報及覆核紀錄均為 0。"
+    },
+    {
+      "questionId": "qb-NJCMN0040000023",
+      "action": "delete",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "questionType": "mc",
+      "beforeFingerprint": "ee64a3213463892372b9ca73225ba9820c22ab2bf93ec6de533f2666d41aeffb",
+      "beforeQuestion": "圖中的人在慶祝甚麼節日？",
+      "beforeCorrectAnswer": "長洲太平清醮",
+      "reason": "題幹只寫『圖中的人』，但平台沒有題目附圖，學生無法作答；來源試卷的圖片未匯入，作答、回報及覆核紀錄均為 0。"
+    }
+  ]
+}

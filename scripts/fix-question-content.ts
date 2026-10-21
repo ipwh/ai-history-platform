@@ -97,23 +97,36 @@ function main(): void {
   const applied: {
     questionId: string;
     question?: { from: string; to: string };
+    options?: { from: string[]; to: string[] };
     correctAnswer?: { from: string; to: string };
+    acceptedAnswers?: { from: string[]; to: string[] };
+    explanation?: { from: string; to: string };
+    revisionBefore: number;
+    revisionAfter: number;
     reason: string;
   }[] = [];
   for (const action of writable) {
     const question = getQuestion(action.questionId);
     if (!question) fail(`題目 ${action.questionId} 讀取失敗`);
-    updateQuestion(question.id, {
+    const updated = updateQuestion(question.id, {
       ...question,
       question: action.newQuestion ?? question.question,
+      options: action.newOptions ?? question.options,
       correctAnswer: action.newCorrectAnswer ?? question.correctAnswer,
+      acceptedAnswers: action.newAcceptedAnswers ?? question.acceptedAnswers,
+      explanation: action.newExplanation ?? question.explanation,
     });
     const item = plan.items.find((entry) => entry.questionId === action.questionId);
     applied.push({
       questionId: action.questionId,
       reason: item?.reason ?? "",
+      revisionBefore: question.revision,
+      revisionAfter: updated.revision,
       ...(item?.question ? { question: item.question } : {}),
+      ...(item?.options ? { options: item.options } : {}),
       ...(item?.correctAnswer ? { correctAnswer: item.correctAnswer } : {}),
+      ...(item?.acceptedAnswers ? { acceptedAnswers: item.acceptedAnswers } : {}),
+      ...(item?.explanation ? { explanation: item.explanation } : {}),
     });
     console.log(`✓ 已修正｜${action.questionId}｜${action.detail}`);
   }
@@ -131,7 +144,7 @@ function main(): void {
     appliedAt: new Date().toISOString(),
     items: applied,
     note:
-      "只修正題幹文字或標準答案；沒有改動選項、可接受答案、知識點或來源，亦沒有寫入任何覆核紀錄。" +
+      "只修正清單明列的欄位（題幹、選項、標準答案、可接受答案、解釋）；沒有改動知識點或來源，亦沒有寫入任何覆核紀錄。" +
       "修正會令 revision +1，因此舊有覆核如實失效。",
   });
   fs.mkdirSync(path.dirname(recordPath), { recursive: true });

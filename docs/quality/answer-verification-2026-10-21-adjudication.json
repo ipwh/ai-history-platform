@@ -1,0 +1,55 @@
+{
+  "generatedAt": "2026-10-21T08:15:00Z",
+  "method": "以已設定於平台的 DeepSeek API（deepseek-flash）逐題核對；每題附上由 production-next.db 的課文／筆記段落檢索出的最相關教材段落。核對紀錄只標示 ai-textbook-verification，不是教師覆核。",
+  "calibration": {
+    "method": "抽 20 條選擇題，故意把標準答案換成另一個選項，再以同一 prompt 核對。",
+    "detected": 20,
+    "total": 20,
+    "note": "20/20 條故意改錯的答案均被判為非 correct，顯示 prompt 對答案錯誤有足夠敏感度；但不能證明沒有漏報。"
+  },
+  "noChangeAdjudications": [
+    {
+      "questionId": "qb-NJCFN0110000021",
+      "modelVerdict": "incorrect",
+      "modelIssue": "wrong-answer",
+      "modelReason": "教材指安理會可制裁甚至採取軍事行動，維和部隊非制裁侵略國手段",
+      "decision": "維持原答案「維持和平部隊」",
+      "basis": "題幹問『派遣____制止衝突』，聯合國安理會可派遣維持和平部隊執行維和任務，歷史上亦多次如此；教材只列舉制裁及軍事行動，沒有排除維和部隊。模型把『制裁』與『派遣』混為一談，屬誤報。"
+    },
+    {
+      "questionId": "qb-NJCMN0020000019",
+      "modelVerdict": "uncertain",
+      "modelIssue": "multiple-correct",
+      "modelReason": "標答正確；『分三段』是否同屬正確有爭議",
+      "decision": "維持原答案「公元1453年結束」",
+      "basis": "教材把中古時代分為前期（476-800年）及後期（800-1453年）兩段，並非三段；『公元800年展開』及『歐洲文明蓬勃發展』亦與教材不符。答案唯一。"
+    },
+    {
+      "questionId": "qb-NJCMN0070000007",
+      "modelVerdict": "uncertain",
+      "modelIssue": "verification-error",
+      "modelReason": "模型回應的 JSON 損毀，未能完成核對",
+      "decision": "維持原答案「英國禁止北美殖民地由法國輸入原材料」",
+      "basis": "教材明言殖民地只能與英國本土及其殖民地貿易，故由法國輸入原材料本已禁止，並非一項獨立政策；其餘三項均為教材明列的經濟政策。答案成立。"
+    }
+  ],
+  "authoritativeWebSources": [
+    {
+      "topic": "1982年區議會首次分區直接選舉；1983年市政局首次分區直接選舉",
+      "url": "https://zh.wikipedia.org/zh-hant/1982%E5%B9%B4%E9%A6%99%E6%B8%AF%E5%8D%80%E8%AD%B0%E6%9C%83%E9%81%B8%E8%88%89",
+      "relatedUrl": "https://zh.wikipedia.org/wiki/1983%E5%B9%B4%E9%A6%99%E6%B8%AF%E5%B8%82%E6%94%BF%E5%B1%80%E9%81%B8%E8%88%89",
+      "conclusion": "區議會1982年首次以普及選舉權舉行分區直接選舉；市政局1983年才首次分區直選。核對後維持區議會為答案，並收窄題幹措辭。"
+    },
+    {
+      "topic": "紐倫堡審判的控罪不包括獨立的種族滅絕罪",
+      "url": "https://www.britannica.com/event/Nurnberg-trials",
+      "conclusion": "控罪為破壞和平罪、戰爭罪、違反人道罪及共謀；種族滅絕並非獨立控罪，1948年《防止及懲治滅絕種族罪公約》才把它確立為獨立罪行。"
+    }
+  ],
+  "knownLimitations": [
+    "AI 核對不能取代歷史科教師的專業判斷；題目在教師端仍顯示「已發布（未經人工覆核）」。",
+    "教材段落檢索以字詞重疊排序，可能抽不到最相關段落；模型仍會以公認史實判斷，但這代表部分判斷並非直接引用教材。",
+    "兩條附圖題目因平台不支援題目附圖而刪除；其餘題目如有未發現的圖片依賴，仍需教師抽查。",
+    "知識點欄位有少量匯入時留下的異常值（例如「A. 國家W」、「D. iii、iv」）及 564 題只寫「校內試題」；本輪沒有改動，因為修改會令既有教師覆核紀錄失效，留待日後以獨立遷移處理。"
+  ]
+}

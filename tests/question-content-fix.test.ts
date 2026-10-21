@@ -130,4 +130,85 @@ describe("planQuestionContentFix", () => {
     });
     expect(plan.status).toBe("missing");
   });
+
+  it("修正與答案矛盾的選項", () => {
+    const plan = planQuestionContentFix(
+      makeQuestion({
+        questionType: "mc",
+        question: "下列哪項是有關冷戰的正確描述？",
+        options: ["冷戰期間，美國與蘇聯爆發了軍事衝突。", "冷戰期間，美國與蘇聯結成同盟。"],
+        correctAnswer: "冷戰期間，美國與蘇聯結成同盟。",
+        sourceExcerpt: "",
+      }),
+      {
+        questionId: "qb-test-1",
+        reason: "教材指美蘇各自組成敵對陣營，選項「結成同盟」與教材矛盾，改為錯誤敘述後答案才唯一。",
+        options: {
+          from: ["冷戰期間，美國與蘇聯爆發了軍事衝突。", "冷戰期間，美國與蘇聯結成同盟。"],
+          to: ["冷戰期間，美國與蘇聯爆發了軍事衝突。", "冷戰期間，美國與蘇聯各自組成聯盟並主導國際政治。"],
+        },
+        correctAnswer: {
+          from: "冷戰期間，美國與蘇聯結成同盟。",
+          to: "冷戰期間，美國與蘇聯各自組成聯盟並主導國際政治。",
+        },
+      },
+    );
+    expect(plan.status).toBe("planned");
+    expect(plan.newOptions?.[1]).toContain("各自組成聯盟");
+    expect(plan.newCorrectAnswer).toContain("各自組成聯盟");
+  });
+
+  it("修正後答案不在選項中即拒絕", () => {
+    const plan = planQuestionContentFix(
+      makeQuestion({
+        questionType: "mc",
+        question: "下列哪項正確？",
+        options: ["甲", "乙"],
+        correctAnswer: "甲",
+      }),
+      {
+        questionId: "qb-test-1",
+        reason: "測試：把答案改成不在選項中的文字，必須被拒絕。",
+        correctAnswer: { from: "甲", to: "丙" },
+      },
+    );
+    expect(plan.status).toBe("unservable");
+  });
+
+  it("修正可接受答案及解釋", () => {
+    const plan = planQuestionContentFix(
+      makeQuestion({ acceptedAnswers: [], explanation: "舊解釋。" }),
+      {
+        questionId: "qb-test-1",
+        reason: "教材作「加百列」，基伯爾是同名異譯；解釋改為教材用語。",
+        acceptedAnswers: { from: [], to: ["基伯爾"] },
+        explanation: { from: "舊解釋。", to: "天使加百列向穆罕默德顯現，傳遞真主阿拉的啟示。" },
+      },
+    );
+    expect(plan.status).toBe("planned");
+    expect(plan.newAcceptedAnswers).toEqual(["基伯爾"]);
+    expect(plan.newExplanation).toContain("加百列");
+  });
+
+  it("解釋不可改為空白", () => {
+    const plan = planQuestionContentFix(makeQuestion({ explanation: "舊解釋。" }), {
+      questionId: "qb-test-1",
+      reason: "測試：把解釋清空必須被拒絕，避免發布沒有解釋的題目。",
+      explanation: { from: "舊解釋。", to: "   " },
+    });
+    expect(plan.status).toBe("conflict");
+  });
+
+  it("全部欄位已是修正值時回報已是最新", () => {
+    const plan = planQuestionContentFix(
+      makeQuestion({ acceptedAnswers: ["基伯爾"], explanation: "新解釋。" }),
+      {
+        questionId: "qb-test-1",
+        reason: "重複執行同一修正清單時應為 no-op。",
+        acceptedAnswers: { from: [], to: ["基伯爾"] },
+        explanation: { from: "舊解釋。", to: "新解釋。" },
+      },
+    );
+    expect(plan.status).toBe("already-applied");
+  });
 });
