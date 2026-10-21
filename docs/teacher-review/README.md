@@ -717,4 +717,23 @@ P1 與 P3 各有核對清單；**P3 只代表排序較後，不代表核准**；
 **這些工具不會令題目變成「已覆核」**：解除標記只令題目可以派發給學生，教師端仍標示
 「已發布（未經人工覆核）」，`quality_warnings_json` 亦保留原暫緩理由並附上決定紀錄。
 
+### 17.1 擁有者風險接受（2026-10-21 09:59）
+
+擁有者閱覽隨機抽樣 20 題後表示「沒有任何問題」，並決定：1,822 題**不用逐條覆核**、
+1,293 題教材依據**不用逐題核對**（兩者都維持全部發布）、技能標籤**繼續空白**。
+
+機器可讀紀錄：[owner-acceptance-2026-10-21.json](owner-acceptance-2026-10-21.json)（決定的完整說明見
+[owner-decision-2026-10-21.md](owner-decision-2026-10-21.md) 第 8 節）。
+
+這是**風險接受（accept by sampling）**，不是覆核紀錄：
+
+- `question_reviews` 仍然只有 2 筆；教師端仍標示「已發布（未經人工覆核）」；
+- `source_verified` 仍為 0，`audit:content` 仍如實列出 `pending_verification`；
+- 發布閘門的 `review-provenance` 及 `source-traceability` 仍然 **FAIL**，`release:gate` 維持 `NOT READY`；
+  這是如實狀態，不是待修故障。
+
+界線由 [tests/owner-acceptance-record.test.ts](../../tests/owner-acceptance-record.test.ts) 守住：
+紀錄檔必須明示 `reviewRecordsCreated: 0`，文件不得把「樣本沒有問題」寫成「已逐題覆核」。
+
+
 

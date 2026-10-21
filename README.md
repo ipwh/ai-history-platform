@@ -1021,6 +1021,8 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 
 > **已帶到正式環境（2026-10-21）**：擁有者指示「全部發布及套用」，51 份補寫 manifest 已套用到正式資料庫（1,784 題成功、91 題對應的題目已不存在），另補寫 4 題、修正 1 題匯入黏連的答案；正式資料庫由 38 題已發布增至 **1,822 題全部已發布**，佔位解釋 **0**、只列答案 **0**、結構不可作答 **0**。這些題目**沒有**逐題人工覆核紀錄（教師端如實顯示「已發布（未經人工覆核）」），技能標籤仍然空白。詳見 [2026-10-21 擁有者授權紀錄](docs/teacher-review/owner-decision-2026-10-21.md) 及 [隨機抽樣 20 題](docs/teacher-review/owner-spot-check-2026-10-21.md)。
 
+> **擁有者風險接受（2026-10-21 09:59）**：擁有者閱覽上述 20 題隨機樣本後表示「沒有任何問題」，並決定 **1,822 題不用逐條覆核**、**1,293 題教材依據不用逐題核對**（兩者維持全部發布）、**技能標籤繼續空白**。這是 *accept by sampling*，**不是**覆核紀錄：`question_reviews` 仍只有 2 筆、`source_verified` 仍為 0、發布閘門的 `review-provenance` 及 `source-traceability` 仍然 FAIL。紀錄：[owner-acceptance-2026-10-21.json](docs/teacher-review/owner-acceptance-2026-10-21.json)。
+
 **`npm run audit:explanation-worklist`（唯讀）** 產生每題的可操作清單（[JSON](docs/quality/explanation-skill-worklist-2026-10-20.json)、[教師版 Markdown](docs/teacher-review/explanation-skill-worklist-2026-10-20.md)）：題幹摘要、現有解釋、正確答案、知識點、來源位置、建議改進類型及建議技能。建議改進類型：需補概念定義 **1,217**、需補因果推理 **658**；技能首選建議的信心分佈為高 **0**／中 **877**（填充題短答案 → 正確地使用歷史辭彙）／低 **998**（選擇題無關鍵詞 → 同項推測，須教師確認）。
 
 **技能框架已存在、只是未使用**：`questions.skill TEXT NULL` 對應 `HISTORY_SKILLS`（教育局《歷史科課程指引》9 項，`historySkillSchema` 為**單選**）。現有選擇題／填充題實際上只能考核其中 1–2 項；第 3、5、7、8、9 項（描述圖表特徵、比較不同解釋、質疑資料可信性、運用想像、組織表達）需要附史料的**新題型**，不是靠補標籤可以達成。
@@ -2024,7 +2026,7 @@ gcloud run services update history-self-study --project pccss-ai-history --regio
 | 5 | **超限通知對象**：達到上限或成本異常時通知誰？ | 現時只在管理員端顯示用量摘要，沒有主動通知 | 科主任／IT |
 | 6 | **資料保留期**：AI 用量記錄保留 30 天是否合適？練習記錄、教材及上載檔案要保留多久？ | AI 用量記錄 30 天自動清理；練習記錄目前無限期保留 | 校方（私隱） |
 | 7 | **私隱聲明**：是否已向家長／學生說明學習記錄（包括姓名、班別、作答記錄）的用途及保存期限？ | README 第九節列出應檢查的私隱事項，但未有正式聲明 | 校方 |
-| 8 | **歷史科教師覆核者**：由誰負責逐題核對史實並簽署覆核？ | 現時**沒有**具名覆核者，`docs/teacher-review/golden-questions.v1.json` 仍是 `pending-review`、**0 條**已覆核題目 | 科主任 |
+| 8 | **歷史科教師覆核者**：由誰負責逐題核對史實並簽署覆核？ | **已決定（2026-10-21）：不做逐題核對**。擁有者（`ipwh@pochiu.edu.hk`，歷史科教師）以 20 題隨機樣本接受現有內容，平台內**沒有**新增覆核紀錄；`docs/teacher-review/golden-questions.v1.json` 仍是 `pending-review`、**0 條**已覆核題目。教師端仍可隨時逐題覆核，屆時才會寫入綁定版本的 `question_reviews` | 已由產品負責人決定 |
 | 9 | **校內試題使用權**：校內試題檔（`kind = 'question-bank'`）可否用於學生練習？ | 匯入的題目一律為草稿，需教師覆核或重新執行自動品質驗證後才發布；相關文件永不列為學生讀物 | 科主任 |
 | 10 | **Token 計量**：是否改用 token 數（而非呼叫次數）作為用量上限的計量單位？ | 現時以呼叫次數計量；`llm_usage` 會記錄 provider 回報的 `inputTokens`／`outputTokens`（可能為空），但上限仍以次數判斷 | IT |
 | 11 | **警示收件人及事故負責人**：超過用量上限、備份失敗或維護清理失敗時通知誰？ | 現時只在管理員端顯示，沒有主動通知 | 科主任／IT |
@@ -2034,8 +2036,9 @@ gcloud run services update history-self-study --project pccss-ai-history --regio
 | 15 | **正式環境是否同步更新教材**：本機的教材更新（2026-10-16）不會自動傳到 Cloud Run | 未執行前，正式環境仍是 2026-10-15 的教材版本（內容為同一系列較舊版本）。更新方式見第十節做法 A 及第十二節第 43 項 | 科主任／IT（決定何時部署） |
 | 16 | **佔位解釋的題目是否暫緩派發** | **已決定（2026-10-20）：否**。`EXPLANATION_HOLD_POLICY` 維持 `off`，題目照樣派發；學生仍會看到佔位解釋，直至補寫完成。開關及診斷警示保留，日後可改變決定 | 已由產品負責人決定 |
 | 17 | **技能標籤由誰逐題確認** | **已決定（2026-10-20）：暫緩**。`questions.skill` 維持空白，`/api/progress` 技能統計因此沒有數據（已接受的狀態）；建議規則及教師端標記功能保留，隨時可恢復 | 已由產品負責人決定（暫緩） |
-| 18 | **解釋由誰補寫** | **已決定（2026-10-20）：由 AI 逐題補寫、教師抽核**。每批以同課題課本段落核對；進度見 [決定紀錄](docs/teacher-review/decision-2026-10-20-explanation-rewrite.md) | 已由產品負責人決定；教師抽核待安排 |
+| 18 | **解釋由誰補寫** | **已決定（2026-10-20；2026-10-21 完成）**：由 AI 逐題補寫，擁有者以 20 題隨機樣本抽核（[樣本](docs/teacher-review/owner-spot-check-2026-10-21.md)）後表示沒有問題，不再逐題抽核。正式環境已套用，佔位解釋 0。進度見 [決定紀錄](docs/teacher-review/owner-decision-2026-10-21.md) | 已完成 |
 | 19 | **是否新增史料題以覆蓋第 3、5、7、8、9 項技能** | **已決定（2026-10-20）：否**。現有選擇／填充題無法考核這些技能，如實記錄而不以標籤掩蓋 | 已由產品負責人決定 |
+| 20 | **1,822 題是否逐條覆核、1,293 題教材依據是否逐題核對** | **已決定（2026-10-21 09:59）：兩者都不做**。擁有者閱覽 20 題隨機樣本後表示沒有問題，題目維持全部發布；技能標籤繼續空白。這是 *accept by sampling*，**不是**覆核紀錄：`question_reviews` 仍只有 2 筆、`source_verified` 仍為 0、`release:gate` 的 `review-provenance`／`source-traceability` 仍然 FAIL。紀錄：[owner-acceptance-2026-10-21.json](docs/teacher-review/owner-acceptance-2026-10-21.json) | 已由產品負責人決定 |
 
 > **成本換算的限制（誠實說明）**：目前系統只記錄 AI 呼叫**次數**，`llm_usage` 沒有 provider 回報的實際費用欄位，專案內亦沒有模型價格表。因此**無法**由系統計算每位學生或整體的金額，亦不應在文件中填寫推測價格。若要金額上限，需要另行加入價格表及用量換算（屬新功能，需先評估）。
 

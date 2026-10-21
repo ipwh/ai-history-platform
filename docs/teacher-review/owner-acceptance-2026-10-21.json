@@ -1,0 +1,42 @@
+{
+  "decision": "owner-accepted-published-content-by-sampling",
+  "decidedBy": "ipwh@pochiu.edu.hk",
+  "decidedAt": "2026-10-21T09:59:06+08:00",
+  "authorization": "已閱覽 owner-spot-check-2026-10-21.md，沒有任何問題。1,822 題沒有逐題覆核紀錄，不用逐條覆核，請完整發布；1,293 題教材依據未逐題核對，不用逐題核對，請完整發布；技能標籤仍全部空白，繼續空白。",
+  "scope": {
+    "database": "production（gs://pccss-ai-history-history-backup/history/data/app.db）",
+    "publishedQuestions": 1822,
+    "spotCheckSample": {
+      "document": "docs/teacher-review/owner-spot-check-2026-10-21.md",
+      "size": 20,
+      "method": "stratified-by-topic, seed 20261021",
+      "ownerVerdict": "沒有任何問題"
+    }
+  },
+  "declined": [
+    {
+      "item": "per-question teacher review",
+      "affectedQuestions": 1822,
+      "ownerDecision": "不用逐條覆核，題目維持全部發布"
+    },
+    {
+      "item": "per-question source traceability verification",
+      "affectedQuestions": 1293,
+      "ownerDecision": "不用逐題核對，題目維持全部發布"
+    }
+  ],
+  "stillOpen": [
+    {
+      "item": "history skill tags",
+      "ownerDecision": "繼續空白（維持 2026-10-20 的暫緩決定）"
+    }
+  ],
+  "reviewRecordsCreated": 0,
+  "whatThisDoesNotMean": [
+    "不代表平台內存在這 1,822 題的人工覆核紀錄；教師端仍顯示「已發布（未經人工覆核）」，`question_reviews` 仍只有 2 筆。",
+    "不代表 1,293 題的教材依據已逐題核對；`source_verified` 仍為 0，`audit:content` 會如實列出 pending_verification。",
+    "不代表發布閘門的 `review-provenance` 及 `source-traceability` 已通過；閘門結果維持 NOT READY，這是如實狀態，不是故障。",
+    "不代表解釋的歷史準確性已由教師逐題確認；擁有者只就 20 題隨機樣本表示沒有問題。"
+  ],
+  "note": "此紀錄是擁有者對已發布內容的風險接受（accept by sampling），不是覆核紀錄，不應被任何程式當作 `question_reviews` 或 `sourceVerified` 的替代品。"
+}

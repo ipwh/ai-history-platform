@@ -73,3 +73,25 @@ npx tsx scripts/audit-servability.ts --database "$env:TEMP\prod-work\app.db"
 
 批次工具的界線（dry-run 預設、正式環境拒絕執行、不建立覆核紀錄）見
 [README.md](README.md) 第 17 節。
+
+## 8. 擁有者最終確認（2026-10-21 09:59）
+
+擁有者閱覽隨機抽樣 20 題（[owner-spot-check-2026-10-21.md](owner-spot-check-2026-10-21.md)）後表示「沒有任何問題」，並作出以下決定：
+
+| 項目 | 決定 |
+| --- | --- |
+| 1,822 題沒有逐題覆核紀錄 | **不用逐條覆核，維持全部發布** |
+| 1,293 題教材依據未逐題核對 | **不用逐題核對，維持全部發布** |
+| 技能標籤 | **繼續空白**（維持 2026-10-20 的暫緩決定） |
+
+機器可讀的紀錄：[owner-acceptance-2026-10-21.json](owner-acceptance-2026-10-21.json)。
+這是**風險接受（accept by sampling）**，不是覆核紀錄：
+
+- `question_reviews` 仍然只有 2 筆，教師端仍顯示「已發布（未經人工覆核）」；
+- `source_verified` 仍為 0，`audit:content` 仍如實列出 `pending_verification`；
+- 發布閘門的 `review-provenance` 及 `source-traceability` 仍然 **FAIL**，閘門結果維持 `NOT READY`——這是如實狀態，不是待修的故障，除非日後真的進行逐題覆核。
+
+同一輪另外修好 2 條示範題（`demo-q-renaissance-origin-literature`、`demo-q-renaissance-vinci`）的解釋：
+兩者只有 14 及 22 字、只是重述答案，低於平台對補寫解釋的 25 字下限
+（[demo-remediation-2026-10-21.json](explanation-batches/demo-remediation-2026-10-21.json)）。
+

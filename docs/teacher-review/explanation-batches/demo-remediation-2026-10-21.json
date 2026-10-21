@@ -1,0 +1,18 @@
+{
+  "batch": "demo-remediation-2026-10-21",
+  "title": "擁有者授權：2 條示範題（demo）解釋低於 25 字下限的補寫",
+  "topicId": "topic-5",
+  "note": "這 2 題是示範題庫（origin=demo），解釋只有 14 及 22 字，且只是重述答案，低於平台對補寫解釋要求的 25 字下限。只改 explanation，不改題幹、選項或答案。",
+  "entries": [
+    {
+      "questionId": "demo-q-renaissance-origin-literature",
+      "expectedExplanation": "文藝復興最早出現在文學領域。",
+      "newExplanation": "文藝復興以意大利半島為起點：佩脫拉克、但丁等學者重新研讀古希臘羅馬典籍，先改變文學及人文學科的寫作方式，之後才擴展至藝術與自然科學。"
+    },
+    {
+      "questionId": "demo-q-renaissance-vinci",
+      "expectedExplanation": "《蒙娜麗莎》與《最後的晚餐》是達文西的名作。",
+      "newExplanation": "達文西把透視、光線與陰影等技法應用於繪畫，《蒙娜麗莎》以暈塗法呈現人物神態，《最後的晚餐》則以單點透視安排十二門徒的位置。"
+    }
+  ]
+}
