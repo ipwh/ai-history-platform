@@ -8,6 +8,8 @@
  *     其餘空格沒有答案可對；
  *   - 標準答案已印在同一題幹後半句（「……聶斯托利派」），答案直接外洩；
  *   - 原檔以圖片或表格排版，解析後選項全部變成「.」，學生無法作答。
+ *   - 時序題把每項事件的年份一併印在題幹（「1946年……、1966年及1967年……、1984年……」），
+ *     學生只須比較題幹印出的年份即可排序，題目沒有考核時序（見 llm/chronology-stem.ts）。
  *
  * 這些題目**不是**史實問題，而是結構上無法作答，因此在派給學生前一律攔下；
  * 題目仍留在題庫，由教師修正（見 scripts/repair-question-bank.ts）。
@@ -15,6 +17,7 @@
  * 這一層只是最後的安全網，不代替那些檢查。
  */
 import type { QuestionType } from "../../lib/types";
+import { chronologyGivenAwayReason } from "../llm/chronology-stem";
 import { answerLeaksIntoStem, countBlankMarkers } from "../llm/fill-question";
 
 export interface ServabilityCheck {
@@ -126,6 +129,12 @@ export function checkQuestionServable(question: {
     }
     if (!options.some((option) => normaliseOption(option) === normaliseOption(answer))) {
       return { ok: false, reason: `選擇題的標準答案「${answer}」不在選項之內` };
+    }
+    // 時序題的年份已印在題幹：學生只須比較題幹的年份，題目沒有考核時序
+    // （2026-10-22 用家回報「題幹已給予年份，考問時序根本沒有意義」）。
+    const chronology = chronologyGivenAwayReason(question.question);
+    if (chronology !== null) {
+      return { ok: false, reason: chronology };
     }
     // 選項以羅馬數字指涉題幹陳述時，題幹必須逐一標示（i／ii／iii／iv）。
     // 否則學生只看到幾句沒有編號的文字，無法把「i、ii及iii」對應到任何一句。

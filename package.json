@@ -58,7 +58,8 @@
     "verify:answers:calibrate": "node scripts/verify-question-answers.mjs --calibrate --limit 20",
     "show:question": "node scripts/show-question-context.mjs",
     "search:materials": "node scripts/search-materials.mjs",
-    "build:answer-plan": "tsx scripts/build-answer-verification-plan.ts"
+    "build:answer-plan": "tsx scripts/build-answer-verification-plan.ts",
+    "plan:topic-focus": "tsx scripts/plan-topic-focus.ts"
   },
   "dependencies": {
     "jszip": "^3.10.2",

@@ -1,0 +1,963 @@
+{
+  "topicId": "topic-6",
+  "sourceSectionId": "topic-6-causes",
+  "sourceSectionIds": [
+    "topic-6-causes"
+  ],
+  "removedSectionIds": [],
+  "generatedAt": "2026-10-22T07:40:05.812Z",
+  "applied": true,
+  "actorEmail": "ipwh@pochiu.edu.hk",
+  "targets": [
+    {
+      "key": "early",
+      "id": "topic-6-early-expansion",
+      "title": "早期殖民擴張（十六至十八世紀）",
+      "summary": "十六世紀初至十八世紀末歐洲國家向海外擴張的背景及原因：新航路的開闢、商業與宗教因素，以及早期殖民帝國的建立。",
+      "matchKeywords": [
+        "歐洲國家早期擴張（十六世紀初至十八世紀末）的背景及原因",
+        "早期擴張",
+        "新航路",
+        "重商主義"
+      ],
+      "classifyKeywords": [
+        "十六世紀",
+        "十七世紀",
+        "十八世紀",
+        "十五世紀",
+        "新航路",
+        "哥倫布",
+        "達伽馬",
+        "麥哲倫",
+        "航海",
+        "香料",
+        "黃金",
+        "白銀",
+        "傳教",
+        "早期擴張",
+        "重商主義",
+        "東印度公司"
+      ],
+      "sortOrder": 0,
+      "create": true
+    },
+    {
+      "key": "late",
+      "id": "topic-6-late-expansion",
+      "title": "後期殖民擴張（十九至二十世紀）",
+      "summary": "十九世紀末至二十世紀初歐洲國家瓜分非洲及亞洲的背景及原因：工業革命、帝國主義、原料與市場的需要。",
+      "matchKeywords": [
+        "歐洲國家後期擴張（十九世紀末至二十世紀初）的背景及原因",
+        "後期擴張",
+        "白人的負擔"
+      ],
+      "classifyKeywords": [
+        "十九世紀",
+        "二十世紀",
+        "工業革命",
+        "帝國主義",
+        "瓜分",
+        "非洲",
+        "原料",
+        "市場",
+        "資本",
+        "後期擴張",
+        "白人的負擔",
+        "民族主義",
+        "柏林會議"
+      ],
+      "sortOrder": 1,
+      "create": true
+    },
+    {
+      "key": "overview",
+      "id": "topic-6-causes",
+      "title": "歐洲殖民擴張的原因：綜合",
+      "summary": "同時涉及早期與後期擴張的題目，以及未能歸入單一時期、需教師覆核者。",
+      "matchKeywords": [
+        "歐洲殖民擴張的原因",
+        "歐洲國家擴張的原因"
+      ],
+      "classifyKeywords": [],
+      "sortOrder": 2,
+      "create": false
+    },
+    {
+      "key": "methods",
+      "id": "topic-6-methods-impact",
+      "title": "歐洲殖民擴張的方式及影響",
+      "summary": "歐洲殖民擴張的簡介、殖民政策的形成與演變、殖民擴張的方式（據點、殖民地、保護國、勢力範圍），以及對美、亞、非三洲與歐洲的影響。",
+      "matchKeywords": [
+        "歐洲殖民擴張的簡介",
+        "歐洲殖民擴張的方式及影響",
+        "殖民政策的形成與演變",
+        "殖民擴張的方式",
+        "據點",
+        "殖民地",
+        "保護國",
+        "勢力範圍",
+        "對美、亞、非三洲的影響",
+        "對歐洲的影響",
+        "社會及文化方面"
+      ],
+      "classifyKeywords": [
+        "據點",
+        "果亞",
+        "休達",
+        "專營權",
+        "勢力範圍",
+        "保護國",
+        "殖民地",
+        "殖民政策",
+        "對歐洲的影響",
+        "對美、亞、非三洲",
+        "社會及文化"
+      ],
+      "sortOrder": 3,
+      "create": false
+    }
+  ],
+  "questions": [
+    {
+      "id": "qb-NJCFN0060000006",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "early": 1,
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000007",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000008",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000009",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000010",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000011",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000012",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0050000013",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "late": 1,
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000014",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000015",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000016",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000017",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000018",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000019",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000020",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000021",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000022",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000023",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "early": 1,
+        "methods": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000024",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000025",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000026",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000055",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000027",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000028",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000029",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "early": 1,
+        "late": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000030",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000031",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000032",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000033",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000034",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000035",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000036",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000037",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "late": 1,
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000038",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000039",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "late": 1,
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000040",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000041",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000043",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000044",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000045",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000046",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000047",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000048",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000049",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000050",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000051",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000052",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000053",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000054",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000055-2",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 4
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000056",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000057",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000058",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "late": 1,
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000059",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000060",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000061",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000062",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000063",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000064",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000065",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000066",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 2,
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0060000067",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000068",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0060000069",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0060000008",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000009",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000010",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000011",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000012",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "early": 1,
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000013",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000014",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "early": 1,
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000015",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0060000016",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0060000017",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000018",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000019",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000020",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000021",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000022",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000023",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "early": 1,
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000057",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000058",
+      "sectionId": "topic-6-methods-impact",
+      "theme": "methods",
+      "ambiguous": false,
+      "scores": {
+        "methods": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000059",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0060000060",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0060000061",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0060000062",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0060000063",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0060000064",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0060000065",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0060000066",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0060000067",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "q_face54bfef60488b",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3,
+        "methods": 1
+      }
+    },
+    {
+      "id": "q_8b6e046569524867",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "q_a16729462e9442a2",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 4
+      }
+    },
+    {
+      "id": "q_6e369acda2e74bae",
+      "sectionId": "topic-6-early-expansion",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3,
+        "methods": 1
+      }
+    },
+    {
+      "id": "q_4bac032067b0488d",
+      "sectionId": "topic-6-late-expansion",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 4
+      }
+    },
+    {
+      "id": "q_05e779951d104e00",
+      "sectionId": "topic-6-causes",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "early": 1,
+        "late": 1
+      }
+    }
+  ],
+  "blockCounts": {
+    "topic-6-early-expansion": 155,
+    "topic-6-late-expansion": 200,
+    "topic-6-causes": 10,
+    "topic-6-methods-impact": 11
+  }
+}

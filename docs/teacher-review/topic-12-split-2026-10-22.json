@@ -1,0 +1,1017 @@
+{
+  "topicId": "topic-12",
+  "sourceSectionId": "topic-12-pre-war",
+  "sourceSectionIds": [
+    "topic-12-pre-war"
+  ],
+  "removedSectionIds": [],
+  "generatedAt": "2026-10-22T07:40:03.161Z",
+  "applied": true,
+  "actorEmail": "ipwh@pochiu.edu.hk",
+  "targets": [
+    {
+      "key": "economy",
+      "id": "topic-12-pre-war-economy",
+      "title": "戰前香港的經濟發展",
+      "summary": "第二次世界大戰前香港的轉口貿易、工業與金融發展，以及經濟發展帶來的社會變化。",
+      "matchKeywords": [
+        "戰前的經濟發展",
+        "戰前經濟",
+        "轉口貿易",
+        "經濟發展"
+      ],
+      "classifyKeywords": [
+        "經濟",
+        "貿易",
+        "轉口",
+        "工業",
+        "銀行",
+        "航運",
+        "百貨",
+        "商會",
+        "工廠",
+        "港口",
+        "鴉片",
+        "關稅",
+        "轉口港",
+        "英聯邦",
+        "製造",
+        "罐頭",
+        "醬油",
+        "廠",
+        "壟斷",
+        "船塢"
+      ],
+      "sortOrder": 0,
+      "create": true
+    },
+    {
+      "key": "chinese",
+      "id": "topic-12-pre-war-chinese",
+      "title": "戰前華人的崛起及其角色",
+      "summary": "戰前華人在經濟與社會上的崛起、華資企業及社團（東華三院、保良局等）的角色，以及他們面對的歧視與爭取。",
+      "matchKeywords": [
+        "戰前華人的崛起及其角色",
+        "華人崛起",
+        "華資",
+        "東華三院",
+        "保良局"
+      ],
+      "classifyKeywords": [
+        "華人",
+        "華資",
+        "東華",
+        "保良",
+        "何東",
+        "種族",
+        "平等待遇",
+        "華民政務司",
+        "歧視",
+        "地位",
+        "罷工",
+        "工會",
+        "非官守議員",
+        "同鄉",
+        "互助",
+        "街坊",
+        "何啟"
+      ],
+      "sortOrder": 1,
+      "create": true
+    },
+    {
+      "key": "overview",
+      "id": "topic-12-pre-war",
+      "title": "第二次世界大戰前的香港：綜合",
+      "summary": "同時涉及戰前經濟與華人社會的題目，以及未能歸入單一主題、需教師覆核者。",
+      "matchKeywords": [
+        "第二次世界大戰前的香港",
+        "戰前"
+      ],
+      "classifyKeywords": [],
+      "sortOrder": 2,
+      "create": false
+    }
+  ],
+  "questions": [
+    {
+      "id": "qb-NJCFN0120000001",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000081",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000002",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 2,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000082",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000003",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000004",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 3,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000005",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000083",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000084",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000006",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000007",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 4
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000085",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000008",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000009",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000010",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000011",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000086",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000087",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000088",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1,
+        "chinese": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000089",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000013",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000014",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000015",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0120000090",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000001",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000091",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000092",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 2,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000093",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000095",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000096",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000002",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 3,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000097",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000098",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000099",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000100",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000101",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000003",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000102",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000004",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000005",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000006",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000007",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000008",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000009",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000010",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000011",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000103",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000104",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000012",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000105",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000014",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000106",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000015",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000016",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000109",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000110",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000018",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000019",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000020",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000022",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000031",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000032",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000111",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000112",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000113",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000034",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000035",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000036",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000114",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000115",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000037",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000038",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000039",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000040",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000041",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000042",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000043",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000045",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000046",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000049",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000050",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000051",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000053",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000054",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000055",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000057",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000058",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000059",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000060",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000061",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000062",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000063",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000064",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000065",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000066",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000067",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000068",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000069",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000070",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0120000071",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000072",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0120000073",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "q_7e8cb79ac3984944",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 4
+      }
+    },
+    {
+      "id": "q_cae4dc982f024276",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 3
+      }
+    },
+    {
+      "id": "q_40215dcca3214311",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 2
+      }
+    },
+    {
+      "id": "q_07e41f1ce8484a1c",
+      "sectionId": "topic-12-pre-war-economy",
+      "theme": "economy",
+      "ambiguous": false,
+      "scores": {
+        "economy": 3
+      }
+    },
+    {
+      "id": "q_74a4b081d16142e0",
+      "sectionId": "topic-12-pre-war",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "economy": 1,
+        "chinese": 1
+      }
+    },
+    {
+      "id": "q_fa88aa9deb2c4925",
+      "sectionId": "topic-12-pre-war-chinese",
+      "theme": "chinese",
+      "ambiguous": false,
+      "scores": {
+        "chinese": 3
+      }
+    }
+  ],
+  "blockCounts": {
+    "topic-12-pre-war-economy": 347,
+    "topic-12-pre-war-chinese": 166,
+    "topic-12-pre-war": 25
+  }
+}

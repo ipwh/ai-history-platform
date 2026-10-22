@@ -249,6 +249,20 @@ export function insertBlocks(blocks: NewBlockInput[]): MaterialBlock[] {
   return listBlocksByDocument(blocks[0]?.documentId ?? "");
 }
 
+/**
+ * 把多個教材段落改掛到另一個分節（主題）。
+ *
+ * 與題目一樣，只改分類、不改內容；用於把過粗的主題按時期拆分。
+ */
+export function moveBlocksToSection(blockIds: string[], sectionId: string): number {
+  if (blockIds.length === 0) return 0;
+  const placeholders = blockIds.map(() => "?").join(", ");
+  const result = getDb()
+    .prepare(`UPDATE material_blocks SET section_id = ? WHERE id IN (${placeholders})`)
+    .run(sectionId, ...blockIds);
+  return Number(result.changes);
+}
+
 export function listBlocksByDocument(documentId: string): MaterialBlock[] {
   const rows = getDb()
     .prepare("SELECT * FROM material_blocks WHERE document_id = ? ORDER BY sort_order ASC")

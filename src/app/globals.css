@@ -717,18 +717,65 @@ body {
   font-size: 0.9rem;
 }
 
+/*
+ * 所有文字類輸入框及下拉選單共用同一套樣式。
+ *
+ * 搜尋框（type="search"）及日期框（type="date"）以往沒有列入這條規則，
+ * 於是沿用瀏覽器的預設外觀（極淺邊框、沒有內距），在表格旁邊看起來像普通文字，
+ * 教師難以辨認那是可以輸入的方格（2026-10-22 用家回報）。現在全部使用同一套
+ * 邊框、內距及焦點樣式，與按鈕（.btn）的深色邊框一致。
+ */
 input[type="text"],
 input[type="number"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+input[type="email"],
+input[type="password"],
+input[type="url"],
+input[type="tel"],
 textarea,
 select {
   width: 100%;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 10px;
   padding: 0.55rem 0.7rem;
   background: var(--surface);
   color: var(--foreground);
   font-family: inherit;
   font-size: 1rem;
+  min-height: 2.5rem;
+  box-shadow: 0 1px 2px rgba(28, 34, 48, 0.05);
+}
+
+input[type="text"]:hover,
+input[type="number"]:hover,
+input[type="search"]:hover,
+input[type="date"]:hover,
+input[type="time"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="url"]:hover,
+input[type="tel"]:hover,
+textarea:hover,
+select:hover {
+  border-color: var(--accent);
+}
+
+input[type="text"]:focus-visible,
+input[type="number"]:focus-visible,
+input[type="search"]:focus-visible,
+input[type="date"]:focus-visible,
+input[type="time"]:focus-visible,
+input[type="email"]:focus-visible,
+input[type="password"]:focus-visible,
+input[type="url"]:focus-visible,
+input[type="tel"]:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
 }
 
 textarea {

@@ -1,0 +1,943 @@
+{
+  "topicId": "topic-2",
+  "sourceSectionId": "topic-2-classical-intro",
+  "sourceSectionIds": [
+    "topic-2-classical-intro"
+  ],
+  "removedSectionIds": [],
+  "generatedAt": "2026-10-22T07:40:08.503Z",
+  "applied": true,
+  "actorEmail": "ipwh@pochiu.edu.hk",
+  "targets": [
+    {
+      "key": "greece",
+      "id": "topic-2-ancient-greece",
+      "title": "古希臘文明",
+      "summary": "古希臘的地理環境、城邦政治（雅典民主與斯巴達寡頭政治），以及希臘的文化成就與影響。",
+      "matchKeywords": [
+        "古希臘文明",
+        "古希臘的地理環境",
+        "斯巴達",
+        "雅典民主政治",
+        "城邦"
+      ],
+      "classifyKeywords": [
+        "古希臘",
+        "希臘",
+        "雅典",
+        "斯巴達",
+        "城邦",
+        "民主政治",
+        "寡頭",
+        "波斯",
+        "亞歷山大",
+        "奧林匹克",
+        "愛奧尼亞",
+        "帕特農"
+      ],
+      "sortOrder": 0,
+      "create": true
+    },
+    {
+      "key": "rome",
+      "id": "topic-2-ancient-rome",
+      "title": "古羅馬文明",
+      "summary": "古羅馬從共和到帝國的發展、政治制度與法律，以及羅馬帝國分裂與西羅馬帝國滅亡。",
+      "matchKeywords": [
+        "古羅馬文明",
+        "羅馬共和",
+        "羅馬元首制",
+        "羅馬帝國",
+        "羅馬共和國的擴張"
+      ],
+      "classifyKeywords": [
+        "古羅馬",
+        "羅馬",
+        "共和",
+        "元首制",
+        "帝國",
+        "凱撒",
+        "元老院",
+        "執政官",
+        "十二銅表",
+        "拉丁",
+        "拜占庭",
+        "東羅馬",
+        "西羅馬",
+        "君士坦丁"
+      ],
+      "sortOrder": 1,
+      "create": true
+    },
+    {
+      "key": "overview",
+      "id": "topic-2-classical-intro",
+      "title": "古典文明的介紹（概論與綜合）",
+      "summary": "歐洲歷史時期的劃分、早期文明概況，以及同時涉及古希臘與古羅馬的題目（未能歸入單一主題者亦保留於此）。",
+      "matchKeywords": [
+        "古典文明的介紹",
+        "歐洲歷史時期的劃分",
+        "歐洲的早期文明",
+        "古典文明"
+      ],
+      "classifyKeywords": [],
+      "sortOrder": 2,
+      "create": false
+    },
+    {
+      "key": "medieval",
+      "id": "topic-2-medieval-europe",
+      "title": "中古時代的歐洲與基督宗教世界的形成",
+      "summary": "西羅馬帝國滅亡後歐洲的轉變、基督宗教世界的形成、封建社會的特徵，以及中古時代的遺產與結束。",
+      "matchKeywords": [
+        "中古時代的歐洲與基督宗教世界的形成",
+        "基督宗教世界的形成",
+        "封建社會的出現及其特徵",
+        "中古時代的結束",
+        "中古時代"
+      ],
+      "classifyKeywords": [
+        "封建",
+        "領主",
+        "附庸",
+        "莊園",
+        "大憲章",
+        "中古時代",
+        "基督宗教",
+        "教會",
+        "城鎮",
+        "行會",
+        "1453"
+      ],
+      "sortOrder": 4,
+      "create": false
+    }
+  ],
+  "questions": [
+    {
+      "id": "qb-NJCFN0020000031",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 3,
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000002",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0020000033",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0020000032",
+      "sectionId": "topic-2-classical-intro",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "greece": 2,
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000003",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000034",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000035",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 7
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000005",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000036",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000037",
+      "sectionId": "topic-2-classical-intro",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "greece": 1,
+        "rome": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000006",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000007",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000009",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000038",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000008",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000039",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0020000040",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000041",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 3,
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000010",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "greece": 2,
+        "rome": 4
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000013",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000014",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 4
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000015",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000016",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000017",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000042",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 4
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000043",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000018",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000019",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 3,
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000020",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000021",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000044",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000022",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000023",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000024",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000025",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000046",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000027",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2,
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000045",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2,
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000029",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000047",
+      "sectionId": "topic-2-classical-intro",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "rome": 1,
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000048",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0020000049",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000001",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000031",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 3,
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000003",
+      "sectionId": "topic-2-classical-intro",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "greece": 2,
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000032",
+      "sectionId": "topic-2-classical-intro",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0020000005",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000033",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000034",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 4
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000006",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000007",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000008",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000035",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000009",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 5
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000036",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000010",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000037",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000012",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "greece": 1,
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000039",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "greece": 1,
+        "rome": 5
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000014",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000015",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000016",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000040",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000017",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000041",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000018",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000019",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000038",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000020",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000021",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000022",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000043",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000044",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000025",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000045",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000046",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000026",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000027",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000028",
+      "sectionId": "topic-2-classical-intro",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0020000029",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000047",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000048",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 2,
+        "medieval": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000049",
+      "sectionId": "topic-2-medieval-europe",
+      "theme": "medieval",
+      "ambiguous": false,
+      "scores": {
+        "medieval": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0020000030",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 3
+      }
+    },
+    {
+      "id": "q_13f6a2ce6dbd4619",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "greece": 2,
+        "rome": 4,
+        "medieval": 2
+      }
+    },
+    {
+      "id": "q_66fe047f027a43a4",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 4
+      }
+    },
+    {
+      "id": "q_c5ed6ae8cf6d47bb",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 3,
+        "medieval": 2
+      }
+    },
+    {
+      "id": "q_e443bcd6f63b4774",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 3
+      }
+    },
+    {
+      "id": "q_c52fc4d4ce794e58",
+      "sectionId": "topic-2-ancient-greece",
+      "theme": "greece",
+      "ambiguous": false,
+      "scores": {
+        "greece": 4,
+        "rome": 1
+      }
+    },
+    {
+      "id": "q_b8654d31b1394a44",
+      "sectionId": "topic-2-ancient-rome",
+      "theme": "rome",
+      "ambiguous": false,
+      "scores": {
+        "rome": 3,
+        "medieval": 2
+      }
+    }
+  ],
+  "blockCounts": {
+    "topic-2-ancient-greece": 310,
+    "topic-2-ancient-rome": 291,
+    "topic-2-classical-intro": 28,
+    "topic-2-medieval-europe": 50
+  }
+}

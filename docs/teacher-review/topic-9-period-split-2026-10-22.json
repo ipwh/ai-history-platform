@@ -1,0 +1,1760 @@
+{
+  "topicId": "topic-9",
+  "sourceSectionId": "topic-9-world-wars",
+  "sourceSectionIds": [
+    "topic-9-world-wars"
+  ],
+  "removedSectionIds": [],
+  "generatedAt": "2026-10-22T07:39:26.669Z",
+  "applied": true,
+  "actorEmail": "ipwh@pochiu.edu.hk",
+  "targets": [
+    {
+      "key": "ww1",
+      "id": "topic-9-ww1",
+      "title": "第一次世界大戰（1914–1918）：背景、經過與結果",
+      "summary": "第一次世界大戰爆發前的國際關係與衝突原因（民族主義、軍備競賽、同盟制度、巴爾幹問題）、戰爭經過及戰後安排。",
+      "matchKeywords": [
+        "第一次世界大戰",
+        "一戰",
+        "塞拉耶佛",
+        "巴爾幹",
+        "三國同盟",
+        "三國協約",
+        "軍備競賽",
+        "無畏艦"
+      ],
+      "classifyKeywords": [
+        "第一次世界大戰",
+        "一戰",
+        "1914",
+        "1915",
+        "1916",
+        "1917",
+        "1918",
+        "塞拉耶佛",
+        "巴爾幹",
+        "三國同盟",
+        "三國協約",
+        "施里芬",
+        "壕溝",
+        "無畏艦",
+        "軍備競賽",
+        "普法戰爭",
+        "極端民族主義",
+        "泛日耳曼",
+        "斯拉夫",
+        "同盟制度",
+        "民族主義",
+        "殖民競爭",
+        "動員"
+      ],
+      "sortOrder": 0,
+      "create": true
+    },
+    {
+      "key": "interwar",
+      "id": "topic-9-interwar",
+      "title": "兩次大戰之間（1919–1939）：巴黎和會、經濟大衰退與極權擴張",
+      "summary": "巴黎和會與《凡爾賽條約》、經濟大衰退、極權國家的興起與擴張、集體安全的失敗及綏靖政策。",
+      "matchKeywords": [
+        "巴黎和會",
+        "凡爾賽",
+        "經濟大衰退",
+        "極權",
+        "軸心國",
+        "集體安全",
+        "綏靖",
+        "國際聯盟"
+      ],
+      "classifyKeywords": [
+        "巴黎和會",
+        "凡爾賽",
+        "威瑪",
+        "經濟大衰退",
+        "經濟大蕭條",
+        "1929",
+        "1930年代",
+        "極權",
+        "納粹",
+        "法西斯",
+        "希特拉",
+        "墨索里尼",
+        "綏靖",
+        "軸心國",
+        "國際聯盟",
+        "國聯",
+        "集體安全",
+        "孤立主義",
+        "慕尼黑",
+        "萊茵",
+        "西班牙內戰",
+        "民族自決",
+        "裁軍",
+        "共產國際"
+      ],
+      "sortOrder": 1,
+      "create": true
+    },
+    {
+      "key": "ww2",
+      "id": "topic-9-ww2",
+      "title": "第二次世界大戰（1939–1945）：爆發、經過與結果",
+      "summary": "第二次世界大戰的爆發、主要戰役與結束，以及戰後的新國際秩序（包括聯合國的成立）。",
+      "matchKeywords": [
+        "第二次世界大戰",
+        "二戰",
+        "珍珠港",
+        "諾曼第",
+        "斯大林格勒",
+        "原子彈",
+        "雅爾塔",
+        "波茨坦"
+      ],
+      "classifyKeywords": [
+        "第二次世界大戰",
+        "二戰",
+        "1939",
+        "1940",
+        "1941",
+        "1942",
+        "1943",
+        "1944",
+        "1945",
+        "珍珠港",
+        "諾曼第",
+        "廣島",
+        "長崎",
+        "斯大林格勒",
+        "閃電戰",
+        "不列顛空戰",
+        "雅爾塔",
+        "波茨坦",
+        "原子彈",
+        "軸心國投降"
+      ],
+      "sortOrder": 2,
+      "create": true
+    },
+    {
+      "key": "overview",
+      "id": "topic-9-world-wars",
+      "title": "兩次世界大戰的關聯與比較",
+      "summary": "兩次世界大戰之間的關聯、整體影響，以及需要同時比較兩次大戰的題目（未能歸入單一時期者亦保留於此）。",
+      "matchKeywords": [
+        "兩次世界大戰",
+        "兩次大戰",
+        "關聯",
+        "比較"
+      ],
+      "classifyKeywords": [],
+      "sortOrder": 3,
+      "create": false
+    },
+    {
+      "key": "holocaust",
+      "id": "topic-9-holocaust",
+      "title": "種族滅絕：二戰期間的「猶太大屠殺」",
+      "summary": "種族滅絕的定義、反猶太主義的由來、納粹黨敵視猶太人的原因、對猶太人的迫害與大屠殺，以及戰後國際社會的審訊與反省。",
+      "matchKeywords": [
+        "種族滅絕",
+        "猶太大屠殺",
+        "反猶太主義",
+        "集中營",
+        "奧斯維辛",
+        "紐倫堡審判"
+      ],
+      "classifyKeywords": [
+        "猶太",
+        "種族滅絕",
+        "集中營",
+        "反猶",
+        "水晶之夜",
+        "紐倫堡",
+        "萬湖",
+        "奧斯維辛",
+        "大屠殺",
+        "最後解決"
+      ],
+      "sortOrder": 4,
+      "create": false,
+      "priority": true
+    }
+  ],
+  "questions": [
+    {
+      "id": "qb-JTH2ndEdFBQ09001",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "ww1": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09002",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "ww1": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09003",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09004",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "ww1": 2,
+        "interwar": 1,
+        "ww2": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09005",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09006",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 4
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09007",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09008",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09009",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09010",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09011",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09012",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09013",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09014",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09015",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09016",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09017",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09018",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09019",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09020",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09021",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09022",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09023",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09024",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09025",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09026",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09027",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09028",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09048",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09049",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09050",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09051",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09052",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 3,
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09053",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09054",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09055",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1,
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09056",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09057",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09058",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09059",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "ww1": 1,
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09060",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09061",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09062",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09063",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09064",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1,
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09065",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1,
+        "interwar": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09066",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09067",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09068",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09069",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09070",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09071",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09072",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09073",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09074",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09075",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09076",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09077",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09078",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09079",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09080",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09081",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "ww1": 1,
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09082",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09083",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09084",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09085",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09086",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09087",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09088",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 4
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09089",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09090",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09091",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09092",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09093",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09094",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "interwar": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09095",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "interwar": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09096",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09097",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09098",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09099",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1,
+        "ww2": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09100",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "interwar": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09101",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09102",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09103",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09104",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "interwar": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09105",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09106",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1,
+        "ww2": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09107",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "interwar": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09108",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09109",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09110",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "interwar": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ09111",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09001",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09002",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "interwar": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09003",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09004",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 2,
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09005",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1,
+        "ww2": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09006",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09007",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09008",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09009",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09010",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09011",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09012",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09013",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09016",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09018",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09023",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09027",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09053",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09060",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09061",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09062",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09063",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09064",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09065",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09067",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09069",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09071",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09072",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09073",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09074",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09075",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "interwar": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09076",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09077",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09079",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09080",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09081",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09082",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09084",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09085",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09087",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09089",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09090",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09091",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09092",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "interwar": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09093",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09095",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09096",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09097",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09098",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09101",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09102",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09103",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09104",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09105",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09106",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09109",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09112",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09113",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 2,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09114",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09116",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09117",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09118",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09119",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09120",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09121",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09122",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09123",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09127",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09128",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09129",
+      "sectionId": "topic-9-interwar",
+      "theme": "interwar",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09185",
+      "sectionId": "topic-9-holocaust",
+      "theme": "holocaust",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1,
+        "holocaust": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09188",
+      "sectionId": "topic-9-holocaust",
+      "theme": "holocaust",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1,
+        "holocaust": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09190",
+      "sectionId": "topic-9-holocaust",
+      "theme": "holocaust",
+      "ambiguous": false,
+      "scores": {
+        "interwar": 1,
+        "ww2": 1,
+        "holocaust": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09191",
+      "sectionId": "topic-9-holocaust",
+      "theme": "holocaust",
+      "ambiguous": false,
+      "scores": {
+        "holocaust": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09193",
+      "sectionId": "topic-9-holocaust",
+      "theme": "holocaust",
+      "ambiguous": false,
+      "scores": {
+        "holocaust": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09194",
+      "sectionId": "topic-9-ww2",
+      "theme": "ww2",
+      "ambiguous": false,
+      "scores": {
+        "ww2": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ09195",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "q_05c9e150d0df40e4",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "interwar": 1,
+        "ww2": 1
+      }
+    },
+    {
+      "id": "q_da7d79b858a247c8",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 2
+      }
+    },
+    {
+      "id": "q_bd90298a864841ad",
+      "sectionId": "topic-9-ww1",
+      "theme": "ww1",
+      "ambiguous": false,
+      "scores": {
+        "ww1": 4
+      }
+    },
+    {
+      "id": "q_cf245e8ac04f4d99",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "ww1": 7,
+        "interwar": 3,
+        "ww2": 2
+      }
+    },
+    {
+      "id": "q_254a4dabfe9349cf",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "ww1": 7,
+        "interwar": 4,
+        "ww2": 2
+      }
+    },
+    {
+      "id": "q_d0fa2079eeec46ab",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "ww1": 8,
+        "interwar": 3,
+        "ww2": 2
+      }
+    },
+    {
+      "id": "q_1c687d00379749c7",
+      "sectionId": "topic-9-world-wars",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "ww1": 7,
+        "interwar": 3,
+        "ww2": 2
+      }
+    }
+  ],
+  "blockCounts": {
+    "topic-9-ww1": 789,
+    "topic-9-interwar": 981,
+    "topic-9-ww2": 298,
+    "topic-9-world-wars": 58,
+    "topic-9-holocaust": 22
+  }
+}

@@ -283,3 +283,96 @@ describe("題目品質閘門：選項不可只是指代詞", () => {
     expect(result.issues.map((issue) => issue.code)).not.toContain("option-vague");
   });
 });
+
+describe("題目品質閘門：時序題不可把年份印在題幹", () => {
+  const CHRONOLOGY_UNITS: MaterialUnit[] = [
+    {
+      blockId: "blk_hk_postwar",
+      sourceLocation: "教材 · 戰後的政治及行政轉變",
+      text:
+        "1946年，港督楊慕琦提出政制改革方案。1966年及1967年，香港先後發生大規模暴動。" +
+        "1984年，中英兩國簽署《中英聯合聲明》。",
+    },
+  ];
+
+  it("題幹已列出各事件年份的時序題會被丟棄（2026-10-22 用家回報）", () => {
+    const result = checkQuestionQuality(
+      {
+        questionType: "mc",
+        question:
+          "以下三項事件均與香港政治及行政轉變有關：1946年楊慕琦提出政制改革方案、" +
+          "1966年及1967年的暴動、1984年簽署《中英聯合聲明》。試按時序排列這三項事件，並選出正確的次序。",
+        options: [
+          "楊慕琦提出政制改革方案 → 1966年及1967年的暴動 → 簽署《中英聯合聲明》",
+          "楊慕琦提出政制改革方案 → 簽署《中英聯合聲明》 → 1966年及1967年的暴動",
+          "1966年及1967年的暴動 → 楊慕琦提出政制改革方案 → 簽署《中英聯合聲明》",
+          "簽署《中英聯合聲明》 → 楊慕琦提出政制改革方案 → 1966年及1967年的暴動",
+        ],
+        correctAnswer: "楊慕琦提出政制改革方案 → 1966年及1967年的暴動 → 簽署《中英聯合聲明》",
+        explanation:
+          "1946年楊慕琦提出方案，1966年及1967年發生暴動，1984年簽署《中英聯合聲明》，故按年份先後排列如上。",
+        sourceExcerpt: "1946年，港督楊慕琦提出政制改革方案。1966年及1967年，香港先後發生大規模暴動。",
+        sourceBlockIds: ["blk_hk_postwar"],
+      },
+      CHRONOLOGY_UNITS,
+    );
+
+    const blocking = result.issues.filter((issue) => issue.severity === "blocking");
+    expect(blocking.map((issue) => issue.code)).toContain("chronology-given-away");
+    expect(result.outcome).toBe("reject");
+  });
+
+  it("題幹沒有寫出年份的時序題仍然可以保留", () => {
+    const units: MaterialUnit[] = [
+      {
+        blockId: "blk_crusade",
+        sourceLocation: "教材 · 十字軍東征",
+        text: "穆罕默德和平重返麥加後，阿拉伯帝國先後征服波斯帝國，其後十字軍東征。",
+      },
+    ];
+    const result = checkQuestionQuality(
+      {
+        questionType: "mc",
+        question:
+          "以下三項事件：阿拉伯帝國征服波斯帝國、穆罕默德和平重返麥加、十字軍東征。若按時間先後排列，正確的次序是：",
+        options: [
+          "穆罕默德和平重返麥加 → 阿拉伯帝國征服波斯帝國 → 十字軍東征",
+          "十字軍東征 → 阿拉伯帝國征服波斯帝國 → 穆罕默德和平重返麥加",
+          "阿拉伯帝國征服波斯帝國 → 十字軍東征 → 穆罕默德和平重返麥加",
+          "十字軍東征 → 穆罕默德和平重返麥加 → 阿拉伯帝國征服波斯帝國",
+        ],
+        correctAnswer: "穆罕默德和平重返麥加 → 阿拉伯帝國征服波斯帝國 → 十字軍東征",
+        explanation:
+          "教材先寫穆罕默德和平重返麥加，再寫阿拉伯帝國征服波斯帝國，十字軍東征在其後，故次序如上。",
+        sourceExcerpt: "穆罕默德和平重返麥加後，阿拉伯帝國先後征服波斯帝國，其後十字軍東征。",
+        sourceBlockIds: ["blk_crusade"],
+      },
+      units,
+    );
+
+    expect(result.issues.map((issue) => issue.code)).not.toContain("chronology-given-away");
+  });
+
+  it("考核公元／公元前先後的「排列年份」題目不受影響", () => {
+    const result = checkQuestionQuality(
+      {
+        questionType: "mc",
+        question: "按年代順序排列以下的年份。 i. 公元850年 ii. 公元前800年 iii. 公元前95年 iv. 公元15年",
+        options: ["i，ii，iii，iv", "ii，iii，iv，i", "iii，ii，iv，i", "iv，iii，ii，i"],
+        correctAnswer: "ii，iii，iv，i",
+        explanation: "公元前95年最早，其次是公元前800年，然後是公元15年及公元850年。",
+        sourceExcerpt: "公元前後的年份次序",
+        sourceBlockIds: ["blk_years"],
+      },
+      [
+        {
+          blockId: "blk_years",
+          sourceLocation: "教材 · 計算年代",
+          text: "公元前後的年份次序：公元前95年、公元前800年、公元15年、公元850年。",
+        },
+      ],
+    );
+
+    expect(result.issues.map((issue) => issue.code)).not.toContain("chronology-given-away");
+  });
+});

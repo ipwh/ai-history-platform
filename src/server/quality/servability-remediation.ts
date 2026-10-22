@@ -18,6 +18,7 @@ export type ServabilityIssueCode =
   | "MCQ_ANSWER_NOT_IN_OPTIONS"
   | "MCQ_ROMAN_LABEL_MISSING"
   | "MCQ_ANSWER_LEAKS"
+  | "MCQ_CHRONOLOGY_GIVEN_AWAY"
   | "UNKNOWN";
 
 export type ServabilityCategory =
@@ -49,6 +50,8 @@ const PATTERNS: { pattern: RegExp; code: ServabilityIssueCode }[] = [
   { pattern: /不在選項之內/, code: "MCQ_ANSWER_NOT_IN_OPTIONS" },
   { pattern: /羅馬數字/, code: "MCQ_ROMAN_LABEL_MISSING" },
   { pattern: /已出現在題幹中/, code: "MCQ_ANSWER_LEAKS" },
+  // 時序題把年份印在題幹：題目仍可作答，但答案已由題幹給出，需由教師改寫或停用
+  { pattern: /題幹已把年份寫在事件之前/, code: "MCQ_CHRONOLOGY_GIVEN_AWAY" },
 ];
 
 export function classifyServabilityIssue(reason: string | null): ServabilityIssueCode {
@@ -70,6 +73,7 @@ const CATEGORY_BY_CODE: Record<ServabilityIssueCode, ServabilityCategory> = {
   MCQ_ANSWER_NOT_IN_OPTIONS: "grading_contract_invalid",
   MCQ_ROMAN_LABEL_MISSING: "unanswerable",
   MCQ_ANSWER_LEAKS: "answer_mapping_suspect",
+  MCQ_CHRONOLOGY_GIVEN_AWAY: "other",
   UNKNOWN: "other",
 };
 

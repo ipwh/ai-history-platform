@@ -1,0 +1,1827 @@
+{
+  "topicId": "topic-5",
+  "sourceSectionId": "topic-5-renaissance-reformation",
+  "sourceSectionIds": [
+    "topic-5-renaissance-reformation"
+  ],
+  "removedSectionIds": [],
+  "generatedAt": "2026-10-22T07:39:54.496Z",
+  "applied": true,
+  "actorEmail": "ipwh@pochiu.edu.hk",
+  "targets": [
+    {
+      "key": "renaissance",
+      "id": "topic-5-renaissance",
+      "title": "文藝復興（十四至十七世紀）",
+      "summary": "文藝復興的起源與發展、人文主義的主要特點、出現原因，以及對歐洲藝術、學術與歷史發展的影響。",
+      "matchKeywords": [
+        "文藝復興",
+        "人文主義",
+        "起源與發展",
+        "主要特點",
+        "文藝復興的影響"
+      ],
+      "classifyKeywords": [
+        "文藝復興",
+        "人文主義",
+        "人文學者",
+        "彼特拉克",
+        "薄伽丘",
+        "薄伽邱",
+        "達文西",
+        "米開朗基羅",
+        "米開蘭基羅",
+        "拉斐爾",
+        "馬基雅維利",
+        "莎士比亞",
+        "贊助",
+        "佛羅倫斯",
+        "義大利半島",
+        "意大利半島",
+        "十四至十七世紀",
+        "十字軍東征",
+        "城邦",
+        "貿易樞紐",
+        "世俗生活",
+        "黑死病",
+        "封建社會",
+        "中古時代後期",
+        "以人為本",
+        "人本"
+      ],
+      "sortOrder": 0,
+      "create": true
+    },
+    {
+      "key": "reformation",
+      "id": "topic-5-reformation",
+      "title": "宗教改革（十六至十七世紀）",
+      "summary": "宗教改革的背景與發展、馬丁路德及其他改革者、新教教派的形成，以及宗教改革對歐洲政治、社會與文化的影響。",
+      "matchKeywords": [
+        "宗教改革",
+        "新教",
+        "馬丁路德",
+        "反宗教改革"
+      ],
+      "classifyKeywords": [
+        "宗教改革",
+        "馬丁路德",
+        "路德",
+        "加爾文",
+        "喀爾文",
+        "新教",
+        "贖罪券",
+        "九十五條",
+        "亨利八世",
+        "英國國教",
+        "反宗教改革",
+        "耶穌會",
+        "特倫多",
+        "天主教會"
+      ],
+      "sortOrder": 1,
+      "create": true
+    },
+    {
+      "key": "science",
+      "id": "topic-5-science-enlightenment",
+      "title": "科學革命與啟蒙運動",
+      "summary": "十六至十八世紀歐洲在科學與思想上的一系列變革：科學革命的原因、發展及影響，以及啟蒙運動的背景、思想、傳播及影響。",
+      "matchKeywords": [
+        "科學革命",
+        "啟蒙運動",
+        "理性時代",
+        "科學革命（十七至十八世紀）",
+        "科學革命的原因",
+        "科學革命的主要發展",
+        "科學革命出現原因",
+        "啟蒙運動（十七至十八世紀）",
+        "主要的啟蒙思想",
+        "啟蒙思想的傳播",
+        "啟蒙運動的影響"
+      ],
+      "classifyKeywords": [
+        "科學革命",
+        "啟蒙運動",
+        "哥白尼",
+        "伽利略",
+        "牛頓",
+        "維塞利亞斯",
+        "哈維",
+        "日心說",
+        "地心說",
+        "萬有引力",
+        "望遠鏡",
+        "伏爾泰",
+        "孟德斯鳩",
+        "盧梭",
+        "洛克",
+        "三權分立",
+        "權力分立",
+        "社會契約",
+        "天賦權利",
+        "皇家學會",
+        "血液循環",
+        "啟蒙思想",
+        "專制君主",
+        "理性",
+        "百科全書"
+      ],
+      "sortOrder": 3,
+      "create": false
+    },
+    {
+      "key": "overview",
+      "id": "topic-5-renaissance-reformation",
+      "title": "文藝復興與宗教改革：綜合與比較",
+      "summary": "同時涉及文藝復興與宗教改革的題目，以及未能歸入單一主題、需教師覆核的題目（例如中古後期的背景）。",
+      "matchKeywords": [
+        "文藝復興與宗教改革",
+        "從神本走向人本"
+      ],
+      "classifyKeywords": [],
+      "sortOrder": 2,
+      "create": false
+    }
+  ],
+  "questions": [
+    {
+      "id": "demo-q-renaissance-nature",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "demo-q-renaissance-features",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "demo-q-renaissance-causes",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "demo-q-renaissance-feudal",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 4
+      }
+    },
+    {
+      "id": "demo-q-renaissance-origin-place",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "demo-q-renaissance-origin-literature",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "demo-q-renaissance-origin-reason",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "demo-q-renaissance-dante",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "demo-q-renaissance-decameron",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "demo-q-renaissance-vinci",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "demo-q-renaissance-michelangelo",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "demo-q-renaissance-impact",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "demo-q-reformation-nature",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 1
+      }
+    },
+    {
+      "id": "demo-q-reformation-background",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 1
+      }
+    },
+    {
+      "id": "demo-q-reformation-95theses",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 4
+      }
+    },
+    {
+      "id": "demo-q-reformation-sola-fide",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 3
+      }
+    },
+    {
+      "id": "demo-q-reformation-trigger",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 2
+      }
+    },
+    {
+      "id": "demo-q-reformation-protestant",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 4
+      }
+    },
+    {
+      "id": "demo-q-reformation-impact-war",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05001",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05002",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05003",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05004",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05005",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05006",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05007",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05008",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05009",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05010",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2,
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05011",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05012",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05013",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05014",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05015",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05016",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05017",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05018",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05019",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05020",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05021",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05022",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05023",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05026",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05027",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05028",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05029",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2,
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05030",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05031",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05032",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05033",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05034",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05035",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05036",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2,
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05037",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1,
+        "reformation": 1,
+        "science": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05038",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1,
+        "science": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05039",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05040",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05041",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2,
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05042",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 4
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05043",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05044",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 5
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05045",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05046",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05047",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 4
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05048",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ05049",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05001",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05002",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05004",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05005",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05006",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05007",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05008",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05009",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05010",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05011",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05012",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05013",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05014",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05015",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05016",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05017",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05018",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05019",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05020",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05021",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05022",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05023",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05024",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05025",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05026",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05029",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05031",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05032",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05033",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05034",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05035",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1,
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05036",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1,
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05038",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05039",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05040",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05041",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05042",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05043",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05044",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05045",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05046",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05047",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05048",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1,
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05049",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05050",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05051",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05052",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05053",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05054",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05055",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05056",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05057",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05058",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 5
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05059",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05060",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05061",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05062",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05064",
+      "sectionId": "topic-5-reformation",
+      "theme": "reformation",
+      "ambiguous": false,
+      "scores": {
+        "reformation": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05066",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1,
+        "science": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05067",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1,
+        "science": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05068",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05070",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05071",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05072",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05073",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05074",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05081",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05082",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05083",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05084",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05085",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05088",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "science": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05089",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1,
+        "science": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05093",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05094",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05096",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05100",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05101",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05102",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05104",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05105",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05106",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05108",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05109",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05110",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05113",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05114",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05115",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05116",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05120",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05121",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05122",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05123",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05124",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05125",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05126",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05127",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05132",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05135",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05136",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05137",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05153",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05154",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05155",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05156",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05157",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05158",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05159",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05160",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05163",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05164",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05165",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05166",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05167",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05172",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05174",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05175",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05176",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05177",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05179",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05180",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05181",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05182",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05186",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05187",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05188",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05190",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ05191",
+      "sectionId": "topic-5-renaissance-reformation",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "q_7389fa12d3974477",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1
+      }
+    },
+    {
+      "id": "q_ff28bac3d8f643be",
+      "sectionId": "topic-5-renaissance",
+      "theme": "renaissance",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 3
+      }
+    },
+    {
+      "id": "q_5d966d0593e64eb2",
+      "sectionId": "topic-5-science-enlightenment",
+      "theme": "science",
+      "ambiguous": false,
+      "scores": {
+        "renaissance": 1,
+        "reformation": 1,
+        "science": 3
+      }
+    }
+  ],
+  "blockCounts": {
+    "topic-5-renaissance": 995,
+    "topic-5-reformation": 363,
+    "topic-5-science-enlightenment": 408,
+    "topic-5-renaissance-reformation": 8
+  }
+}

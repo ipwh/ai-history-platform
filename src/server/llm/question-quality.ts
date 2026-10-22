@@ -15,6 +15,7 @@
  * 交由教師覆核跟進。
  */
 import type { QuestionType } from "../../lib/types";
+import { chronologyGivenAwayReason } from "./chronology-stem";
 import { normalizeForMatch, splitSentences } from "../materials/text-utils";
 import {
   analyseMaterial,
@@ -31,6 +32,7 @@ export type QualityIssueCode =
   | "option-vague"
   | "stem-answer-type-mismatch"
   | "answer-in-stem"
+  | "chronology-given-away"
   | "answer-not-in-material"
   | "explanation-unsupported"
   | "copied-source"
@@ -1095,6 +1097,12 @@ export function checkQuestionQuality(
 
   const leak = answerLeakReason(candidate);
   if (leak !== null) blocking("answer-in-stem", leak);
+
+  // 時序題把年份印在題幹，排序答案等於直接給出：題目沒有考核時序。
+  // 與 question-servability.ts 共用同一判定（同樣只針對選擇題，避免誤擋填充題）。
+  const chronology =
+    candidate.questionType === "mc" ? chronologyGivenAwayReason(candidate.question) : null;
+  if (chronology !== null) blocking("chronology-given-away", chronology);
 
   const explanation = candidate.explanation.trim();
   if (explanation.length === 0) {

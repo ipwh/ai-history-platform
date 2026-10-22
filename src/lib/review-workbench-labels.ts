@@ -43,6 +43,7 @@ export const SERVABILITY_REASON_TEXT: Record<string, string> = {
   MCQ_ANSWER_NOT_IN_OPTIONS: "記錄的正確答案不在選項之內。",
   MCQ_ROMAN_LABEL_MISSING: "題幹使用羅馬數字小項，但選項未能對應。",
   MCQ_ANSWER_LEAKS: "正確答案已出現在題幹中，等同直接提供答案。",
+  MCQ_CHRONOLOGY_GIVEN_AWAY: "時序題的題幹已列出各事件的年份，學生只須比較題幹的年份即可排序，題目沒有考核時序。",
   UNKNOWN: "系統未能判斷具體原因，需要直接審閱題目。",
 };
 

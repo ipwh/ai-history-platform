@@ -310,8 +310,9 @@ describe("分節可用性（介面顯示用，取代容易誤解的題目數量�
     const overview = topicService.getTopicDetail("topic-5", null);
     expect(overview).not.toBeNull();
 
-    // 2026-10-20：課題5 整合為 4 個主題，學生直接選取這 4 個主題
-    expect(overview!.sections).toHaveLength(4);
+    // 2026-10-22：課題5 的「文藝復興與宗教改革」按時期再分為 3 個主題，
+    // 連同科學革命、工業革命及法國大革命，學生共可選 6 個主題。
+    expect(overview!.sections).toHaveLength(6);
     for (const theme of overview!.sections) {
       expect(theme.children).toHaveLength(0);
       expect(theme.materialBlockCount).toBeGreaterThan(0);
@@ -320,10 +321,14 @@ describe("分節可用性（介面顯示用，取代容易誤解的題目數量�
       expect(types.isSectionPractisable(theme, "ai")).toBe(true);
     }
 
-    const renaissance = overview!.sections.find(
+    const overviewTheme = overview!.sections.find(
       (section) => section.id === "topic-5-renaissance-reformation",
     );
-    expect(renaissance?.title).toBe("文藝復興與宗教改革");
+    expect(overviewTheme?.title).toBe("文藝復興與宗教改革：綜合與比較");
+    const renaissance = overview!.sections.find(
+      (section) => section.id === "topic-5-renaissance",
+    );
+    expect(renaissance?.title).toBe("文藝復興（十四至十七世紀）");
   });
 
   it("教材未開放給學生時，學生端可用段落數為 0，AI 出題不可選（但題庫仍可）", () => {

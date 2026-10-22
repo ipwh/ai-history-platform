@@ -1,0 +1,2292 @@
+{
+  "topicId": "topic-10",
+  "sourceSectionId": "topic-10-coldwar-development",
+  "sourceSectionIds": [
+    "topic-10-coldwar-development"
+  ],
+  "removedSectionIds": [],
+  "generatedAt": "2026-10-22T07:39:57.821Z",
+  "applied": true,
+  "actorEmail": "ipwh@pochiu.edu.hk",
+  "targets": [
+    {
+      "key": "early",
+      "id": "topic-10-coldwar-start",
+      "title": "冷戰的展開與初期對抗（1946–1953）",
+      "summary": "冷戰在歐洲的形成：鐵幕演說、杜魯門主義、馬歇爾計劃、柏林封鎖、北約成立及韓戰。",
+      "matchKeywords": [
+        "冷戰的展開",
+        "初期緊張",
+        "鐵幕",
+        "杜魯門主義",
+        "馬歇爾計劃",
+        "柏林封鎖",
+        "北約"
+      ],
+      "classifyKeywords": [
+        "鐵幕",
+        "杜魯門",
+        "馬歇爾",
+        "柏林封鎖",
+        "空運",
+        "北約",
+        "韓戰",
+        "1946",
+        "1947",
+        "1948",
+        "1949",
+        "1950",
+        "1951",
+        "1952",
+        "1953",
+        "原子彈",
+        "衛星國",
+        "佔領區",
+        "波茨坦",
+        "西德",
+        "東德",
+        "朝鮮",
+        "韓國",
+        "金日成",
+        "朝鮮戰爭",
+        "東南亞條約",
+        "遏制",
+        "經濟援助",
+        "冷戰對手",
+        "中華人民共和國"
+      ],
+      "sortOrder": 1,
+      "create": true
+    },
+    {
+      "key": "middle",
+      "id": "topic-10-coldwar-middle",
+      "title": "冷戰的起伏：解凍、危機與緩和（1953–1979）",
+      "summary": "史太林去世後的短暫緩和、柏林圍牆與古巴導彈危機、越戰，以及1970年代的緩和（乒乓外交、尼克遜訪華）。",
+      "matchKeywords": [
+        "冷戰解凍",
+        "古巴導彈危機",
+        "越戰",
+        "冷戰緩和",
+        "乒乓外交"
+      ],
+      "classifyKeywords": [
+        "解凍",
+        "史太林",
+        "日內瓦",
+        "匈牙利",
+        "柏林圍牆",
+        "古巴導彈",
+        "越戰",
+        "越南",
+        "緩和",
+        "乒乓",
+        "尼克遜",
+        "赫爾辛基",
+        "赫魯曉夫",
+        "艾森豪威爾",
+        "U-2",
+        "高峰會",
+        "導彈",
+        "和平共存",
+        "共存",
+        "太空",
+        "1955",
+        "1956",
+        "1957",
+        "1958",
+        "1959",
+        "1960",
+        "1961",
+        "1962",
+        "1963",
+        "1964",
+        "1965",
+        "1966",
+        "1967",
+        "1968",
+        "1969",
+        "1970",
+        "1971",
+        "1972",
+        "1975"
+      ],
+      "sortOrder": 2,
+      "create": true
+    },
+    {
+      "key": "late",
+      "id": "topic-10-coldwar-late",
+      "title": "冷戰再度加劇（1979–1985）",
+      "summary": "蘇聯入侵阿富汗、美蘇軍備競賽與「星戰計劃」，以及1980年代初期美蘇關係的再次緊張。",
+      "matchKeywords": [
+        "冷戰再度加劇",
+        "蘇聯入侵阿富汗",
+        "軍備競賽",
+        "星戰計劃"
+      ],
+      "classifyKeywords": [
+        "阿富汗",
+        "軍備競賽",
+        "星戰",
+        "戰略防禦",
+        "列根",
+        "1980",
+        "1981",
+        "1982",
+        "1983",
+        "1984",
+        "1985"
+      ],
+      "sortOrder": 3,
+      "create": true
+    },
+    {
+      "key": "overview",
+      "id": "topic-10-coldwar-development",
+      "title": "冷戰的發展：跨階段比較",
+      "summary": "同時涉及冷戰多個階段（例如由初期對抗到緩和再到再度加劇）的題目，以及未能歸入單一階段者。",
+      "matchKeywords": [
+        "冷戰的主要發展",
+        "冷戰的發展",
+        "跨階段"
+      ],
+      "classifyKeywords": [],
+      "sortOrder": 6,
+      "create": false
+    }
+  ],
+  "questions": [
+    {
+      "id": "qb-JTH2ndEdFBQ10027",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10028",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10029",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10030",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2,
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10031",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10032",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10033",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10034",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10035",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10036",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10037",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10038",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10039",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10040",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10042",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10043",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10044",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10045",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10046",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10047",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10048",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10049",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10050",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10051",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10052",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10053",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10054",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10055",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10056",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10057",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 4
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10058",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10059",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10060",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10061",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10062",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "early": 1,
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10063",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3,
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10064",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "early": 1,
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10065",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10066",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10067",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "early": 1,
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10068",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10069",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10070",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "early": 1,
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10071",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10072",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10073",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 5
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10074",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10075",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10076",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10077",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10078",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10079",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10080",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 4
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10081",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10082",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3,
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10083",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10084",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10085",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "early": 1,
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10086",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10087",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10088",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10089",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10090",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10091",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10092",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10093",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10094",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10095",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10096",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10097",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10098",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10099",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10100",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10101",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "early": 1,
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10102",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10103",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10104",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "early": 1,
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10105",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10106",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10107",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10108",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10109",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10110",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10111",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10112",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10113",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "early": 1,
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10114",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10115",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10116",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10117",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10118",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10119",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10120",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10121",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10122",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10123",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10124",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10125",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10126",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10127",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10128",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10129",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10130",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10131",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10132",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10133",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10134",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10135",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10136",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10137",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10138",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10139",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10140",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10141",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10142",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10143",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10144",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10145",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10146",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10147",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10148",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10149",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10150",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2,
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10151",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10152",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10153",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10154",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10155",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10156",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10157",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10158",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10159",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10160",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10161",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10162",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10163",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10164",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10165",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10166",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10167",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10168",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10169",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10170",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10171",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10172",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10173",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10174",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10175",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10176",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10177",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10178",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10179",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10180",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10181",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdFBQ10182",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10021",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10022",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10023",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10024",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10025",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10026",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10027",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10028",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10029",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10030",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10031",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10032",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10034",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10035",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10036",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10037",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10038",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10039",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10040",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10042",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "early": 1,
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10043",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "early": 1,
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10044",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10045",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10046",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10047",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10049",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10050",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10051",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10052",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10053",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10055",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10056",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10057",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10058",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10059",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10060",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 2,
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10061",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "early": 1,
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10062",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "early": 1,
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10063",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10064",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10065",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10066",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "early": 1,
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10067",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10069",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10073",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10074",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "early": 1,
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10075",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10077",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10078",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10079",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10080",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10081",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10082",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10083",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 3
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10085",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10086",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10087",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10088",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10089",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10090",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10092",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10093",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10094",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10096",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10097",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10098",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10101",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10103",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10105",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10106",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10107",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10108",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10109",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10110",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10111",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10112",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 4
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10113",
+      "sectionId": "topic-10-coldwar-middle",
+      "theme": "middle",
+      "ambiguous": false,
+      "scores": {
+        "middle": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10114",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10115",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10116",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10117",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10118",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10119",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10120",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 2
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10121",
+      "sectionId": "topic-10-coldwar-development",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "middle": 1,
+        "late": 1
+      }
+    },
+    {
+      "id": "qb-JTH2ndEdMCQ10122",
+      "sectionId": "topic-10-coldwar-late",
+      "theme": "late",
+      "ambiguous": false,
+      "scores": {
+        "late": 2
+      }
+    },
+    {
+      "id": "q_026c9410c1504daf",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "q_ddd531b0295d458e",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "q_e5ef1ecceedf4e0f",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 5
+      }
+    },
+    {
+      "id": "q_dcab5dca00144f2d",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 4
+      }
+    },
+    {
+      "id": "q_87aa2f056b4c4876",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 3
+      }
+    },
+    {
+      "id": "q_2db192fbcbf04d5e",
+      "sectionId": "topic-10-coldwar-start",
+      "theme": "early",
+      "ambiguous": false,
+      "scores": {
+        "early": 5
+      }
+    }
+  ],
+  "blockCounts": {
+    "topic-10-coldwar-start": 1599,
+    "topic-10-coldwar-middle": 1682,
+    "topic-10-coldwar-late": 290,
+    "topic-10-coldwar-development": 22
+  }
+}

@@ -1,0 +1,1425 @@
+{
+  "topicId": "topic-7",
+  "sourceSectionId": "topic-7-revolution",
+  "sourceSectionIds": [
+    "topic-7-revolution",
+    "topic-7-expansion",
+    "topic-7-civil-war"
+  ],
+  "removedSectionIds": [
+    "topic-7-expansion",
+    "topic-7-civil-war"
+  ],
+  "generatedAt": "2026-10-22T07:40:00.478Z",
+  "applied": true,
+  "actorEmail": "ipwh@pochiu.edu.hk",
+  "targets": [
+    {
+      "key": "revolution",
+      "id": "topic-7-revolution-early",
+      "title": "美國革命的背景與經過（1775–1783）",
+      "summary": "北美殖民地的背景、革命的內外成因與導火線、獨立戰爭的經過，以及革命的影響。",
+      "matchKeywords": [
+        "美國革命的內外因素及影響",
+        "美國革命的內外成因",
+        "背景、成因與導火線",
+        "美國革命（1775-1783年）",
+        "美國革命的影響"
+      ],
+      "classifyKeywords": [
+        "美國革命",
+        "獨立宣言",
+        "獨立戰爭",
+        "波士頓",
+        "傾茶",
+        "印花稅",
+        "茶稅",
+        "1775",
+        "1776",
+        "1777",
+        "1778",
+        "1781",
+        "1783",
+        "華盛頓",
+        "大陸會議",
+        "列剋星敦",
+        "殖民地",
+        "母國"
+      ],
+      "sortOrder": 0,
+      "create": true
+    },
+    {
+      "key": "constitution",
+      "id": "topic-7-constitution",
+      "title": "美國憲法與政治體制",
+      "summary": "1787年制憲、三權分立的聯邦制度、國會與總統的職權，以及《權利法案》。",
+      "matchKeywords": [
+        "十八世紀末美國的政治體制與憲法",
+        "行政機關",
+        "憲法",
+        "三權分立"
+      ],
+      "classifyKeywords": [
+        "憲法",
+        "制憲",
+        "三權分立",
+        "國會",
+        "總統",
+        "最高法院",
+        "聯邦",
+        "1787",
+        "1789",
+        "權利法案",
+        "選舉人",
+        "行政機關",
+        "立法",
+        "司法"
+      ],
+      "sortOrder": 1,
+      "create": true
+    },
+    {
+      "key": "nineteenth",
+      "id": "topic-7-nineteenth-century",
+      "title": "十九世紀的美國：領土拓展與南北內戰",
+      "summary": "十九世紀美國向西拓展領土的過程、移民（包括華人）的經歷，以及南北內戰的爆發、影響與戰後發展。",
+      "matchKeywords": [
+        "十九世紀的美國領土拓展",
+        "十九世紀的領土拓展",
+        "追尋美國夢的移民",
+        "華人移居美國的原因",
+        "早期華人勞工在美國的生活及經歷",
+        "南北內戰前後的美國",
+        "美國南北內戰（1861-1865年）",
+        "美國南北內戰的影響",
+        "美國南北內戰後的重要發展"
+      ],
+      "classifyKeywords": [
+        "領土拓展",
+        "西進",
+        "移民",
+        "華工",
+        "華人勞工",
+        "鐵路",
+        "加利福尼亞",
+        "德克薩斯",
+        "路易斯安那",
+        "南北內戰",
+        "內戰",
+        "林肯",
+        "1861",
+        "1865",
+        "奴隸",
+        "莊園",
+        "南方",
+        "北方",
+        "重建",
+        "堪薩斯",
+        "門羅主義",
+        "關稅",
+        "佛羅里達",
+        "德克薩斯",
+        "阿拉斯加",
+        "加州",
+        "華人歧視",
+        "外交方針",
+        "購地",
+        "版圖",
+        "民兵",
+        "地方議會",
+        "1823",
+        "1845",
+        "1848",
+        "1867"
+      ],
+      "sortOrder": 2,
+      "create": true
+    },
+    {
+      "key": "overview",
+      "id": "topic-7-revolution",
+      "title": "美國革命與建國：綜合與比較",
+      "summary": "同時涉及革命、憲法及十九世紀發展的題目，以及未能歸入單一主題、需教師覆核者。",
+      "matchKeywords": [
+        "美國革命的內外因素及影響",
+        "美國革命與建國"
+      ],
+      "classifyKeywords": [],
+      "sortOrder": 3,
+      "create": false
+    }
+  ],
+  "questions": [
+    {
+      "id": "q_da180eee13c445d0",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 4
+      }
+    },
+    {
+      "id": "q_bb3e34c488964cf4",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 1,
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "q_c294ac83bde34170",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 5
+      }
+    },
+    {
+      "id": "q_062b472f4d2043a9",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 4
+      }
+    },
+    {
+      "id": "q_3f9da4fcad3f4fc8",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "q_5ee81414593e4cc5",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "constitution": 1,
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "q_26e5b13b908048e2",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "q_bed0171f47ab4a08",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "q_195cdf55ba434a91",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 1,
+        "nineteenth": 4
+      }
+    },
+    {
+      "id": "q_ef267915eaa14094",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "q_cd7c5b3bec524292",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "q_9b48cf168a1c4601",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "q_48ca46bc8d484e7c",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "q_5b011f18e7824470",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "q_dd971caed1dc446f",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "q_c7414abbf56b4d2d",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 4
+      }
+    },
+    {
+      "id": "q_edcda96341a64894",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "q_a5dbee3218bd4c56",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000001",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000003",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000004",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "revolution": 1,
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000005",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000006",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000007",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "revolution": 1,
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000008",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000009",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000010",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000011",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000012",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000013",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000014",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000015",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000016",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000018",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000019",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000021",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000023",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000025",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000026",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000027",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000028",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000029",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0070000030",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000031",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0070000032",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0070000033",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000035",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000036",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0070000037",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0070000038",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0070000040",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000041",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000042",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 4
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000043",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 1,
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000044",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000045",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 4
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000046",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "constitution": 1,
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000047",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000048",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000049",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 1,
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000050",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "constitution": 1,
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000051",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 1,
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000052",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 4
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000053",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 1,
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000054",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 4
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000055",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 2,
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000056",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000057",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCFN0070000058",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCFN0070000059",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0070000001",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000002",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000003",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000004",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "revolution": 1,
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000005",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000006",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "revolution": 1,
+        "constitution": 1,
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000007",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000008",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000009",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000010",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 2,
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000011",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000012",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000013",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000014",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000015",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000016",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000017",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000018",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0070000019",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000020",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000021",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000022",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000023",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "revolution": 1,
+        "constitution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000024",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000025",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000026",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000027",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000028",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000029",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000030",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1,
+        "constitution": 1,
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000031",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000032",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000033",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0070000034",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0070000035",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0070000036",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000037",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000038",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0070000039",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000040",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000041",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0070000042",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000043",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000044",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000045",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000046",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000047",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000048",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "constitution": 2,
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000049",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 4
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000050",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000051",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000052",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000053",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 1,
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000054",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000055",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": false,
+      "scores": {}
+    },
+    {
+      "id": "qb-NJCMN0070000056",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000057",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 1
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000058",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000059",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "constitution": 1,
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000060",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000061",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 4
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000062",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000063",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000064",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 2
+      }
+    },
+    {
+      "id": "qb-NJCMN0070000065",
+      "sectionId": "topic-7-nineteenth-century",
+      "theme": "nineteenth",
+      "ambiguous": false,
+      "scores": {
+        "nineteenth": 3
+      }
+    },
+    {
+      "id": "q_3f98589a298e4473",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1,
+        "constitution": 2
+      }
+    },
+    {
+      "id": "q_ee725bfb1ea04d44",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    },
+    {
+      "id": "q_b47eb2e78a1a4163",
+      "sectionId": "topic-7-constitution",
+      "theme": "constitution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1,
+        "constitution": 2
+      }
+    },
+    {
+      "id": "q_34ad8663c1cf438a",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 3
+      }
+    },
+    {
+      "id": "q_89fb3e74a5b746cc",
+      "sectionId": "topic-7-revolution",
+      "theme": null,
+      "ambiguous": true,
+      "scores": {
+        "revolution": 3,
+        "constitution": 3
+      }
+    },
+    {
+      "id": "q_5905331a031d483c",
+      "sectionId": "topic-7-revolution-early",
+      "theme": "revolution",
+      "ambiguous": false,
+      "scores": {
+        "revolution": 1
+      }
+    }
+  ],
+  "blockCounts": {
+    "topic-7-revolution-early": 63,
+    "topic-7-constitution": 69,
+    "topic-7-nineteenth-century": 437,
+    "topic-7-revolution": 11
+  }
+}

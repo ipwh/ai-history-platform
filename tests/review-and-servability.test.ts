@@ -28,6 +28,10 @@ describe("結構不可作答：issue code 與建議", () => {
     ["選擇題的標準答案「甲」不在選項之內", "MCQ_ANSWER_NOT_IN_OPTIONS"],
     ["選項以羅馬數字（i、ii）指涉題幹的陳述，但題幹沒有 i、ii 的標示，學生無法對應哪一句是哪一項", "MCQ_ROMAN_LABEL_MISSING"],
     ["選擇題的標準答案「甲」已出現在題幹中，答案直接外洩", "MCQ_ANSWER_LEAKS"],
+    [
+      "題幹已把年份寫在事件之前（1946年、1967年的暴動、1984年），學生只須比較題幹印出的年份即可排出次序，並未考核時序；請刪去題幹的年份，或改為考核其他歷史理解",
+      "MCQ_CHRONOLOGY_GIVEN_AWAY",
+    ],
   ];
 
   it("每一種實際 reason 都對應穩定 issue code", () => {

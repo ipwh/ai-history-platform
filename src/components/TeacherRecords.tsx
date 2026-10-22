@@ -109,6 +109,8 @@ export function TeacherRecords() {
   const [overviewOpen, setOverviewOpen] = useState(false);
   const recordsRef = useRef<HTMLDivElement | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
+  // 每次查詢的流水號；見 handleQuery（避免較慢的舊請求覆蓋新結果）
+  const requestSequence = useRef(0);
   // 每次查詢後遞增並指定捲動位置；畫面更新後才捲動，避免捲到尚未更新的內容。
   const [scrollRequest, setScrollRequest] = useState<{
     target: "results" | "records";
@@ -154,9 +156,18 @@ export function TeacherRecords() {
     filters: Filters,
     options: { focusLearnerId?: string } = {},
   ) => {
+    /**
+     * 每次查詢都取得一個流水號；回覆回來時若已有更新的查詢，就丟棄這次結果。
+     *
+     * 學習者選單改為「選好即查詢」後，老師可能連續點選幾位學生；沒有這個守衛時，
+     * 較慢的舊請求會覆蓋較新的結果，畫面顯示的學生與選單不一致。
+     */
+    const sequence = requestSequence.current + 1;
+    requestSequence.current = sequence;
     setLoading(true);
     try {
       const result = await fetchRecords(filters);
+      if (sequence !== requestSequence.current) return;
       setData(result);
       setApplied(filters);
       setError(null);
@@ -169,9 +180,10 @@ export function TeacherRecords() {
         setScrollRequest((current) => ({ target: "results", token: (current?.token ?? 0) + 1 }));
       }
     } catch (caught) {
+      if (sequence !== requestSequence.current) return;
       setError(caught);
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
   };
 
@@ -284,7 +296,7 @@ export function TeacherRecords() {
           <h2 className="font-semibold">篩選</h2>
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="text-sm">
-              班別（收窄學習者清單）
+              班別
               <select
                 value={classFilter}
                 onChange={(event) => {
@@ -312,7 +324,7 @@ export function TeacherRecords() {
               />
             </label>
             <label className="text-sm">
-              活動狀態（收窄學習者清單）
+              活動狀態
               <select
                 value={activityFilter}
                 onChange={(event) => {
@@ -351,7 +363,14 @@ export function TeacherRecords() {
             學習者
             <select
               value={draft.learnerId}
-              onChange={(event) => setDraft({ ...draft, learnerId: event.target.value })}
+              onChange={(event) => {
+                const filters = { ...draft, learnerId: event.target.value };
+                setDraft(filters);
+                // 選好學習者後立即查詢並捲到逐題記錄，不必再按「查詢記錄」
+                void handleQuery(filters, {
+                  focusLearnerId: filters.learnerId === "" ? undefined : filters.learnerId,
+                });
+              }}
             >
               <option value="">全部學習者（{learnerOptions.length} 位）</option>
               {learnerOptions.map((learner) => (
@@ -456,11 +475,6 @@ export function TeacherRecords() {
             你已更改篩選，但下方清單仍是上一次查詢的結果。按「查詢記錄」可更新畫面；直接按匯出會先套用新的篩選再下載。
           </Notice>
         ) : null}
-        <p className="text-xs text-gray-500">
-          四種格式內容一致：<strong>Excel</strong> 有「匯出說明」「練習概況」及「逐題記錄」三張工作表，適合統計；
-          <strong>Word／PDF</strong> 以每次練習為一節，附逐題表格，適合列印或存檔（超過 120 次練習時只列最近 120 次）；
-          <strong>CSV</strong> 每題一列，可用其他工具處理。
-        </p>
         </div>
 
         <div

@@ -228,6 +228,19 @@ export function deleteSection(sectionId: string): void {
 }
 
 /**
+ * 調整分節的顯示次序（只改 `sort_order`）。
+ *
+ * 拆分過粗的主題時，新主題要插在其他既有主題之間（例如課題10 的冷戰階段），
+ * 但不應改動那些主題的名稱或關鍵詞——所以需要一個只改次序的方法。
+ */
+export function setSectionOrder(sectionId: string, order: number): boolean {
+  const result = getDb()
+    .prepare("UPDATE sections SET sort_order = ?, updated_at = ? WHERE id = ?")
+    .run(order, nowIso(), sectionId);
+  return Number(result.changes) > 0;
+}
+
+/**
  * 將選取的分節展開為「自身 + 所有子分節」，讓學生選擇父分節時也能取得子分節內容。
  */
 export function expandSectionIds(topicId: string, sectionIds: string[]): string[] {

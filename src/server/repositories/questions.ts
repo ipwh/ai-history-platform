@@ -312,6 +312,20 @@ export function setQuestionStatus(questionId: string, status: QuestionStatus): Q
 }
 
 /**
+ * 把題目改掛到另一個分節（主題）。
+ *
+ * 只改 `section_id`：題目內容、版本（`revision`）及既有覆核紀錄全部不變——
+ * 分節是「這題屬於哪個主題」的分類，不是題目內容，因此不應令已完成的覆核失效。
+ * 由 `scripts/plan-topic-focus.ts` 在拆分過粗的主題時使用。
+ */
+export function moveQuestionToSection(questionId: string, sectionId: string): boolean {
+  const result = getDb()
+    .prepare("UPDATE questions SET section_id = ? WHERE id = ?")
+    .run(sectionId, questionId);
+  return Number(result.changes) > 0;
+}
+
+/**
  * 條件式狀態更新（Sprint 12，TOCTOU 防護）。
  *
  * 只有當題目目前仍是 `expectedRevision` 時才更新狀態。若另一個請求在「讀取題目 →
