@@ -98,6 +98,32 @@ export function QuestionReportPanel({
         </div>
       </div>
 
+      <div
+        className="rounded-xl border p-3 text-xs text-gray-700 flex flex-col gap-1"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <p>
+          <strong>已處理</strong>：你已核對並跟進這筆回報（例如已修正題目、已暫時下架，
+          或確認只是個別學生誤解）。回報會離開「待覆核」清單，紀錄保留供日後查閱。
+        </p>
+        <p>
+          <strong>略過</strong>：這筆回報<strong>不是題目本身的問題</strong>（例如誤報、重複回報、
+          學生看錯題意），不需要改動題目。回報同樣會離開待覆核清單，紀錄保留。
+        </p>
+        <p>
+          <strong>題目真的有錯時怎樣改</strong>：先按「暫時下架題目」即時停止派發，
+          再到<a className="underline" href="/teacher/questions">題目管理</a>按「編輯」修正題幹／選項／答案
+          （編輯已發布的題目會自動下架，修正後重新發布即可；系統保留每個版本的覆核紀錄）。
+          題目若已不適用，亦可在題目管理停用或刪除。
+        </p>
+        <p>
+          <strong>AI 即時生成的題目</strong>（標示「AI 即時生成題目」）只存在於該次練習、<strong>不在題庫</strong>，
+          因此不能在題目管理編輯。這類回報用來了解 AI 出題的問題：可用相同設定再練習一次
+          （系統會避開已出過的題目），或改用題庫題目。若同一分節經常出現同類問題，請把回報內容告知管理員，
+          以便調整教材或出題規則。
+        </p>
+      </div>
+
       {reports.length === 0 ? (
         <p className="text-sm text-gray-600">目前沒有符合條件的題目回報。</p>
       ) : (
@@ -173,6 +199,7 @@ export function QuestionReportPanel({
                     type="button"
                     className="btn"
                     disabled={busyReportId === report.id}
+                    title="已核對並跟進（已修正、已下架，或確認只是個別學生誤解）。回報會離開待覆核清單，紀錄保留。"
                     onClick={() => onResolve(report.id, "resolved")}
                   >
                     標記為已處理
@@ -183,6 +210,7 @@ export function QuestionReportPanel({
                     type="button"
                     className="btn"
                     disabled={busyReportId === report.id}
+                    title="不是題目本身的問題（誤報、重複回報、學生看錯）。不需改動題目，紀錄保留。"
                     onClick={() => onResolve(report.id, "dismissed")}
                   >
                     略過

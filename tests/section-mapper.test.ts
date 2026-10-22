@@ -120,4 +120,74 @@ describe("教材段落對應分節", () => {
     expect(scoped.sectionIds[1]).toBe("s2");
     expect(scoped.sectionIds[2]).toBe("s2");
   });
+
+  it("子標題誤中其他分節的關鍵詞時，短區段會沿用前後分節", () => {
+    // 實際個案（2026-10-21 學生回報）：法國大革命「革命的成因」之下有子標題
+    // 「啟蒙運動的影響及美國革命的鼓舞」（清單段落，不是標題樣式），而
+    // 「啟蒙運動」是科學革命與啟蒙運動分節的關鍵詞，令該段及其後數段被歸入
+    // 科學革命分節，學生練習時就見到「美國革命對法國大革命的影響」這種與所選
+    // 分節無關的題目。
+    const sections: Section[] = [
+      { ...SECTIONS[0], id: "french", title: "法國大革命", order: 2, matchKeywords: ["法國大革命", "革命的成因", "革命的經過"] },
+      { ...SECTIONS[0], id: "science", title: "科學革命與啟蒙運動", order: 1, matchKeywords: ["科學革命", "啟蒙運動"] },
+    ];
+    const blocks = [
+      block("法國大革命", 0),
+      block("革命的成因", 1),
+      block("十八世紀的法國社會仍存在嚴格的等級制度。", 2),
+      block("美國革命的鼓舞", 3),
+      block("啟蒙運動的影響及美國革命的鼓舞", 4, "list"),
+      block("法國曾派兵支援美國革命，思想隨之傳入法國。", 5, "list"),
+      block("革命的經過", 6),
+      block("革命浪潮與統一運動的出現。", 7),
+    ];
+
+    const result = mapBlocksToSections(blocks, sections);
+    // 沒有平滑處理時，第 4–5 段會被歸入 science；修正後應沿用 french
+    expect(result.sectionIds.slice(0, 8)).toEqual([
+      "french",
+      "french",
+      "french",
+      "french",
+      "french",
+      "french",
+      "french",
+      "french",
+    ]);
+  });
+
+  it("由標題觸發的短分節不會被平滑掉（單元標題可以只有標題及日期兩段）", () => {
+    const sections: Section[] = [
+      { ...SECTIONS[0], id: "renaissance", title: "文藝復興與宗教改革", order: 0, matchKeywords: ["文藝復興"] },
+      { ...SECTIONS[0], id: "science", title: "科學革命與啟蒙運動", order: 1, matchKeywords: ["科學革命與啟蒙運動"] },
+    ];
+    const blocks = [
+      block("文藝復興（十四至十七世紀）", 0, "heading"),
+      block("宗教改革的背景與發展。", 1, "list"),
+      block("科學革命與啟蒙運動", 2, "heading"),
+      block("（十六世紀中葉至十八世紀）", 3, "heading"),
+      block("文藝復興對科學發展的推動。", 4, "list"),
+    ];
+    const result = mapBlocksToSections(blocks, sections);
+    expect(result.sectionIds[2]).toBe("science");
+    expect(result.sectionIds[3]).toBe("science");
+  });
+
+  it("夾在兩個不同分節之間的短區段不會被改寫", () => {
+    const sections: Section[] = [
+      { ...SECTIONS[0], id: "a", title: "甲分節", order: 0, matchKeywords: ["甲分節"] },
+      { ...SECTIONS[0], id: "b", title: "乙分節", order: 1, matchKeywords: ["乙分節"] },
+      { ...SECTIONS[0], id: "c", title: "丙分節", order: 2, matchKeywords: ["丙分節"] },
+    ];
+    const blocks = [
+      block("甲分節", 0),
+      block("甲的內容。", 1),
+      block("乙分節", 2),
+      block("乙的內容。", 3),
+      block("丙分節", 4),
+      block("丙的內容。", 5),
+    ];
+    const result = mapBlocksToSections(blocks, sections);
+    expect(result.sectionIds).toEqual(["a", "a", "b", "b", "c", "c"]);
+  });
 });

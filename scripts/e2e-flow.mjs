@@ -1093,6 +1093,27 @@ async function main() {
       badFormatResponse.status === 400,
       `HTTP ${badFormatResponse.status}`,
     );
+
+    // 匯出必須套用學習者篩選（2026-10-22 用家回報：匯出與所選學生無關）
+    const filteredQuery = await call("GET", `/api/teacher/records?learnerId=${encodeURIComponent(LEARNER_ID)}`);
+    const filteredSessionCount = filteredQuery.payload?.records?.length ?? 0;
+    const filteredCsv = await fetch(
+      `${BASE_URL}/api/teacher/records/export?format=csv&learnerId=${encodeURIComponent(LEARNER_ID)}`,
+    );
+    const filteredCsvText = Buffer.from(await filteredCsv.arrayBuffer()).toString("utf8");
+    const filteredRows = filteredCsvText
+      .split("\r\n")
+      .slice(1)
+      .filter((line) => line.length > 0);
+    const filteredLearnerIds = new Set(filteredRows.map((line) => line.split(",")[5]));
+    check(
+      "匯出套用學習者篩選（CSV 只含該學習者）",
+      filteredCsv.status === 200 &&
+        filteredSessionCount > 0 &&
+        filteredLearnerIds.size === 1 &&
+        [...filteredLearnerIds][0] === LEARNER_ID,
+      `查詢 ${filteredSessionCount} 次、CSV 學習者 ${[...filteredLearnerIds].slice(0, 3).join("、")}`,
+    );
   } finally {
     if (server) {
       server.kill();

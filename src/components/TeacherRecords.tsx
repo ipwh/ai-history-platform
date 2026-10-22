@@ -102,7 +102,7 @@ export function TeacherRecords() {
   const [activityFilter, setActivityFilter] = useState("");
   // 名冊可能有數百名學生；先顯示 50 人，避免手機一次渲染整份名單。
   const [listLimit, setListLimit] = useState(50);
-  const recordsRef = useRef<HTMLElement | null>(null);
+  const recordsRef = useRef<HTMLDivElement | null>(null);
   // 每次按下「查看記錄」遞增；待畫面更新後才捲動到「練習記錄」區塊。
   const [scrollRequest, setScrollRequest] = useState(0);
 
@@ -203,12 +203,32 @@ export function TeacherRecords() {
   const wrongTotal = records.reduce((sum, record) => sum + record.wrongCount, 0);
   const learnerById = new Map(learners.map((learner) => [learner.learnerId, learner]));
   const topicLabelById = new Map(topics.map((topic) => [topic.id, practiceTopicLabel(topic)]));
-  const exportQuery = queryString(applied);
+  /**
+   * 匯出使用**目前選擇的篩選**（`draft`），不是上次查詢的條件。
+   *
+   * 2026-10-22 用家回報「匯出的資料與所選的學生無關」：老師在「學習者」下拉選單
+   * 選了某位學生但未按「查詢記錄」，匯出仍用上一次已套用的條件（多數是「全部學習者」）。
+   * 現在連結以下拉選單的值為準，按下時同時套用查詢，畫面與檔案保持一致。
+   */
   const exportHref = (format: "xlsx" | "docx" | "pdf" | "csv"): string => {
-    const params = new URLSearchParams(exportQuery);
+    const params = new URLSearchParams(queryString(draft));
     params.set("format", format);
     return `/api/teacher/records/export?${params.toString()}`;
   };
+  const filtersPending = queryString(draft) !== queryString(applied);
+  const scopeLabels = [
+    draft.topicId ? topicLabelById.get(draft.topicId) ?? draft.topicId : "全部課題",
+    draft.learnerId
+      ? (() => {
+          const learner = learnerById.get(draft.learnerId);
+          return learner
+            ? [learnerName(learner), learner.className, learner.studentNumber].filter(Boolean).join("・")
+            : draft.learnerId;
+        })()
+      : "全部學習者",
+    draft.from || draft.to ? `日期 ${draft.from || "不限"} 至 ${draft.to || "不限"}` : "",
+  ].filter(Boolean);
+  const exportScope = scopeLabels.join("、");
   const activeLearner = applied.learnerId ? learnerById.get(applied.learnerId) : undefined;
   const activeLearnerName =
     activeLearner?.name ||
@@ -220,11 +240,18 @@ export function TeacherRecords() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-xl font-bold">學生練習記錄</h1>
-        <span className="text-sm text-gray-600">共 {records.length} 次練習記錄</span>
+        <span className="text-sm text-gray-600">
+          目前篩選：{records.length} 次練習、
+          {learners.filter((learner) => learner.sessions > 0).length} 位有記錄的學習者（名冊共{" "}
+          {learners.length} 位）
+        </span>
       </div>
 
-      <section className="card flex flex-col gap-3">
-        <h2 className="font-semibold">篩選</h2>
+      {data?.rosterNotice ? <Notice tone="warning">{data.rosterNotice}</Notice> : null}
+
+      <section className="card flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
+          <h2 className="font-semibold">篩選</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm">
             課題
@@ -300,30 +327,76 @@ export function TeacherRecords() {
         </div>
         <div className="flex flex-wrap items-center gap-2 border-t pt-3" style={{ borderColor: "var(--border)" }}>
           <span className="text-sm font-semibold">匯出目前篩選結果</span>
-          <a className="btn" href={exportHref("xlsx")} download>
+          <a
+            className="btn"
+            href={exportHref("xlsx")}
+            download
+            onClick={() => {
+              if (filtersPending) void handleQuery(draft);
+            }}
+          >
             Excel（XLSX）
           </a>
-          <a className="btn" href={exportHref("docx")} download>
+          <a
+            className="btn"
+            href={exportHref("docx")}
+            download
+            onClick={() => {
+              if (filtersPending) void handleQuery(draft);
+            }}
+          >
             Word（DOCX）
           </a>
-          <a className="btn" href={exportHref("pdf")} download>
+          <a
+            className="btn"
+            href={exportHref("pdf")}
+            download
+            onClick={() => {
+              if (filtersPending) void handleQuery(draft);
+            }}
+          >
             PDF
           </a>
-          <a className="btn" href={exportHref("csv")} download>
+          <a
+            className="btn"
+            href={exportHref("csv")}
+            download
+            onClick={() => {
+              if (filtersPending) void handleQuery(draft);
+            }}
+          >
             CSV
           </a>
         </div>
+        <p className="text-xs text-gray-600">
+          匯出範圍：<strong>{exportScope}</strong>（會使用上面已選擇的篩選；按下匯出時畫面亦會同步套用）。
+        </p>
+        {filtersPending ? (
+          <Notice tone="info">
+            你已更改篩選，但下方清單仍是上一次查詢的結果。按「查詢記錄」可更新畫面；直接按匯出會先套用新的篩選再下載。
+          </Notice>
+        ) : null}
         <p className="text-xs text-gray-500">
-          匯出會按目前套用的篩選條件（課題、學習者、日期）產生，四種格式內容一致：
-          <strong>Excel</strong> 有「練習概況」及「逐題記錄」兩張工作表，適合統計；
+          四種格式內容一致：<strong>Excel</strong> 有「匯出說明」「練習概況」及「逐題記錄」三張工作表，適合統計；
           <strong>Word／PDF</strong> 以每次練習為一節，附逐題表格，適合列印或存檔（超過 120 次練習時只列最近 120 次）；
           <strong>CSV</strong> 每題一列，可用其他工具處理。
         </p>
-      </section>
+        </div>
 
-      {data?.rosterNotice ? <Notice tone="warning">{data.rosterNotice}</Notice> : null}
+        <div
+          className="grid gap-2 border-t pt-4 sm:grid-cols-2 lg:grid-cols-4"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <StatBox label="目前篩選的練習次數" value={`${records.length}`} />
+          <StatBox label="學習者人數" value={`${new Set(records.map((record) => record.learnerId)).size}`} />
+          <StatBox label="答對題數" value={`${correctTotal}`} />
+          <StatBox label="答錯題數" value={`${wrongTotal}`} />
+        </div>
 
-      <section className="card flex flex-col gap-3">
+        <div
+          className="flex flex-col gap-3 border-t pt-4"
+          style={{ borderColor: "var(--border)" }}
+        >
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <h2 className="font-semibold">學習者使用概況</h2>
@@ -467,25 +540,20 @@ export function TeacherRecords() {
             </button>
           </div>
         ) : null}
-      </section>
-
-      <section className="card flex flex-col gap-3">
-        <h2 className="font-semibold">概況</h2>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          <StatBox label="練習次數" value={`${records.length}`} />
-          <StatBox label="學習者人數" value={`${new Set(records.map((r) => r.learnerId)).size}`} />
-          <StatBox label="答對題數" value={`${correctTotal}`} />
-          <StatBox label="答錯題數" value={`${wrongTotal}`} />
         </div>
-      </section>
 
-      <section ref={recordsRef} className="card flex flex-col gap-3 scroll-mt-4">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-semibold">練習記錄</h2>
-          {applied.learnerId ? (
-            <span className="text-sm text-gray-600">目前顯示：{activeLearnerName}</span>
-          ) : null}
-        </div>
+        <div
+          ref={recordsRef}
+          className="flex flex-col gap-3 border-t pt-4 scroll-mt-4"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-semibold">練習記錄（逐題作答）</h2>
+            <span className="text-sm text-gray-600">
+              {applied.learnerId ? `目前顯示：${activeLearnerName}` : "目前顯示：全部學習者"}
+              ・共 {records.length} 次、答對 {correctTotal} 題、答錯 {wrongTotal} 題
+            </span>
+          </div>
         {loading ? <Loading label="正在載入練習記錄…" /> : null}
         {!loading && records.length === 0 && applied.learnerId ? (
           <Notice tone="info">
@@ -568,13 +636,8 @@ export function TeacherRecords() {
             ) : null}
           </article>
         ))}
+        </div>
       </section>
-
-      {!loading && records.length === 0 && !applied.learnerId ? (
-        <Notice tone="info">
-          學生完成練習後，記錄會自動儲存並顯示在這裡；教師亦可隨時以 Excel、Word、PDF 或 CSV 匯出存檔。
-        </Notice>
-      ) : null}
     </div>
   );
 }
