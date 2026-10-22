@@ -735,7 +735,7 @@ scripts/deploy-cloud-run.ps1      Cloud Build + Cloud Run 部署（見第十節�
 | `GET/PATCH /api/teacher/reports` | 題目回報清單（可按狀態／課題篩選）／處理回報。`PATCH` 可用 `{status}` 只更新回報，或用 `{action: "withdraw-question"}` 一併暫時下架題目、`{action: "revalidate-question"}` 重新執行自動品質驗證；實際行動會記錄在回報的 `resolution_action` |
 | `GET/POST /api/teacher/content-improvement` | 解釋補寫／技能確認的工作佇列（唯讀，可按標記、解釋分類、建議改進類型及是否已標記篩選）／批次標記 `explanation_needs_rewrite`、`skill_needs_confirmation`（`{flag, action: "mark" \| "clear", questionIds, reason}`，最多 200 題、必須有理由）。標記只寫入 `question_content_flags`（只可新增），**不會**改變題目內容、答案、技能或發布狀態 |
 | `GET /api/teacher/records` | 學生練習記錄（可按 `topicId`、`learnerId`、`from`／`to` 日期篩選），每筆含作答日期、課題、題型及答對／答錯的題目；另回傳 `learners`（每位學生的姓名、班別、學號、電郵、練習次數、累計答題及答對比率）及 `rosterSource`（`live`／`snapshot`／`none`） |
-| `GET /api/teacher/records/export` | 下載學生練習記錄：`?format=csv`（預設，每題一列，UTF-8 BOM）、`xlsx`（練習概況＋逐題記錄兩張工作表）、`docx`／`pdf`（每次練習一節，附逐題表格）。同樣支援上述篩選；不支援的格式回 400 |
+| `GET /api/teacher/records/export` | 下載學生練習記錄：`?format=csv`（預設，每題一列，UTF-8 BOM）、`xlsx`（匯出說明＋練習概況＋逐題記錄三張工作表）、`docx`／`pdf`（每次練習一節，附逐題表格）。同樣支援上述篩選；不支援的格式回 400 |
 | `PATCH /api/admin/sections/[sectionId]` | 修改分節名稱、說明及關鍵詞（**管理員**） |
 | `PATCH /api/admin/topics/[topicId]` | 發布／取消發布課題（**管理員**） |
 | `GET /api/admin/system/health` | 管理員端系統狀態（版本、資料庫、LLM、OCR、登入、部署提示、環境變數問題）（**管理員**） |
@@ -1311,7 +1311,7 @@ npm run generate:questions -- --draft-only     # 只建立草稿，不自動發�
 - 權限由伺服器端工作階段判定，**不信任前端傳來的 `role` 或 `learnerId`**；集中於 [src/server/auth/guards.ts](src/server/auth/guards.ts) 的 `requireSignedIn`／`requireTeacher`／`requireAdmin`／`resolveLearnerId`。
 - 學生 API 一律由工作階段推導學習者 ID；教師或管理員呼叫學生 API 時使用**自己的**身分，因此測試記錄與任何學生完全分開。
 - 未登入呼叫受保護 API 會回傳 `401`（身分檢查在讀取 request body 之前完成，未登入不會先看到欄位驗證訊息）；學生呼叫教師或管理員 API 會回傳 `403`，教師呼叫管理員 API 亦會回傳 `403`。
-- 教師及管理員不可透過學生端 API 讀取或修改其他學習者的練習記錄（服務層會核對 `session.learnerId`，不符即回傳 `403`）；只可經教師端「學生練習記錄」（`/teacher/records`）查閱及下載學生的練習記錄。
+- 教師及管理員不可透過學生端 API 讀取或修改其他學習者的練習記錄（服務層會核對 `session.learnerId`，不符即回傳 `403`）；只可經教師端「學生練習記錄」（`/teacher/records`）查閱及匯出學生的練習記錄。
 - 角色每次讀取工作階段時都**以目前的設定重新判定**（見 [src/server/auth/role.ts](src/server/auth/role.ts) 的 `revalidateSessionUser`）：把帳號移出 `AUTH_ADMIN_EMAILS`／`AUTH_TEACHER_EMAILS` 後，該帳號**現有的 cookie 立即失去權限**，毋須等待 30 天到期（撤銷的有效期為 0）。重新判定**只會維持或降權，不會升權**——升權一律要求重新登入，因此不可能因為重新判定時拿不到名冊資料而把學生變成教師。名冊提供的班別、學號只反映登入時的名冊狀態。
 - 自動化腳本可在 `ADMIN_TOKEN` 設定後以 `x-admin-token` 標頭呼叫後台 API。這個權杖**等同管理員並會繞過所有角色檢查**，因此：只接受 **32 個字元或以上**的值（過短一律視為無效並回傳 `401`）、以固定時間比較，且只應存放於伺服器的環境變數或 Secret Manager。權杖長度不足時，管理員端系統狀態頁會顯示「error」等級的設定問題。
 - 未登入（未設定 Google 憑證）時，`npm run dev` 仍會保持 `/api/teacher/*`、`/api/admin/*` 及其頁面開放，方便本機測試；**任何正式建置**（`npm run build` 後的 `npm start`，以及 Cloud Run）則預設拒絕（除非明確設定 `HISTORY_ALLOW_UNSAFE_DEMO_MODE=true`）。
@@ -2570,7 +2570,7 @@ STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=./secrets/roster-service-account.json
 `/teacher/materials` 會轉址到 `/admin/materials`、`/teacher/settings` 轉址到 `/admin/settings`、`/admin/questions` 轉址到 `/teacher/questions`。API 方面，教材／OCR／分節／課題／系統狀態已統一在 `/api/admin/*`（只限管理員），題目／回報／學生練習記錄在 `/api/teacher/*`（教師及管理員）；舊的 `/api/teacher/materials*`、`/api/teacher/system/*`、`/api/admin/questions*` 已移除。
 
 **Q：學生回報題目後會怎樣？**
-回報會寫入資料庫，題目在教師端（`/teacher/questions`）會標示「待覆核回報」，並可在「題目回報」區塊按狀態及課題篩選、標記「已處理」或「略過」。系統**不會**自動刪除、停用或修改題目，教師需自行核對教材後處理。學生重複回報同一題目不會產生重複記錄。教師及管理員可在「學生練習記錄」（`/teacher/records`）查閱及下載學生的練習記錄。
+回報會寫入資料庫，題目在教師端（`/teacher/questions`）會標示「待覆核回報」，並可在「題目回報」區塊按狀態及課題篩選、標記「已處理」或「略過」。系統**不會**自動刪除、停用或修改題目，教師需自行核對教材後處理。學生重複回報同一題目不會產生重複記錄。教師及管理員可在「學生練習記錄」（`/teacher/records`）查閱及匯出學生的練習記錄。
 
 **Q：在哪裡查看 AI 用量及批改成功率？**
 管理員儀表板（`/admin`）的「最近 7 天 AI 使用情況」，或 `GET /api/admin/system/overview`。只記錄統計資料（provider、模型、請求類型、成功與否、回應時間、token 數及錯誤類別），不會記錄 API key、完整回應內容或學生的答案內容。
