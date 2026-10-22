@@ -1584,6 +1584,8 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 
 - **不需要任何金鑰**：備份程式在 Cloud Run／GCE 內會向 metadata server 取得存取權杖；只需要把 bucket 的 `roles/storage.objectAdmin` 授予 Cloud Run 的執行身分。
 - **備份在請求週期內執行（重要）**：Cloud Run 只在處理請求時分配 CPU，容器閒置時的背景計時器會被節流（實測會以 `fetch failed` 失敗）；Next.js 亦有自己的 SIGTERM 處理，令關機備份未必來得及完成。因此可靠的機制是 **API 請求期間的到期檢查**（`handleRoute` 內 `await backupIfDue()`）：未到期時成本只是兩次 `stat`，到期才做快照及上載（實測 27 MB 資料庫在區內上載只需數秒）。背景計時器與關機備份仍會嘗試，屬額外保險。
+- **還原失敗時暫停上載（2026-10-22 加入的保護）**：啟動還原若失敗（例如冷啟動下載 16 MB 快照逾時），執行個體的資料庫只是一份**全新的空白資料庫**；若照常備份，就會以它覆蓋雲端唯一有效的備份。現在 `backupNow()` 會在 `restore === "failed"` 時停止上載，並在 `/api/health` 的 `persistence.lastError` 及日誌顯示「已暫停上載備份以免覆蓋雲端資料」。下載本身亦已放寬至 300 秒並重試 3 次。
+- **部署後必須覆核還原結果**：`GET /api/health` 的 `persistence.restore` 應為 `restored`，而 `materials.blocks`／`materials.studentVisibleDocuments` 不應為 0。若顯示 `failed`，即代表線上執行個體正使用空白資料庫（此時備份已被保護，不會覆蓋 bucket）：立即以 `gcloud storage cp` 把正確快照重新上載，再觸發一次新 revision。
 - **資料有變更才會上載**：以資料庫檔案（含 `-wal`）的修改時間判斷，沒有變更時完全跳過快照及上載，因此頻繁瀏覽不會產生多餘備份。
 - **費用**：資料庫只有數十 MB，標準儲存每月每 GB 約 HK$0.2 以下，一般落在 Cloud Storage 免費額度內；asia-east2（香港）的延遲最低，如需貼近零成本可改用美國區域（`-BackupLocation us-central1`）。同區 Cloud Run → Cloud Storage 的流量不收費。
 - **不是即時同步**：兩次備份之間的寫入（預設最多 1 分鐘後若有請求即會備份；最長 5 分鐘）在執行個體被強制終止時可能遺失。
@@ -1830,6 +1832,8 @@ npm run open:materials -- --owner-email ipwh@pochiu.edu.hk --reason "…" --topi
 > ```
 >
 > （用 `--update-env-vars` 只加／改該變數；`--set-env-vars` 會整個取代，請避免手動使用以免覆蓋其他設定。）
+>
+> **PowerShell 必須為逗號分隔的值加引號**：`--update-env-vars A=1,B=2` 在 PowerShell 會被當成陣列並以空格連接，令 `A` 實際變成 `"1 B=2"`（實測 2026-10-22 曾因此把 `BACKUP_ENABLED` 設成 `"true BACKUP_RESTORE_ON_START=true …"`，結果備份一直維持關閉）。正確寫法：`--update-env-vars "A=1,B=2"`。
 
 或以 Cloud Build 直接建置（需先自行建立 Secret）：
 
@@ -1969,6 +1973,7 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 | `--allow-unauthenticated: ignored explicit argument 'true'` | 該旗標是切換式旗標 | 以 `_AUTH_FLAG` 傳入完整旗標或留空（IAP 模式），並以 bash 展開 |
 | Cloud Run 上 `llmProvider` 仍是 `mock` | 容器不會讀取本機 `.env.local` | 部署時一併以 `--set-env-vars` 設定 `LLM_PROVIDER`／`LLM_MODEL` 等（已寫入 cloudbuild.yaml） |
 | 重新部署後題庫、教材、練習記錄消失 | 資料庫位於容器內 `/tmp/data`（映像檔不會保存） | 已內建 Cloud Storage 備份（設定 `BACKUP_BUCKET`，並把 `BACKUP_PREFER_CLOUD=true`）：重新部署後會自動還原上次快照。若未設定，則每次重新部署後需重新匯入教材 |
+| 部署後題庫、教材或練習記錄變成 0（`persistence.restore` 為 `failed`） | 冷啟動下載 16 MB 以上的快照可能逾時（2026-10-22 實測 180 秒逾時），執行個體因此以全新空白資料庫啟動 | 下載已放寬至 300 秒並重試 3 次；還原失敗時**不會**上載備份（避免以空白資料庫覆蓋雲端唯一有效備份）。處理：以 `gcloud storage cp data/exports/<正確快照>.db gs://<專案ID>-history-backup/history/data/app.db` 重新上載，再以 `gcloud run services update … --update-env-vars "BACKUP_ENABLED=true"` 觸發新 revision 還原，並再次確認 `persistence.restore` 為 `restored` |
 | 學生登入顯示「名冊暫時無法讀取」 | Sheet 未分享給名冊服務帳戶 | 把 Sheet 分享給 `history-roster-reader@<專案>.iam.gserviceaccount.com`（檢視者） |
 | Google 登入畫面顯示「您即將重新登入『其他平台名稱』」 | OAuth 同意畫面（應用程式名稱、標誌、已授權網域）屬**整個 GCP 專案**，同專案內所有 OAuth 用戶端共用。**OAuth 用戶端可分開，但顯示名稱不能分開** | 本平台已改用獨立專案 `pccss-ai-history`（同意畫面名稱＝歷史科自學網站），此現象只會在與其他平台**共用專案**時出現。若遇到：在 [Google Auth Platform → Branding](https://console.cloud.google.com/auth/branding) 把應用程式名稱改為涵蓋兩者，或建立獨立專案（見第十節）。**注意**：使用者類型設為「內部」時，只有同組織的 Workspace 帳戶能登入，外部 Gmail 一律被 Google 拒絕，不能用來測試學生角色 |
 | Google 登入回 `redirect_uri_mismatch`（Error 400） | OAuth 用戶端未登記本平台的回呼網址。**注意本平台與 NextAuth 平台（如 ai-english-platform）路徑不同**：本平台是 `/api/auth/google/callback`，NextAuth 是 `/api/auth/callback/google`；共用同一個 OAuth 用戶端時，兩條都要各自登記 | 到 [Google Cloud Console → 憑證](https://console.cloud.google.com/apis/credentials) 開啟該「網頁應用程式」用戶端 → 「已授權的重新導向 URI」→ 加入 `http://localhost:3000/api/auth/google/callback`（正式環境另加 `https://<服務網址>/api/auth/google/callback`）→ 儲存。加入多條 URI 不會影響原有平台 |

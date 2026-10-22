@@ -171,11 +171,14 @@ export async function downloadBackup(
 
   let response: Response;
   try {
-    response = await resolveFetch(io)(url, {
-      headers: { authorization: `Bearer ${token}` },
-      // 資料庫可達 28 MB 以上，冷啟動時下載可能較慢，因此放寬至 180 秒
-      signal: AbortSignal.timeout(180_000),
-    });
+    // 冷啟動時下載 16–30 MB 曾實測逾時（2026-10-22 正式環境還原失敗），
+    // 因此放寬至 300 秒並重試，避免一次網絡抖動就令執行個體以空白資料庫啟動。
+    response = await withRetry(() =>
+      resolveFetch(io)(url, {
+        headers: { authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(300_000),
+      }),
+    );
   } catch (error) {
     throw new Error(describeFetchError(error));
   }
@@ -244,13 +247,22 @@ export async function backupNow(io: BackupIO = {}, options: { force?: boolean } 
   const config = getServerConfig().backup;
   if (!config.enabled || !config.bucket) return;
 
+  const status = statusRef();
+  if (status.restore === "failed") {
+    // 啟動還原失敗時，執行個體的資料庫可能只是剛建立的全新空白資料庫；
+    // 把它上載會覆蓋雲端唯一有效的備份（2026-10-22 正式環境曾因此失去資料，
+    // 需由人工重新上載）。寧可停止備份並在 /api/health 及日誌顯示原因。
+    status.lastError = "啟動還原失敗，已暫停上載備份以免覆蓋雲端資料";
+    console.warn("[backup] 暫停上載備份：啟動還原失敗，避免以空白資料庫覆蓋雲端備份");
+    return;
+  }
+
   const databasePath = getServerConfig().databasePath;
   if (!fs.existsSync(databasePath) && !options.force) {
     // 尚未建立資料庫（例如全新容器、未收到任何請求）→ 沒有需要備份的內容
     return;
   }
 
-  const status = statusRef();
   const snapshotPath = `${databasePath}${SNAPSHOT_SUFFIX}`;
   try {
     const bytes = await snapshotDatabase(databasePath, snapshotPath);

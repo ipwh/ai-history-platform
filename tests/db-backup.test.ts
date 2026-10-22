@@ -277,6 +277,44 @@ describe("還原", () => {
     expect(outcome).toBe("failed");
     expect(backup.getBackupStatus().restoreMessage).toContain("HTTP 500");
   });
+
+  it("下載遇到網絡錯誤時會重試（一次抖動不會令還原失敗）", async () => {
+    process.env.BACKUP_BUCKET = "history-backup-bucket";
+    process.env.BACKUP_PREFER_CLOUD = "true";
+    connection.closeDefaultDatabase();
+    fs.rmSync(databasePath, { force: true });
+    const stub = createStorageStub(Buffer.from("cloud-backup"));
+
+    let attempts = 0;
+    const flaky = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      attempts += 1;
+      if (attempts === 1) throw new TypeError("fetch failed");
+      return stub.fetchImpl(input, init);
+    }) as unknown as typeof fetch;
+
+    const outcome = await backup.restoreOnStartup({ fetchImpl: flaky, tokenProvider });
+    expect(outcome).toBe("restored");
+    expect(attempts).toBe(2);
+  });
+
+  it("還原失敗後不會上載備份（避免以空白資料庫覆蓋雲端唯一備份）", async () => {
+    process.env.BACKUP_BUCKET = "history-backup-bucket";
+    process.env.BACKUP_PREFER_CLOUD = "true";
+    connection.closeDefaultDatabase();
+    fs.rmSync(databasePath, { force: true });
+    const failingRestore = (async () => {
+      throw new TypeError("The operation was aborted due to timeout");
+    }) as unknown as typeof fetch;
+    expect(await backup.restoreOnStartup({ fetchImpl: failingRestore, tokenProvider })).toBe("failed");
+
+    // 執行個體之後建立了新的（空白）資料庫，到期備份仍不可上載
+    connection.getDb().exec("CREATE TABLE IF NOT EXISTS fresh_probe(id TEXT)");
+    const stub = createStorageStub(Buffer.from("cloud-backup"));
+    await backup.backupNow({ fetchImpl: stub.fetchImpl, tokenProvider });
+
+    expect(stub.uploads).toHaveLength(0);
+    expect(backup.getBackupStatus().lastError).toContain("暫停上載備份");
+  });
 });
 
 describe("到期備份（在請求週期內執行，避免 Cloud Run CPU 節流）", () => {
