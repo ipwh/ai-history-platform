@@ -102,9 +102,18 @@ export function TeacherRecords() {
   const [activityFilter, setActivityFilter] = useState("");
   // 名冊可能有數百名學生；先顯示 50 人，避免手機一次渲染整份名單。
   const [listLimit, setListLimit] = useState(50);
+  /**
+   * 「學習者使用概況」（名冊清單）預設收合：選定學習者後只需看逐題記錄，
+   * 不應每次都要越過整份名冊表才看到查詢結果。
+   */
+  const [overviewOpen, setOverviewOpen] = useState(false);
   const recordsRef = useRef<HTMLDivElement | null>(null);
-  // 每次按下「查看記錄」遞增；待畫面更新後才捲動到「練習記錄」區塊。
-  const [scrollRequest, setScrollRequest] = useState(0);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
+  // 每次查詢後遞增並指定捲動位置；畫面更新後才捲動，避免捲到尚未更新的內容。
+  const [scrollRequest, setScrollRequest] = useState<{
+    target: "results" | "records";
+    token: number;
+  } | null>(null);
 
   const fetchRecords = useCallback(async (filters: Filters): Promise<RecordsResponse> => {
     const query = queryString(filters);
@@ -130,14 +139,15 @@ export function TeacherRecords() {
   }, [fetchRecords]);
 
   /**
-   * 查詢記錄。
+   * 查詢記錄後的捲動。
    *
-   * focusLearnerId 有值時（按下某位學習者的「查看記錄」），會即時展開該學習者所有練習的
-   * 逐題作答並捲動到「練習記錄」區塊；否則畫面停留在名冊列表，看起來像按了沒有反應。
+   * focusLearnerId 有值時（按下某位學習者的「查看記錄」）捲到逐題作答；否則捲到統計區，
+   * 令「查詢記錄」按下去一定有反應——不再停留在名冊列表。
    */
   useEffect(() => {
-    if (scrollRequest === 0) return;
-    recordsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (scrollRequest === null) return;
+    const element = scrollRequest.target === "records" ? recordsRef.current : resultsRef.current;
+    element?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [scrollRequest]);
 
   const handleQuery = async (
@@ -150,9 +160,13 @@ export function TeacherRecords() {
       setData(result);
       setApplied(filters);
       setError(null);
+      // 選定某位學習者後收起名冊清單，讓逐題記錄緊接統計出現
+      if (filters.learnerId && filters.learnerId !== applied.learnerId) setOverviewOpen(false);
       if (options.focusLearnerId !== undefined) {
         setExpanded(result.records.map((record) => record.sessionId));
-        setScrollRequest((request) => request + 1);
+        setScrollRequest((current) => ({ target: "records", token: (current?.token ?? 0) + 1 }));
+      } else {
+        setScrollRequest((current) => ({ target: "results", token: (current?.token ?? 0) + 1 }));
       }
     } catch (caught) {
       setError(caught);
@@ -201,7 +215,20 @@ export function TeacherRecords() {
   });
   const correctTotal = records.reduce((sum, record) => sum + record.correctCount, 0);
   const wrongTotal = records.reduce((sum, record) => sum + record.wrongCount, 0);
+  const learnerCountInRecords = new Set(records.map((record) => record.learnerId)).size;
+  const notStartedCount = learners.filter((learner) => learner.sessions === 0).length;
   const learnerById = new Map(learners.map((learner) => [learner.learnerId, learner]));
+  /**
+   * 「學習者」選單的選項＝已用快篩收窄的清單。
+   *
+   * 若現時選取的學習者被快篩排除（例如選了人之後再改班別），仍要把他留在選單內，
+   * 否則下拉會變成空白，看起來像沒有選人。
+   */
+  const selectedLearner = draft.learnerId ? learnerById.get(draft.learnerId) : undefined;
+  const learnerOptions =
+    selectedLearner && !visibleLearners.some((learner) => learner.learnerId === selectedLearner.learnerId)
+      ? [...visibleLearners, selectedLearner]
+      : visibleLearners;
   const topicLabelById = new Map(topics.map((topic) => [topic.id, practiceTopicLabel(topic)]));
   /**
    * 匯出使用**目前選擇的篩選**（`draft`），不是上次查詢的條件。
@@ -216,19 +243,24 @@ export function TeacherRecords() {
     return `/api/teacher/records/export?${params.toString()}`;
   };
   const filtersPending = queryString(draft) !== queryString(applied);
-  const scopeLabels = [
-    draft.topicId ? topicLabelById.get(draft.topicId) ?? draft.topicId : "全部課題",
-    draft.learnerId
-      ? (() => {
-          const learner = learnerById.get(draft.learnerId);
-          return learner
-            ? [learnerName(learner), learner.className, learner.studentNumber].filter(Boolean).join("・")
-            : draft.learnerId;
-        })()
-      : "全部學習者",
-    draft.from || draft.to ? `日期 ${draft.from || "不限"} 至 ${draft.to || "不限"}` : "",
-  ].filter(Boolean);
-  const exportScope = scopeLabels.join("、");
+  /** 篩選條件的中文摘要（課題、學習者、日期），供畫面說明「現在顯示／將匯出」的是甚麼 */
+  const scopeText = (filters: Filters): string =>
+    [
+      filters.topicId ? topicLabelById.get(filters.topicId) ?? filters.topicId : "全部課題",
+      filters.learnerId
+        ? (() => {
+            const learner = learnerById.get(filters.learnerId);
+            return learner
+              ? [learnerName(learner), learner.className, learner.studentNumber].filter(Boolean).join("・")
+              : filters.learnerId;
+          })()
+        : "全部學習者",
+      filters.from || filters.to ? `日期 ${filters.from || "不限"} 至 ${filters.to || "不限"}` : "",
+    ]
+      .filter(Boolean)
+      .join("、");
+  const exportScope = scopeText(draft);
+  const activeScope = scopeText(applied);
   const activeLearner = applied.learnerId ? learnerById.get(applied.learnerId) : undefined;
   const activeLearnerName =
     activeLearner?.name ||
@@ -241,9 +273,7 @@ export function TeacherRecords() {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-xl font-bold">學生練習記錄</h1>
         <span className="text-sm text-gray-600">
-          目前篩選：{records.length} 次練習、
-          {learners.filter((learner) => learner.sessions > 0).length} 位有記錄的學習者（名冊共{" "}
-          {learners.length} 位）
+          目前顯示：{activeScope}
         </span>
       </div>
 
@@ -252,6 +282,56 @@ export function TeacherRecords() {
       <section className="card flex flex-col gap-4">
         <div className="flex flex-col gap-3">
           <h2 className="font-semibold">篩選</h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="text-sm">
+              班別（收窄學習者清單）
+              <select
+                value={classFilter}
+                onChange={(event) => {
+                  setClassFilter(event.target.value);
+                  setListLimit(50);
+                }}
+              >
+                <option value="">全部班別</option>
+                {classes.map((className) => (
+                  <option key={className} value={className}>{className}</option>
+                ))}
+                <option value="__unlisted">未列入名冊</option>
+              </select>
+            </label>
+            <label className="text-sm">
+              搜尋學習者（姓名／學號／電郵）
+              <input
+                type="search"
+                value={learnerSearch}
+                onChange={(event) => {
+                  setLearnerSearch(event.target.value);
+                  setListLimit(50);
+                }}
+                placeholder="輸入姓名、學號或電郵"
+              />
+            </label>
+            <label className="text-sm">
+              活動狀態（收窄學習者清單）
+              <select
+                value={activityFilter}
+                onChange={(event) => {
+                  setActivityFilter(event.target.value);
+                  setListLimit(50);
+                }}
+              >
+                <option value="">全部狀態</option>
+                <option value="active">近 7 日活躍</option>
+                <option value="low">7–13 日未活動</option>
+                <option value="inactive">14 日以上未活動</option>
+                <option value="never-started">尚未開始</option>
+              </select>
+            </label>
+          </div>
+          <p className="text-xs text-gray-500">
+            以上三項只收窄下面的「學習者」選單及「學習者使用概況」清單，<strong>不會改變已查詢的記錄</strong>；
+            要改變記錄範圍請用課題及日期。
+          </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm">
             課題
@@ -273,8 +353,8 @@ export function TeacherRecords() {
               value={draft.learnerId}
               onChange={(event) => setDraft({ ...draft, learnerId: event.target.value })}
             >
-              <option value="">全部學習者</option>
-              {visibleLearners.map((learner) => (
+              <option value="">全部學習者（{learnerOptions.length} 位）</option>
+              {learnerOptions.map((learner) => (
                 <option key={learner.learnerId} value={learner.learnerId}>
                   {[learner.name || learner.email || learner.learnerId, learner.className, learner.studentNumber]
                     .filter(Boolean)
@@ -384,13 +464,17 @@ export function TeacherRecords() {
         </div>
 
         <div
-          className="grid gap-2 border-t pt-4 sm:grid-cols-2 lg:grid-cols-4"
+          ref={resultsRef}
+          className="flex flex-col gap-2 border-t pt-4 scroll-mt-4"
           style={{ borderColor: "var(--border)" }}
         >
-          <StatBox label="目前篩選的練習次數" value={`${records.length}`} />
-          <StatBox label="學習者人數" value={`${new Set(records.map((record) => record.learnerId)).size}`} />
-          <StatBox label="答對題數" value={`${correctTotal}`} />
-          <StatBox label="答錯題數" value={`${wrongTotal}`} />
+          <span className="text-sm font-semibold">本次查詢統計</span>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <StatBox label="練習次數" value={`${records.length}`} />
+            <StatBox label="學習者人數" value={`${learnerCountInRecords}`} />
+            <StatBox label="答對題數" value={`${correctTotal}`} />
+            <StatBox label="答錯題數" value={`${wrongTotal}`} />
+          </div>
         </div>
 
         <div
@@ -398,74 +482,43 @@ export function TeacherRecords() {
           style={{ borderColor: "var(--border)" }}
         >
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <div>
-            <h2 className="font-semibold">學習者使用概況</h2>
-            <p className="text-xs text-gray-500">
-              依學生名冊配對班別、姓名及學號；找不到名冊資料時會保留登入電郵或匿名 ID。
-            </p>
-            <p className="text-xs text-gray-500">
-              可按班別、姓名或活動狀態縮窄清單，再選擇「查看記錄」檢視逐題作答。
-            </p>
-            <p className="text-xs text-gray-500">
-              「活動狀態」以最近一次練習日期計算：未曾練習＝尚未開始；7 日內有練習＝活躍；
-              7–13 日未練習；14 日以上未練習。「答對比率」只計算該學習者已提交的答案，
-              未作答時會顯示「未作答」。
-            </p>
+          <h2 className="font-semibold">學習者使用概況</h2>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+            <span>
+              名冊 {learners.length} 位・本次查詢 {learnerCountInRecords} 位有記錄・{notStartedCount} 位尚未開始
+              {data?.rosterSource === "live"
+                ? " ・ 名冊：即時"
+                : data?.rosterSource === "snapshot"
+                  ? " ・ 名冊：上次成功載入"
+                  : ""}
+            </span>
+            <button
+              type="button"
+              className="btn"
+              aria-expanded={overviewOpen}
+              aria-controls="learner-overview"
+              title={
+                overviewOpen
+                  ? "收起名冊清單，只保留本次查詢統計及逐題記錄。"
+                  : "展開名冊清單，逐項核對班別、練習次數、答對比率及最近活動。"
+              }
+              onClick={() => setOverviewOpen((open) => !open)}
+            >
+              {overviewOpen ? "收起名冊" : "展開名冊"}
+            </button>
           </div>
-          <span className="text-sm text-gray-600">
-            {visibleLearners.length} 位學習者
-            {data?.rosterSource === "live"
-              ? " ・ 名冊：即時"
-              : data?.rosterSource === "snapshot"
-                ? " ・ 名冊：上次成功載入"
-                : ""}
-          </span>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <label className="text-sm">
-            班別
-            <select
-              value={classFilter}
-              onChange={(event) => {
-                setClassFilter(event.target.value);
-                setListLimit(50);
-              }}
-            >
-              <option value="">全部班別</option>
-              {classes.map((className) => (
-                <option key={className} value={className}>{className}</option>
-              ))}
-              <option value="__unlisted">未列入名冊</option>
-            </select>
-          </label>
-          <label className="text-sm">
-            搜尋姓名、學號或電郵
-            <input
-              type="search"
-              value={learnerSearch}
-              onChange={(event) => {
-                setLearnerSearch(event.target.value);
-                setListLimit(50);
-              }}
-              placeholder="輸入姓名、學號或電郵"
-            />
-          </label>
-          <label className="text-sm">
-            活動狀態
-            <select
-              value={activityFilter}
-              onChange={(event) => {
-                setActivityFilter(event.target.value);
-                setListLimit(50);
-              }}
-            >
-              <option value="">全部狀態</option>
-              <option value="active">近 7 日活躍</option>
-              <option value="low">7–13 日未活動</option>
-              <option value="inactive">14 日以上未活動</option>
-              <option value="never-started">尚未開始</option>
-            </select>
-          </label>
+        {overviewOpen ? (
+        <div id="learner-overview" className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-gray-500">
+            依學生名冊配對班別、姓名及學號；找不到名冊資料時會保留登入電郵或匿名 ID。
+          </p>
+          <p className="text-xs text-gray-500">
+            表內「練習次數」「累計答題」「答對比率」是該學習者的<strong>終身累計</strong>，不受課題及日期篩選影響；
+            上方統計方塊才是本次查詢的數字。活動狀態：未曾練習＝尚未開始；7 日內＝活躍；7–13 日未練習；
+            14 日以上未練習。「答對比率」只計算已提交的答案，未作答時顯示「未作答」。
+          </p>
         </div>
         {visibleLearners.length === 0 ? (
           <p className="text-sm text-gray-600">沒有符合條件的學習者。</p>
@@ -517,6 +570,8 @@ export function TeacherRecords() {
                           onClick={() => {
                             const filters = { ...draft, learnerId: learner.learnerId };
                             setDraft(filters);
+                            // 收起名冊清單，逐題記錄便會緊接統計出現（並自動捲動到該區）
+                            setOverviewOpen(false);
                             void handleQuery(filters, { focusLearnerId: learner.learnerId });
                           }}
                         >
@@ -541,6 +596,13 @@ export function TeacherRecords() {
           </div>
         ) : null}
         </div>
+        ) : (
+          <p className="text-xs text-gray-500">
+            名冊清單已收起，下面只顯示本次查詢的統計及逐題記錄。按「展開名冊」可逐項核對班別、
+            練習次數、答對比率及最近活動。
+          </p>
+        )}
+        </div>
 
         <div
           ref={recordsRef}
@@ -551,7 +613,7 @@ export function TeacherRecords() {
             <h2 className="font-semibold">練習記錄（逐題作答）</h2>
             <span className="text-sm text-gray-600">
               {applied.learnerId ? `目前顯示：${activeLearnerName}` : "目前顯示：全部學習者"}
-              ・共 {records.length} 次、答對 {correctTotal} 題、答錯 {wrongTotal} 題
+              ・共 {records.length} 次練習
             </span>
           </div>
         {loading ? <Loading label="正在載入練習記錄…" /> : null}
