@@ -248,58 +248,64 @@ function outcomeOf(row: PracticeRecordQuestion): keyof typeof OUTCOME_LABELS {
   return "ungraded";
 }
 
+/** 單題結果的文字說明（CSV／XLSX 共用） */
+export function recordOutcomeLabel(row: PracticeRecordQuestion): string {
+  const outcome = outcomeOf(row);
+  if (outcome === "ungraded" && row.selfAssessment === "needs-review") {
+    return "待自我檢查（需重溫）";
+  }
+  return OUTCOME_LABELS[outcome];
+}
+
+/** 逐題記錄的欄位（CSV 及 XLSX 的「逐題記錄」工作表共用，次序不可任意改動） */
+export const RECORDS_ROW_HEADER = [
+  "作答日期",
+  "學生姓名",
+  "班別",
+  "學號",
+  "電郵",
+  "學習者 ID",
+  "課題",
+  "分節",
+  "題型",
+  "難度",
+  "題目",
+  "學生答案",
+  "正確答案",
+  "結果",
+  "練習編號",
+] as const;
+
+/** 一次練習中的每道題目各成一列（與 RECORDS_ROW_HEADER 對應） */
+export function recordRowValues(record: PracticeRecordSession): (string | null)[][] {
+  return record.questions.map((row) => [
+    record.createdAt,
+    record.learnerName,
+    record.learnerClassName,
+    record.learnerStudentNumber,
+    record.learnerEmail,
+    record.learnerId,
+    record.topicTitle,
+    row.sectionTitle,
+    row.questionTypeLabel,
+    record.difficultyLabel,
+    row.question,
+    row.studentAnswer,
+    row.correctAnswer,
+    recordOutcomeLabel(row),
+    record.sessionId,
+  ]);
+}
+
 /**
  * 把練習記錄轉成 CSV 文字（每題一列）。
  * 欄位包含作答日子、課題、分節、題型、題目、學生答案、正確答案及答對／答錯。
  */
 export function buildRecordsCsv(records: PracticeRecordSession[]): string {
-  const header = [
-    "作答日期",
-    "學生姓名",
-    "班別",
-    "學號",
-    "電郵",
-    "學習者 ID",
-    "課題",
-    "分節",
-    "題型",
-    "難度",
-    "題目",
-    "學生答案",
-    "正確答案",
-    "結果",
-    "練習編號",
-  ];
-
-  const lines: string[] = [header.map(csvCell).join(",")];
+  const lines: string[] = [[...RECORDS_ROW_HEADER].map(csvCell).join(",")];
   for (const record of records) {
-    for (const row of record.questions) {
-      const outcome = outcomeOf(row);
-      const result =
-        outcome === "ungraded" && row.selfAssessment === "needs-review"
-          ? "待自我檢查（需重溫）"
-          : OUTCOME_LABELS[outcome];
-      lines.push(
-        [
-          record.createdAt,
-          record.learnerName,
-          record.learnerClassName,
-          record.learnerStudentNumber,
-          record.learnerEmail,
-          record.learnerId,
-          record.topicTitle,
-          row.sectionTitle,
-          row.questionTypeLabel,
-          record.difficultyLabel,
-          row.question,
-          row.studentAnswer,
-          row.correctAnswer,
-          result,
-          record.sessionId,
-        ]
-          .map(csvCell)
-          .join(","),
-      );
+    for (const row of recordRowValues(record)) {
+      lines.push(row.map(csvCell).join(","));
     }
   }
   return lines.join("\r\n");

@@ -74,8 +74,9 @@ const nextConfig: NextConfig = {
    *   - tesseract.js：會建立 worker thread 並以相對路徑載入 WASM 與語言資料，
    *     打包後路徑會失效，導致 OCR 工作無法啟動。
    *   - unpdf / pdfjs：內含自己的 worker 檔案，同樣需要保持獨立。
+   *   - pdfkit：以 `__dirname` 讀取內建的標準字型 `.afm` 資料，打包後路徑失效。
    */
-  serverExternalPackages: ["tesseract.js", "unpdf"],
+  serverExternalPackages: ["tesseract.js", "unpdf", "pdfkit"],
   /**
    * 產生自足式（standalone）輸出，供 Docker／Cloud Run 使用：
    * `.next/standalone` 只包含執行所需的檔案，啟動方式為 `node .next/standalone/server.js`。
@@ -91,6 +92,9 @@ const nextConfig: NextConfig = {
       "./node_modules/tesseract.js-core/**/*",
       "./node_modules/unpdf/**/*",
       "./node_modules/pdfjs-dist/**/*",
+      "./node_modules/pdfkit/**/*",
+      // 教師端匯出 PDF 時需要的中文字型（執行時以檔案路徑讀取，靜態分析無法追蹤）
+      "./assets/fonts/**/*",
       ...tesseractDependencyGlobs(),
     ],
   },

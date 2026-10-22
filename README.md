@@ -591,7 +591,25 @@ materials/
 | 教師端首頁 | `/teacher` | 題庫概況（題目總數／已發布／草稿／已停用／校內試題待核對／未通過教材核對／待覆核回報）、學生練習記錄數量及常用操作入口 |
 | 題目管理 | `/teacher/questions` | 生成題目預覽（附教材依據）、手動新增／編輯／發布／停用／刪除題目、依分節及狀態篩選、**題目回報覆核**（可按狀態及課題篩選，標記已處理／已略過／重設待覆核；即時生成題目會標示「AI 即時生成題目」及「只存於該次練習，未存入題庫」） |
 | 題目生成與審核 | `/teacher/questions/generate` | 同上，預設捲動至生成區塊，方便直接出題及審核 |
-| 學生練習記錄 | `/teacher/records` | 名冊配對顯示學生姓名、班別、學號及電郵（名冊暫時不可用時沿用上次成功載入的身分快照）；可搜尋學生、按班別／近 7 日活躍／7–13 日未活動／14 日以上未活動／尚未開始篩選，檢視練習次數、累計答題、答對比率及最近活動（「活動狀態」以最近一次練習日期計算；「答對比率」在未曾作答時顯示「未作答」，不再以「—」表示）；按「查看記錄」會即時篩選該學習者、展開逐題作答並捲動到「練習記錄」區塊，該學習者沒有記錄時會顯示說明而不是毫無反應；另可按課題及日期查閱逐題作答，並可**下載 CSV**（每題一列，含學生資料、學生答案、正確答案及結果） |
+| 學生練習記錄 | `/teacher/records` | 名冊配對顯示學生姓名、班別、學號及電郵（名冊暫時不可用時沿用上次成功載入的身分快照）；可搜尋學生、按班別／近 7 日活躍／7–13 日未活動／14 日以上未活動／尚未開始篩選，檢視練習次數、累計答題、答對比率及最近活動（「活動狀態」以最近一次練習日期計算；「答對比率」在未曾作答時顯示「未作答」，不再以「—」表示）；按「查看記錄」會即時篩選該學習者、展開逐題作答並捲動到「練習記錄」區塊，該學習者沒有記錄時會顯示說明而不是毫無反應；另可按課題及日期查閱逐題作答，並可**匯出 CSV／Excel（XLSX）／Word（DOCX）／PDF**（內容一致，含學生資料、學生答案、正確答案及結果；見下節「練習記錄匯出」） |
+
+#### 練習記錄匯出（CSV／Excel／Word／PDF，2026-10-22）
+
+`/teacher/records` 的「匯出目前篩選結果」會按**目前已套用的篩選**（課題、學習者、日期）產生檔案；先按「查看記錄」再匯出，即等於匯出該學生每次的練習記錄。四種格式的資料來源相同（`listPracticeRecords`），只是呈現方式不同：
+
+| 格式 | 內容 | 適用 |
+| --- | --- | --- |
+| **Excel（`format=xlsx`）** | 三張工作表：匯出說明、練習概況（每次練習一列）、逐題記錄（每題一列，欄位與 CSV 相同）；首列凍結並可篩選 | 統計、排序、與其他學生比較 |
+| **Word（`format=docx`）** | 每次練習一節（學習者、香港時間、課題、題型／難度／答對答錯／準確率），下接逐題表格（題目、學生答案、正確答案、結果）；表格標題列跨頁重複 | 交功課紀錄、家長溝通、需要再編輯 |
+| **PDF（`format=pdf`）** | 與 Word 相同內容，A4 直向、自動分頁、每頁頁腳顯示網站名稱、匯出時間及頁碼 | 列印、存檔、派發（不可修改） |
+| **CSV（`format=csv`，預設）** | 每題一列（UTF-8 BOM，Excel 可直接開啟） | 既有流程、其他工具處理 |
+
+- 輸出實作：[office.ts](src/server/export/office.ts)（XLSX／DOCX，以專案已有的 `jszip` 直接寫 Office Open XML，不需要額外套件）、[pdf.ts](src/server/export/pdf.ts)（PDFKit）、[records-export.ts](src/server/services/records-export.ts)（四種格式共用的紀錄模型、香港時間格式、檔名）。
+- **PDF 需要中文字型**：字型為 Noto Sans TC（SIL OFL 1.1，授權全文見 [assets/fonts/LICENSE-NotoSansTC.txt](assets/fonts/LICENSE-NotoSansTC.txt)），由 Google 的 Noto CJK 可變字型以 `fonttools` 固定為 wght=400 並移除不必要的表（見 [assets/fonts/README.md](assets/fonts/README.md)）。PDFKit 只嵌入實際用到的字形，一份 32 次練習、20 頁的 PDF 約 270 KB。字型路徑可用 `RECORDS_EXPORT_FONT_PATH` 覆寫；**Docker 映像必須包含 `assets/`**（[Dockerfile](Dockerfile) 已加入 `COPY /app/assets`），缺少字型時 PDF 會回 500 並提示改用 Excel／Word（其餘格式不受影響）。
+- **為何不用 pdf-lib**：pdf-lib 1.17 的字型子集化在這種大型 CJK 字型會漏字形（同一段中文只有部分字顯示、其餘空白，文字抽取卻正常）；`subset: false` 則每份 PDF 都要內嵌 7 MB 字型。PDFKit 的子集化經實際渲染（MuPDF）確認所有中文字正確顯示。
+- **長度上限**：Word／PDF 最多顯示最近 120 次練習（`MAX_READABLE_SESSIONS`），並在文件開頭註明只列最近若干次及總數；Excel／CSV 沒有此限制（最多 2000 次，與 API 的 `limit` 一致）。
+- 檔名固定為 `practice-records-YYYY-MM-DD.<ext>`（香港時間）；篩選條件、匯出時間及總計會寫進 Excel「匯出說明」工作表及 Word／PDF 開頭，存檔後仍知道範圍。
+- 安全性：`requireTeacher` 守衛（教師／管理員）；回應含 `Cache-Control: private, no-store`；CSV 仍會把 `=`、`+`、`-`、`@` 起首的儲存格加前置單引號（XLSX 以 inline string 寫入、DOCX／PDF 為純文字，本身不會被當成公式）。
 
 ### 管理員端
 
@@ -651,6 +669,7 @@ Next.js Route Handlers（src/app/api/**）      ← 唯一後端入口，統一�
 ### 目錄重點
 
 ```
+assets/fonts/                     PDF 匯出用的中文字型（Noto Sans TC，SIL OFL 1.1）及授權文件
 src/lib/types.ts                  資料契約（zod schema + 型別）
 src/server/config.ts              環境變數與伺服器設定
 src/server/config-diagnostics.ts  設定驗證（缺少憑證、暫時性儲存、Cloud Run 偵測、備份狀態）
@@ -662,12 +681,13 @@ src/server/materials/             DOCX、PDF 解析、圖片與段落對應、�
 src/server/ocr/                   OCR provider 介面、tesseract.js、Google Vision、PNG 編碼
 src/server/auth/                  Google OAuth、工作階段 cookie、角色判定、guards.ts 集中授權
 src/server/llm/                   provider 介面、mock、DeepSeek、Gemini、OpenAI 相容、輸出驗證、填充題歷史元素判定（historical-answer.ts）、題目品質閘門（question-quality.ts）、填充題題幹規則（fill-question.ts）、題目重複判定（question-dedupe.ts）
-src/server/services/              練習流程、題目生成、題庫批次生成、OCR、教材管理、評分、回報、AI 用量統計
+src/server/services/              練習流程、題目生成、題庫批次生成、OCR、教材管理、評分、回報、AI 用量統計、練習記錄匯出（records-export.ts）
+src/server/export/                教師端匯出檔案產生器（office.ts：XLSX／DOCX；pdf.ts：PDF＋中文字型）
 src/server/seed/                  教育局課程架構、學習重點（精簡摘要）、示範題庫、教材依據核對
 src/app/api/                      REST API（學生端、教師端 /api/teacher/**、管理員端 /api/admin/**）
 src/app/                          頁面（學生端 /、/practice/**、/account；教師端 /teacher/**；管理員端 /admin/**）
 src/components/                   前端元件
-tests/                            Vitest 測試（77 個測試檔）及 tests/fixtures/ 測試樣本
+tests/                            Vitest 測試（111 個測試檔）及 tests/fixtures/ 測試樣本
 scripts/setup.ts                  初始化示範環境
 scripts/import-materials.ts       命令列匯入教材
 scripts/generate-question-bank.ts 命令列批次生成題目
@@ -715,7 +735,7 @@ scripts/deploy-cloud-run.ps1      Cloud Build + Cloud Run 部署（見第十節�
 | `GET/PATCH /api/teacher/reports` | 題目回報清單（可按狀態／課題篩選）／處理回報。`PATCH` 可用 `{status}` 只更新回報，或用 `{action: "withdraw-question"}` 一併暫時下架題目、`{action: "revalidate-question"}` 重新執行自動品質驗證；實際行動會記錄在回報的 `resolution_action` |
 | `GET/POST /api/teacher/content-improvement` | 解釋補寫／技能確認的工作佇列（唯讀，可按標記、解釋分類、建議改進類型及是否已標記篩選）／批次標記 `explanation_needs_rewrite`、`skill_needs_confirmation`（`{flag, action: "mark" \| "clear", questionIds, reason}`，最多 200 題、必須有理由）。標記只寫入 `question_content_flags`（只可新增），**不會**改變題目內容、答案、技能或發布狀態 |
 | `GET /api/teacher/records` | 學生練習記錄（可按 `topicId`、`learnerId`、`from`／`to` 日期篩選），每筆含作答日期、課題、題型及答對／答錯的題目；另回傳 `learners`（每位學生的姓名、班別、學號、電郵、練習次數、累計答題及答對比率）及 `rosterSource`（`live`／`snapshot`／`none`） |
-| `GET /api/teacher/records/export` | 下載學生練習記錄 CSV（同樣支援上述篩選；UTF-8 BOM，Excel 可直接開啟） |
+| `GET /api/teacher/records/export` | 下載學生練習記錄：`?format=csv`（預設，每題一列，UTF-8 BOM）、`xlsx`（練習概況＋逐題記錄兩張工作表）、`docx`／`pdf`（每次練習一節，附逐題表格）。同樣支援上述篩選；不支援的格式回 400 |
 | `PATCH /api/admin/sections/[sectionId]` | 修改分節名稱、說明及關鍵詞（**管理員**） |
 | `PATCH /api/admin/topics/[topicId]` | 發布／取消發布課題（**管理員**） |
 | `GET /api/admin/system/health` | 管理員端系統狀態（版本、資料庫、LLM、OCR、登入、部署提示、環境變數問題）（**管理員**） |
@@ -1491,7 +1511,7 @@ STUDENT_ROSTER_FILE=./data/student-roster.csv
 - 啟用登入後，資料庫會儲存學校帳戶的電郵、顯示名稱及頭像網址（用於顯示登入狀態）；如學校政策要求，可只保留電郵而移除名稱及頭像（修改 [src/server/auth/role.ts](src/server/auth/role.ts) 的 `buildSessionUser`）。
 - **學生的作答內容不會傳送給 LLM 作為出題依據**：生成題目時只傳送教材段落。AI 批改會傳送該題的題目、參考答案、得分要點、解釋及學生在該題的答案（僅用於判斷該答案是否達到要求）。
 - **使用 `OCR_PROVIDER=google-vision` 時，教材圖片會上傳到 Google Cloud Vision 進行辨識**（`tesseract` 則完全在本機執行）。請只上載不含個人資料的教材，並確認符合學校的資料處理要求。
-- 練習記錄一律留檔：學生端**沒有**刪除記錄的功能，教師可在 `/teacher/records` 查閱及下載（CSV），確保學習記錄可供教學檢視。要徹底重設示範資料，請刪除 `data/` 目錄後再執行 `npm run setup`。
+- 練習記錄一律留檔：學生端**沒有**刪除記錄的功能，教師可在 `/teacher/records` 查閱及匯出（CSV／Excel／Word／PDF），確保學習記錄可供教學檢視。要徹底重設示範資料，請刪除 `data/` 目錄後再執行 `npm run setup`。
 - 徹底重設示範資料：刪除 `data/` 目錄後再執行 `npm run setup`。
 - 環境變數可調整資料位置：`APP_DATABASE_PATH`、`APP_UPLOADS_DIR`、`APP_MATERIALS_DIR`、`STORAGE_PROVIDER`、`GCS_BUCKET`、`APP_MAX_UPLOAD_BYTES`、`APP_MAX_BLOCKS`。
 
@@ -1974,6 +1994,8 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 | Cloud Run 上 `llmProvider` 仍是 `mock` | 容器不會讀取本機 `.env.local` | 部署時一併以 `--set-env-vars` 設定 `LLM_PROVIDER`／`LLM_MODEL` 等（已寫入 cloudbuild.yaml） |
 | 重新部署後題庫、教材、練習記錄消失 | 資料庫位於容器內 `/tmp/data`（映像檔不會保存） | 已內建 Cloud Storage 備份（設定 `BACKUP_BUCKET`，並把 `BACKUP_PREFER_CLOUD=true`）：重新部署後會自動還原上次快照。若未設定，則每次重新部署後需重新匯入教材 |
 | 部署後題庫、教材或練習記錄變成 0（`persistence.restore` 為 `failed`） | 冷啟動下載 16 MB 以上的快照可能逾時（2026-10-22 實測 180 秒逾時），執行個體因此以全新空白資料庫啟動 | 下載已放寬至 300 秒並重試 3 次；還原失敗時**不會**上載備份（避免以空白資料庫覆蓋雲端唯一有效備份）。處理：以 `gcloud storage cp data/exports/<正確快照>.db gs://<專案ID>-history-backup/history/data/app.db` 重新上載，再以 `gcloud run services update … --update-env-vars "BACKUP_ENABLED=true"` 觸發新 revision 還原，並再次確認 `persistence.restore` 為 `restored` |
+| 匯出練習記錄時 PDF 回 500「伺服器未有可用的中文字型」 | 容器映像沒有包含 `assets/fonts/NotoSansTC-Regular.ttf`（Dockerfile 的 `COPY /app/assets` 被移除，或 `RECORDS_EXPORT_FONT_PATH` 指向不存在的路徑） | 確認映像內有 `/app/assets/fonts/NotoSansTC-Regular.ttf`；Excel／Word／CSV 不受影響，可先改用它們。若要把字型放在其他位置，設定 `RECORDS_EXPORT_FONT_PATH` |
+| 匯出練習記錄的 PDF 中文顯示為空白方格 | 更換了 PDF 字型，而該字型在子集化後缺字形（文字抽取仍正常，故不易察覺） | 以真實渲染器（MuPDF／Acrobat／Chrome）開啟檢查，不要只看文字抽取；依 [assets/fonts/README.md](assets/fonts/README.md) 重新產生字型，並保留 `subset` 行為（不可整份嵌入，否則每份 PDF 多約 7 MB） |
 | 學生登入顯示「名冊暫時無法讀取」 | Sheet 未分享給名冊服務帳戶 | 把 Sheet 分享給 `history-roster-reader@<專案>.iam.gserviceaccount.com`（檢視者） |
 | Google 登入畫面顯示「您即將重新登入『其他平台名稱』」 | OAuth 同意畫面（應用程式名稱、標誌、已授權網域）屬**整個 GCP 專案**，同專案內所有 OAuth 用戶端共用。**OAuth 用戶端可分開，但顯示名稱不能分開** | 本平台已改用獨立專案 `pccss-ai-history`（同意畫面名稱＝歷史科自學網站），此現象只會在與其他平台**共用專案**時出現。若遇到：在 [Google Auth Platform → Branding](https://console.cloud.google.com/auth/branding) 把應用程式名稱改為涵蓋兩者，或建立獨立專案（見第十節）。**注意**：使用者類型設為「內部」時，只有同組織的 Workspace 帳戶能登入，外部 Gmail 一律被 Google 拒絕，不能用來測試學生角色 |
 | Google 登入回 `redirect_uri_mismatch`（Error 400） | OAuth 用戶端未登記本平台的回呼網址。**注意本平台與 NextAuth 平台（如 ai-english-platform）路徑不同**：本平台是 `/api/auth/google/callback`，NextAuth 是 `/api/auth/callback/google`；共用同一個 OAuth 用戶端時，兩條都要各自登記 | 到 [Google Cloud Console → 憑證](https://console.cloud.google.com/apis/credentials) 開啟該「網頁應用程式」用戶端 → 「已授權的重新導向 URI」→ 加入 `http://localhost:3000/api/auth/google/callback`（正式環境另加 `https://<服務網址>/api/auth/google/callback`）→ 儲存。加入多條 URI 不會影響原有平台 |
@@ -2246,6 +2268,7 @@ node scripts/e2e-flow.mjs --start   # 端對端檢查全部通過（含版權閘
 | `tests/material-decision-queue.test.ts`（Sprint 8.2） | **36 條待教師決定題目隊列**：隊列覆蓋 36 條且 ID 不重複，每條都有問題描述、現行教材證據、建議行動及影響評估，四類數量為 4／7／11／14，建議行動分佈為更正答案 7／教師決定 3／改寫 16／停用 10；建議改寫者必須附建議題目及答案文字；每條都有處理結果（31 條改寫並附新版本號、5 條刪除），學生端維持 fail-closed 的原始狀態已記錄於 `state` |
 | `tests/material-question-queue-actions.test.ts`（Sprint 8.2 後續；8.3 擴充） | **題目修正動作清單套用器**：36 條隊列清單（31 改寫＋5 刪除）覆蓋隊列全部題目、23 條用詞對齊清單完整、10 條校內試題的教材依據連結清單只改依據；套用器只在節錄逐字相符時改寫、指紋不符（教師改過）不套用、同一段落不會被重複引用（否則學生端會 fail-closed）、證據位置歧義時拒絕套用、`link-evidence` 只改教材依據且題目內容不變、刪除可重複執行且內容已改時拒絕刪除、模擬模式不寫入、`--require-open` 擋下未開放的證據段落，且不建立任何人工覆核紀錄 |
 | `tests/practice-flow.test.ts` | 完整練習流程：組題 → 作答 → 答案回饋 → 成績 → 重做錯題 → 短答自我檢查 → 練習記錄留檔及 CSV 匯出；**題目快照題數不完整時明確回報 409**；教師端學習者清單按名冊電郵配對姓名、班別及學號 |
+| `tests/records-export.test.ts`（2026-10-22） | **練習記錄四種匯出格式**：CSV 欄位及公式注入防護、XLSX 為有效活頁簿（三張工作表、凍結首列、中文及 `&lt;`／`&amp;` 正確轉義）、DOCX 以表格呈現逐題內容（含空記錄仍可開啟）、PDF 嵌入中文子集字型且文字可抽取、大量記錄自動分頁並註明只列最近 120 次；香港時間格式與伺服器時區無關 |
 | `tests/roster-identities.test.ts`（2026-10-21） | **名冊身分快照**：每次成功載入名冊時整體替換（已離校學生不會殘留）、沒有快照時回傳空清單（教師端如實提示未能配對） |
 | `tests/api-client.test.ts`（2026-10-21） | **回應解析容錯**：伺服器回傳非 JSON（例如反向代理錯誤頁）時顯示可理解的 `ApiError`，不會以 JSON 解析錯誤文字淹沒畫面 |
 | `tests/practice-difficulty.test.ts` | **選擇題難度跟隨選擇**（2026-10-21）：題庫有足夠所選難度時全部符合、不足時先按所選難度生成、生成不足才以其他難度補足並如實說明；填充題不設難度，沿用原有次序 |
@@ -2289,7 +2312,7 @@ node scripts/e2e-flow.mjs --start   # 端對端檢查全部通過（含版權閘
 | `tests/db-backup.test.ts` | 免費資料持久化：未設定 `BACKUP_BUCKET` 時不啟用、`VACUUM INTO` 快照內容正確、上傳及下載（含 `gs://` 前綴）、啟動還原與 `BACKUP_PREFER_CLOUD`、還原失敗不阻止服務啟動、到期判斷（含「資料未變更不重複備份」與「變更後縮短間隔」）、狀態在多個模組實例（啟動掛勾與 API）之間一致 |
 | `tests/question-servability.test.ts` | **題目是否可以派給學生**（最後安全網）：多空格填充題、題幹沒有空格、答案仍留在題幹、選項全部變成「.」／空白／重複／答案不在選項內一律攔下；排序類選項（「ii，iii，iv，i」）不會被誤判為重複；亦覆蓋多空格填充題的改寫及評卷參考答案的還原 |
 
-端對端測試（[scripts/e2e-flow.mjs](scripts/e2e-flow.mjs)）會依序檢查：健康檢查（版本、資料庫狀態、不洩漏路徑或憑證）→ 登入狀態 → 課程編排（初中 12 個及高中 5 個課題、年級／主題分組、課題編號、教材就緒）→ 課題及分節 → **教材版權閘門（先還原為未確認，再確認後學生才有可用教材段落）** → 建立練習 → 作答前不洩露答案 → 提交答案並取得教材來源 → 重複提交不重複計分 → 成績及需重溫知識點 → 錯題再練習 → 短答題自我檢查 → 管理員端教材清單及預覽 → 生成題目（含教材依據、自動品質驗證紀錄及學生可用狀態）→ 不支援格式錯誤 → OCR 狀態及執行 → DOCX 上載及刪除 → 修改分節及題目狀態 → 管理員端系統狀態及儀表板統計 → **學生回報題目及教師覆核** → **回報 AI 即時生成的題目（教師端標示該題不在題庫）** → **學習記錄按學習者分開（未登入不可冒用 `school:`／`teacher:`／`admin:` 身分、他人不可讀取練習記錄）** → **後台功能分家（教師端／管理員端路徑）** → **教師查閱及下載學生練習記錄（CSV）**。
+端對端測試（[scripts/e2e-flow.mjs](scripts/e2e-flow.mjs)）會依序檢查：健康檢查（版本、資料庫狀態、不洩漏路徑或憑證）→ 登入狀態 → 課程編排（初中 12 個及高中 5 個課題、年級／主題分組、課題編號、教材就緒）→ 課題及分節 → **教材版權閘門（先還原為未確認，再確認後學生才有可用教材段落）** → 建立練習 → 作答前不洩露答案 → 提交答案並取得教材來源 → 重複提交不重複計分 → 成績及需重溫知識點 → 錯題再練習 → 短答題自我檢查 → 管理員端教材清單及預覽 → 生成題目（含教材依據、自動品質驗證紀錄及學生可用狀態）→ 不支援格式錯誤 → OCR 狀態及執行 → DOCX 上載及刪除 → 修改分節及題目狀態 → 管理員端系統狀態及儀表板統計 → **學生回報題目及教師覆核** → **回報 AI 即時生成的題目（教師端標示該題不在題庫）** → **學習記錄按學習者分開（未登入不可冒用 `school:`／`teacher:`／`admin:` 身分、他人不可讀取練習記錄）** → **後台功能分家（教師端／管理員端路徑）** → **教師查閱及下載學生練習記錄（CSV／XLSX／DOCX／PDF，並核對不支援格式回 400）**。
 
 ---
 

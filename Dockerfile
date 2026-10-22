@@ -67,6 +67,8 @@ COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder --chown=node:node /app/public ./public
 COPY --from=builder --chown=node:node /app/materials ./materials
+# 教師端匯出 PDF 用的中文字型（Noto Sans TC，SIL OFL 1.1）；路徑對應 RECORDS_EXPORT_FONT_PATH 的預設值
+COPY --from=builder --chown=node:node /app/assets ./assets
 
 USER node
 EXPOSE 8080

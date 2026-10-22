@@ -204,6 +204,11 @@ export function TeacherRecords() {
   const learnerById = new Map(learners.map((learner) => [learner.learnerId, learner]));
   const topicLabelById = new Map(topics.map((topic) => [topic.id, practiceTopicLabel(topic)]));
   const exportQuery = queryString(applied);
+  const exportHref = (format: "xlsx" | "docx" | "pdf" | "csv"): string => {
+    const params = new URLSearchParams(exportQuery);
+    params.set("format", format);
+    return `/api/teacher/records/export?${params.toString()}`;
+  };
   const activeLearner = applied.learnerId ? learnerById.get(applied.learnerId) : undefined;
   const activeLearnerName =
     activeLearner?.name ||
@@ -292,16 +297,27 @@ export function TeacherRecords() {
           >
             重設篩選
           </button>
-          <a
-            className="btn"
-            href={`/api/teacher/records/export${exportQuery ? `?${exportQuery}` : ""}`}
-            download
-          >
-            下載 CSV
+        </div>
+        <div className="flex flex-wrap items-center gap-2 border-t pt-3" style={{ borderColor: "var(--border)" }}>
+          <span className="text-sm font-semibold">匯出目前篩選結果</span>
+          <a className="btn" href={exportHref("xlsx")} download>
+            Excel（XLSX）
+          </a>
+          <a className="btn" href={exportHref("docx")} download>
+            Word（DOCX）
+          </a>
+          <a className="btn" href={exportHref("pdf")} download>
+            PDF
+          </a>
+          <a className="btn" href={exportHref("csv")} download>
+            CSV
           </a>
         </div>
         <p className="text-xs text-gray-500">
-          下載的 CSV 會按目前篩選條件匯出，每題一列，可用 Excel 開啟（含作答日期、課題、題型、題目、學生答案、正確答案及答對／答錯）。
+          匯出會按目前套用的篩選條件（課題、學習者、日期）產生，四種格式內容一致：
+          <strong>Excel</strong> 有「練習概況」及「逐題記錄」兩張工作表，適合統計；
+          <strong>Word／PDF</strong> 以每次練習為一節，附逐題表格，適合列印或存檔（超過 120 次練習時只列最近 120 次）；
+          <strong>CSV</strong> 每題一列，可用其他工具處理。
         </p>
       </section>
 
@@ -556,7 +572,7 @@ export function TeacherRecords() {
 
       {!loading && records.length === 0 && !applied.learnerId ? (
         <Notice tone="info">
-          學生完成練習後，記錄會自動儲存並顯示在這裡；教師亦可隨時下載 CSV 存檔。
+          學生完成練習後，記錄會自動儲存並顯示在這裡；教師亦可隨時以 Excel、Word、PDF 或 CSV 匯出存檔。
         </Notice>
       ) : null}
     </div>
