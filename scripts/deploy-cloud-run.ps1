@@ -66,6 +66,9 @@ param(
     [string]$RosterSheetId = "",
     # 學生名冊工作表名稱（留空 = 第一張工作表）
     [string]$RosterSheetName = "",
+    # 開放的班別前綴（前綴比對；預設 1;2;3;4;5;6 = 中一至中六，留空 = 不設限）
+    # 留空會令所有班別都可登入；高中（4、5、6）不在此清單時中四至中六學生無法登入。
+    [string]$RosterClassPrefixes = "1;2;3;4;5;6",
     # 管理員電郵（可進入管理員端 /admin；多個以分號分隔；留空 = 沒有人是管理員）
     # 注意：管理員必須在此指定，否則部署後無法進入 /admin 管理教材及系統設定。
     [string]$AdminEmails = "",
@@ -482,7 +485,7 @@ if (-not $RosterSheetId -and $Apply) {
 }
 # --allow-unauthenticated 是切換式旗標（不能寫 =true）；不允許公開存取時留空，改由 IAP／身分權杖保護
 $authFlag = if ($AllowUnauthenticated) { "--allow-unauthenticated" } else { "" }
-$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13},_STAFF_ACCESS_POLICY={14},_STAFF_DOMAINS={15},_REVIEWER_EMAILS={16}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $adminEmailList, $teacherEmailList, $StaffAccessPolicy, $staffDomainList, $reviewerEmailList)
+$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13},_STAFF_ACCESS_POLICY={14},_STAFF_DOMAINS={15},_REVIEWER_EMAILS={16},_ROSTER_CLASS_PREFIXES={17}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $adminEmailList, $teacherEmailList, $StaffAccessPolicy, $staffDomainList, $reviewerEmailList, $RosterClassPrefixes)
 Invoke-Gcloud builds submit --project $Project --config cloudbuild.yaml --substitutions $substitutions --timeout=1800s . | Out-Null
 
 # 已棄用的舊變數不會授予任何權限，但留著會產生 error 級設定警示，也容易令人誤以為仍然生效。

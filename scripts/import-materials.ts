@@ -12,6 +12,7 @@
  *   npm run import:materials -- --books            # 只匯入書本內容
  *   npm run import:materials -- --questions        # 只匯入校內試題
  *   npm run import:materials -- --topic topic-5    # 只匯入指定課題
+ *   npm run import:materials -- --senior           # 只匯入高中教材（materials/高中/…）
  *   npm run import:materials -- --file 某檔案.docx --topic topic-3
  *   npm run import:materials -- --ocr              # 匯入後執行 OCR（辨識圖片文字）
  */
@@ -33,6 +34,7 @@ interface Args {
   booksOnly: boolean;
   questionsOnly: boolean;
   topicId: string | null;
+  seniorOnly: boolean;
   ocr: boolean;
 }
 
@@ -45,6 +47,7 @@ function readArgs(argv: string[]): Args {
     booksOnly: args.includes("--books"),
     questionsOnly: args.includes("--questions"),
     topicId: topicIndex >= 0 && args[topicIndex + 1] ? args[topicIndex + 1] : null,
+    seniorOnly: args.includes("--senior"),
     ocr: args.includes("--ocr"),
   };
 }
@@ -74,7 +77,7 @@ async function docxToText(filePath: string): Promise<string> {
 
 async function main() {
   const config = getServerConfig();
-  const { files, booksOnly, questionsOnly, topicId, ocr } = readArgs(process.argv);
+  const { files, booksOnly, questionsOnly, topicId, seniorOnly, ocr } = readArgs(process.argv);
 
   getDb();
   const seeded = seedCurriculum();
@@ -91,6 +94,8 @@ async function main() {
       }))
     : collectTargets(config.materialsDir);
   if (topicId) targets = targets.filter((target) => target.topicId === topicId);
+  // 只匯入高中教材（避免重複匯入已存在的初中教材）
+  if (seniorOnly) targets = targets.filter((target) => target.topicId?.startsWith("hs-topic-"));
 
   if (targets.length === 0) {
     console.log(`找不到可匯入的教材，請把檔案放在：${config.materialsDir}`);

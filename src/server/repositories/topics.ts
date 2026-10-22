@@ -8,6 +8,8 @@ import {
   CURRICULUM_LEVEL_LABELS,
   curriculumThemeText,
   sectionSchema,
+  type CurriculumLevel,
+  type CurriculumTheme,
   type Section,
   type Topic,
   type TopicOverview,
@@ -33,6 +35,7 @@ interface TopicRow {
   created_at: string;
   updated_at: string;
   level: number | null;
+  curriculum_theme: string | null;
   topic_number: number | null;
 }
 
@@ -55,7 +58,11 @@ function mapTopic(row: TopicRow): Topic {
     description: row.description,
     published: fromSqlBool(row.published),
     order: row.sort_order,
-    level: ((row.level ?? 1) as 0 | 1 | 2 | 3),
+    level: ((row.level ?? 1) as CurriculumLevel),
+    curriculumTheme:
+      row.curriculum_theme === "A" || row.curriculum_theme === "B"
+        ? row.curriculum_theme
+        : null,
     topicNumber: row.topic_number,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -100,7 +107,8 @@ export function upsertTopic(topic: {
   description?: string;
   published?: boolean;
   order?: number;
-  level?: 0 | 1 | 2 | 3;
+  level?: CurriculumLevel;
+  curriculumTheme?: CurriculumTheme | null;
   topicNumber?: number | null;
 }): Topic {
   const db = getDb();
@@ -109,13 +117,14 @@ export function upsertTopic(topic: {
   if (existing) {
     db.prepare(
       `UPDATE topics SET title = ?, description = ?, published = ?, sort_order = ?,
-       level = ?, topic_number = ?, updated_at = ? WHERE id = ?`,
+       level = ?, curriculum_theme = ?, topic_number = ?, updated_at = ? WHERE id = ?`,
     ).run(
       topic.title,
       topic.description ?? existing.description,
       toSqlBool(topic.published ?? existing.published),
       topic.order ?? existing.order,
       topic.level ?? existing.level,
+      topic.curriculumTheme === undefined ? existing.curriculumTheme : topic.curriculumTheme,
       topic.topicNumber === undefined ? existing.topicNumber : topic.topicNumber,
       timestamp,
       topic.id,
@@ -123,8 +132,8 @@ export function upsertTopic(topic: {
   } else {
     db.prepare(
       `INSERT INTO topics
-       (id, title, description, published, sort_order, level, topic_number, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, title, description, published, sort_order, level, curriculum_theme, topic_number, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       topic.id,
       topic.title,
@@ -132,6 +141,7 @@ export function upsertTopic(topic: {
       toSqlBool(topic.published ?? false),
       topic.order ?? 0,
       topic.level ?? 1,
+      topic.curriculumTheme ?? null,
       topic.topicNumber ?? null,
       timestamp,
       timestamp,
@@ -345,7 +355,7 @@ function buildOverview(topic: Topic, learnerId: string | null): TopicOverview {
   return {
     ...topic,
     levelLabel: CURRICULUM_LEVEL_LABELS[topic.level] ?? "",
-    themeText: topic.level === 0 ? "" : curriculumThemeText(topic.level),
+    themeText: curriculumThemeText(topic.level, topic.curriculumTheme),
     sections: topLevel,
     totalPublishedQuestions: [...counts.values()].reduce((total, value) => total + value, 0),
     progress,
@@ -361,7 +371,8 @@ export function seedTopicStructure(input: {
     description: string;
     order: number;
     published: boolean;
-    level?: 0 | 1 | 2 | 3;
+    level?: CurriculumLevel;
+    curriculumTheme?: CurriculumTheme | null;
     topicNumber?: number | null;
   };
   sections: {
@@ -381,6 +392,7 @@ export function seedTopicStructure(input: {
       order: input.topic.order,
       published: input.topic.published,
       level: input.topic.level,
+      curriculumTheme: input.topic.curriculumTheme,
       topicNumber: input.topic.topicNumber,
     });
     const sections: Section[] = [];

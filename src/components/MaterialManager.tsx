@@ -490,7 +490,10 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
   // 依課程年級分組顯示教材（level 0 為未對應任何課題的教材）
   const groupedDocuments = [1, 2, 3, 0].map((level) => ({
     level,
-    label: level === 0 ? "未對應課題的教材" : CURRICULUM_LEVEL_LABELS[level as 1 | 2 | 3],
+    label:
+      level === 0
+        ? "未對應課題的教材"
+        : (CURRICULUM_LEVEL_LABELS[level as keyof typeof CURRICULUM_LEVEL_LABELS] ?? ""),
     documents: (data?.documents ?? []).filter((document) => {
       const topic = topics.find((item) => item.id === document.topicId);
       if (level === 0) return document.topicId === null || topic === undefined;
@@ -503,7 +506,7 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
       <div>
         <h1 className="text-xl font-bold">教材管理</h1>
         <p className="text-sm text-gray-600">
-          匯入教育局歷史科課程教材（12 個課題，中一至中三）。系統會擷取標題、清單、段落及表格，
+          匯入教育局歷史科課程教材（初中 12 個課題、高中 5 個課題，中一至中六）。系統會擷取標題、清單、段落及表格，
           並自動對應到課題分節；圖片文字會以 OCR 辨識後加入教材內容，供 AI 生成題目之用。
         </p>
         <p className="text-xs text-gray-500 mt-1">目前 OCR 引擎：{ocrEngineLabel}</p>

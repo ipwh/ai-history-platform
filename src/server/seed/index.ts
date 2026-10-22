@@ -9,9 +9,20 @@ import { questionSchema, type Question, type TableCell } from "../../lib/types";
 import { nowIso } from "../db/connection";
 import { listBlocksByTopic } from "../repositories/materials";
 import { getQuestion, insertQuestion, updateQuestion } from "../repositories/questions";
-import { listSections, listTopics, seedTopicStructure } from "../repositories/topics";
+import {
+  getTopic,
+  listSections,
+  listTopics,
+  seedTopicStructure,
+} from "../repositories/topics";
 import { normalizeForMatch, truncate } from "../materials/text-utils";
-import { CURRICULUM_TOPICS, PILOT_SECTIONS, PILOT_TOPIC, type TopicSeed } from "./curriculum";
+import {
+  ALL_CURRICULUM_TOPICS,
+  PILOT_SECTIONS,
+  PILOT_TOPIC,
+  SENIOR_CURRICULUM_TOPICS,
+  type TopicSeed,
+} from "./curriculum";
 import { DEMO_QUESTIONS } from "./demo-questions";
 
 export interface SeedReport {
@@ -67,24 +78,28 @@ export function findAnchorSource(topicId: string, anchor: string): AnchorSource 
 }
 
 /**
- * 建立／更新全部 12 個課題（中一至中三）的結構。
+ * 建立／更新全部課程課題的結構（初中 12 個、高中 5 個）。
  * 可重複執行（具幂等性）。
  */
-export function seedCurriculum(options: { levels?: (0 | 1 | 2 | 3)[] } = {}): CurriculumSeedReport {
+export function seedCurriculum(options: { levels?: (0 | 1 | 2 | 3 | 4)[] } = {}): CurriculumSeedReport {
   const topics = options.levels
-    ? CURRICULUM_TOPICS.filter((topic) => options.levels?.includes(topic.level))
-    : CURRICULUM_TOPICS;
+    ? ALL_CURRICULUM_TOPICS.filter((topic) => options.levels?.includes(topic.level))
+    : ALL_CURRICULUM_TOPICS;
 
   let sectionCount = 0;
   for (const topic of topics) {
+    // 重複執行種子不得改變發布狀態：高中課題預設不發布，管理員發布後若再次匯入教材，
+    // 不應被種子悄悄下架。
+    const existing = getTopic(topic.id);
     const result = seedTopicStructure({
       topic: {
         id: topic.id,
         title: topic.title,
         description: topic.description,
         order: topic.order,
-        published: topic.published,
+        published: existing?.published ?? topic.published,
         level: topic.level,
+        curriculumTheme: topic.curriculumTheme ?? null,
         topicNumber: topic.topicNumber,
       },
       sections: topic.sections,
@@ -102,6 +117,7 @@ export function seedCurriculum(options: { levels?: (0 | 1 | 2 | 3)[] } = {}): Cu
     1: "中一",
     2: "中二",
     3: "中三",
+    4: "中四至中六",
   };
 
   return {
@@ -115,7 +131,7 @@ export function seedCurriculum(options: { levels?: (0 | 1 | 2 | 3)[] } = {}): Cu
 
 /** 取得課題的 seed 資料（用於匯入教材時對應檔案） */
 export function findTopicSeed(topicId: string): TopicSeed | null {
-  return CURRICULUM_TOPICS.find((topic) => topic.id === topicId) ?? null;
+  return ALL_CURRICULUM_TOPICS.find((topic) => topic.id === topicId) ?? null;
 }
 
 /** 建立／更新試點課題（課題5）的分節結構 */
@@ -194,7 +210,7 @@ export function seedPilotTopic(): SeedReport {
 let bootstrapped = false;
 
 /**
- * 首次啟動時若資料庫尚未有任何課題，自動建立 12 個課題的結構及示範題庫，
+ * 首次啟動時若資料庫尚未有任何課題，自動建立初中 12 個及高中 5 個課題的結構及示範題庫，
  * 確保沒有 API key、沒有上載教材的情況下仍可使用示範模式。
  */
 export function ensureBootstrap(): void {
@@ -203,5 +219,24 @@ export function ensureBootstrap(): void {
   if (listTopics().length === 0) {
     seedCurriculum();
     seedPilotTopic();
+    return;
+  }
+  // 既有資料庫（已在運作的初中平台）：補上尚未建立的高中課題結構。
+  // 只建立缺少的課題，不改動已存在課題的發布狀態或管理員設定。
+  for (const topic of SENIOR_CURRICULUM_TOPICS) {
+    if (getTopic(topic.id)) continue;
+    seedTopicStructure({
+      topic: {
+        id: topic.id,
+        title: topic.title,
+        description: topic.description,
+        order: topic.order,
+        published: topic.published,
+        level: topic.level,
+        curriculumTheme: topic.curriculumTheme ?? null,
+        topicNumber: topic.topicNumber,
+      },
+      sections: topic.sections,
+    });
   }
 }

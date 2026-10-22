@@ -101,11 +101,13 @@ describe("教育局歷史科課程結構", () => {
 describe("課程結構寫入資料庫", () => {
   it("建立全部課題及分節，並記錄年級及課題編號", () => {
     const report = seed.seedCurriculum();
-    expect(report.topics).toBe(12);
+    // 初中 12 個課題 + 高中 5 個課題
+    expect(report.topics).toBe(17);
     expect(report.sections).toBeGreaterThan(30);
 
     const stored = topics.listTopics();
-    expect(stored).toHaveLength(12);
+    expect(stored).toHaveLength(17);
+    // 高中課題在匯入教材及生成題目前不發布，因此學生端仍只看到初中 12 個課題。
     expect(topics.listTopics({ publishedOnly: true })).toHaveLength(12);
 
     const topic5 = topics.getTopic("topic-5");
@@ -129,7 +131,7 @@ describe("課程結構寫入資料庫", () => {
   it("重複執行課程種子不會產生重複課題", () => {
     seed.seedCurriculum();
     seed.seedCurriculum();
-    expect(topics.listTopics()).toHaveLength(12);
+    expect(topics.listTopics()).toHaveLength(17);
     expect(questions.countQuestions({ topicId: "topic-1" })).toBe(0);
   });
 

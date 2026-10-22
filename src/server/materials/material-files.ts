@@ -13,7 +13,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { CURRICULUM_TOPICS, findTopicSeedByFile } from "../seed/curriculum";
+import {
+  ALL_CURRICULUM_TOPICS,
+  CURRICULUM_TOPICS,
+  findTopicSeedByFile,
+} from "../seed/curriculum";
 import { isRetiredQuestionBankFileName } from "./question-bank";
 
 export interface MaterialFileEntry {
@@ -45,7 +49,7 @@ export function detectTopicId(name: string): string | null {
   }
 
   const flattened = name.replace(/\s+/g, "");
-  for (const topic of CURRICULUM_TOPICS) {
+  for (const topic of ALL_CURRICULUM_TOPICS) {
     const shortTitle = topic.title.replace(/^課題\s*\d+[：:\s]*/, "").replace(/\s+/g, "");
     if (shortTitle.length >= 2 && flattened.includes(shortTitle)) return topic.id;
   }

@@ -11,6 +11,7 @@ import {
   type PracticeRecordQuestion,
   type PracticeRecordSession,
 } from "../../lib/types";
+import { practiceTopicLabel } from "../../lib/practice-summary";
 import type { RosterStudent } from "../roster/columns";
 import { getTopic, sectionTitleMap } from "../repositories/topics";
 import {
@@ -194,7 +195,8 @@ export function listPracticeRecords(filter: SessionRecordFilter = {}): PracticeR
   return sessions.map((session) => {
     let topicTitle = topicTitles.get(session.topicId);
     if (topicTitle === undefined) {
-      topicTitle = getTopic(session.topicId)?.title ?? session.topicId;
+      const topic = getTopic(session.topicId);
+      topicTitle = topic ? practiceTopicLabel(topic) : session.topicId;
       topicTitles.set(session.topicId, topicTitle);
     }
     return buildSessionRecord(session, topicTitle, sectionTitlesFor(session.topicId));

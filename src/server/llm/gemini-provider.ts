@@ -3,7 +3,7 @@
  * 需要 GEMINI_API_KEY；未設定時不會使用此 provider。
  */
 import type { LlmQuestion } from "../../lib/types";
-import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt";
+import { buildUserPrompt, systemPromptFor } from "./prompt";
 import {
   LlmProviderError,
   type GenerateQuestionsOutcome,
@@ -43,7 +43,7 @@ export function createGeminiProvider(options: GeminiOptions): LlmProvider {
             "x-goog-api-key": options.apiKey,
           },
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            systemInstruction: { parts: [{ text: systemPromptFor(input.stage) }] },
             contents: [{ role: "user", parts: [{ text: buildUserPrompt(input) }] }],
             generationConfig: {
               temperature: 0.6,

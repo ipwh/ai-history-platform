@@ -1405,6 +1405,17 @@ export const MIGRATIONS: Migration[] = [
          ON roster_students(class_name, student_number)`,
     ],
   },
+  {
+    id: "0028-senior-secondary-curriculum-theme",
+    statements: [
+      // 高中課程（中四至中六）橫跨三年，不以年級分組，而是依教育局課程的
+      // 「主題甲：二十世紀亞洲的現代化與蛻變」及「主題乙：二十世紀世界的
+      // 衝突與合作」分組。初中課題此欄為 NULL，行為完全不變。
+      `ALTER TABLE topics ADD COLUMN curriculum_theme TEXT`,
+      `CREATE INDEX IF NOT EXISTS idx_topics_level_theme
+         ON topics(level, curriculum_theme, sort_order)`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

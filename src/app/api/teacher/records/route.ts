@@ -37,6 +37,7 @@ export async function GET(request: Request) {
         id: topic.id,
         title: topic.title,
         level: topic.level,
+        curriculumTheme: topic.curriculumTheme,
         topicNumber: topic.topicNumber,
       }));
     const rosterNotice = rosterStudents.length === 0

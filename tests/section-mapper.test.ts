@@ -98,4 +98,26 @@ describe("教材段落對應分節", () => {
     const result = mapBlocksToSections([block("內容", 0)], []);
     expect(result.sectionIds).toEqual([null]);
   });
+
+  it("限定候選分節後，其他分節的標題不會搶走段落", () => {
+    // 匯入時若課程種子聲明某份教材只屬於指定分節（見 declaredSectionsForFile），
+    // import-service 只會傳入該範圍，避免「文藝復興」等字眼令宗教改革的筆記
+    // 被歸入文藝復興的分節。
+    const blocks = [
+      block("文藝復興", 0, "heading"),
+      block("宗教改革", 1, "heading"),
+      block("引發衝突與戰爭", 2, "list"),
+    ];
+
+    const unrestricted = mapBlocksToSections(blocks, SECTIONS);
+    expect(unrestricted.sectionIds[0]).toBe("s1");
+
+    const scoped = mapBlocksToSections(
+      blocks,
+      SECTIONS.filter((section) => section.id === "s2" || section.id === "s2a"),
+    );
+    expect(scoped.sectionIds[0]).toBeNull();
+    expect(scoped.sectionIds[1]).toBe("s2");
+    expect(scoped.sectionIds[2]).toBe("s2");
+  });
 });

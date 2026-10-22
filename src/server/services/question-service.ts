@@ -10,6 +10,7 @@
  */
 import {
   CURRICULUM_LEVEL_LABELS,
+  SENIOR_SECONDARY_LEVEL,
   curriculumThemeText,
   questionGenerationRequestSchema,
   questionInputSchema,
@@ -59,7 +60,7 @@ import { getBlocksByIds } from "../repositories/materials";
 import { countQuestionRevisionDrift } from "../repositories/practice";
 import { expandSectionIds, getSection, getTopic, listSections } from "../repositories/topics";
 import { normalizeForMatch, truncate } from "../materials/text-utils";
-import { topicLearningFocusText } from "../seed/curriculum-focus";
+import { learningFocusTextForTopic } from "../seed/curriculum-focus";
 import { buildMaterialUnits } from "./material-units";
 import { studentExcerptVisibility } from "./source-visibility";
 import { checkQuestionServable } from "./question-servability";
@@ -169,11 +170,12 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
     .filter((section) => sectionIds.includes(section.id))
     .map((section) => section.title);
 
-  // 讓模型掌握課程脈絡：年級（中一至中三）、教育局課程主題，以及該課題的學習重點
+  // 讓模型掌握課程脈絡：階段（初中／高中）、課程主題，以及該課題的學習重點
   const courseContext = {
+    stage: topic.level === SENIOR_SECONDARY_LEVEL ? ("senior" as const) : ("junior" as const),
     levelLabel: CURRICULUM_LEVEL_LABELS[topic.level] ?? "",
-    themeText: topic.level === 0 ? "" : curriculumThemeText(topic.level),
-    learningFocusText: topicLearningFocusText(topic.topicNumber),
+    themeText: curriculumThemeText(topic.level, topic.curriculumTheme),
+    learningFocusText: learningFocusTextForTopic(topic),
   };
 
   const resolved = resolveProvider();

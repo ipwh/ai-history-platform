@@ -9,7 +9,8 @@
  * 題目、答案及解釋的史實一律以已匯入的教材段落為準（見 src/server/llm/validation.ts），
  * 因此這些內容只會寫入提示詞，不會寫入資料庫。
  */
-import { HISTORY_SKILLS } from "../../lib/types";
+import { HISTORY_SKILLS, SENIOR_SECONDARY_LEVEL } from "../../lib/types";
+import { seniorLearningFocusText } from "./senior-curriculum-focus";
 
 /** 學習重點中的一個分題（對應《預期學習內容》的欄目） */
 export interface TopicFocusStrand {
@@ -512,4 +513,17 @@ export function topicLearningFocusText(topicNumber: number | null | undefined): 
     )
     .join("\n");
   return `課題${topicNumber}「${focus.title}」的學習重點（共 ${focus.lessons} 節；有「延伸部分」的項目屬選修）：\n${strands}`;
+}
+
+/**
+ * 依課題所屬階段取得學習重點。
+ * 高中課題以課題 ID 查高中指引；初中課題沿用教育局中一至中三的學習重點。
+ */
+export function learningFocusTextForTopic(topic: {
+  id: string;
+  level: number;
+  topicNumber: number | null;
+}): string {
+  if (topic.level === SENIOR_SECONDARY_LEVEL) return seniorLearningFocusText(topic.id);
+  return topicLearningFocusText(topic.topicNumber);
 }

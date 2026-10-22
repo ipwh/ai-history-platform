@@ -11,12 +11,32 @@ import {
   type Difficulty,
   type QuestionType,
 } from "../../lib/types";
-import type { QuestionGenerationInput } from "./provider";
+import type { QuestionGenerationInput, QuestionStage } from "./provider";
 import type { AnswerGradingInput } from "./grader";
 import { materialAnalysisPrompt } from "./material-analysis";
 import { historyLearningGoalsText } from "../seed/curriculum-focus";
+import { seniorLearningGoalsText } from "../seed/senior-curriculum-focus";
 
-export const SYSTEM_PROMPT = `你是一位香港中學歷史科教師，熟悉教育局《歷史科課程指引》（中一至中三），負責按教材內容設計練習題。
+/**
+ * 建立出題系統提示。
+ *
+ * 初中（中一至中三）與高中（中四至中六）的課程要求不同：高中以二十世紀為範圍，
+ * 重視因果、延續與轉變、異同比較、歷史意義及史料運用，因此提示詞需要分開，
+ * 避免把初中程度的「辨認字詞」當作高中要求。
+ */
+export function buildSystemPrompt(stage: QuestionStage = "junior"): string {
+  const stageLabel = stage === "senior" ? "中四至中六" : "中一至中三";
+  const learningGoals =
+    stage === "senior" ? seniorLearningGoalsText() : historyLearningGoalsText();
+  const stageGuidance =
+    stage === "senior"
+      ? `
+高中課程的重點：本課程以二十世紀的歷史為範圍，要求學生理解事件的因果關係、延續與轉變、
+異同比較及歷史意義，並能運用史料。基礎題可考核重要史實、時序及制度；進階題要解釋原因、
+結果或轉變；挑戰題要比較、評價或分析歷史意義。不可把初中程度的字詞辨認當作進階或挑戰題，
+亦不可要求背誦課程學習重點沒有列出的細節。`
+      : "";
+  return `你是一位香港中學歷史科教師，熟悉教育局《歷史科課程指引》（${stageLabel}），負責按教材內容設計練習題。
 你必須嚴格遵守以下規則：
 1. 只可使用使用者提供的「教材段落」內容出題，不得加入教材沒有交代的歷史事實、人物、事件、地名、數字或年份。
    題目、參考答案及解釋中出現的年份，必須與教材段落的寫法一致；教材沒有提及的年份一律不可出現。
@@ -34,7 +54,7 @@ export const SYSTEM_PROMPT = `你是一位香港中學歷史科教師，熟悉�
    因應難度考核相應的歷史技能：${HISTORY_SKILLS.join("；")}。
    基礎題以辨認關鍵字詞及史實為主；進階題要理解整句意思；挑戰題要分析、比較、綜合，或考核時序、因果、轉變與延續。不可把不屬於該難度的要求當作基礎題，亦不可只要求背誦。
    以下是教育局《歷史科學習目標》的精簡摘要，題目的要求不可超出這個範圍：
-${historyLearningGoalsText()}
+${learningGoals}${stageGuidance}
 7. 用語必須符合香港歷史科的書面語：使用繁體中文（香港用法），專有名詞、人名、地名、條約及著作名稱、年份寫法一律沿用教材的寫法，不可自行翻譯、簡化或改寫，不可混用簡體字。
    提問用語要符合香港歷史科的慣常用法（例如「試說明」、「試比較」、「試舉例說明」、「何以見得」、「哪一項最能解釋」），不可使用課程以外的考核形式或簡體字題目。
 8. **所有欄位（題目、選項、答案、解釋、知識點）都必須是純文字**：
@@ -63,6 +83,14 @@ ${historyLearningGoalsText()}
     如果教材沒有交代因果，就不要出「為甚麼」的題目；如果教材沒有交代意義或影響，
     就不要出「有何歷史意義」的題目。寧可少出，不可自行補上教材沒有的背景。
 18. 只輸出 JSON，不要輸出任何解釋文字或 Markdown 代碼標記。`;
+}
+
+/** 初中出題系統提示（保留原有匯出，供舊呼叫端及測試使用） */
+export const SYSTEM_PROMPT = buildSystemPrompt("junior");
+
+export function systemPromptFor(stage: QuestionStage = "junior"): string {
+  return stage === "senior" ? buildSystemPrompt("senior") : SYSTEM_PROMPT;
+}
 
 function formatUnits(input: QuestionGenerationInput): string {
   return input.materialUnits

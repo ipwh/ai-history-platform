@@ -27,6 +27,7 @@ import {
 import { listQuestions, updateQuestion } from "../repositories/questions";
 import { autoOpenDocument } from "../services/material-distribution";
 import { listSections, listTopics } from "../repositories/topics";
+import { declaredSectionsForFile, findTopicSeedByFile } from "../seed/curriculum";
 import { listDocxImagesInDocumentOrder } from "./docx-images";
 import { filterExcludedBlocks } from "./exclusions";
 import { parseDocx } from "./docx";
@@ -77,6 +78,11 @@ function extensionOf(fileName: string): string {
 
 /** 由檔名或內容推測課題，例如 HNC2A2E_T5_SN_TE.docx → 課題 5 */
 export function detectTopicForFile(fileName: string, topics: Topic[]): Topic | null {
+  // 先比對課程種子登記的教材檔名（高中筆記以「1.1 …」命名，不含「課題N」）。
+  const seed = findTopicSeedByFile(fileName);
+  const bySeed = seed ? topics.find((topic) => topic.id === seed.id) : undefined;
+  if (bySeed) return bySeed;
+
   const match = /[_-]T(\d+)[_-]/i.exec(fileName) ?? /課題\s*(\d+)/.exec(fileName);
   if (match) {
     const topicNumber = match[1];
@@ -195,7 +201,20 @@ export async function importMaterial(options: ImportOptions): Promise<ImportOutc
   }
 
   const sections = detectedTopic ? listSections(detectedTopic.id) : [];
-  const assignment = mapBlocksToSections(blocks, sections);
+  // 若課程種子聲明了這份教材所屬的分節，只可在該範圍內比對，避免通用字眼
+  // （例如「第二次世界大戰」）令段落被歸入同一課題的其他分節。
+  const declaredSections = declaredSectionsForFile(options.fileName);
+  const candidateSections = declaredSections
+    ? sections.filter((section) => declaredSections.includes(section.id))
+    : sections;
+  const scopedSections = candidateSections.length > 0 ? candidateSections : sections;
+  const assignment = mapBlocksToSections(blocks, scopedSections);
+  // 只聲明單一分節的教材（整份筆記屬於同一主題）：未命中的段落亦歸入該分節，
+  // 令封面、目錄等段落不會成為無分節的孤兒教材。
+  if (declaredSections?.length === 1 && scopedSections.length === 1) {
+    const onlySection = scopedSections[0].id;
+    assignment.sectionIds = assignment.sectionIds.map(() => onlySection);
+  }
 
   // 圖片段落的 ocr_source 需與 OCR 服務抽出的媒體路徑一致（word/media/imageN.ext），
   // 這裡依 DOCX 內媒體檔名的排序對應，方便 OCR 完成後寫回正確段落。

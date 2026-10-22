@@ -138,8 +138,9 @@ function textOf(value) {
 async function loadTopics() {
   const response = await call("GET", `/api/topics?learnerId=${LEARNER}`);
   check(response.status === 200, "topics", `GET /api/topics 回應 ${response.status}`);
-  const topics = response.payload?.topics ?? [];
-  check(topics.length === 12, "topics", `課題數應為 12，實際 ${topics.length}`);
+  // 只模擬學生實際可見（已發布）的課題；高中課題在匯入教材及出題前不會發布。
+  const topics = (response.payload?.topics ?? []).filter((topic) => topic.published);
+  check(topics.length >= 12, "topics", `已發布課題應至少 12 個，實際 ${topics.length}`);
 
   const details = [];
   for (const topic of topics) {
@@ -708,8 +709,12 @@ function pickSections(topic, mode) {
       return [topic.sections.find((section) => section.parentId === null)?.id ?? topic.sections[0].id];
     case "all":
       return topic.sections.filter((section) => section.parentId === null).map((section) => section.id);
-    default:
-      return withQuestions.slice(0, 3).map((section) => section.id);
+    default: {
+      // 分節可以完全沒有題庫題目（例如高中課題在生成題目前），
+      // 此時仍要選出可分節，否則會送出空的 sectionIds（API 會回 400）。
+      const candidates = withQuestions.length > 0 ? withQuestions : topic.sections;
+      return candidates.slice(0, 3).map((section) => section.id);
+    }
   }
 }
 
@@ -964,7 +969,10 @@ async function main() {
     );
   }
 
-  const emptySection = topics
+  // 題目數會隨練習增加的即時生成題目變動，因此這項檢查必須用**即時**的課題資料，
+  // 不可用 [A] 開始時的舊快照（否則會誤用一條已經有題目的分節）。
+  const freshTopics = await loadTopics();
+  const emptySection = freshTopics
     .flatMap((topic) => topic.sections.map((section) => ({ ...section, topicId: topic.id })))
     .find((section) => section.publishedQuestionCount === 0);
   if (emptySection) {

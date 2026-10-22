@@ -562,6 +562,89 @@
         }
       ],
       "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。學生閱讀頁及 AI 出題仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
+    },
+    {
+      "decision": "owner-authorized-student-distribution",
+      "label": "production-snapshot",
+      "target": "data\\exports\\production-hs.db",
+      "ownerEmail": "ipwh@pochiu.edu.hk",
+      "reason": "負責人已逐段核對高中十份筆記內容，批准向中四至中六學生發放作自學之用",
+      "decidedAt": "2026-10-22T02:20:31.361Z",
+      "openedCount": 10,
+      "distributionChanges": 10,
+      "openedDocuments": [
+        {
+          "id": "doc_08d3f90e9a734274",
+          "topicId": "hs-topic-5",
+          "fileName": "5.2 社會及文化方面的國際協作筆記答案.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        },
+        {
+          "id": "doc_a5a1cbeb2d03420f",
+          "topicId": "hs-topic-5",
+          "fileName": "5.1 經濟方面的國際協作筆記答案.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        },
+        {
+          "id": "doc_63929793bf224a5d",
+          "topicId": "hs-topic-4",
+          "fileName": "4.3.1 超級大國的對抗與關係緩和筆記答案.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        },
+        {
+          "id": "doc_fd8a8b82f49948dc",
+          "topicId": "hs-topic-4",
+          "fileName": "4.2 兩次世界大戰及有關和約的簽署筆記答案.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        },
+        {
+          "id": "doc_8df6902b21ef41e2",
+          "topicId": "hs-topic-4",
+          "fileName": "4.1 1900年至1914年的國際關係筆記答案.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        },
+        {
+          "id": "doc_16f210acde2d401a",
+          "topicId": "hs-topic-3",
+          "fileName": "3.1 日本的現代化與蛻變筆記答案.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        },
+        {
+          "id": "doc_77e1b5ae352a4c98",
+          "topicId": "hs-topic-2",
+          "fileName": "2.2 毛澤東時代的社會主義現代化筆記答案.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        },
+        {
+          "id": "doc_5c7f55ec72e241be",
+          "topicId": "hs-topic-2",
+          "fileName": "2.1 中國早期的現代化努力 — 改革與革命筆記答案.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        },
+        {
+          "id": "doc_34000cd8fedf4028",
+          "topicId": "hs-topic-1",
+          "fileName": "1.2 香港作為國際城市的發展筆記答案.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        },
+        {
+          "id": "doc_9cdffbece52644da",
+          "topicId": "hs-topic-1",
+          "fileName": "1.1 香港的政治及行政轉變筆記答案.docx",
+          "teacherEdition": true,
+          "teacherOnlyBlocksHiddenFromStudents": 0
+        }
+      ],
+      "note": "這些教材由擁有者授權批次開放：`rights_confirmed_by` 記錄下達指示的擁有者；教師版文件的 `content_reviewed_by` 亦已記錄，但**不是**逐段人工核對（值內已如實標明）。AI 出題及題目來源節錄仍會過濾判定為教師專用的段落（答案、評分參考），但該判斷是模式比對、不是內容理解，可能漏掉以其他方式書寫的答案。撤回開放不需要任何確認且立即生效（管理端 /admin/materials）。"
     }
   ]
 }

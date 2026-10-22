@@ -17,8 +17,13 @@ export interface MaterialUnit {
   fromOcr?: boolean;
 }
 
+/** 出題階段：初中（中一至中三）或高中（中四至中六） */
+export type QuestionStage = "junior" | "senior";
+
 export interface QuestionGenerationInput {
   topicTitle: string;
+  /** 課程階段（決定使用初中或高中的系統提示） */
+  stage?: QuestionStage;
   /** 年級標籤（例如「中二」），讓模型掌握課程脈絡 */
   levelLabel?: string;
   /** 課程主題（例如「近代世界（15 至 19 世紀）：西力的形成與外延」） */

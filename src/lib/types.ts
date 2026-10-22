@@ -94,17 +94,22 @@ export const IMAGE_PLACEHOLDER_MESSAGE = "圖片內容未能自動擷取";
 /* ------------------------------------------------------------------ */
 
 /**
- * 中一至中三的課程組織（按教育局歷史科課程指引）：
- *   中一（level 1）古代世界（史前時期至14世紀）：區域文明的誕生與交流 → 課題1-4
- *   中二（level 2）近代世界（15至19世紀）：西力的形成與外延     → 課題5-8
- *   中三（level 3）現代世界（20世紀至今）：邁向多極與相互依存    → 課題9-12
+ * 課程組織（按教育局歷史科課程指引）：
+ *   初中  中一（level 1）古代世界（史前時期至14世紀）：區域文明的誕生與交流 → 課題1-4
+ *         中二（level 2）近代世界（15至19世紀）：西力的形成與外延     → 課題5-8
+ *         中三（level 3）現代世界（20世紀至今）：邁向多極與相互依存    → 課題9-12
+ *   高中  中四至中六（level 4）二十世紀的世界：主題甲／主題乙
  * level 0 保留給未對應任何年級的教材，學生端不會顯示。
+ *
+ * 高中課程橫跨三年，不由單一年級授課，因此以**主題**（curriculumTheme）分組，
+ * 而不是再細分為中四／中五／中六。
  */
 export const curriculumLevelSchema = z.union([
   z.literal(0),
   z.literal(1),
   z.literal(2),
   z.literal(3),
+  z.literal(4),
 ]);
 export type CurriculumLevel = z.infer<typeof curriculumLevelSchema>;
 
@@ -113,7 +118,14 @@ export const CURRICULUM_LEVEL_LABELS: Record<CurriculumLevel, string> = {
   1: "中一",
   2: "中二",
   3: "中三",
+  4: "中四至中六",
 };
+
+/** 高中課程主題（教育局高中歷史科課程指引） */
+export const curriculumThemeSchema = z.enum(["A", "B"]);
+export type CurriculumTheme = z.infer<typeof curriculumThemeSchema>;
+
+export const SENIOR_SECONDARY_LEVEL: CurriculumLevel = 4;
 
 /** 各年級的課程主題 */
 export const CURRICULUM_THEMES: Record<1 | 2 | 3, { title: string; era: string; focus: string }> = {
@@ -134,9 +146,40 @@ export const CURRICULUM_THEMES: Record<1 | 2 | 3, { title: string; era: string; 
   },
 };
 
-export function curriculumThemeText(level: 1 | 2 | 3): string {
-  const theme = CURRICULUM_THEMES[level];
-  return `${theme.title}（${theme.era}）：${theme.focus}`;
+/** 高中兩個主題的說明（首頁橫幅及出題提示詞使用） */
+export const SENIOR_CURRICULUM_THEMES: Record<
+  CurriculumTheme,
+  { title: string; era: string; focus: string }
+> = {
+  A: {
+    title: "主題甲：二十世紀亞洲的現代化與蛻變",
+    era: "20 世紀",
+    focus: "香港、中國、日本及東南亞的現代化與蛻變",
+  },
+  B: {
+    title: "主題乙：二十世紀世界的衝突與合作",
+    era: "20 世紀",
+    focus: "主要衝突與和平的訴求、協作與繁榮",
+  },
+};
+
+export const CURRICULUM_THEME_LABELS: Record<CurriculumTheme, string> = {
+  A: "主題甲",
+  B: "主題乙",
+};
+
+export function curriculumThemeText(
+  level: CurriculumLevel,
+  theme?: CurriculumTheme | null,
+): string {
+  if (level === SENIOR_SECONDARY_LEVEL) {
+    const seniorTheme = theme ? SENIOR_CURRICULUM_THEMES[theme] : null;
+    if (seniorTheme === null) return "";
+    return `${seniorTheme.title}（${seniorTheme.era}）：${seniorTheme.focus}`;
+  }
+  if (level === 0) return "";
+  const juniorTheme = CURRICULUM_THEMES[level as 1 | 2 | 3];
+  return `${juniorTheme.title}（${juniorTheme.era}）：${juniorTheme.focus}`;
 }
 
 /**
@@ -297,9 +340,11 @@ export const topicSchema = z.object({
   description: z.string().default(""),
   published: z.boolean(),
   order: z.number().int(),
-  /** 課程年級：1 中一、2 中二、3 中三（0 為未分類） */
+  /** 課程階段：1 中一、2 中二、3 中三、4 中四至中六（0 為未分類） */
   level: curriculumLevelSchema.default(1),
-  /** 教育局課程的課題編號（例如 5）；未對應者為 null */
+  /** 高中課程主題（A 主題甲／B 主題乙）；初中課題為 null */
+  curriculumTheme: curriculumThemeSchema.nullable().default(null),
+  /** 初中教育局課程的課題編號（例如 5）；高中及未對應者為 null */
   topicNumber: z.number().int().nullable().default(null),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -953,6 +998,8 @@ export interface PracticeRecordTopicOption {
   id: string;
   title: string;
   level: number;
+  /** 高中課程主題（A 主題甲／B 主題乙）；初中為 null */
+  curriculumTheme: CurriculumTheme | null;
   topicNumber: number | null;
 }
 

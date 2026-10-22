@@ -55,7 +55,7 @@ substitutions:
   _ROSTER_COLUMN_NAME: "CHNAME"
   # 只開放的班別（前綴比對）；此平台為中一至中三，因此只接受 1x／2x／3x 班
   # 註：gcloud --set-env-vars 以逗號分隔多個變數，因此清單內用分號（設定層同時接受逗號、分號及空白）
-  _ROSTER_CLASS_PREFIXES: "1;2;3"
+  _ROSTER_CLASS_PREFIXES: "1;2;3;4;5;6"
   # 後台角色：管理員可進入 /admin（教材、OCR、課題發布、系統狀態）；教師可進入 /teacher
   # 註：清單內用分號，避免與 gcloud --set-env-vars 的逗號分隔衝突
   #

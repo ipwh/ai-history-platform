@@ -273,7 +273,7 @@ export interface RosterConfig {
   /** 名冊來源暫時無法讀取時是否仍允許登入（預設 false：拒絕，避免未授權帳戶進入） */
   failOpen: boolean;
   /**
-   * 只開放指定班別（例如中一至中三）。
+   * 只開放指定班別（例如 1,2,3,4,5,6 代表中一至中六）。
    * classPrefixes 以「開頭」比對（1 會接受 1A、1B、1C、1D）；classes 以完全相等比對。
    * 兩者皆為空時不設限。
    */

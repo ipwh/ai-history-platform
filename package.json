@@ -17,6 +17,7 @@
     "import:materials": "tsx scripts/import-materials.ts",
     "generate:questions": "tsx scripts/generate-question-bank.ts",
     "publish:drafts": "tsx scripts/publish-draft-questions.ts",
+    "publish:senior": "tsx scripts/publish-senior.ts",
     "resolve:teacher-confirmation": "tsx scripts/resolve-teacher-confirmation.ts",
     "approve:questions": "tsx scripts/approve-questions.ts",
     "repair:questions": "tsx scripts/repair-question-bank.ts",

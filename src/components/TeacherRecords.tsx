@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api-client";
+import { learnerAccuracyLabel, practiceTopicLabel } from "@/lib/practice-summary";
 import type {
   PracticeRecordLearner,
   PracticeRecordSession,
@@ -101,6 +102,9 @@ export function TeacherRecords() {
   const [activityFilter, setActivityFilter] = useState("");
   // 名冊可能有數百名學生；先顯示 50 人，避免手機一次渲染整份名單。
   const [listLimit, setListLimit] = useState(50);
+  const recordsRef = useRef<HTMLElement | null>(null);
+  // 每次按下「查看記錄」遞增；待畫面更新後才捲動到「練習記錄」區塊。
+  const [scrollRequest, setScrollRequest] = useState(0);
 
   const fetchRecords = useCallback(async (filters: Filters): Promise<RecordsResponse> => {
     const query = queryString(filters);
@@ -125,13 +129,31 @@ export function TeacherRecords() {
     };
   }, [fetchRecords]);
 
-  const handleQuery = async (filters: Filters) => {
+  /**
+   * 查詢記錄。
+   *
+   * focusLearnerId 有值時（按下某位學習者的「查看記錄」），會即時展開該學習者所有練習的
+   * 逐題作答並捲動到「練習記錄」區塊；否則畫面停留在名冊列表，看起來像按了沒有反應。
+   */
+  useEffect(() => {
+    if (scrollRequest === 0) return;
+    recordsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [scrollRequest]);
+
+  const handleQuery = async (
+    filters: Filters,
+    options: { focusLearnerId?: string } = {},
+  ) => {
     setLoading(true);
     try {
       const result = await fetchRecords(filters);
       setData(result);
       setApplied(filters);
       setError(null);
+      if (options.focusLearnerId !== undefined) {
+        setExpanded(result.records.map((record) => record.sessionId));
+        setScrollRequest((request) => request + 1);
+      }
     } catch (caught) {
       setError(caught);
     } finally {
@@ -180,7 +202,14 @@ export function TeacherRecords() {
   const correctTotal = records.reduce((sum, record) => sum + record.correctCount, 0);
   const wrongTotal = records.reduce((sum, record) => sum + record.wrongCount, 0);
   const learnerById = new Map(learners.map((learner) => [learner.learnerId, learner]));
+  const topicLabelById = new Map(topics.map((topic) => [topic.id, practiceTopicLabel(topic)]));
   const exportQuery = queryString(applied);
+  const activeLearner = applied.learnerId ? learnerById.get(applied.learnerId) : undefined;
+  const activeLearnerName =
+    activeLearner?.name ||
+    activeLearner?.email ||
+    activeLearner?.learnerId ||
+    applied.learnerId;
 
   return (
     <div className="flex flex-col gap-4">
@@ -201,7 +230,7 @@ export function TeacherRecords() {
               <option value="">全部課題</option>
               {topics.map((topic) => (
                 <option key={topic.id} value={topic.id}>
-                  {topic.title}
+                  {practiceTopicLabel(topic)}
                 </option>
               ))}
             </select>
@@ -257,6 +286,7 @@ export function TeacherRecords() {
               setLearnerSearch("");
               setActivityFilter("");
               setListLimit(50);
+              setExpanded([]);
               void handleQuery(EMPTY_FILTERS);
             }}
           >
@@ -286,6 +316,11 @@ export function TeacherRecords() {
             </p>
             <p className="text-xs text-gray-500">
               可按班別、姓名或活動狀態縮窄清單，再選擇「查看記錄」檢視逐題作答。
+            </p>
+            <p className="text-xs text-gray-500">
+              「活動狀態」以最近一次練習日期計算：未曾練習＝尚未開始；7 日內有練習＝活躍；
+              7–13 日未練習；14 日以上未練習。「答對比率」只計算該學習者已提交的答案，
+              未作答時會顯示「未作答」。
             </p>
           </div>
           <span className="text-sm text-gray-600">
@@ -376,7 +411,7 @@ export function TeacherRecords() {
                       <td className="px-2 py-2 text-right">{learner.sessions}</td>
                       <td className="px-2 py-2 text-right">{learner.answeredQuestions}</td>
                       <td className="px-2 py-2 text-right">
-                        {learner.accuracy === null ? "—" : `${Math.round(learner.accuracy * 100)}%`}
+                        {learnerAccuracyLabel(learner)}
                       </td>
                       <td className="px-2 py-2 whitespace-nowrap">
                         {learner.lastAt ? formatDateTime(learner.lastAt) : "尚未活動"}
@@ -385,12 +420,16 @@ export function TeacherRecords() {
                         <button
                           type="button"
                           className="btn"
+                          title={
+                            learner.sessions === 0
+                              ? "這位學習者目前沒有練習記錄；按下會顯示說明。"
+                              : "篩選並展開這位學習者的逐題作答。"
+                          }
                           onClick={() => {
                             const filters = { ...draft, learnerId: learner.learnerId };
                             setDraft(filters);
-                            void handleQuery(filters);
+                            void handleQuery(filters, { focusLearnerId: learner.learnerId });
                           }}
-                          disabled={learner.sessions === 0}
                         >
                           查看記錄
                         </button>
@@ -424,10 +463,22 @@ export function TeacherRecords() {
         </div>
       </section>
 
-      <section className="card flex flex-col gap-3">
-        <h2 className="font-semibold">練習記錄</h2>
+      <section ref={recordsRef} className="card flex flex-col gap-3 scroll-mt-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-semibold">練習記錄</h2>
+          {applied.learnerId ? (
+            <span className="text-sm text-gray-600">目前顯示：{activeLearnerName}</span>
+          ) : null}
+        </div>
         {loading ? <Loading label="正在載入練習記錄…" /> : null}
-        {!loading && records.length === 0 ? (
+        {!loading && records.length === 0 && applied.learnerId ? (
+          <Notice tone="info">
+            <strong>{activeLearnerName}</strong> 在目前篩選條件下沒有練習記錄。練習記錄只會在學生
+            以學校 Google 帳戶登入並提交答案後產生；若學生已在其他裝置作答，請確認他使用的是同一個
+            學校帳戶，並先按「重設篩選」清除課題及日期條件。
+          </Notice>
+        ) : null}
+        {!loading && records.length === 0 && !applied.learnerId ? (
           <p className="text-sm text-gray-600">目前沒有符合條件的練習記錄。</p>
         ) : null}
 
@@ -449,7 +500,7 @@ export function TeacherRecords() {
                 </span>
               ) : null}
               <span className="font-semibold">{formatDateTime(record.createdAt)}</span>
-              <span>{record.topicTitle}</span>
+              <span>{topicLabelById.get(record.topicId) ?? record.topicTitle}</span>
               {record.questionTypeLabels.map((label) => (
                 <span key={label} className="badge">
                   {label}
@@ -503,7 +554,7 @@ export function TeacherRecords() {
         ))}
       </section>
 
-      {!loading && records.length === 0 ? (
+      {!loading && records.length === 0 && !applied.learnerId ? (
         <Notice tone="info">
           學生完成練習後，記錄會自動儲存並顯示在這裡；教師亦可隨時下載 CSV 存檔。
         </Notice>

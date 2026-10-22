@@ -182,12 +182,22 @@ async function main() {
     check("GET /api/topics 回應正常", topics.status === 200);
     const allTopics = topics.payload?.topics ?? [];
     const courseTopics = allTopics.filter((item) => item.level !== 0);
-    check("包含 12 個課程課題", courseTopics.length === 12, `實際 ${courseTopics.length}`);
-    check("學生端只看到 12 個課程課題", allTopics.length === 12, `實際 ${allTopics.length}`);
+    const juniorTopics = courseTopics.filter((item) => item.level >= 1 && item.level <= 3);
+    const seniorTopics = courseTopics.filter((item) => item.level === 4);
+    check(
+      "包含初中 12 個及高中 5 個課程課題",
+      juniorTopics.length === 12 && seniorTopics.length === 5,
+      `初中 ${juniorTopics.length}、高中 ${seniorTopics.length}`,
+    );
+    check(
+      "未發布的高中課題不會出現在學生端",
+      allTopics.filter((item) => item.published).length === 12,
+      `學生可見 ${allTopics.filter((item) => item.published).length}`,
+    );
 
     const levelGroups = [1, 2, 3].map((level) => ({
       level,
-      topics: courseTopics.filter((item) => item.level === level),
+      topics: juniorTopics.filter((item) => item.level === level),
     }));
     check(
       "課題按中一／中二／中三分組（各 4 個）",
@@ -195,32 +205,32 @@ async function main() {
       levelGroups.map((group) => `中${group.level}:${group.topics.length}`).join(" "),
     );
     check(
-      "課題編號為 1 至 12",
-      courseTopics.map((item) => item.topicNumber).sort((a, b) => a - b).join(",") ===
+      "初中課題編號為 1 至 12",
+      juniorTopics.map((item) => item.topicNumber).sort((a, b) => a - b).join(",") ===
         "1,2,3,4,5,6,7,8,9,10,11,12",
     );
     check(
       "中二課題5 的主題文字正確",
-      courseTopics
+      juniorTopics
         .find((item) => item.topicNumber === 5)
         ?.themeText?.includes("近代世界"),
-      courseTopics.find((item) => item.topicNumber === 5)?.themeText,
+      juniorTopics.find((item) => item.topicNumber === 5)?.themeText,
     );
     console.log(
-      `    課題：${courseTopics
+      `    課題：${juniorTopics
         .slice(0, 3)
         .map((item) => item.title)
-        .join("、")} … 共 ${courseTopics.length} 個`,
+        .join("、")} … 共 ${juniorTopics.length} 個（另加高中 ${seniorTopics.length} 個）`,
     );
 
-    const withMaterial = courseTopics.filter((item) => item.materialReady);
+    const withMaterial = juniorTopics.filter((item) => item.materialReady);
     check(
-      "全部課程課題都已有教材",
+      "初中課程課題都已有教材",
       withMaterial.length === 12,
       `有教材 ${withMaterial.length}/12`,
     );
 
-    const topic = courseTopics.find((item) => item.topicNumber === 5) ?? courseTopics[0];
+    const topic = juniorTopics.find((item) => item.topicNumber === 5) ?? juniorTopics[0];
     check("有可用的課題", Boolean(topic));
     check(
       "課題有分節及題目",

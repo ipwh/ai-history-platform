@@ -6,7 +6,7 @@
  * 與 AI 語意批改共用同一套 JSON 模式設定。
  */
 import type { LlmQuestion } from "../../lib/types";
-import { SYSTEM_PROMPT, buildUserPrompt } from "./prompt";
+import { buildUserPrompt, systemPromptFor } from "./prompt";
 import { requestJsonCompletion, type ChatCompletionOptions } from "./chat-client";
 import type { GenerateQuestionsOutcome, LlmProvider, QuestionGenerationInput } from "./provider";
 
@@ -30,7 +30,7 @@ export function createOpenAiCompatibleProvider(options: OpenAiCompatibleOptions)
       const completion = await requestJsonCompletion(
         options,
         [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemPromptFor(input.stage) },
           { role: "user", content: buildUserPrompt(input) },
         ],
         options.label ?? "LLM API",

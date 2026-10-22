@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import type {
   AuthStatus,
+  CurriculumTheme,
   LearningProgressPayload,
   TopicOverview,
   TopicProgressSummary,
@@ -12,10 +13,14 @@ import type {
 import {
   CURRICULUM_LEVEL_LABELS,
   CURRICULUM_THEMES,
+  CURRICULUM_THEME_LABELS,
   LEARNING_STATE_LABELS,
   LEARNER_STORAGE_KEY,
+  SENIOR_CURRICULUM_THEMES,
+  SENIOR_SECONDARY_LEVEL,
   countPracticeThemes,
 } from "@/lib/types";
+import { practiceAccuracy, topicBadge } from "@/lib/practice-summary";
 import { api, getLearnerId } from "@/lib/api-client";
 import { ErrorNotice, Loading, Notice, ProgressBar } from "@/components/ui";
 
@@ -23,11 +28,17 @@ import { ErrorNotice, Loading, Notice, ProgressBar } from "@/components/ui";
 const LAST_TOPIC_KEY = "hk-history-last-topic";
 /** 學生最後選擇的年級（重開頁面時沿用） */
 const LEVEL_KEY = "hk-history-level";
+/** 學生最後選擇的學習階段（初中／高中） */
+const STAGE_KEY = "hk-history-stage";
+/** 高中學生最後選擇的課程主題（主題甲／乙） */
+const THEME_KEY = "hk-history-theme";
 /** 同一頁面內改動 localStorage 不會觸發 storage 事件，因此自行派發通知 */
 const STORAGE_EVENT = "hk-history-storage";
 
 type Level = 1 | 2 | 3;
-const LEVELS: Level[] = [1, 2, 3];
+type Stage = "junior" | "senior";
+const JUNIOR_LEVELS: Level[] = [1, 2, 3];
+const SENIOR_THEMES: CurriculumTheme[] = ["A", "B"];
 
 function subscribeStorage(onChange: () => void): () => void {
   window.addEventListener("storage", onChange);
@@ -60,6 +71,23 @@ function toLevel(raw: string): Level | null {
   return raw === "1" ? 1 : raw === "2" ? 2 : raw === "3" ? 3 : null;
 }
 
+function toStage(raw: string): Stage | null {
+  return raw === "junior" || raw === "senior" ? raw : null;
+}
+
+function toTheme(raw: string): CurriculumTheme | null {
+  return raw === "A" || raw === "B" ? raw : null;
+}
+
+/** 依班別判斷學習階段：中四至中六為高中，其餘為初中 */
+function stageFromClassName(className: string | null | undefined): Stage | null {
+  const prefix = className?.trim().charAt(0) ?? "";
+  if (prefix === "") return null;
+  if (prefix === "4" || prefix === "5" || prefix === "6") return "senior";
+  if (prefix === "1" || prefix === "2" || prefix === "3") return "junior";
+  return null;
+}
+
 /**
  * 首頁：讓學生一登入就找到自己要練的課題。
  *
@@ -78,8 +106,10 @@ export function HomeView() {
   const [learnerId, setLearnerId] = useState("");
   const [auth, setAuth] = useState<AuthStatus | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
-  /** 學生手動選擇的年級（儲存在瀏覽器；未選擇時會自動偵測） */
+  /** 學生手動選擇的年級／階段／主題（儲存在瀏覽器；未選擇時會自動偵測） */
   const chosenLevel = toLevel(useSyncExternalStore(subscribeStorage, () => readStored(LEVEL_KEY), () => ""));
+  const chosenStage = toStage(useSyncExternalStore(subscribeStorage, () => readStored(STAGE_KEY), () => ""));
+  const chosenTheme = toTheme(useSyncExternalStore(subscribeStorage, () => readStored(THEME_KEY), () => ""));
   const storedTopicId = useSyncExternalStore(
     subscribeStorage,
     () => readStored(LAST_TOPIC_KEY),
@@ -134,21 +164,50 @@ export function HomeView() {
     [progress],
   );
 
+  const juniorTopics = useMemo(
+    () => (topics ?? []).filter((topic) => topic.level !== SENIOR_SECONDARY_LEVEL),
+    [topics],
+  );
+  const seniorTopics = useMemo(
+    () => (topics ?? []).filter((topic) => topic.level === SENIOR_SECONDARY_LEVEL),
+    [topics],
+  );
+
+  /** 高中學生的預設階段：先看上次練習的課題，再看學校班別 */
+  const defaultStage: Stage = useMemo(() => {
+    const lastTopic = topics?.find((topic) => topic.id === lastTopicId);
+    if (lastTopic) {
+      return lastTopic.level === SENIOR_SECONDARY_LEVEL ? "senior" : "junior";
+    }
+    return stageFromClassName(auth?.user?.className) ?? "junior";
+  }, [auth?.user?.className, lastTopicId, topics]);
+
+  const activeStage: Stage =
+    seniorTopics.length === 0 ? "junior" : (chosenStage ?? defaultStage);
+
   const activeLevel: Level = useMemo(() => {
     if (chosenLevel !== null) return chosenLevel;
-    if (topics !== null) {
-      const busiest = [...topics]
-        .filter((topic) => topic.progress.completedSessions > 0)
-        .sort((a, b) => b.progress.completedSessions - a.progress.completedSessions)[0];
-      if (busiest && (busiest.level === 1 || busiest.level === 2 || busiest.level === 3)) {
-        return busiest.level;
-      }
+    const busiest = [...juniorTopics]
+      .filter((topic) => topic.progress.completedSessions > 0)
+      .sort((a, b) => b.progress.completedSessions - a.progress.completedSessions)[0];
+    if (busiest && (busiest.level === 1 || busiest.level === 2 || busiest.level === 3)) {
+      return busiest.level;
     }
     return 1;
-  }, [chosenLevel, topics]);
+  }, [chosenLevel, juniorTopics]);
+
+  const activeTheme: CurriculumTheme = chosenTheme
+    ?? seniorTopics.find((topic) => topic.id === lastTopicId)?.curriculumTheme
+    ?? "A";
 
   function chooseLevel(level: Level): void {
     writeStored(LEVEL_KEY, String(level));
+    writeStored(STAGE_KEY, "junior");
+  }
+
+  function chooseSeniorTheme(theme: CurriculumTheme): void {
+    writeStored(THEME_KEY, theme);
+    writeStored(STAGE_KEY, "senior");
   }
 
   function rememberTopic(topicId: string): void {
@@ -160,29 +219,34 @@ export function HomeView() {
 
   const started = (progress?.topics ?? []).filter((item) => item.attemptedQuestions > 0);
   const dueCount = progress?.review.dueCount ?? 0;
-  const totalAttempted = started.reduce((sum, item) => sum + item.attemptedQuestions, 0);
-  const totalCorrect = started.reduce((sum, item) => sum + item.correctQuestions, 0);
   const totalPracticeAnswers = topics.reduce(
     (sum, topic) => sum + topic.progress.answeredQuestions,
     0,
   );
-  const overallAccuracy =
-    totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : null;
+  // 與旁邊的「練習累計答題」同一口徑：包括 AI 即時生成及重做的題目，
+  // 否則只練習生成題目的學生會看到「—」，與已累計的答題數自相矛盾。
+  const overallAccuracy = practiceAccuracy(topics.map((topic) => topic.progress));
 
-  const levelTopics = topics
-    .filter((topic) => topic.level === activeLevel)
-    .sort((a, b) => (a.topicNumber ?? 0) - (b.topicNumber ?? 0));
+  const levelTopics = (activeStage === "senior" ? seniorTopics : juniorTopics)
+    .filter((topic) => activeStage === "senior" || topic.level === activeLevel)
+    .filter((topic) => activeStage === "junior" || topic.curriculumTheme === activeTheme)
+    .sort((a, b) => (a.topicNumber ?? a.order) - (b.topicNumber ?? b.order));
 
   const lastTopic =
     lastTopicId !== null ? (topics.find((topic) => topic.id === lastTopicId) ?? null) : null;
 
+  const inActiveGroup = (topic: TopicOverview): boolean =>
+    activeStage === "senior"
+      ? topic.level === SENIOR_SECONDARY_LEVEL && topic.curriculumTheme === activeTheme
+      : topic.level === activeLevel;
+
   /**
-   * 首頁主要行動：優先「繼續上次練習」，但必須屬於目前選取的年級；
-   * 否則建議該年級中第一個「已開始但未完成」的課題，最後才用第一個課題。
-   * 這樣切換年級後，按鈕不會帶學生去另一個年級的課題。
+   * 首頁主要行動：優先「繼續上次練習」，但必須屬於目前選取的階段／年級／主題；
+   * 否則建議該組別中第一個「已開始但未完成」的課題，最後才用第一個課題。
+   * 這樣切換階段或主題後，按鈕不會帶學生去另一組的課題。
    */
   const continueTopic = (() => {
-    if (lastTopic !== null && lastTopic.level === activeLevel) return lastTopic;
+    if (lastTopic !== null && inActiveGroup(lastTopic)) return lastTopic;
     const inProgress = levelTopics.find(
       (topic) => topic.progress.completedSessions > 0 && topic.progress.answeredQuestions > 0,
     );
@@ -191,25 +255,35 @@ export function HomeView() {
   const isResuming = lastTopic !== null && continueTopic?.id === lastTopic.id;
 
   const greetingName = signedIn && auth?.user?.name ? auth.user.name : "同學";
-  const theme = CURRICULUM_THEMES[activeLevel];
+  const theme =
+    activeStage === "senior"
+      ? SENIOR_CURRICULUM_THEMES[activeTheme]
+      : CURRICULUM_THEMES[activeLevel];
+  const stageLabel =
+    activeStage === "senior" ? CURRICULUM_LEVEL_LABELS[SENIOR_SECONDARY_LEVEL] : CURRICULUM_LEVEL_LABELS[activeLevel];
 
   return (
-    <div className="flex flex-col gap-5" data-level={activeLevel}>
+    <div
+      className="flex flex-col gap-5"
+      data-level={activeStage === "senior" ? SENIOR_SECONDARY_LEVEL : activeLevel}
+      data-stage={activeStage}
+    >
       <section className="home-hero">
         <div className="home-hero__main">
-          <p className="home-hero__eyebrow">
-            {CURRICULUM_LEVEL_LABELS[activeLevel]} ・ 歷史科自學
-          </p>
+          <p className="home-hero__eyebrow">{stageLabel} ・ 歷史科自學</p>
           <h1 className="home-hero__title">你好，{greetingName}</h1>
           <p className="home-hero__subtitle">
-            先選擇你的年級，再揀課題就可以開始練習；每個課題都已按課本主題整理。
+            先選擇你的年級或課程主題，再揀課題就可以開始練習；每個課題都已按課本主題整理。
           </p>
           <div className="home-hero__stats">
             <div className="home-stat">
               <span className="home-stat__value">{totalPracticeAnswers}</span>
               <span className="home-stat__label">練習累計答題</span>
             </div>
-            <div className="home-stat">
+            <div
+              className="home-stat"
+              title="以你所有練習作答計算，包括 AI 即時生成及重做的題目。"
+            >
               <span className="home-stat__value">
                 {overallAccuracy === null ? "—" : `${overallAccuracy}%`}
               </span>
@@ -258,27 +332,41 @@ export function HomeView() {
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-bold">選擇課題</h2>
-          <div className="level-tabs" role="tablist" aria-label="選擇年級">
-            {LEVELS.map((level) => (
+          <div className="level-tabs" role="tablist" aria-label="選擇年級或課程主題">
+            {JUNIOR_LEVELS.map((level) => (
               <button
                 key={level}
                 type="button"
                 role="tab"
-                aria-selected={activeLevel === level}
+                aria-selected={activeStage === "junior" && activeLevel === level}
                 className="level-tab"
-                data-active={activeLevel === level}
+                data-active={activeStage === "junior" && activeLevel === level}
                 onClick={() => chooseLevel(level)}
               >
                 {CURRICULUM_LEVEL_LABELS[level]}
               </button>
             ))}
+            {seniorTopics.length > 0 ? SENIOR_THEMES.map((seniorTheme) => (
+              <button
+                key={seniorTheme}
+                type="button"
+                role="tab"
+                aria-selected={activeStage === "senior" && activeTheme === seniorTheme}
+                className="level-tab"
+                data-active={activeStage === "senior" && activeTheme === seniorTheme}
+                title={SENIOR_CURRICULUM_THEMES[seniorTheme].title}
+                onClick={() => chooseSeniorTheme(seniorTheme)}
+              >
+                {CURRICULUM_THEME_LABELS[seniorTheme]}
+              </button>
+            )) : null}
           </div>
         </div>
 
         <div className="level-banner">
           <div>
             <p className="level-banner__title">
-              {CURRICULUM_LEVEL_LABELS[activeLevel]}｜{theme.title}
+              {stageLabel}｜{theme.title}
               <span className="level-banner__era">{theme.era}</span>
             </p>
             <p className="level-banner__focus">{theme.focus}</p>
@@ -286,9 +374,16 @@ export function HomeView() {
           <p className="level-banner__count">{levelTopics.length} 個課題</p>
         </div>
 
+        <p className="text-xs text-gray-500">
+          課題卡的「題庫進度」只計算題庫內已發布的題目；只練習 AI 即時生成的題目時會顯示「練習中」，
+          累計答題及答對比率仍會計入上方統計。
+        </p>
+
         {levelTopics.length === 0 ? (
           <p className="text-sm text-gray-500 pl-1">
-            此年級暫無已發布的課題，可切換其他年級，或請教師匯入教材。
+            {activeStage === "senior"
+              ? "此主題暫無已發布的課題，可切換其他主題，或請教師匯入高中教材。"
+              : "此年級暫無已發布的課題，可切換其他年級，或請教師匯入教材。"}
           </p>
         ) : null}
 
@@ -300,12 +395,15 @@ export function HomeView() {
             const eligible = topicProgress?.eligibleQuestions ?? topic.totalPublishedQuestions;
             const themeNames = topic.sections.map((section) => section.title);
             const shownThemes = themeNames.slice(0, 2);
+            const badge = topicBadge(state, topic.progress.answeredQuestions);
             const stateBadge =
-              state === "needs-review"
-                ? "badge-warning"
-                : state === "not-started"
-                  ? ""
-                  : "badge-success";
+              badge.tone === "muted"
+                ? ""
+                : badge.tone === "accent"
+                  ? "badge-accent"
+                  : badge.tone === "warning"
+                    ? "badge-warning"
+                    : "badge-success";
             const isLast = lastTopicId === topic.id;
             return (
               <Link
@@ -317,7 +415,9 @@ export function HomeView() {
               >
                 <span className="topic-tile__head">
                   <span className="topic-tile__title">{topic.title}</span>
-                  <span className={`badge ${stateBadge}`}>{LEARNING_STATE_LABELS[state]}</span>
+                  <span className={`badge ${stateBadge}`} title={badge.hint}>
+                    {badge.label}
+                  </span>
                 </span>
                 <span className="topic-tile__themes">
                   {isLast ? <span className="theme-chip theme-chip--last">上次練習</span> : null}

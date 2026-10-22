@@ -1,6 +1,9 @@
 /**
  * 香港教育局歷史科課程（中一至中三）12 個課題的結構。
  *
+ * 高中（中四至中六）的 5 個課題另見 senior-curriculum.ts；兩者由
+ * ALL_CURRICULUM_TOPICS 合併，教材檔名搜尋及匯入都會使用合併清單。
+ *
  * 課程組織（按教育局歷史科課程指引）：
  *   中一（level 1）古代世界（史前時期至 14 世紀）：區域文明的誕生與交流 → 課題 1-4
  *   中二（level 2）近代世界（15 至 19 世紀）：西力的形成與外延     → 課題 5-8
@@ -9,7 +12,12 @@
  * 每個課題的分節按試點教材（《歷史旅程－新課題系列（第二版）》溫習筆記）
  * 的編排整理，matchKeywords 用於把教材段落自動對應到分節。
  */
-import { curriculumThemeText, type CurriculumLevel } from "../../lib/types";
+import {
+  curriculumThemeText,
+  type CurriculumLevel,
+  type CurriculumTheme,
+} from "../../lib/types";
+import { SENIOR_CURRICULUM_TOPICS } from "./senior-curriculum";
 
 export interface SectionSeed {
   id: string;
@@ -29,8 +37,20 @@ export interface TopicSeed {
   description: string;
   order: number;
   published: boolean;
+  /** 高中課程主題（A 主題甲／B 主題乙）；初中課題為 null */
+  curriculumTheme?: CurriculumTheme | null;
   /** 對應的教材檔案名稱（用於自動匯入） */
   materialFile: string | null;
+  /** 一個課題可有多份教材（例如高中課題1 由 1.1 及 1.2 兩份筆記組成） */
+  materialFiles?: string[];
+  /**
+   * 教材檔案 → 只可用來對應的分節清單。
+   *
+   * 分節對應以標題／關鍵詞比對，但同一課題的多份筆記往往會提及相同的通用字眼
+   * （例如「第二次世界大戰」、「冷戰」），令 A 筆記的段落被歸入 B 筆記的分節。
+   * 在此聲明每份檔案所屬的分節後，匯入時只會在該範圍內比對；沒有聲明時行為不變。
+   */
+  materialFileSections?: Record<string, string[]>;
   sections: SectionSeed[];
 }
 
@@ -759,16 +779,29 @@ export const PILOT_TOPIC = {
 
 export const PILOT_SECTIONS: SectionSeed[] = TOPIC_5.sections;
 
+/** 初中及高中全部課題（搜尋教材檔名及匯入時使用） */
+export const ALL_CURRICULUM_TOPICS: TopicSeed[] = [
+  ...CURRICULUM_TOPICS,
+  ...SENIOR_CURRICULUM_TOPICS,
+];
+
+function topicMaterialFiles(topic: TopicSeed): string[] {
+  return [...(topic.materialFile ? [topic.materialFile] : []), ...(topic.materialFiles ?? [])];
+}
+
 /** 依教材檔案名稱找出對應的課題 */
 export function findTopicSeedByFile(fileName: string): TopicSeed | null {
   const base = fileName.split(/[\\/]/).pop() ?? fileName;
-  const matches = (candidate: string | null): boolean =>
-    candidate !== null && (candidate.split(/[\\/]/).pop() ?? candidate) === base;
+  const matches = (candidate: string): boolean =>
+    (candidate.split(/[\\/]/).pop() ?? candidate) === base;
 
-  const exact = CURRICULUM_TOPICS.find((topic) => matches(topic.materialFile));
+  const exact = ALL_CURRICULUM_TOPICS.find((topic) =>
+    topicMaterialFiles(topic).some((candidate) => matches(candidate)),
+  );
   if (exact) return exact;
 
   // 由檔名判斷年級及課題編號，例如 HNC2A2E_T5_SN_TE.docx → 中二課題5
+  // 高中課題不使用 topicNumber（避免與初中編號衝突），因此這兩個後備規則只查初中。
   const match = /HNC([123])[AB]?2?E?_T(\d+)_/i.exec(fileName);
   if (match) {
     const topicNumber = Number(match[2]);
@@ -786,13 +819,38 @@ export function findTopicSeedByFile(fileName: string): TopicSeed | null {
 
 /** 所有課程教材檔案 */
 export function allCurriculumMaterialFiles(): string[] {
-  return CURRICULUM_TOPICS.flatMap((topic) => (topic.materialFile ? [topic.materialFile] : []));
+  return ALL_CURRICULUM_TOPICS.flatMap(topicMaterialFiles);
+}
+
+/**
+ * 某教材檔案只可對應的分節 ID 清單；沒有聲明時回傳 null（維持以關鍵詞在全部分節中比對）。
+ *
+ * 用於避免同一課題的多份筆記互相污染：例如課題4 的 4.2 提及「第一次世界大戰」，
+ * 若不設限會被歸入 4.1 的分節。
+ */
+export function declaredSectionsForFile(fileName: string): string[] | null {
+  const base = fileName.split(/[\\/]/).pop() ?? fileName;
+  for (const topic of ALL_CURRICULUM_TOPICS) {
+    const declared = topic.materialFileSections;
+    if (!declared) continue;
+    for (const [candidate, sectionIds] of Object.entries(declared)) {
+      if ((candidate.split(/[\\/]/).pop() ?? candidate) === base && sectionIds.length > 0) {
+        return sectionIds;
+      }
+    }
+  }
+  return null;
 }
 
 export function flatSectionSeeds(sections: SectionSeed[]): SectionSeed[] {
   return sections.flatMap((section) => [section, ...(section.children ?? [])]);
 }
 
-export function topicThemeText(level: CurriculumLevel): string {
-  return level === 0 ? "" : curriculumThemeText(level);
+export function topicThemeText(
+  level: CurriculumLevel,
+  theme?: CurriculumTheme | null,
+): string {
+  return curriculumThemeText(level, theme);
 }
+
+export { SENIOR_CURRICULUM_TOPICS };
