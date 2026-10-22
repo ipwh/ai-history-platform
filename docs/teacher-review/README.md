@@ -956,3 +956,8 @@ npx tsx --env-file=.env.local scripts/generate-question-bank.ts --count 15 --typ
   `/teacher/questions` 手動建立，或先補充該主題的教材段落再重跑同一指令。
 - 學生端行為不變：選進階／挑戰時先由題庫出題，題庫不足才即時以教材生成，因此上述 3 個
   主題仍不會出現「沒有題目」的情況。
+- **上線記錄（2026-10-22）**：同一份快照（17,711,104 bytes）已上載至
+  `gs://pccss-ai-history-history-backup/history/data/app.db`（舊物件備份為 `app.db.pre-20261022T0820Z`），
+  並以 revision `history-self-study-00047-769` 還原（日誌「已由雲端還原（17296 KB）」，
+  `/api/health` 的 `persistence.restore = restored`）。上線後重新下載 bucket 物件核對：
+  題目 2,850、已發布選擇題 1,062／376／377，七個拆分課題的分節 ID 全部存在。
