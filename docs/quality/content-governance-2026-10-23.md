@@ -117,7 +117,38 @@
 - `npm run explanation:apply`：**預設模擬且唯讀**；`--apply` 必須另加 `--actor`；
   **只改 `explanation`**（答案／選項／題幹不變）、保留發布狀態、`revision` +1、
   不寫 `question_reviews`。
-- 兩者的說明已完整記錄於 `README.md` 第七節，本輪**沒有**執行任何大批 `--apply`。
+- `npm run fix:chronology-stem`：**預設模擬且唯讀**；`--apply` 必須另加 `--actor`；
+  **只改題幹**、題目回到草稿、`revision` +1。
+- 三者的說明已完整記錄於 `README.md`，本輪**沒有**執行任何大批 `--apply`。
+
+## 六之二、把本機內容同步到正式環境（**本輪未執行**）
+
+本輪已部署程式碼（rev `history-self-study-00048-lsr`，Next.js 16.4.1，見
+[deployment-evidence-2026-10-23.json](../deployment-evidence-2026-10-23.json)），
+但**沒有**上載資料庫快照：正式資料庫（46 份教材文件、26,599 段）比本機（36 份）新，
+直接上載本機 `data/app.db` 會令正式環境遺失較新的教材內容。
+
+因此本輪的內容修正（4 題題幹、14 題補題草稿）目前只在本機 `data/app.db`。要同步，請在
+**非上課時段**（沒有學生正在作答）按以下順序執行，並全程以正式快照為起點：
+
+```powershell
+# 1. 先下載正式環境最新的資料庫快照（不要用本機的 app.db 作起點）
+gcloud storage cp gs://pccss-ai-history-history-backup/history/data/app.db .\prod-snapshot.db
+
+# 2. 在快照副本上套用同一份清單（預設模擬，確認後加 --apply）
+npx tsx scripts/fix-chronology-stem-years.ts --manifest docs/teacher-review/chronology-stem-fixes-2026-10-23.json --database .\prod-snapshot.db
+npx tsx scripts/fix-chronology-stem-years.ts --manifest docs/teacher-review/chronology-stem-fixes-2026-10-23.json --database .\prod-snapshot.db --apply --actor ipwh@pochiu.edu.hk
+
+# 3. 上載並立即以新 revision 重新啟動，令容器由新快照還原
+gcloud storage cp .\prod-snapshot.db gs://pccss-ai-history-history-backup/history/data/app.db
+gcloud run services update history-self-study --project pccss-ai-history --region asia-east2 --update-env-vars DEPLOY_MARKER=<時間戳>
+
+# 4. 重新下載核對（例如已發布但不可作答的題目應為 0）
+npx tsx scripts/audit-servability.ts --database .\prod-snapshot.db
+```
+
+注意：舊 revision 每 60–300 秒可能寫入自己的備份，因此第 3 步的上載與重新啟動必須連續完成；
+14 題補題草稿亦要由教師在正式環境逐題覆核後才可發布。
 
 ## 七、本輪沒有做的事
 
