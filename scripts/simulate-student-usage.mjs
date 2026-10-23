@@ -150,6 +150,27 @@ function textOf(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+/**
+ * 填充題的標準答案可能同時列出多個可接受寫法（例如「門羅主義 / 門羅宣言」）。
+ * 平台會按「/」拆開逐一接受（見 grading.ts 的 answerAlternatives），因此學生**不會**
+ * 也不可能輸入整串「A / B」。模擬提交答案時要用其中一個寫法，否則會誤報「標準答案
+ * 被判錯」（2026-10-23 在正式資料上誤報 2 題）。
+ */
+function answerAlternatives(correctAnswer) {
+  const alternatives = correctAnswer
+    .split(/\s*[／/]\s*/)
+    .map((candidate) => candidate.trim())
+    .filter((candidate) => candidate.length > 0);
+  return alternatives.length > 0 ? alternatives : [correctAnswer];
+}
+
+/** 這次要用哪一個寫法當「標準答案」（輪流使用，令每個同義寫法都被測到） */
+function canonicalAnswer(questionType, correctAnswer, index) {
+  if (questionType !== "fill") return correctAnswer;
+  const alternatives = answerAlternatives(correctAnswer);
+  return alternatives[index % alternatives.length];
+}
+
 /* ------------------------------------------------------------------ */
 /* 課題與分節                                                          */
 /* ------------------------------------------------------------------ */
@@ -393,13 +414,14 @@ async function submitAnswers(practice, { answerMode, learner = LEARNER }) {
     let answer;
     /** null = 不檢查分數；true／false = 預期這次提交的判定 */
     let expectedCorrect = null;
+    const standardAnswer = canonicalAnswer(questionType, correctAnswer, index);
     if (answerMode === "correct") {
-      answer = correctAnswer;
+      answer = standardAnswer;
       expectedCorrect = true;
     } else if (answerMode === "partial") {
       // 部分答對：偶數題答對、奇數題答錯（模擬學生只懂一半內容）
       const useCorrect = index % 2 === 0;
-      answer = useCorrect ? correctAnswer : wrongAnswer;
+      answer = useCorrect ? standardAnswer : wrongAnswer;
       expectedCorrect = useCorrect;
     } else {
       answer = wrongAnswer;
@@ -689,9 +711,15 @@ async function checkAnswerFormats(topic) {
   let variantIndex = 0;
 
   for (const studentQuestion of practice.questions) {
-    const correctAnswer = textOf(snapshotById.get(studentQuestion.id)?.correctAnswer);
+    const snapshotQuestion = snapshotById.get(studentQuestion.id);
+    const correctAnswer = textOf(snapshotQuestion?.correctAnswer);
     if (!correctAnswer) continue;
-    const variants = equivalentAnswerVariants(correctAnswer);
+    const standardAnswer = canonicalAnswer(
+      studentQuestion.questionType,
+      correctAnswer,
+      variantIndex,
+    );
+    const variants = equivalentAnswerVariants(standardAnswer);
     const variant = variants[variantIndex % variants.length];
     variantIndex += 1;
 
@@ -738,11 +766,16 @@ async function checkPartialCompletion(topic) {
   const snapshotById = new Map(
     (snapshotOf(practice.session.id) ?? []).map((question) => [question.id, question]),
   );
-  for (const studentQuestion of practice.questions.slice(0, 2)) {
+  for (const [index, studentQuestion] of practice.questions.slice(0, 2).entries()) {
+    const snapshotQuestion = snapshotById.get(studentQuestion.id);
     await call("POST", `/api/practice/${practice.session.id}/answers`, {
       learnerId: LEARNER,
       questionId: studentQuestion.id,
-      answer: textOf(snapshotById.get(studentQuestion.id)?.correctAnswer),
+      answer: canonicalAnswer(
+        studentQuestion.questionType,
+        textOf(snapshotQuestion?.correctAnswer),
+        index,
+      ),
     });
     answersRun += 1;
   }
