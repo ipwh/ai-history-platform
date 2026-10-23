@@ -6,6 +6,8 @@
  *   node scripts/simulate-student-usage.mjs --base-url http://127.0.0.1:3000
  *   node scripts/simulate-student-usage.mjs --random 10         # 額外隨機組合次數
  *   node scripts/simulate-student-usage.mjs --no-ai             # 跳過即時生成
+ *   node scripts/simulate-student-usage.mjs --no-matrix         # 跳過 [J] 系統化組合矩陣
+ *   node scripts/simulate-student-usage.mjs --report-md out.md  # 另存 Markdown 報告
  *
  * 覆蓋範圍：
  *   1. 12 個課題 × 不同題型組合（選擇題／填充題／兩者混合）× 三種難度 × 不同題目數量，
@@ -17,8 +19,13 @@
  *   4. 重做錯題（題庫練習及即時生成練習之後）、學生回報（全部原因）、學習進度、重溫佇列。
  *   5. 部分作答後完成（未作答題目不可當成答錯）、併發重複提交（只可記錄一次且分數一致）。
  *   6. 邊界與錯誤輸入：題數 0／31、不存在的題型／難度／課題／分節、沒有題目的分節。
+ *   7. [J] 系統化組合矩陣：每年級一個代表課題 × 單／多分節 × 題型 × 難度 × 題數
+ *      （1／5／10／超過庫存）× 作答模式（全對／部分／全錯），並核對未發布課題不可
+ *      出現在學生清單或建立練習、學生身分不可呼叫教師／管理員 API。
  *
- * 任何異常都會列印原因及相關詳情，並以非零狀態結束；完整報告寫入 --report。
+ * 任何異常都會列印原因及相關詳情，並以非零狀態結束；完整報告寫入 --report（JSON）
+ * 及 --report-md（Markdown，內含組合矩陣結果、異常、疑似內容問題清單）。
+ * 「題目內容」有疑點時只記錄 question_id 及現象，**不會**修改答案或解釋。
  *
  * 需要讀取資料庫以核對「標準答案」及「題目狀態」（學生端 API 刻意不回傳這些資料），
  * 因此本腳本只可在本機測試環境執行；資料庫路徑由 --database 指定。
@@ -43,10 +50,22 @@ const ONLY_TOPICS = (arg("--topics", "") ?? "")
   .map((value) => value.trim())
   .filter((value) => value.length > 0);
 const LEARNER = arg("--learner", `sim-${Date.now().toString(36)}`);
-const OTHER_LEARNER = `${LEARNER}-other`;
+/** 是否執行 [J] 系統化組合矩陣（預設執行；--no-matrix 可跳過） */
+const RUN_MATRIX = !args.includes("--no-matrix");
+/** 組合矩陣只用的隨機組合數量上限（避免無限增長） */
+const MATRIX_TOPIC_LIMIT = Number.parseInt(arg("--matrix-topics", "4"), 10);
 
 const anomalies = [];
 const info = [];
+/**
+ * 「疑似題目內容問題」：只記錄題目 ID 及現象，**不會**修改答案或解釋。
+ * 題目在上載時已由科組審核，因此這裡只供擁有者抽樣覆核。
+ */
+const contentSuspects = [];
+/**
+ * [J] 組合矩陣的逐個案結果（課題、參數、HTTP 狀態、要求／實際題數、是否誤派不可作答題目）。
+ */
+const matrixCases = [];
 /**
  * 「要求 N 題、實際較少」的個案。
  *
@@ -191,10 +210,16 @@ function validateQuestions(practice, setup, topicSections) {
   const session = practice.session ?? {};
   const allowedSections = expandSections(topicSections, setup.sectionIds);
   const label = `${setup.topicId} ${setup.questionTypes.join("+")} ${setup.difficulty} ×${setup.questionCount}（${setup.questionSource ?? "bank"}）`;
+  /** 結構上無法作答的題目（會被介面或 checkQuestionServable 攔下的那一類） */
+  const unservable = new Set();
+  const markUnservable = (questionId, phenomenon) => {
+    unservable.add(questionId);
+    contentSuspects.push({ questionId, phenomenon });
+  };
 
   if (questions.length === 0) {
     anomaly("zero-questions", `練習建立了 0 題：${label}`, { notice: practice.notice ?? null });
-    return questions;
+    return { questions, unservable: [] };
   }
   if (questions.length > setup.questionCount) {
     anomaly("too-many-questions", `交付題數 ${questions.length} 多於要求的 ${setup.questionCount}：${label}`);
@@ -231,28 +256,35 @@ function validateQuestions(practice, setup, topicSections) {
     }
     if (textOf(question.question).length === 0) {
       anomaly("empty-field", `題目 ${question.id} 沒有題幹：${label}`);
+      markUnservable(question.id, "題目沒有題幹");
     }
     if (textOf(question.sectionId).length === 0) {
       anomaly("empty-field", `題目 ${question.id} 沒有分節：${label}`);
+      markUnservable(question.id, "題目沒有分節");
     }
 
     if (question.questionType === "mc") {
       const options = question.options ?? [];
       if (options.length < 2) {
         anomaly("mc-options", `選擇題 ${question.id} 只有 ${options.length} 個選項：${label}`);
+        markUnservable(question.id, `選擇題只有 ${options.length} 個選項`);
       }
       if (new Set(options.map((option) => textOf(option))).size !== options.length) {
         anomaly("mc-options", `選擇題 ${question.id} 有重複選項：${label}`, options);
+        markUnservable(question.id, "選擇題有重複選項");
       }
       if (options.some((option) => textOf(option).length === 0)) {
         anomaly("mc-options", `選擇題 ${question.id} 有空選項：${label}`);
+        markUnservable(question.id, "選擇題有空白的選項");
       }
     } else if (question.questionType === "fill") {
       if (!/[_＿]{2,}/.test(question.question)) {
         anomaly("fill-blank", `填充題 ${question.id} 沒有空格：${question.question}`);
+        markUnservable(question.id, "填充題題幹沒有空格標記");
       }
     } else {
       anomaly("wrong-type", `出現未知題型 ${question.questionType}：${question.id}`);
+      markUnservable(question.id, `未知題型 ${question.questionType}`);
     }
 
     const row = bankQuestion(question.id);
@@ -279,19 +311,21 @@ function validateQuestions(practice, setup, topicSections) {
     anomaly("difficulty-silent", `題目難度與所選不同卻沒有說明：${label}`);
   }
 
-  return questions;
+  return { questions, unservable: [...unservable] };
 }
 
 /* ------------------------------------------------------------------ */
 /* 作答、評分與完成                                                    */
 /* ------------------------------------------------------------------ */
 
-async function submitAnswers(practice, { answerMode }) {
+async function submitAnswers(practice, { answerMode, learner = LEARNER }) {
   const questions = practice.questions ?? [];
   const sessionId = practice.session.id;
   const snapshot = snapshotOf(sessionId) ?? [];
   const snapshotById = new Map(snapshot.map((question) => [question.id, question]));
   const wrongIds = [];
+  let expectedCorrectCount = 0;
+  let unexpectedResults = 0;
 
   for (const [index, studentQuestion] of questions.entries()) {
     const source = snapshotById.get(studentQuestion.id) ?? {};
@@ -308,10 +342,18 @@ async function submitAnswers(practice, { answerMode }) {
         anomaly("fill-blank", `填充題的空格數為 ${blankCount}（應為 1）：${studentQuestion.id}`, {
           question: stem.slice(0, 80),
         });
+        contentSuspects.push({
+          questionId: studentQuestion.id,
+          phenomenon: `填充題題幹有 ${blankCount} 個空格，但只有一個答案欄位`,
+        });
       } else if (correctAnswer.length >= 2 && stem.replace(/[＿_]{2,}/g, "").includes(correctAnswer)) {
         anomaly("fill-leak", `填充題的答案仍出現在題幹：${studentQuestion.id}`, {
           answer: correctAnswer,
           question: stem.slice(0, 80),
+        });
+        contentSuspects.push({
+          questionId: studentQuestion.id,
+          phenomenon: "填充題的標準答案仍出現在題幹其他位置（可直接抄寫）",
         });
       }
     }
@@ -322,23 +364,46 @@ async function submitAnswers(practice, { answerMode }) {
           answer: correctAnswer,
           question: stem.slice(0, 80),
         });
+        contentSuspects.push({
+          questionId: studentQuestion.id,
+          phenomenon: "選擇題的標準答案已出現在題幹（答案直接外洩）",
+        });
       }
       if (!options.includes(correctAnswer)) {
         anomaly("mc-answer", `選擇題的答案不在選項內：${studentQuestion.id}`, {
           answer: correctAnswer,
           options,
         });
+        contentSuspects.push({
+          questionId: studentQuestion.id,
+          phenomenon: "選擇題的標準答案不在選項之內（無法作答）",
+        });
       }
     }
 
+    // 錯誤答案：選擇題必須選另一個選項；填充題必須與標準答案明顯不同。
+    let wrongAnswer = "";
+    if (questionType === "mc") {
+      const options = studentQuestion.options ?? [];
+      wrongAnswer = options.find((option) => textOf(option) !== correctAnswer) ?? "";
+    } else {
+      wrongAnswer = `${correctAnswer}XYZ錯誤`;
+    }
+
     let answer;
+    /** null = 不檢查分數；true／false = 預期這次提交的判定 */
+    let expectedCorrect = null;
     if (answerMode === "correct") {
       answer = correctAnswer;
-    } else if (questionType === "mc") {
-      const options = studentQuestion.options ?? [];
-      answer = options.find((option) => textOf(option) !== correctAnswer) ?? options[0] ?? "";
+      expectedCorrect = true;
+    } else if (answerMode === "partial") {
+      // 部分答對：偶數題答對、奇數題答錯（模擬學生只懂一半內容）
+      const useCorrect = index % 2 === 0;
+      answer = useCorrect ? correctAnswer : wrongAnswer;
+      expectedCorrect = useCorrect;
     } else {
-      answer = `${correctAnswer}XYZ錯誤`;
+      answer = wrongAnswer;
+      expectedCorrect = false;
     }
     if (!answer) {
       anomaly("cannot-answer", `無法為題目 ${studentQuestion.id} 構造答案（缺少標準答案）`, {
@@ -348,7 +413,7 @@ async function submitAnswers(practice, { answerMode }) {
     }
 
     const submitted = await call("POST", `/api/practice/${sessionId}/answers`, {
-      learnerId: LEARNER,
+      learnerId: learner,
       questionId: studentQuestion.id,
       answer,
     });
@@ -363,22 +428,21 @@ async function submitAnswers(practice, { answerMode }) {
     }
     const feedback = submitted.payload?.feedback ?? {};
 
-    if (answerMode === "correct") {
-      check(
-        feedback.isCorrect === true,
-        "grading",
-        `提交標準答案卻未被判為正確（${questionType}）：${studentQuestion.question.slice(0, 40)}`,
-        { answer, correctAnswer: feedback.correctAnswer, reviewFlag: feedback.reviewFlag, aiGrading: feedback.aiGrading ?? null },
-      );
-    } else {
-      if (feedback.isCorrect === true) {
-        anomaly("grading", `提交錯誤答案卻被判為正確（${questionType}）：${studentQuestion.question.slice(0, 40)}`, {
-          answer,
-          correctAnswer: feedback.correctAnswer,
-        });
+    if (expectedCorrect !== null) {
+      if (feedback.isCorrect !== expectedCorrect) {
+        unexpectedResults += 1;
+        anomaly(
+          "grading",
+          expectedCorrect
+            ? `提交標準答案卻未被判為正確（${questionType}）：${studentQuestion.question.slice(0, 40)}`
+            : `提交錯誤答案卻被判為正確（${questionType}）：${studentQuestion.question.slice(0, 40)}`,
+          { answer, correctAnswer: feedback.correctAnswer, reviewFlag: feedback.reviewFlag, aiGrading: feedback.aiGrading ?? null },
+        );
+      } else if (expectedCorrect) {
+        expectedCorrectCount += 1;
       }
-      wrongIds.push(studentQuestion.id);
     }
+    if (!expectedCorrect) wrongIds.push(studentQuestion.id);
 
     if (!feedback.explanation) {
       anomaly("feedback", `作答後沒有解釋：${studentQuestion.id}`);
@@ -389,7 +453,7 @@ async function submitAnswers(practice, { answerMode }) {
 
     if (index === 0) {
       const repeat = await call("POST", `/api/practice/${sessionId}/answers`, {
-        learnerId: LEARNER,
+        learnerId: learner,
         questionId: studentQuestion.id,
         answer: answerMode === "correct" ? "另一個答案" : correctAnswer,
       });
@@ -403,13 +467,15 @@ async function submitAnswers(practice, { answerMode }) {
     }
   }
 
-  return { wrongIds };
+  return { wrongIds, expectedCorrectCount, unexpectedResults };
 }
 
 async function runPractice(topic, setup, options = {}) {
   practicesRun += 1;
+  const learner = options.learner ?? LEARNER;
+  const otherLearner = `${learner}-other`;
   const created = await call("POST", "/api/practice", {
-    learnerId: LEARNER,
+    learnerId: learner,
     topicId: topic.id,
     sectionIds: setup.sectionIds,
     questionTypes: setup.questionTypes,
@@ -431,6 +497,16 @@ async function runPractice(topic, setup, options = {}) {
       // 真實模型的輸出未通過教材依據／品質檢查時，平台會如實回報「未能生成」並建議改用題庫。
       // 這是設計中的降級（不會派未核實的題目），只記錄次數，不當作缺陷。
       note(`即時生成未能提供題目（${label}）：${errorText.slice(0, 60)}…`);
+    } else if (created.status === 429) {
+      // AI 用量上限（見 ai-limits.ts）：這是設計中的防濫用行為，不是缺陷；
+      // 但訊息必須可行動（說明上限、何時可再試、可以向誰反映）。
+      note(`AI 用量上限拒絕建立練習（429）：${label}`);
+      check(
+        errorText.length > 20 && /上限/.test(errorText) && /(稍後|再試)/.test(errorText),
+        "http-429",
+        `429 回應缺少可行動的說明：${label}`,
+        errorText,
+      );
     } else if (created.status >= 500) {
       anomaly("http-5xx", `建立練習回應 ${created.status}：${label}`, { error: errorText });
     } else if (created.status === 409) {
@@ -438,16 +514,46 @@ async function runPractice(topic, setup, options = {}) {
     } else {
       anomaly("create-rejected", `建立練習失敗（HTTP ${created.status}）：${label}`, { error: errorText });
     }
+    if (options.matrixCase) {
+      matrixCases.push({
+        ...options.matrixCase,
+        status: created.status,
+        requested: setup.questionCount,
+        delivered: 0,
+        outcome: "rejected",
+        error: errorText.slice(0, 200),
+        unservable: 0,
+      });
+    }
     return null;
   }
 
   const practice = created.payload;
-  const questions = validateQuestions(practice, setup, topic.sections);
-  if (questions.length === 0) return null;
+  const validation = validateQuestions(practice, setup, topic.sections);
+  const questions = validation.questions;
+  if (options.matrixCase) {
+    options.matrixCase.status = created.status;
+    options.matrixCase.requested = setup.questionCount;
+    options.matrixCase.delivered = questions.length;
+    options.matrixCase.unservable = validation.unservable.length;
+    options.matrixCase.notice = textOf(practice.notice).slice(0, 400);
+  }
+  if (validation.unservable.length > 0) {
+    check(
+      false,
+      "unservable-served",
+      `派發了 ${validation.unservable.length} 條結構上無法作答的題目：${label}`,
+      validation.unservable.slice(0, 5),
+    );
+  }
+  if (questions.length === 0) {
+    if (options.matrixCase) options.matrixCase.outcome = "zero-questions";
+    return null;
+  }
 
   // 空白答案必須在「未作答」時才被拒絕；已作答的題目會回傳原有結果。
   const blank = await call("POST", `/api/practice/${practice.session.id}/answers`, {
-    learnerId: LEARNER,
+    learnerId: learner,
     questionId: practice.questions[0].id,
     answer: "",
   });
@@ -455,9 +561,12 @@ async function runPractice(topic, setup, options = {}) {
     anomaly("blank-answer", `空白答案被接受：${practice.questions[0].id}`);
   }
 
-  const { wrongIds } = await submitAnswers(practice, { answerMode: options.answerMode ?? "correct" });
+  const { wrongIds, expectedCorrectCount, unexpectedResults } = await submitAnswers(practice, {
+    answerMode: options.answerMode ?? "correct",
+    learner,
+  });
 
-  const completed = await call("POST", `/api/practice/${practice.session.id}/complete`, { learnerId: LEARNER });
+  const completed = await call("POST", `/api/practice/${practice.session.id}/complete`, { learnerId: learner });
   if (completed.status !== 200) {
     anomaly("complete-failed", `完成練習失敗（HTTP ${completed.status}）：${label}`);
   } else {
@@ -468,17 +577,25 @@ async function runPractice(topic, setup, options = {}) {
     if (result.answeredCount !== questions.length) {
       anomaly("result-count", `成績的已作答數 ${result.answeredCount} 與交付 ${questions.length} 不符：${label}`);
     }
-    if (options.answerMode === "correct" && result.correctCount !== questions.length) {
-      anomaly("result-count", `全部答對但成績只有 ${result.correctCount}/${questions.length} 正確：${label}`, {
+    if (
+      (options.answerMode === "correct" || options.answerMode === "partial") &&
+      result.correctCount !== expectedCorrectCount
+    ) {
+      anomaly("result-count", `成績的答對數 ${result.correctCount} 與預期 ${expectedCorrectCount} 不符：${label}`, {
         reviewFlags: (result.feedback ?? []).filter((item) => item.reviewFlag).length,
       });
     }
     if (!Array.isArray(result.feedback) || result.feedback.length !== questions.length) {
       anomaly("result-count", `成績缺少部分題目回饋：${label}`);
     }
+    if (options.matrixCase) {
+      options.matrixCase.correctCount = result.correctCount;
+      options.matrixCase.expectedCorrectCount = expectedCorrectCount;
+      options.matrixCase.unexpectedResults = unexpectedResults;
+    }
 
     // 重新載入練習頁及成績頁時內容要一致（學生會重新整理）
-    const reopened = await call("GET", `/api/practice/${practice.session.id}?learnerId=${LEARNER}`);
+    const reopened = await call("GET", `/api/practice/${practice.session.id}?learnerId=${learner}`);
     check(reopened.status === 200, "reopen", `重新載入練習回應 ${reopened.status}：${label}`);
     if (reopened.status === 200) {
       if ((reopened.payload?.questions ?? []).length !== questions.length) {
@@ -490,7 +607,7 @@ async function runPractice(topic, setup, options = {}) {
     }
     const resultView = await call(
       "GET",
-      `/api/practice/${practice.session.id}/result?learnerId=${LEARNER}`,
+      `/api/practice/${practice.session.id}/result?learnerId=${learner}`,
     );
     check(resultView.status === 200, "result-view", `讀取成績頁回應 ${resultView.status}：${label}`);
     if (resultView.status === 200 && (resultView.payload?.feedback ?? []).length !== questions.length) {
@@ -498,19 +615,24 @@ async function runPractice(topic, setup, options = {}) {
     }
   }
 
-  const stolen = await call("GET", `/api/practice/${practice.session.id}?learnerId=${OTHER_LEARNER}`);
+  const stolen = await call("GET", `/api/practice/${practice.session.id}?learnerId=${otherLearner}`);
   check(stolen.status === 403, "isolation", `其他學習者可讀取練習記錄（HTTP ${stolen.status}）`, {
     sessionId: practice.session.id,
   });
-  const stolenComplete = await call("POST", `/api/practice/${practice.session.id}/complete`, { learnerId: OTHER_LEARNER });
+  const stolenComplete = await call("POST", `/api/practice/${practice.session.id}/complete`, { learnerId: otherLearner });
   check(stolenComplete.status === 403, "isolation", `其他學習者可完成練習（HTTP ${stolenComplete.status}）`);
 
   const foreign = await call("POST", `/api/practice/${practice.session.id}/answers`, {
-    learnerId: LEARNER,
+    learnerId: learner,
     questionId: "q_not_in_session",
     answer: "測試",
   });
   check(foreign.status === 404, "submit-scope", `提交不屬於練習的題目回應 ${foreign.status}（應為 404）`);
+
+  if (options.matrixCase) {
+    options.matrixCase.outcome = "ok";
+    options.matrixCase.sessionId = practice.session.id;
+  }
 
   return { sessionId: practice.session.id, questions, wrongIds };
 }
@@ -694,6 +816,316 @@ async function checkConcurrentSubmit(topic) {
     );
   }
   await call("POST", `/api/practice/${practice.session.id}/complete`, { learnerId: LEARNER });
+}
+
+/* ------------------------------------------------------------------ */
+/* 系統化組合矩陣                                                      */
+/* ------------------------------------------------------------------ */
+
+function sectionsWithQuestions(topic) {
+  return topic.sections.filter((section) => section.publishedQuestionCount > 0);
+}
+
+/**
+ * 依年級抽取代表課題：每個年級取一個（有題目分節最多者優先），
+ * 確保矩陣覆蓋不同年級／類型的課題，而不是集中測試同一個課題。
+ */
+function selectMatrixTopics(topics) {
+  const byLevel = new Map();
+  for (const topic of topics) {
+    const level = topic.level ?? 0;
+    if (!byLevel.has(level)) byLevel.set(level, []);
+    byLevel.get(level).push(topic);
+  }
+  const picked = [];
+  for (const level of [...byLevel.keys()].sort((a, b) => a - b)) {
+    const best = [...byLevel.get(level)].sort(
+      (a, b) => sectionsWithQuestions(b).length - sectionsWithQuestions(a).length,
+    )[0];
+    if (best) picked.push(best);
+  }
+  return picked.slice(0, Math.max(1, MATRIX_TOPIC_LIMIT));
+}
+
+/**
+ * 組合矩陣的固定個案：分節數目（1／多個）× 題型（MC／填充／混合）×
+ * 難度（基礎／進階／挑戰）× 題數（1／5／10／超過庫存）× 作答模式（全對／部分／全錯）。
+ *
+ * 每個個案使用**獨立學習者 ID**：AI 出題有每人用量上限（ai-limits.ts），
+ * 共用同一個學習者會令後面的個案全部收到 429，令矩陣只測到「上限」而不是出題流程。
+ */
+const MATRIX_CASES = [
+  {
+    key: "single-mc-basic-1",
+    description: "單分節／選擇題／基礎／1 題（題數下限）",
+    sections: "single",
+    questionTypes: ["mc"],
+    difficulty: "basic",
+    questionCount: 1,
+    answerMode: "correct",
+  },
+  {
+    key: "single-fill-advanced-5",
+    description: "單分節／填充題／進階／5 題（部分答對）",
+    sections: "single",
+    questionTypes: ["fill"],
+    difficulty: "advanced",
+    questionCount: 5,
+    answerMode: "partial",
+  },
+  {
+    key: "multi-mixed-challenge-10",
+    description: "多分節／選擇題＋填充題／挑戰／10 題（全對）",
+    sections: "few",
+    questionTypes: ["mc", "fill"],
+    difficulty: "challenge",
+    questionCount: 10,
+    answerMode: "correct",
+  },
+  {
+    key: "multi-mc-basic-30",
+    description: "多分節／選擇題／基礎／30 題（超過庫存，全錯）",
+    sections: "few",
+    questionTypes: ["mc"],
+    difficulty: "basic",
+    questionCount: 30,
+    answerMode: "wrong",
+  },
+];
+
+async function runMatrix(topics) {
+  console.log("\n[J] 系統化組合矩陣（分節×題型×難度×題數×作答模式）");
+  const selected = selectMatrixTopics(topics);
+  if (selected.length === 0) {
+    anomaly("matrix", "沒有可用的已發布課題，無法執行組合矩陣");
+    return;
+  }
+  info.push(
+    `組合矩陣課題：${selected.map((topic) => `${topic.id}（${topic.level} 級）`).join("、")}`,
+  );
+
+  for (const [topicIndex, topic] of selected.entries()) {
+    if (sectionsWithQuestions(topic).length === 0) {
+      info.push(`課題 ${topic.id} 沒有已發布題目，矩陣個案只會測到「沒有題目」的降級路徑`);
+    }
+    console.log(`  · ${topic.id}（${topic.level} 級）`);
+    for (const [caseIndex, testCase] of MATRIX_CASES.entries()) {
+      const learner = `${LEARNER}-m${topicIndex}${caseIndex}`;
+      const record = {
+        topicId: topic.id,
+        level: topic.level,
+        caseKey: testCase.key,
+        description: testCase.description,
+        questionTypes: testCase.questionTypes.join("+"),
+        difficulty: testCase.difficulty,
+        answerMode: testCase.answerMode,
+        unservable: 0,
+      };
+      await runPractice(
+        topic,
+        {
+          topicId: topic.id,
+          sectionIds:
+            testCase.sections === "single"
+              ? pickSections(topic, "single")
+              : pickSections(topic, "few"),
+          questionTypes: testCase.questionTypes,
+          difficulty: testCase.difficulty,
+          questionCount: testCase.questionCount,
+        },
+        { answerMode: testCase.answerMode, learner, matrixCase: record },
+      );
+      matrixCases.push(record);
+      const statusText =
+        record.outcome === "ok"
+          ? `${record.delivered}/${record.requested} 題`
+          : `HTTP ${record.status ?? "?"}（${record.outcome ?? "unknown"}）`;
+      console.log(`      ${testCase.key}：${statusText}`);
+    }
+  }
+
+  // 空錯題：全新學習者沒有任何作答記錄，「重做錯題」必須被拒並說明如何繼續
+  const emptyWrongTopic = selected[0];
+  const emptyWrong = await call("POST", "/api/practice", {
+    learnerId: `${LEARNER}-empty`,
+    topicId: emptyWrongTopic.id,
+    sectionIds: pickSections(emptyWrongTopic, "single"),
+    questionTypes: ["mc", "fill"],
+    difficulty: "basic",
+    questionCount: 5,
+    mode: "wrong-only",
+  });
+  const emptyWrongMessage = textOf(emptyWrong.payload?.error);
+  check(
+    emptyWrong.status === 409,
+    "wrong-only",
+    `沒有錯題時重做錯題回應 ${emptyWrong.status}（應為 409）`,
+    emptyWrongMessage,
+  );
+  check(
+    emptyWrongMessage.length > 10 && /(練習|錯誤|完整)/.test(emptyWrongMessage),
+    "wrong-only",
+    "沒有錯題時的回應缺少可行動說明",
+    emptyWrongMessage,
+  );
+
+  // 未發布課題不可出現在學生清單，也不可直接建立練習
+  const unpublished = db
+    .prepare("SELECT id FROM topics WHERE published = 0")
+    .all()
+    .map((row) => row.id);
+  if (unpublished.length > 0) {
+    const publishedOnly = await call(
+      "GET",
+      `/api/topics?learnerId=${LEARNER}&publishedOnly=true`,
+    );
+    const listed = new Set((publishedOnly.payload?.topics ?? []).map((topic) => topic.id));
+    for (const topicId of unpublished) {
+      check(
+        !listed.has(topicId),
+        "unpublished-topic",
+        `未發布課題 ${topicId} 出現在學生課題清單`,
+      );
+    }
+    const firstUnpublished = unpublished[0];
+    const blocked = await call("POST", "/api/practice", {
+      learnerId: LEARNER,
+      topicId: firstUnpublished,
+      sectionIds: ["unknown-section"],
+      questionTypes: ["mc"],
+      difficulty: "basic",
+      questionCount: 3,
+    });
+    check(
+      blocked.status === 404,
+      "unpublished-topic",
+      `未發布課題 ${firstUnpublished} 仍可建立練習（HTTP ${blocked.status}，應為 404）`,
+      textOf(blocked.payload?.error) || null,
+    );
+  }
+
+  // 學生身分呼叫教師／管理員 API 必須被拒（請求未帶 x-admin-token）
+  for (const endpoint of [
+    "/api/teacher/overview",
+    "/api/teacher/records",
+    "/api/teacher/questions",
+    "/api/teacher/review-queue",
+    "/api/admin/system/overview",
+    "/api/admin/materials",
+  ]) {
+    const response = await call("GET", endpoint);
+    check(
+      [401, 403].includes(response.status),
+      "authz",
+      `未授權的學生請求 ${endpoint} 回應 ${response.status}（應為 401／403）`,
+    );
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 報告                                                               */
+/* ------------------------------------------------------------------ */
+
+function buildMarkdownReport(generatedAt) {
+  const lines = [];
+  lines.push("# 學生使用模擬報告（自動產生）");
+  lines.push("");
+  lines.push(`- 產生時間：${generatedAt}`);
+  lines.push(`- 伺服器：${BASE_URL}`);
+  lines.push(`- 模擬學習者：${LEARNER}`);
+  lines.push(`- 練習次數：${practicesRun}；作答次數：${answersRun}；檢查項目：${checksRun}`);
+  lines.push("");
+  lines.push("## 組合矩陣結果");
+  lines.push("");
+  const passed = matrixCases.filter(
+    (item) => item.outcome === "ok" && (item.unexpectedResults ?? 0) === 0 && item.unservable === 0,
+  ).length;
+  lines.push(`- 執行組合數：${matrixCases.length}`);
+  lines.push(`- 通過：${passed}`);
+  lines.push(`- 需跟進：${matrixCases.length - passed}`);
+  lines.push("");
+  if (matrixCases.length > 0) {
+    lines.push("| 課題 | 年級 | 組合 | 題型 | 難度 | 作答 | 要求題數 | 實際題數 | 不可作答題 | HTTP | 結果 |");
+    lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+    for (const item of matrixCases) {
+      const ok =
+        item.outcome === "ok" && (item.unexpectedResults ?? 0) === 0 && item.unservable === 0;
+      lines.push(
+        `| ${item.topicId} | ${item.level ?? ""} | ${item.caseKey} | ${item.questionTypes} | ${item.difficulty} | ${item.answerMode} | ${item.requested ?? "-"} | ${item.delivered ?? 0} | ${item.unservable} | ${item.status ?? "-"} | ${ok ? "通過" : "需跟進"} |`,
+      );
+    }
+    lines.push("");
+  }
+
+  lines.push("## 異常（程式層面）");
+  lines.push("");
+  if (anomalies.length === 0) {
+    lines.push("沒有發現異常。");
+    lines.push("");
+  } else {
+    const byCategory = new Map();
+    for (const item of anomalies) {
+      if (!byCategory.has(item.category)) byCategory.set(item.category, []);
+      byCategory.get(item.category).push(item);
+    }
+    for (const [category, items] of byCategory) {
+      lines.push(`### \`${category}\`（${items.length} 項）`);
+      lines.push("");
+      for (const item of items) {
+        lines.push(`- ${item.message}`);
+        if (item.detail) {
+          lines.push(`  - 詳情：\`${JSON.stringify(item.detail).slice(0, 300)}\``);
+        }
+      }
+      lines.push("");
+    }
+  }
+
+  lines.push("## 疑似題目內容問題（只記錄，不會自動修改）");
+  lines.push("");
+  if (contentSuspects.length === 0) {
+    lines.push("沒有發現。");
+  } else {
+    const unique = new Map();
+    for (const item of contentSuspects) {
+      unique.set(`${item.questionId}|${item.phenomenon}`, item);
+    }
+    lines.push("| question_id | 現象 |");
+    lines.push("| --- | --- |");
+    for (const item of unique.values()) {
+      lines.push(`| ${item.questionId} | ${item.phenomenon} |`);
+    }
+    lines.push("");
+    lines.push(
+      "> 題目內容在上載時已由科組逐題審核；以上僅供擁有者／教師抽樣覆核，模擬流程不會改寫答案或解釋。",
+    );
+  }
+  lines.push("");
+
+  lines.push("## 題數少於要求（平台已如實告知，非錯誤）");
+  lines.push("");
+  if (shortfalls.length === 0) {
+    lines.push("所有練習均取足要求的題數。");
+  } else {
+    lines.push(`共 ${shortfalls.length} 項：`);
+    lines.push("");
+    for (const item of shortfalls) {
+      lines.push(
+        `- ${item.label}：要求 ${item.requested} 題，實際 ${item.delivered} 題${item.notice ? `（${item.notice.slice(0, 160)}）` : ""}`,
+      );
+    }
+  }
+  lines.push("");
+
+  lines.push("## 已知／可接受的降級");
+  lines.push("");
+  if (info.length === 0) {
+    lines.push("無。");
+  } else {
+    for (const message of info) lines.push(`- ${message}`);
+  }
+  lines.push("");
+  return lines.join("\n");
 }
 
 /* ------------------------------------------------------------------ */
@@ -1006,8 +1438,25 @@ async function main() {
     }
   }
 
+  if (RUN_MATRIX) await runMatrix(topics);
+
   console.log("\n──────── 結果 ────────");
   console.log(`練習次數：${practicesRun}，作答次數：${answersRun}，檢查項目：${checksRun}`);
+  if (matrixCases.length > 0) {
+    const matrixPassed = matrixCases.filter(
+      (item) => item.outcome === "ok" && (item.unexpectedResults ?? 0) === 0 && item.unservable === 0,
+    ).length;
+    console.log(
+      `組合矩陣：${matrixCases.length} 個組合，通過 ${matrixPassed}，需跟進 ${matrixCases.length - matrixPassed}`,
+    );
+  }
+  if (contentSuspects.length > 0) {
+    console.log(`\n疑似題目內容問題（只記錄，不會自動修改）：${contentSuspects.length} 項`);
+    for (const item of contentSuspects.slice(0, 20)) {
+      console.log(`  - ${item.questionId}：${item.phenomenon}`);
+    }
+    if (contentSuspects.length > 20) console.log(`  …其餘 ${contentSuspects.length - 20} 項`);
+  }
   if (shortfalls.length > 0) {
     console.log(
       `\n題數少於要求（${shortfalls.length} 項；平台已如實告知學生，非錯誤，但需留意）：`,
@@ -1045,15 +1494,41 @@ async function main() {
   }
 
   const fs = await import("node:fs");
+  const nodePath = await import("node:path");
+  const os = await import("node:os");
+  // 預設報告放在作業系統的暫存目錄：模擬是臨時產物，不應留在專案的 data/ 之內。
+  const reportPath = arg("--report", nodePath.join(os.tmpdir(), "hist-sim-report.json"));
+  const markdownPath = arg(
+    "--report-md",
+    nodePath.join(os.tmpdir(), "hist-sim-report-simulation.md"),
+  );
+  fs.mkdirSync(nodePath.dirname(reportPath), { recursive: true });
+  fs.mkdirSync(nodePath.dirname(markdownPath), { recursive: true });
+  const generatedAt = new Date().toISOString();
   fs.writeFileSync(
-    arg("--report", "data/tmp-sim/report.json"),
+    reportPath,
     JSON.stringify(
-      { baseUrl: BASE_URL, learner: LEARNER, practicesRun, answersRun, checksRun, anomalies, shortfalls, info },
+      {
+        baseUrl: BASE_URL,
+        learner: LEARNER,
+        generatedAt,
+        practicesRun,
+        answersRun,
+        checksRun,
+        matrixCases,
+        anomalies,
+        shortfalls,
+        contentSuspects,
+        info,
+      },
       null,
       2,
     ),
     "utf8",
   );
+  fs.writeFileSync(markdownPath, buildMarkdownReport(generatedAt), "utf8");
+  console.log(`\n報告：${reportPath}`);
+  console.log(`報告（Markdown）：${markdownPath}`);
   db.close();
   process.exit(anomalies.length === 0 ? 0 : 1);
 }

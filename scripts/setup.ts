@@ -15,20 +15,39 @@ import fs from "node:fs";
 
 import { getDb } from "../src/server/db/connection";
 import { getServerConfig } from "../src/server/config";
-import { CURRICULUM_TOPICS } from "../src/server/seed/curriculum";
 import { deleteDocumentsByKind } from "../src/server/repositories/materials";
 import { importMaterial } from "../src/server/materials/import-service";
 import { describeLlm } from "../src/server/llm";
 import { describeOcr } from "../src/server/ocr";
 import { countQuestions } from "../src/server/repositories/questions";
 import { listTopics } from "../src/server/repositories/topics";
+import { collectMaterialFiles } from "../src/server/materials/material-files";
+import { isQuestionBankFileName } from "../src/server/materials/question-bank";
 import { runOcr } from "../src/server/services/ocr-service";
 import { generateQuestionBank } from "../src/server/services/question-bank";
 import { seedCurriculum, seedDemoQuestionBank } from "../src/server/seed";
 
 // 試點教材＝課題5 的書本內容（路徑來自課程種子，保持單一來源）
-const PILOT_TOPIC = CURRICULUM_TOPICS.find((topic) => topic.id === "topic-5");
-const PILOT_FILE = PILOT_TOPIC?.materialFile ?? "課題5 近代歐洲的興起.docx";
+const PILOT_TOPIC_ID = "topic-5";
+
+/**
+ * 這次要匯入的書本內容檔案。
+ *
+ * 以往只用課程種子記錄的檔名（`materialFile`）逐個組合路徑，但 2026-10 擁有者把教材
+ * 移入以課題命名的子資料夾，並以「…_筆記.docx」命名書本內容，種子記錄的檔名因此全部
+ * 對不上：`npm run setup` 只會匯入課題1 及課題5，其餘 10 個已發布課題既沒有教材也沒有
+ * 題目（學生選了就只得「暫時沒有可用題目」）。這裡改用 `import:materials` 同一套遞迴
+ * 掃描，令兩種匯入方式得到一致的結果。
+ */
+function bookMaterialTargets(materialsDir: string, pilotOnly: boolean): { filePath: string; topicId: string }[] {
+  return collectMaterialFiles(materialsDir)
+    .filter((entry) => entry.topicId !== null && !isQuestionBankFileName(entry.fileName))
+    .filter((entry) => !pilotOnly || entry.topicId === PILOT_TOPIC_ID)
+    .map((entry) => ({
+      filePath: path.join(materialsDir, entry.relativePath.split("/").join(path.sep)),
+      topicId: entry.topicId as string,
+    }));
+}
 
 async function main() {
   const config = getServerConfig();
@@ -53,24 +72,24 @@ async function main() {
   // 2. 匯入教材（重新匯入示範教材，避免重複執行時產生重複段落）
   deleteDocumentsByKind("demo");
 
-  const targets = pilotOnly
-    ? [{ fileName: PILOT_FILE, topicId: "topic-5" }]
-    : CURRICULUM_TOPICS.flatMap((topic) =>
-        topic.materialFile ? [{ fileName: topic.materialFile, topicId: topic.id }] : [],
-      );
+  const targets = bookMaterialTargets(config.materialsDir, pilotOnly);
+  if (targets.length === 0) {
+    console.log(`！在 ${config.materialsDir} 找不到任何書本內容檔案，略過匯入。`);
+  }
 
   const importedDocuments: { id: string; fileName: string }[] = [];
 
   for (const target of targets) {
-    const filePath = path.join(config.materialsDir, target.fileName);
+    const filePath = target.filePath;
     if (!fs.existsSync(filePath)) {
-      console.log(`！找不到 ${target.fileName}，略過。`);
+      console.log(`！找不到 ${target.filePath}，略過。`);
       continue;
     }
     const buffer = fs.readFileSync(filePath);
+    const fileName = path.basename(filePath);
     const outcome = await importMaterial({
-      fileName: target.fileName,
-      mimeType: target.fileName.endsWith(".pdf")
+      fileName,
+      mimeType: fileName.endsWith(".pdf")
         ? "application/pdf"
         : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       sizeBytes: buffer.byteLength,
