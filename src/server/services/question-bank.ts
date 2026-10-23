@@ -166,6 +166,9 @@ export async function generateQuestionBank(
             questionTypes,
             difficulty,
             questionCount: target - existing,
+            // `--draft-only` 必須真的只建立草稿：連「通過自動驗證即時發布」亦要停用，
+            // 否則題目仍會未經教師覆核就派給學生（2026-10-23 實際發生）。
+            ...(options.draftOnly ? { autoPublish: false } : {}),
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);

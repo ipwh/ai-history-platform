@@ -67,6 +67,7 @@ npm run dev          # 啟動開發伺服器
 | `npm run publish:drafts` | **擁有者授權**的批次發布草稿題目（預設模擬；`--owner-email`、`--reason`、`--origins`、`--apply`，見第十節） |
 | `npm run resolve:teacher-confirmation` | **擁有者授權**解除「待教師確認」暫緩標記（逐題理由檔 `--plan`；先驗可作答性；不建立覆核紀錄；見第十節） |
 | `npx tsx scripts/fix-question-content.ts` | 修正題目**內容錯誤**（題幹錯字／答案與史實不符；`--plan`、`from`／`to` 必須相符、預設模擬、要 `--apply`；見第十節） |
+| `npm run fix:chronology-stem` | 按清單刪去「時序題題幹內的年份」（清單驅動、預設模擬、`--apply` 需 `--actor`；只改題幹，題目會回到草稿待覆核；見第七節） |
 | `npx tsx scripts/verify-provenance-manifest.ts` | 逐題核對 provenance 佇列（匯出批次／寫入核對紀錄；紀錄綁定版本，題目再改動自動重回佇列；見第十節） |
 | `npm run approve:questions` | **擁有者授權**的批次覆核通過並發布題目（逐題寫入覆核紀錄；預設模擬，參數同上；**不會**處理待教師確認的題目，見第十節） |
 | `npm run repair:questions` | 修復題庫中結構上無法作答的題目（多空格填充題、排版符號殘留；預設模擬、要 `--apply`；可加 `--delete-unusable` 刪除**結構上**無法修復的題目、`--quarantine <報告>` 隔離已被證實改變考核答案的題目；見第七節） |
@@ -1221,6 +1222,34 @@ npm run explanation:apply -- --manifest docs/teacher-review/explanation-batches/
 
 補寫的界線（測試：`tests/explanation-rewrite.test.ts`）：**只改 `explanation`**，答案、選項、題幹及空格不變；**保留發布狀態**（不因補寫而下架）；`revision` 如實 +1，舊覆核如實失效（負責人已確認接受此做法）；**不寫 `question_reviews`**（補寫不是教師覆核），紀錄寫入 `question_content_flags` 的 `explanation_rewritten`；新解釋必須通過同一套品質分類器（不可仍是佔位文字／只列答案／過短／與答案矛盾）。進度：**全部 12 個課題共 1,875 題已完成**（1,875 題仍全部 `published`，`question_reviews` 沒有增加；重新產生的工作清單顯示 `placeholder`／`answer_only`／`insufficient` 均為 0）。教師仍須**逐題核實**補寫內容，`questions.skill` 依負責人決定暫時維持空白。
 
+### 刪去時序題題幹內的年份（`npm run fix:chronology-stem`）
+
+時序題若把年份一併印在題幹（「1946年…、1966年及1967年…」），學生只須比較題幹的年份就能排序，
+題目沒有考核時序（判定見 `src/server/llm/chronology-stem.ts`）。這類題目會被
+`checkQuestionServable` 攔下（不會派給學生），但仍會令發布閘門的「題目結構可作答」FAIL。
+
+修法是**逐題刪去題幹的年份**——這是文字判斷，不可用通用正則批量改寫（會產生
+「其後於與追隨者」這類殘句），因此工具改為**清單驅動**：
+
+```bash
+# 1. 模擬（預設唯讀，不寫入）：逐項顯示題幹「前／後」對照
+npm run fix:chronology-stem
+
+# 2. 確認後寫入（必須有 --actor）
+npm run fix:chronology-stem -- --apply --actor teacher@pochiu.edu.hk
+
+# 3. 其他清單／其他資料庫（例如正式快照）
+npm run fix:chronology-stem -- --manifest docs/teacher-review/xxx.json --database <path> --apply --actor …
+```
+
+- 清單（預設 `docs/teacher-review/chronology-stem-fixes-2026-10-23.json`）每項都寫明
+  `before`／`after` 及理由；套用前會核對**目前的題幹是否仍與 `before` 完全相同**，
+  不一致即整批拒絕（不會套用到已被修改的題目）。
+- 只改題幹一個欄位：答案、選項、解釋、知識點及教材依據一律不變。
+- 套用後題目會**回到草稿**、`revision` +1（舊覆核紀錄隨之失效），需教師重新覆核後才可再發布。
+- 修改後會即時再跑 `checkQuestionServable`，仍有問題（例如刪去年份後**列出次序與答案相同**）
+  的項目會被拒絕，不會寫入。
+
 ### 題庫：讓每個課題都有題目
 
 執行 `npm run setup` 時會自動為課程內每個分節生成題目（每個分節目標 5 題），亦可隨時手動補充：
@@ -1230,8 +1259,13 @@ npm run generate:questions                     # 為所有課題補足題目（�
 npm run generate:questions -- --topic topic-9  # 只處理課題9
 npm run generate:questions -- --count 6        # 每個分節目標 6 題（三個難度各 2 題）
 npm run generate:questions -- --types mc --count 9  # 只補選擇題，每個分節每個難度 3 題
-npm run generate:questions -- --draft-only     # 只建立草稿，不自動發布
+npm run generate:questions -- --draft-only     # 只建立草稿，不自動發布（連自動驗證亦不發布）
 ```
+
+- **`--draft-only` 真正做到「只建立草稿」**（2026-10-23 修正）：以往它只停用本地示範模式的
+  自動發布，`recordAutoValidationAndPublish()` 仍會把通過自動品質驗證的題目**直接發布**，
+  令題目未經教師覆核就派給學生（實際發生：14 題被自動發布，已全部改回草稿）。
+  現在 `--draft-only` 會傳 `autoPublish: false`，題目只記錄自動驗證、一律留在草稿。
 
 - **`--types mc`（2026-10-21 新增）**：只補選擇題。目標題數及「現有題數」都**只計算選擇題**，因此填充題的存量不會令選擇題被誤判為已達標。學生介面一次只練一種題型、選擇題可調節難度，這個模式用於「每個分節補齊三種難度的選擇題」，令學生選進階／挑戰時可直接由題庫出題（不必等待即時生成）。
 - **目標只計算可派發的題目**（2026-10-21）：已發布但「待教師確認」的草稿，以及未發布的草稿，都**不計入**目標。否則一個分節可能因為 1 題待確認草稿而被誤判為「已達每難度 3 題」，學生實際只有 2 題可用。修正後再執行同一指令會繼續補題，直到三個難度都有足夠的可派發題目（仍受教材及品質閘門限制；未能通過檢查的題目會留在草稿待教師確認）。

@@ -132,4 +132,33 @@ describe("題庫難度分配", () => {
     expect(fillAfter).toBe(fillBefore);
     expect(mcAfter - mcBefore).toBe(report.created);
   });
+
+  it("draftOnly 只建立草稿：通過自動驗證的新題目亦不會發布", async () => {
+    const draftIdsBefore = new Set(
+      questionsRepo.listQuestions({ topicId: "topic-5", statuses: ["draft"] }).map((question) => question.id),
+    );
+    const publishedBefore = questionsRepo.countQuestions({ topicId: "topic-5", statuses: ["published"] });
+
+    const report = await bank.generateQuestionBank({
+      topicId: "topic-5",
+      perSection: 12,
+      questionTypes: ["mc"],
+      draftOnly: true,
+    });
+
+    expect(
+      report.created,
+      `draftOnly 仍應生成題目（已達標：${report.duplicateSections.length}；教材不足：${report.insufficientSections.length}）`,
+    ).toBeGreaterThan(0);
+
+    const newDrafts = questionsRepo
+      .listQuestions({ topicId: "topic-5", statuses: ["draft"] })
+      .filter((question) => !draftIdsBefore.has(question.id));
+    expect(newDrafts.length).toBe(report.created);
+    // 這是 2026-10-23 的實際缺陷：--draft-only 只停用了示範自動發布，
+    // recordAutoValidationAndPublish 仍把通過驗證的題目直接發布。
+    expect(publishedBefore).toBe(
+      questionsRepo.countQuestions({ topicId: "topic-5", statuses: ["published"] }),
+    );
+  });
 });

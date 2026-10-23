@@ -105,7 +105,7 @@ export interface GenerateOptions extends QuestionGenerationRequest {
   /**
    * 已用過的標準答案（例如同一份練習已出過的題目）。
    *
-   * 只用於「補題」：提示模型改出其他史實，避免把同一題改寫後再交一次。
+   * 只用於「補題」：提示模型改出其他史實，避免同一題改寫後再交一次。
    * 這不是強制條件——最終仍由 `question-dedupe.ts` 的共用判定把重複題目擋下。
    */
   avoidAnswers?: string[];
@@ -118,6 +118,15 @@ export interface GenerateOptions extends QuestionGenerationRequest {
    * 成本只增加同一請求的輸出 token，不會增加請求次數。
    */
   overGenerate?: number;
+  /**
+   * 是否容許「通過自動品質驗證後即時發布」（預設 true，即既有行為）。
+   *
+   * 設為 false 時只記錄自動驗證，題目一律留在**草稿**等待教師覆核。
+   * `npm run generate:questions -- --draft-only` 使用這個選項：以往它只停用
+   * 「示範模式自動發布」，但 `recordAutoValidationAndPublish` 仍會把通過驗證的題目
+   * 直接發布，令 `--draft-only` 名不副實（2026-10-23 實際發生：14 題被自動發布）。
+   */
+  autoPublish?: boolean;
 }
 
 export interface GenerationResult extends GeneratedQuestionPreview {
@@ -421,7 +430,10 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
         const inserted = insertQuestion(question);
         // 通過驗證的題目立即記錄自動品質驗證（並在設定允許時發布），
         // 學生因此毋須等待教師逐題預先批准即可練習（Sprint 7.8）。
-        return recordAutoValidationAndPublish(inserted.id);
+        // `autoPublish: false`（例如 `--draft-only`）只記錄驗證，題目留在草稿。
+        return recordAutoValidationAndPublish(inserted.id, {
+          publish: options.autoPublish !== false,
+        });
       })
     : finalQuestions;
 
@@ -882,8 +894,14 @@ export function listOwnerApprovalCandidates(
  * 由生成流程呼叫（題目在寫入題庫前已通過 validateLlmQuestions 的所有檢查，
  * 包括 question-quality.ts 的品質閘門）。回傳更新後的題目；發布失敗只會令題目
  * 留在草稿，不會令生成流程失敗（教師之後可以重新驗證或覆核）。
+ *
+ * `options.publish === false` 時仍然記錄驗證結果，但**不發布**：用於
+ * `--draft-only` 這類「先交教師覆核」的批次，避免題目未經人手就派給學生。
  */
-export function recordAutoValidationAndPublish(questionId: string): Question {
+export function recordAutoValidationAndPublish(
+  questionId: string,
+  options: { publish?: boolean } = {},
+): Question {
   const existing = getQuestion(questionId);
   if (!existing) throw new QuestionServiceError("找不到指定的題目", 404);
 
@@ -895,6 +913,7 @@ export function recordAutoValidationAndPublish(questionId: string): Question {
   });
   if (!validated) throw new QuestionServiceError("自動驗證紀錄寫入失敗", 500);
 
+  if (options.publish === false) return validated;
   if (!getServerConfig().autoPublishValidatedQuestions) return validated;
   // 未確定項目（例如題目要求的思考面向未見於教材）即使已記錄自動驗證，也不得自動發布：
   // 題目保留為草稿，等待教師確認（見 changeQuestionStatus 及 0020 migration）。

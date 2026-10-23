@@ -16,6 +16,7 @@
     "setup": "tsx scripts/setup.ts",
     "import:materials": "tsx scripts/import-materials.ts",
     "generate:questions": "tsx scripts/generate-question-bank.ts",
+    "fix:chronology-stem": "tsx scripts/fix-chronology-stem-years.ts",
     "publish:drafts": "tsx scripts/publish-draft-questions.ts",
     "publish:senior": "tsx scripts/publish-senior.ts",
     "remap:sections": "tsx scripts/remap-material-sections.ts",
