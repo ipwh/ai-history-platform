@@ -12,6 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { freshTestDatabasePath } from "./test-database";
+import { syntheticCandidates, writeGoldenCandidatesFile } from "./fixtures/golden-candidates";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("review-queue");
 process.env.LLM_PROVIDER = "mock";
@@ -107,6 +108,9 @@ beforeAll(async () => {
   session = await import("@/server/auth/session");
   seed = await import("@/server/seed");
   seed.ensureBootstrap();
+  // 候選清單是依版權政策不入庫的產生檔：以 42 個合成候選（全部不在這個測試資料庫）
+  // 驗證「候選與資料庫不符時 fail-closed」的契約，不依賴真實候選檔。
+  writeGoldenCandidatesFile(syntheticCandidates(42));
 });
 
 describe("審核佇列：權限", () => {

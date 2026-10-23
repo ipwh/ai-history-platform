@@ -68,7 +68,9 @@ export function cleanStaleTestDatabases(now: number = Date.now()): CleanupReport
     report.candidates += 1;
     const fullPath = path.join(directory, entry);
     try {
-      const stats = fs.statSync(fullPath);
+      // lstat：符號連結只看連結本身的時間，不會跟隨到目標（否則會把目標的更新時間
+      // 當成連結的時間，甚至把連結目標當成候選檔案刪除）。
+      const stats = fs.lstatSync(fullPath);
       if (now - stats.mtimeMs < STALE_AFTER_MS) {
         report.skippedRecent += 1;
         continue;
@@ -106,7 +108,8 @@ export function cleanStaleTestUploadDirs(now: number = Date.now()): CleanupRepor
     report.candidates += 1;
     const fullPath = path.join(directory, entry);
     try {
-      const stats = fs.statSync(fullPath);
+      // lstat：與資料庫清理相同，只看資料夾／連結本身的時間，不會跟隨符號連結
+      const stats = fs.lstatSync(fullPath);
       if (now - stats.mtimeMs < STALE_AFTER_MS) {
         report.skippedRecent += 1;
         continue;

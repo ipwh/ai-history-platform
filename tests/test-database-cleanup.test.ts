@@ -203,7 +203,15 @@ describe("邊界情況（不安全名稱、路徑逃逸、目錄、符號連結�
     }
 
     const old = new Date(Date.now() - 24 * HOUR);
-    fs.utimesSync(link, old, old);
+    // 必須用 lutimesSync 設定「連結本身」的時間：utimesSync 會跟隨連結，改到目標的時間
+    // （Linux 上會令連結目標被當成過期檔案而刪除——2026-10-23 CI 實際失敗原因）。
+    if (typeof fs.lutimesSync === "function") {
+      fs.lutimesSync(link, old, old);
+    } else {
+      fs.rmSync(link, { force: true });
+      fs.rmSync(target, { force: true });
+      return;
+    }
     try {
       setup.cleanStaleTestDatabases();
       expect(fs.existsSync(target), "連結目標必須保留").toBe(true);

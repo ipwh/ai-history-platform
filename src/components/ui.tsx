@@ -1,6 +1,6 @@
 "use client";
 
-import { ApiError } from "@/lib/api-client";
+import { describeApiFailure } from "@/lib/api-errors";
 
 export function Loading({ label = "載入中…" }: { label?: string }) {
   return (
@@ -15,14 +15,23 @@ export function Loading({ label = "載入中…" }: { label?: string }) {
 }
 
 export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
-  const message = error instanceof Error ? error.message : String(error);
-  const details = error instanceof ApiError ? error.details : [];
+  // 錯誤分類（Sprint 23）：網絡、逾時、登入、權限、找不到、資料格式、伺服器錯誤各自
+  // 有標題及可行的下一步，避免把所有失敗都顯示成同一句「沒有題目」。
+  const failure = describeApiFailure(error);
+  const title = failure.title;
+  const message = failure.message;
+  const details = failure.details;
 
   return (
     <div className="card" style={{ borderColor: "var(--danger)" }}>
       <p className="font-semibold" style={{ color: "var(--danger)" }}>
-        發生問題：{message}
+        {title}：{message}
       </p>
+      {failure.hint ? (
+        <p className="text-sm mt-1" style={{ color: "var(--foreground)" }}>
+          {failure.hint}
+        </p>
+      ) : null}
       {details.length > 0 ? (
         <ul className="list-disc pl-5 text-sm mt-1">
           {details.map((detail) => (
@@ -30,9 +39,14 @@ export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry?: () =
           ))}
         </ul>
       ) : null}
-      {onRetry ? (
+      {onRetry && failure.retryable ? (
         <button type="button" className="btn mt-3" onClick={onRetry}>
           重試
+        </button>
+      ) : null}
+      {onRetry && !failure.retryable ? (
+        <button type="button" className="btn mt-3" onClick={onRetry}>
+          重新載入
         </button>
       ) : null}
     </div>

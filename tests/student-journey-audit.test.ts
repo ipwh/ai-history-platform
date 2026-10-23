@@ -16,6 +16,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { openDocumentForStudents } from "./material-distribution";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 const testDbPath = freshTestDatabasePath("student-journey");
 process.env.APP_DATABASE_PATH = testDbPath;
@@ -31,7 +32,6 @@ delete process.env.K_SERVICE;
 
 type SessionModule = typeof import("@/server/auth/session");
 type SeedModule = typeof import("@/server/seed");
-type MaterialService = typeof import("@/server/services/material-service");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
 type PracticeRepo = typeof import("@/server/repositories/practice");
 type QuestionRepo = typeof import("@/server/repositories/questions");
@@ -40,7 +40,6 @@ type ReportService = typeof import("@/server/services/question-report-service");
 
 let session: SessionModule;
 let seed: SeedModule;
-let materialService: MaterialService;
 let materialsRepo: MaterialsRepo;
 let practiceRepo: PracticeRepo;
 let questionsRepo: QuestionRepo;
@@ -184,15 +183,13 @@ async function createFillQuestion(options: {
 beforeAll(async () => {
   session = await import("@/server/auth/session");
   seed = await import("@/server/seed");
-  materialService = await import("@/server/services/material-service");
   materialsRepo = await import("@/server/repositories/materials");
   practiceRepo = await import("@/server/repositories/practice");
   questionsRepo = await import("@/server/repositories/questions");
   questionService = await import("@/server/services/question-service");
   reports = await import("@/server/services/question-report-service");
   seed.ensureBootstrap();
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案");
+  await importTestPilotMaterial();
   for (const block of materialsRepo.listGroundingBlocksForSections("topic-5", [])) {
     openDocumentForStudents(materialsRepo, block.documentId);
   }

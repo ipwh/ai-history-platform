@@ -15,6 +15,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { freshTestDatabasePath } from "./test-database";
 import { openDocumentForStudents } from "./material-distribution";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 const testDbPath = freshTestDatabasePath("publication-safety");
 process.env.APP_DATABASE_PATH = testDbPath;
@@ -26,7 +27,6 @@ type QuestionRepo = typeof import("@/server/repositories/questions");
 type PracticeService = typeof import("@/server/services/practice-service");
 type PracticeRepo = typeof import("@/server/repositories/practice");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
-type MaterialService = typeof import("@/server/services/material-service");
 type Seed = typeof import("@/server/seed");
 type ReportService = typeof import("@/server/services/question-report-service");
 type SessionModule = typeof import("@/server/auth/session");
@@ -37,7 +37,6 @@ let questionRepo: QuestionRepo;
 let practice: PracticeService;
 let practiceRepo: PracticeRepo;
 let materialsRepo: MaterialsRepo;
-let materialService: MaterialService;
 let seed: Seed;
 let reports: ReportService;
 let session: SessionModule;
@@ -106,15 +105,13 @@ beforeAll(async () => {
   practice = await import("@/server/services/practice-service");
   practiceRepo = await import("@/server/repositories/practice");
   materialsRepo = await import("@/server/repositories/materials");
-  materialService = await import("@/server/services/material-service");
   seed = await import("@/server/seed");
   reports = await import("@/server/services/question-report-service");
   session = await import("@/server/auth/session");
   teacherReportsRoute = await import("@/app/api/teacher/reports/route");
 
   seed.ensureBootstrap();
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案");
+  await importTestPilotMaterial();
   for (const block of materialsRepo.listGroundingBlocksForSections(TOPIC, [])) {
     openDocumentForStudents(materialsRepo, block.documentId);
   }
@@ -123,7 +120,8 @@ beforeAll(async () => {
 function firstSectionBlock() {
   const blocks = materialsRepo.listGroundingBlocksForSections(TOPIC, [SECTION]);
   if (blocks.length === 0) throw new Error("課題5沒有可用教材段落");
-  const block = blocks[0];
+  // 標題段落不是可作答的教材內容（它只標示分節），因此取第一個非標題段落
+  const block = blocks.find((candidate) => candidate.type !== "heading") ?? blocks[0];
   const sentence = block.text.split(/[。！？\n]/).find((part) => part.trim().length >= 8);
   return { blockId: block.id, excerpt: (sentence ?? block.text).trim().slice(0, 40) };
 }

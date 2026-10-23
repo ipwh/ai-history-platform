@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { openDocumentForStudents } from "./material-distribution";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 // 使用獨立暫存資料庫，並以本地示範生成代替真實 LLM（不會發出網絡請求）
 const testDbPath = freshTestDatabasePath("ai-practice");
@@ -9,7 +10,6 @@ process.env.LLM_PROVIDER = "mock";
 
 type PracticeService = typeof import("@/server/services/practice-service");
 type QuestionRepository = typeof import("@/server/repositories/questions");
-type MaterialService = typeof import("@/server/services/material-service");
 type TopicService = typeof import("@/server/services/topic-service");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
 type PracticeRepo = typeof import("@/server/repositories/practice");
@@ -18,7 +18,6 @@ type Types = typeof import("@/lib/types");
 
 let practice: PracticeService;
 let questionsRepo: QuestionRepository;
-let materialService: MaterialService;
 let topicService: TopicService;
 let materialsRepo: MaterialsRepo;
 let practiceRepo: PracticeRepo;
@@ -48,18 +47,14 @@ function revokeDistribution(): void {
 beforeAll(async () => {
   practice = await import("@/server/services/practice-service");
   questionsRepo = await import("@/server/repositories/questions");
-  materialService = await import("@/server/services/material-service");
   topicService = await import("@/server/services/topic-service");
   materialsRepo = await import("@/server/repositories/materials");
   practiceRepo = await import("@/server/repositories/practice");
   seed = await import("@/server/seed");
   types = await import("@/lib/types");
   seed.ensureBootstrap();
-  // 即時出題需要教材內容作依據，因此匯入課題5的書本內容
-  const imported = await materialService.importPilotMaterialFromDisk({
-    runOcr: false,
-  });
-  if (!imported) throw new Error("找不到課題5的教材檔案，無法測試 AI 出題模式");
+  // 即時出題需要教材內容作依據；使用合成教材，不依賴受版權保護的 materials/
+  await importTestPilotMaterial();
   grantDistributionForTopic("topic-5");
 });
 

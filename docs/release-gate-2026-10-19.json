@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-21T00:20:10.398Z",
+  "generatedAt": "2026-10-23T08:14:34.060Z",
   "notice": "唯讀發布閘門：沒有修改題目、覆核或發布狀態。未定義標準或沒有證據的項目不會當作通過。",
   "verdict": "NOT READY",
   "scope": {
@@ -14,54 +14,56 @@
     "goldenCandidates": "C:\\Users\\TC-37\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\golden-candidates-2026-10-19.json"
   },
   "auditSummary": {
-    "questions": 1875,
-    "published": 1875,
-    "teacherConfirmationRequired": 0,
+    "questions": 3247,
+    "published": 3205,
+    "teacherConfirmationRequired": 42,
     "source": {
-      "traceable": 877,
-      "partial": 0,
+      "traceable": 1559,
+      "partial": 304,
       "unknown": 0,
-      "pending_verification": 998
+      "pending_verification": 1384
     },
     "explanation": {
       "placeholder": 0,
       "answer_only": 0,
       "insufficient": 0,
       "potentially_inconsistent": 0,
-      "not_assessed": 1875
+      "not_assessed": 3247
     },
     "metadata": {
-      "skillMissing": 1875,
+      "skillMissing": 1915,
       "bySeverity": {
         "blocking": 0,
-        "needs_review": 981,
-        "warning": 1875
+        "needs_review": 2607,
+        "warning": 1915
       },
       "difficulty": {
-        "basic": 1875
+        "basic": 2125,
+        "advanced": 560,
+        "challenge": 562
       }
     },
     "policy": {
       "byCategory": {
-        "hard_block": 0,
-        "teacher_review": 1979,
-        "warning": 1875,
+        "hard_block": 44,
+        "teacher_review": 4295,
+        "warning": 1915,
         "policy_pending": 0
       },
-      "questionsWithHardBlock": 0,
-      "questionsWithTeacherReview": 1346,
-      "questionsReleasable": 529
+      "questionsWithHardBlock": 42,
+      "questionsWithTeacherReview": 3013,
+      "questionsReleasable": 234
     },
-    "inputFingerprint": "b64f7301b58d1cb2d93084c91fb22fdc3a8d4048eafc6ba083e749e7c56e8c93"
+    "inputFingerprint": "8ffd228977055f1b42f2f87b3d7e9dbc2113854aea4c51f3f5554dc38155f22b"
   },
   "gates": [
     {
       "id": "question-isolation",
       "title": "隔離／待教師確認",
-      "status": "PASS",
-      "summary": "沒有題目帶待教師確認標記",
-      "numerator": 0,
-      "denominator": 1875,
+      "status": "FAIL",
+      "summary": "42 題仍待教師確認",
+      "numerator": 42,
+      "denominator": 3247,
       "evidence": [
         "questions.teacher_confirmation_required"
       ],
@@ -75,7 +77,7 @@
       "status": "PASS",
       "summary": "所有已發布題目均可作答",
       "numerator": 0,
-      "denominator": 1875,
+      "denominator": 3205,
       "evidence": [
         "checkQuestionServable()"
       ],
@@ -102,9 +104,9 @@
       "id": "source-traceability",
       "title": "來源可追溯性",
       "status": "POLICY_PENDING",
-      "summary": "可定位 877／1875；待核實 998；無法追溯 0",
-      "numerator": 877,
-      "denominator": 1875,
+      "summary": "可定位 1559／3247；待核實 1688；無法追溯 0",
+      "numerator": 1559,
+      "denominator": 3247,
       "evidence": [
         "source_location",
         "source_block_ids",
@@ -121,7 +123,7 @@
       "status": "PASS",
       "summary": "佔位 0、只列答案 0、疑似矛盾 0",
       "numerator": 0,
-      "denominator": 1875,
+      "denominator": 3247,
       "evidence": [
         "explanation 分類（placeholder／answer_only／potentially_inconsistent）"
       ],
@@ -134,9 +136,9 @@
       "id": "metadata",
       "title": "元數據完整性",
       "status": "POLICY_PENDING",
-      "summary": "技能空白 1875；難度值 basic；阻擋級關聯錯誤 0",
-      "numerator": 1875,
-      "denominator": 1875,
+      "summary": "技能空白 1915；難度值 basic／advanced／challenge；阻擋級關聯錯誤 0",
+      "numerator": 1915,
+      "denominator": 3247,
       "evidence": [
         "skill",
         "difficulty",
@@ -168,9 +170,9 @@
       "id": "review-provenance",
       "title": "審核證據來源",
       "status": "FAIL",
-      "summary": "教師逐題裁決 0；只有擁有者批次 0；只有自動修復 0；完全沒有證據 1875",
+      "summary": "教師逐題裁決 0；只有擁有者批次 0；只有自動修復 0；完全沒有證據 3247",
       "numerator": 0,
-      "denominator": 1875,
+      "denominator": 3247,
       "evidence": [
         "docs/quality/review-provenance-2026-10-19.json",
         "question_reviews"
@@ -185,9 +187,9 @@
       "id": "copyright",
       "title": "版權與教材發行權",
       "status": "WARN",
-      "summary": "擁有者已確認版權；可向學生發布 12／36 份；逐份權利紀錄 12 份",
-      "numerator": 12,
-      "denominator": 36,
+      "summary": "擁有者已確認版權；可向學生發布 22／46 份；逐份權利紀錄 22 份",
+      "numerator": 22,
+      "denominator": 46,
       "evidence": [
         "docs/teacher-review/copyright-owner-attestation-2026-10-19.md"
       ],
@@ -247,9 +249,9 @@
     {
       "id": "golden-approval",
       "title": "Golden Dataset 人工核准",
-      "status": "INSUFFICIENT_EVIDENCE",
-      "summary": "已核准 fixture 0；待教師核准候選 42；裁決因題目改動而失效 0",
-      "numerator": 0,
+      "status": "PASS",
+      "summary": "已核准 fixture 1；待教師核准候選 41；裁決因題目改動而失效 0",
+      "numerator": 1,
       "denominator": 42,
       "evidence": [
         "golden_fixture_reviews",
@@ -416,12 +418,14 @@
       "numerator": null,
       "denominator": null,
       "evidence": [
-        "2026-10-21 共部署四次（00020-c64、00021-4c4、00022-52v、00023-nft）；最後一次為 commit 305e5cf。",
+        "2026-10-21 共部署七次（00020-c64、00021-4c4、00022-52v、00023-nft、00026-nb9、00027-vcz、00028-27f）；最後一次為 commit f92d7cc。",
         "2026-10-21 實測：GET /api/health 200；執行中 revision 已含 HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk 及 MATERIAL_AUTO_OPEN_POLICY=lesson-content。",
-        "2026-10-21 實測：POST /api/admin/materials/open-all 未登入回 401（新端點受 requireAdmin 保護）。",
-        "2026-10-21 實測：正式資料庫 materials = {documents:0, blocks:0, studentVisibleDocuments:0}——教材仍**未匯入**正式資料庫；匯入需管理員在 /admin/materials 按「匯入全部課程教材」（匯入後會依政策自動開放）。",
+        "2026-10-21 實測：正式資料庫 materials = {documents:36, blocks:23925, studentVisibleDocuments:12}；health.materialsAutoImport.state=skipped（不覆寫既有教材）。",
+        "2026-10-21 內容資料更新（擁有者授權）：上載 app.db 到 gs://pccss-ai-history-history-backup/history/data/app.db 後部署，令新 revision 還原該快照。部署後重新下載核對：questions=1822 全部 published、可派發 1822、佔位解釋 0、短於 25 字解釋 0、待教師確認 0、question_reviews 40 筆（擁有者本人在教師端逐題核准，全部保留）。",
+        "2026-10-21「需核對課本依據」佇列清空：623 題來源清單中 602 題已按現時版本逐題核對並移出佇列、21 題已不在題庫、0 題待教師決定；manifest（會打包進映像檔）rows=0。",
+        "2026-10-21 內容修正（有逐題理由）：qb-JTH2ndEdFBQ05044、qb-JTH2ndEdFBQ09211 題幹錯字；qb-NJCFN0120000063 答案由「市政局與區域市政局」改為「市政局」（區域市政局 1986 年才成立）。這 3 題原本沒有任何覆核紀錄，因此沒有令任何教師核准失效。",
         "資料庫還原：health.persistence.restore=restored；備份已上載。",
-        "公開存取：allUsers 具 roles/run.invoker；AUTH_REQUIRE_SIGN_IN=true，未登入存取 / 會 307 轉 /login。"
+        "公開存取：allUsers 具 roles/run.invoker；AUTH_REQUIRE_SIGN_IN=true，未登入存取 / 會 307 轉 /login（實測 /api/topics 未登入回 401）。"
       ],
       "recommendations": [
         "部署後完成登入、權限、備份還原及健康檢查"
@@ -447,8 +451,8 @@
       "label": "content-quality-queue-2026-10-19",
       "metric": "技能空白",
       "previous": 1882,
-      "current": 1875,
-      "change": -7
+      "current": 1915,
+      "change": 33
     },
     {
       "label": "content-quality-queue-2026-10-19",

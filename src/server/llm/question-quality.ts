@@ -17,6 +17,7 @@
 import type { QuestionType } from "../../lib/types";
 import { chronologyGivenAwayReason } from "./chronology-stem";
 import { normalizeForMatch, splitSentences } from "../materials/text-utils";
+import { analyseOptionQuality } from "../quality/option-quality";
 import {
   analyseMaterial,
   type MaterialAnalysis,
@@ -46,7 +47,12 @@ export type QualityIssueCode =
   | "unsupported-causation"
   | "approximate-date-overprecision"
   | "asserted-inference"
-  | "unsupported-evaluation";
+  | "unsupported-evaluation"
+  /* Sprint 23：表面線索（長度／句式／絕對化用語／重複），一律只作警告 */
+  | "option-length-asymmetry"
+  | "option-form-mismatch"
+  | "option-absolutist-distractor"
+  | "option-duplicate";
 
 export interface QualityIssue {
   code: QualityIssueCode;
@@ -1150,6 +1156,20 @@ export function checkQuestionQuality(
 
   const offTopic = explanationOffTopicReason(candidate);
   if (offTopic !== null) note("explanation-off-topic", offTopic, "warning");
+
+  // 表面線索（Sprint 23）：長度／句式／絕對化用語／重複。全部只作 warning——
+  // 既不影響 qualityOutcome（因此不改變自動發布政策），亦不寫入 teacherConfirmationRequired、
+  // 不觸發重寫、不改動任何題目內容（見 src/server/quality/option-quality.ts 的說明）。
+  if (candidate.questionType === "mc") {
+    const optionQuality = analyseOptionQuality({
+      questionType: candidate.questionType,
+      options: candidate.options,
+      correctAnswer: candidate.correctAnswer,
+    });
+    for (const finding of optionQuality.findings) {
+      note(finding.code, finding.message, "warning");
+    }
+  }
 
   return {
     ok: !issues.some((issue) => issue.severity === "blocking"),

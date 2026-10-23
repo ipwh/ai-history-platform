@@ -13,6 +13,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { freshTestDatabasePath } from "./test-database";
 import { openDocumentForStudents } from "./material-distribution";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 const testDbPath = freshTestDatabasePath("generation-empty-response");
 process.env.APP_DATABASE_PATH = testDbPath;
@@ -25,7 +26,6 @@ delete process.env.K_SERVICE;
 type PracticeService = typeof import("@/server/services/practice-service");
 type PracticeRepo = typeof import("@/server/repositories/practice");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
-type MaterialService = typeof import("@/server/services/material-service");
 type MaterialUnits = typeof import("@/server/services/material-units");
 type TextUtils = typeof import("@/server/materials/text-utils");
 type TopicsRepo = typeof import("@/server/repositories/topics");
@@ -82,15 +82,13 @@ beforeAll(async () => {
   practice = await import("@/server/services/practice-service");
   practiceRepo = await import("@/server/repositories/practice");
   materialsRepo = await import("@/server/repositories/materials");
-  const materialService: MaterialService = await import("@/server/services/material-service");
   materialUnits = await import("@/server/services/material-units");
   textUtils = await import("@/server/materials/text-utils");
   topicsRepo = await import("@/server/repositories/topics");
   seed = await import("@/server/seed");
 
   seed.ensureBootstrap();
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案");
+  await importTestPilotMaterial();
   for (const block of materialsRepo.listGroundingBlocksForSections(TOPIC, [])) {
     openDocumentForStudents(materialsRepo, block.documentId);
   }

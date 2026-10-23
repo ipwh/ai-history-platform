@@ -15,6 +15,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { openDocumentForStudents } from "./material-distribution";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("distribution");
 process.env.LLM_PROVIDER = "mock";
@@ -30,13 +31,11 @@ delete process.env.K_SERVICE;
 type SessionModule = typeof import("@/server/auth/session");
 type SeedModule = typeof import("@/server/seed");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
-type MaterialService = typeof import("@/server/services/material-service");
 type TeacherContent = typeof import("@/server/materials/teacher-content");
 
 let session: SessionModule;
 let seed: SeedModule;
 let materialsRepo: MaterialsRepo;
-let materialService: MaterialService;
 let teacherContent: TeacherContent;
 
 /**
@@ -112,12 +111,10 @@ beforeAll(async () => {
   session = await import("@/server/auth/session");
   seed = await import("@/server/seed");
   materialsRepo = await import("@/server/repositories/materials");
-  materialService = await import("@/server/services/material-service");
   teacherContent = await import("@/server/materials/teacher-content");
   seed.ensureBootstrap();
-  // 發行權是針對教材文件，因此測試需要已匯入的教材
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案，無法測試發行權");
+  // 發行權是針對教材文件，因此測試需要已匯入的教材（合成教材，非受版權保護的課本）
+  await importTestPilotMaterial();
 });
 
 describe("教材發行權（fail-closed 及稽核記錄）", () => {

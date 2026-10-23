@@ -19,6 +19,7 @@ import { DatabaseSync } from "node:sqlite";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { freshTestDatabasePath } from "./test-database";
+import { syntheticCandidates, writeGoldenCandidatesFile } from "./fixtures/golden-candidates";
 
 type Connection = typeof import("@/server/db/connection");
 type Migrations = typeof import("@/server/db/migrations");
@@ -109,6 +110,8 @@ beforeAll(async () => {
   migrations = await import("@/server/db/migrations");
   expect(fs.existsSync(TSX_CLI), "tsx CLI 存在").toBe(true);
   expect(migrations.MIGRATIONS.length).toBeGreaterThan(0);
+  // 候選清單是依版權政策不入庫的產生檔；以合成清單令 CLI 可以完成 schema 完整的路徑
+  writeGoldenCandidatesFile(syntheticCandidates(1));
 });
 
 describe("golden:export --check 唯讀契約", () => {

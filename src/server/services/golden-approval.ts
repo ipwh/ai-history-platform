@@ -130,6 +130,20 @@ export interface GoldenFixtureExport {
 export const GOLDEN_CANDIDATES_PATH = "docs/teacher-review/golden-candidates-2026-10-19.json";
 
 /**
+ * 候選清單的實際路徑。
+ *
+ * 預設是倉庫內的產生檔（依版權政策不納入版本控制）。`GOLDEN_CANDIDATES_FILE` 可指向
+ * 其他檔案：**測試**用它指向暫存目錄內的合成清單，令 CI（乾淨 checkout、沒有產生檔）
+ * 可以驗證同一套契約；正式環境不應設定此變數。
+ */
+export function goldenCandidatesPath(): string {
+  const override = process.env.GOLDEN_CANDIDATES_FILE?.trim();
+  return override
+    ? path.resolve(override)
+    : path.join(repositoryRoot(), GOLDEN_CANDIDATES_PATH);
+}
+
+/**
  * Golden 裁決表是否存在（Sprint 13）。
  *
  * 唯讀模式下不會執行 migration，所以「表不存在」是**可回報的狀態**，不是自動修復的訊號：
@@ -152,7 +166,7 @@ function repositoryRoot(): string {
 }
 
 export function loadGoldenCandidates(
-  filePath = path.join(repositoryRoot(), GOLDEN_CANDIDATES_PATH),
+  filePath = goldenCandidatesPath(),
 ): GoldenCandidate[] {
   if (!fs.existsSync(filePath)) {
     throw new Error(

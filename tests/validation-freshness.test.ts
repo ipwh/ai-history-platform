@@ -14,6 +14,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import type { Question } from "@/lib/types";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("release-audit");
 process.env.LLM_PROVIDER = "mock";
@@ -26,7 +27,6 @@ type PracticeRepo = typeof import("@/server/repositories/practice");
 type ReportsRepo = typeof import("@/server/repositories/reports");
 type ReportService = typeof import("@/server/services/question-report-service");
 type PracticeService = typeof import("@/server/services/practice-service");
-type MaterialService = typeof import("@/server/services/material-service");
 type Seed = typeof import("@/server/seed");
 
 let getDb: Connection["getDb"];
@@ -36,7 +36,6 @@ let practiceRepo: PracticeRepo;
 let reportsRepo: ReportsRepo;
 let reportService: ReportService;
 let practice: PracticeService;
-let materialService: MaterialService;
 let seed: Seed;
 
 const SECTION = "topic-5-industrial";
@@ -93,11 +92,9 @@ beforeAll(async () => {
   reportsRepo = await import("@/server/repositories/reports");
   reportService = await import("@/server/services/question-report-service");
   practice = await import("@/server/services/practice-service");
-  materialService = await import("@/server/services/material-service");
   seed = await import("@/server/seed");
   seed.ensureBootstrap();
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案");
+  await importTestPilotMaterial();
 });
 
 describe("自動驗證必須對應目前的版本與內容", () => {

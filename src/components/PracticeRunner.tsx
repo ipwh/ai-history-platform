@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { api, getLearnerId } from "@/lib/api-client";
+import { ApiError } from "@/lib/api-errors";
 import {
   AI_VERDICT_LABELS,
   DIFFICULTY_LABELS,
@@ -60,7 +61,11 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
     let cancelled = false;
     const learnerId = getLearnerId();
     api
-      .get<PracticeViewData>(`/api/practice/${sessionId}?learnerId=${learnerId}`)
+      // 載入時限：避免網絡停滯時無限等待（畫面會一直停在「正在載入題目…」）。
+      // 提交答案不設時限（伺服器端 AI 批改可能較慢）。
+      .get<PracticeViewData>(`/api/practice/${sessionId}?learnerId=${learnerId}`, {
+        timeoutMs: 20_000,
+      })
       .then((view) => {
         if (cancelled) return;
         setData(view);
@@ -125,6 +130,21 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
   }
 
   if (error) return <ErrorNotice error={error} onRetry={() => setReloadToken((t) => t + 1)} />;
+  // 伺服器回傳成功但題目清單是空的：以前會永遠停在「正在載入題目…」（`!current` 為真），
+  // 學生與教師都無法判斷發生甚麼事。這裡改為明確、可重試的錯誤（Sprint 23）。
+  if (data && questions.length === 0) {
+    return (
+      <ErrorNotice
+        error={new ApiError(
+          "伺服器回傳的題目清單是空的，因此未能顯示題目。",
+          200,
+          [],
+          "empty",
+        )}
+        onRetry={() => setReloadToken((t) => t + 1)}
+      />
+    );
+  }
   if (!data || !current) return <Loading label="正在載入題目…" />;
 
   const isLast = currentIndex === questions.length - 1;

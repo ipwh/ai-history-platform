@@ -67,7 +67,7 @@ npm run dev          # 啟動開發伺服器
 | `npm run publish:drafts` | **擁有者授權**的批次發布草稿題目（預設模擬；`--owner-email`、`--reason`、`--origins`、`--apply`，見第十節） |
 | `npm run resolve:teacher-confirmation` | **擁有者授權**解除「待教師確認」暫緩標記（逐題理由檔 `--plan`；先驗可作答性；不建立覆核紀錄；見第十節） |
 | `npx tsx scripts/fix-question-content.ts` | 修正題目**內容錯誤**（題幹錯字／答案與史實不符；`--plan`、`from`／`to` 必須相符、預設模擬、要 `--apply`；見第十節） |
-| `npm run fix:chronology-stem` | 按清單刪去「時序題題幹內的年份」（清單驅動、預設模擬、`--apply` 需 `--actor`；只改題幹，題目會回到草稿待覆核；見第七節） |
+| `npm run fix:chronology-stem` | 按清單刪去「時序題題幹內的年份」（清單驅動、預設模擬、`--apply` 需 `--actor`；整批在單一交易內套用，任何一項過期即全部回滾；只改題幹，題目會回到草稿待覆核；變更寫入 `question_mutations`；見第六節） |
 | `npx tsx scripts/verify-provenance-manifest.ts` | 逐題核對 provenance 佇列（匯出批次／寫入核對紀錄；紀錄綁定版本，題目再改動自動重回佇列；見第十節） |
 | `npm run approve:questions` | **擁有者授權**的批次覆核通過並發布題目（逐題寫入覆核紀錄；預設模擬，參數同上；**不會**處理待教師確認的題目，見第十節） |
 | `npm run repair:questions` | 修復題庫中結構上無法作答的題目（多空格填充題、排版符號殘留；預設模擬、要 `--apply`；可加 `--delete-unusable` 刪除**結構上**無法修復的題目、`--quarantine <報告>` 隔離已被證實改變考核答案的題目；見第七節） |
@@ -382,6 +382,21 @@ materials/
 | **已人工覆核** | **歷史科教師／管理員** | `question_reviews` 的紀錄 + `Question.revision` |
 
 兩者**分開記錄**，任何時候都分得出「機器檢查通過」與「教師確認過」（教師端顯示 `published-unreviewed` / 自動驗證時間）。
+
+**第三種紀錄：內容變更（`question_mutations`，Sprint 20）**。以腳本批次改寫題目（例如 `npm run fix:chronology-stem` 刪去時序題題幹的年份）既不是機器品質驗證，也不是教師覆核——它只是「有人用某個工具改了內容」。這一類事件寫入 `question_mutations`（只可新增）：操作者電郵、機制身分（`--actor-role`，預設 `automation`）、工具名稱、改動前後的版本／內容指紋／題幹，以及原因。因此「誰在何時用哪支工具把哪一題由第幾版改成第幾版」可以逐筆追溯，而 `question_reviews` 不會被這類腳本寫入（那會等於偽造教師決定）。工具亦**不會**因為這次改動而取得發布權：題目一律回到草稿，需重新覆核。
+
+**發布路徑一覽**（哪條路徑可以自動發布、需要甚麼設定；測試見 [tests/generate-draft-only.test.ts](tests/generate-draft-only.test.ts)、[tests/auto-publish-boundary.test.ts](tests/auto-publish-boundary.test.ts)、[tests/publication-safety.test.ts](tests/publication-safety.test.ts)）：
+
+| 路徑 | 會否自動發布 | 明確條件 |
+| --- | --- | --- |
+| `npm run generate:questions`（預設） | 會，**只限通過自動品質驗證**的題目 | `AUTO_PUBLISH_VALIDATED_QUESTIONS=true`（預設） |
+| `npm run generate:questions -- --draft-only` | **不會**（連自動驗證路線亦停用） | 旗標本身；`autoPublish: false` |
+| 本地示範生成（`LLM_PROVIDER=mock`） | 會，包括**未經驗證**的示範題目 | 非正式環境 **且** `DEMO_AUTO_PUBLISH_QUESTIONS=true` |
+| 品質閘門判定「未確定」 | **不會**，任何路徑都不派給學生 | `teacher_confirmation_required = 1`，須教師逐題確認 |
+| 教師人工覆核（`approved`） | 會 | 唯一會寫入 `question_reviews` 的路徑 |
+| 腳本改寫題幹（`fix:chronology-stem` 等） | **不會**（一律回到草稿） | 只寫 `question_mutations` |
+
+為甚麼容許自動發布：自學平台不應等待教師逐題預先批准（Sprint 7.8 的產品決定），因此機器檢查通過即可供學生練習；但自動驗證**不是**歷史事實核對，它只覆蓋教材依據、答案一致及結構可作答。教師覆核仍是唯一的「人的確認」，兩者在資料庫及介面都分開記錄。
 
 規則（實作於 [question-service.ts](src/server/services/question-service.ts)、[validation.ts](src/server/llm/validation.ts)，測試見 [tests/self-study-availability.test.ts](tests/self-study-availability.test.ts)、[tests/question-quality.test.ts](tests/question-quality.test.ts)）：
 
@@ -1245,10 +1260,18 @@ npm run fix:chronology-stem -- --manifest docs/teacher-review/xxx.json --databas
 - 清單（預設 `docs/teacher-review/chronology-stem-fixes-2026-10-23.json`）每項都寫明
   `before`／`after` 及理由；套用前會核對**目前的題幹是否仍與 `before` 完全相同**，
   不一致即整批拒絕（不會套用到已被修改的題目）。
+- **整批在同一個資料庫交易內完成**（`question-service.applyQuestionStemBatch`）：交易內會
+  重新核對每一題的題幹、版本及狀態，任何一項不符即整批回滾，不會留下「只改了一半」的題庫。
+  測試見 [tests/chronology-stem-batch.test.ts](tests/chronology-stem-batch.test.ts)。
 - 只改題幹一個欄位：答案、選項、解釋、知識點及教材依據一律不變。
 - 套用後題目會**回到草稿**、`revision` +1（舊覆核紀錄隨之失效），需教師重新覆核後才可再發布。
+- 每項變更寫入 `question_mutations`：操作者（`--actor`）、機制身分（`--actor-role`，預設
+  `automation`）、工具名稱、改動前後的版本／指紋／題幹及原因。**不寫** `question_reviews`：
+  腳本改寫不是教師覆核。
 - 修改後會即時再跑 `checkQuestionServable`，仍有問題（例如刪去年份後**列出次序與答案相同**）
   的項目會被拒絕，不會寫入。
+- 程式層可作答 ≠ 史實正確：正式環境 2026-10-23 的兩題修正仍為草稿，待歷史科審核者逐項核對
+  （見 [docs/teacher-review/chronology-review-flags-2026-10-23.json](docs/teacher-review/chronology-review-flags-2026-10-23.json)）。
 
 ### 題庫：讓每個課題都有題目
 

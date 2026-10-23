@@ -1416,6 +1416,92 @@ export const MIGRATIONS: Migration[] = [
          ON topics(level, curriculum_theme, sort_order)`,
     ],
   },
+  {
+    id: "0029-question-mutations",
+    statements: [
+      // ── 題目內容變更的稽核紀錄（Sprint 20）────────────────────────────
+      //
+      // 為甚麼不是 `question_reviews`：覆核紀錄代表「某人確認過這一版題目」，是發布
+      // 關卡的證據。由腳本改寫題幹**不是**覆核，記錄到那裡等於偽造教師決定。
+      //
+      // 為甚麼需要新表：先前工具列印 `--actor` 但沒有任何地方保存它，於是「誰在何時
+      // 用哪個工具改了這一題」無法追溯。`question_content_flags` 只記錄標記狀態，
+      // 不記錄「改了甚麼」，不足以回答這個問題。
+      //
+      // 只可新增：沒有提供更新或刪除的函式（見 repositories/question-mutations.ts）。
+      `CREATE TABLE IF NOT EXISTS question_mutations (
+        id TEXT PRIMARY KEY,
+        question_id TEXT NOT NULL,
+        action TEXT NOT NULL,
+        before_revision INTEGER NOT NULL,
+        after_revision INTEGER NOT NULL,
+        before_fingerprint TEXT NOT NULL,
+        after_fingerprint TEXT NOT NULL,
+        before_question TEXT NOT NULL,
+        after_question TEXT NOT NULL,
+        actor_email TEXT NOT NULL,
+        actor_role TEXT NOT NULL,
+        source TEXT NOT NULL,
+        reason TEXT,
+        created_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_question_mutations_question
+         ON question_mutations(question_id, created_at DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_question_mutations_actor
+         ON question_mutations(actor_email, created_at DESC)`,
+    ],
+  },
+  {
+    id: "0030-question-quality-findings",
+    statements: [
+      // ── 品質警告的結構化診斷紀錄（Sprint 25）────────────────────────────
+      //
+      // 為甚麼需要獨立表：`questions.quality_warnings_json` 只是一串人類可讀文字，
+      // 既不能按代碼／規則版本篩選，也不能統計（要解析字串）。教師需要知道
+      // 「這一題為甚麼被標記」「同一版本規則標記了多少題」。此表只保存**診斷中繼資料**，
+      // 不保存題目內容、選項、答案、解釋或任何學生資料。
+      //
+      // 兩個來源（origin）：
+      //   - `revalidation`：教師按「重新檢查」時，對**落庫題目**的現況判定
+      //     （每個題目×代碼×版本只保留一列，重新檢查會整體替換，見 repository）
+      //   - `instant`：學生練習時的即時生成題（連結 session ID 及快照內題目 ID，
+      //     題目本身不落庫）。此來源在本 Sprint **預設不寫入**（見文件 §5 的決定），
+      //     但 schema 及函式已就緒，待隱私及保留政策決定後才啟用。
+      //
+      // 與題目內容的關係：`question_revision` 記錄「判定時看到的版本」，僅作說明；
+      // 本表不參與 `questionFingerprint`，因此寫入或清理此表**不會**令教師覆核失效、
+      // 不會改動題目內容、revision、狀態或發布。
+      `CREATE TABLE IF NOT EXISTS question_quality_findings (
+        id TEXT PRIMARY KEY,
+        code TEXT NOT NULL CHECK (length(trim(code)) > 0),
+        rule_version TEXT NOT NULL CHECK (length(trim(rule_version)) > 0),
+        severity TEXT NOT NULL CHECK (severity IN ('warning', 'review')),
+        origin TEXT NOT NULL CHECK (origin IN ('revalidation', 'instant')),
+        question_id TEXT,
+        question_revision INTEGER,
+        session_id TEXT,
+        snapshot_question_id TEXT,
+        detected_at TEXT NOT NULL,
+        -- 每個來源必須有對應的關聯鍵：落庫題目用 question_id，即時生成題用 session + 題目 ID
+        CHECK (
+          (origin = 'revalidation' AND question_id IS NOT NULL AND session_id IS NULL)
+          OR (origin = 'instant' AND session_id IS NOT NULL AND snapshot_question_id IS NOT NULL)
+        )
+      )`,
+      // 同一題目、同一代碼、同一版本、同一來源只保留一列：重複重新檢查不會產生重複，
+      // 但不同版本（規則升級後）會並存，令「升級前後」可比較。
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_question_quality_findings_question
+         ON question_quality_findings(question_id, code, rule_version, origin)
+         WHERE question_id IS NOT NULL`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_question_quality_findings_session
+         ON question_quality_findings(session_id, snapshot_question_id, code, rule_version)
+         WHERE session_id IS NOT NULL`,
+      `CREATE INDEX IF NOT EXISTS idx_question_quality_findings_code
+         ON question_quality_findings(code, rule_version, detected_at DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_question_quality_findings_time
+         ON question_quality_findings(detected_at DESC)`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

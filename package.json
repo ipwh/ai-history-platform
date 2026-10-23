@@ -32,6 +32,8 @@
     "audit:adjudication-worklist": "tsx scripts/audit-adjudication-worklist.ts",
     "audit:source-crosswalk": "tsx scripts/audit-source-provenance-crosswalk.ts",
     "audit:golden-readiness": "tsx scripts/audit-golden-readiness.ts",
+    "audit:governance-evidence": "tsx scripts/audit-governance-evidence.ts",
+    "audit:option-bias": "tsx scripts/audit-option-bias.ts",
     "audit:review-manifest": "tsx scripts/audit-review-priority-manifest.ts",
     "audit:explanation-worklist": "tsx scripts/build-content-improvement-worklist.ts",
     "flag:content-improvement": "tsx scripts/apply-content-improvement-flags.ts",

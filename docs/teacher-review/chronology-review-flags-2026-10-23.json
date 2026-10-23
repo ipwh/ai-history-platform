@@ -1,0 +1,42 @@
+{
+  "generatedAt": "2026-10-23",
+  "status": "pending-history-review",
+  "notice": "由 Sprint 20 建立的待審核標記。這些題目在正式環境仍是草稿；在具名的歷史科審核者完成下列逐項核對前，不得發布，亦不得由任何批次工具代為核准。本檔只記錄待辦事項，不是覆核紀錄，也不代表已核對。",
+  "whyNow": "2026-10-23 的時序題修正只刪去題幹中的年份（避免答案外洩），並未核對事件定義、時序、選項與標準答案是否在史實上成立。程式層的 checkQuestionServable 只證明題目結構上可作答，不能證明歷史內容正確。",
+  "reviewer": null,
+  "reviewerRequired": "必須是獲授權的歷史科內容審核者（HISTORY_REVIEWER_EMAILS 名單內的真人）",
+  "items": [
+    {
+      "questionId": "q_2753d4272a1b4291",
+      "topicId": "hs-topic-4",
+      "topic": "第二次世界大戰",
+      "currentStatus": "draft",
+      "currentRevision": 2,
+      "flag": "event-definition-conflation",
+      "concern": "六項事件中「盟軍發動反攻，美國和日本展開太平洋戰爭」把兩件不同的事併為一項：太平洋戰爭始於 1941 年 12 月日本偷襲珍珠港，而「盟軍發動反攻」一般指 1942 年起（例如中途島戰役後的轉勢）。這一項的年份與定義必須由審核者判定是否成立。",
+      "mustVerify": [
+        "每一項事件的定義是否準確（特別是「美國和日本展開太平洋戰爭」的起始時間）",
+        "六項事件在題幹所列次序是否已與正確答案不同（避免答案外洩）",
+        "選項與標準答案在事件定義修正後是否仍然唯一正確",
+        "教材依據（sourceExcerpt／sourceLocation）是否支持修正後的描述"
+      ],
+      "mustNotDo": "不得只憑自動檢查通過就發布；不得改寫史實描述後自行核准。"
+    },
+    {
+      "questionId": "q_6e575d744fa24f5a",
+      "topicId": "hs-topic-2",
+      "topic": "改革開放",
+      "currentStatus": "draft",
+      "currentRevision": 2,
+      "flag": "chronology-order-needs-verification",
+      "concern": "三項事件的先後次序在刪去年份後必須由審核者確認：恢復高校統一考試招生制度（1977）、推行家庭聯產承包責任制（1978）、加入世界銀行與國際貨幣基金組織（1980）。另外「改革開放」的起點與恢復高考的年份關係亦需確認。",
+      "mustVerify": [
+        "三項事件的年份及先後次序是否與權威資料一致",
+        "題幹所列次序是否已與正確答案不同（避免答案外洩）",
+        "選項與標準答案是否仍然唯一正確",
+        "教材依據是否支持修正後的描述"
+      ],
+      "mustNotDo": "不得只憑自動檢查通過就發布；不得改寫史實描述後自行核准。"
+    }
+  ]
+}

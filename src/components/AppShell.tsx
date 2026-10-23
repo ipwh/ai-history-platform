@@ -40,6 +40,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [auth, setAuth] = useState<AuthStatus | null>(null);
   const [signingOut, setSigningOut] = useState(false);
 
+  // 標記「React 已 hydrate」。根版面的舊裝置看門狗（ES5）會輪詢這個屬性：
+  // 若一直未設定，代表框架 bundle 未能執行（例如 Safari 16.4 以下無法解析），
+  // 由它顯示可操作的說明，避免學生只看到永遠不會結束的載入畫面。
+  useEffect(() => {
+    document.documentElement.setAttribute("data-app-hydrated", "1");
+  }, []);
+
   useEffect(() => {
     api
       .get<Health>("/api/health")
@@ -108,7 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             {health ? (
               <span
                 className={`badge ${health.demoMode ? "badge-warning" : "badge-success"}`}
@@ -122,9 +129,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </span>
             ) : null}
             {auth?.enabled && auth.user ? (
-              <span className="flex items-center gap-2 text-xs">
+              <span className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
                 <span
-                  className={`badge ${
+                  className={`badge max-w-full truncate ${
                     auth.user.role === "student" ? "badge-success" : "badge-accent"
                   }`}
                   title={auth.user.email}

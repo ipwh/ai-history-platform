@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import { AppShell } from "@/components/AppShell";
+import { BROWSER_SUPPORT_NOTICE, buildLegacyBrowserWatchdogScript } from "@/lib/browser-support";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,7 +35,89 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="zh-Hant">
       <body className="min-h-full flex flex-col">
-        <AppShell>{children}</AppShell>
+        {/*
+          舊裝置的看門狗（Sprint 23）。伺服器輸出只含「正在載入題目…」；若瀏覽器
+          無法解析 Next.js 的 client bundle（Safari 16.4 以下的引擎），React 永遠不會
+          hydrate，畫面便停在載入中而且沒有錯誤訊息。這段腳本刻意只用 ES5 語法，
+          因此即使框架 bundle 解析失敗它仍會執行，並在合理等待後顯示可操作的說明。
+
+          面板本身由伺服器輸出（`hidden`），不依賴 JavaScript 才存在；沒有 JavaScript
+          時由下方 <noscript> 提供同樣的說明。
+        */}
+        <div id="app-root">
+          <AppShell>{children}</AppShell>
+        </div>
+
+        <div
+          id="browser-support-fallback"
+          hidden
+          tabIndex={-1}
+          style={{
+            maxWidth: "40rem",
+            margin: "2rem auto",
+            padding: "1.25rem",
+            border: "1px solid #c2cadb",
+            borderRadius: "0.75rem",
+            background: "#ffffff",
+            lineHeight: 1.7,
+          }}
+        >
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+            {BROWSER_SUPPORT_NOTICE.title}
+          </h1>
+          <p style={{ fontSize: "0.95rem" }}>{BROWSER_SUPPORT_NOTICE.body}</p>
+          <ul style={{ listStyle: "disc", paddingLeft: "1.25rem", fontSize: "0.9rem", marginTop: "0.5rem" }}>
+            {BROWSER_SUPPORT_NOTICE.actions.map((action) => (
+              <li key={action} style={{ marginTop: "0.25rem" }}>
+                {action}
+              </li>
+            ))}
+          </ul>
+          <p id="browser-support-detected" style={{ fontSize: "0.85rem", marginTop: "0.75rem", color: "#4b5563" }} />
+          <p style={{ marginTop: "0.75rem" }}>
+            <a
+              href=""
+              style={{
+                display: "inline-block",
+                padding: "0.5rem 1rem",
+                borderRadius: "0.5rem",
+                background: "#2f5bd7",
+                color: "#ffffff",
+                fontWeight: 600,
+              }}
+            >
+              重新載入
+            </a>
+          </p>
+        </div>
+
+        <noscript>
+          <div
+            style={{
+              maxWidth: "40rem",
+              margin: "2rem auto",
+              padding: "1.25rem",
+              border: "1px solid #c2cadb",
+              borderRadius: "0.75rem",
+              background: "#ffffff",
+              lineHeight: 1.7,
+            }}
+          >
+            <h1 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+              {BROWSER_SUPPORT_NOTICE.title}
+            </h1>
+            <p style={{ fontSize: "0.95rem" }}>{BROWSER_SUPPORT_NOTICE.body}</p>
+            <p style={{ fontSize: "0.9rem", marginTop: "0.5rem" }}>
+              本網站需要 JavaScript。請在瀏覽器設定中重新開啟 JavaScript，或改用其他裝置。
+            </p>
+          </div>
+        </noscript>
+
+        <script
+          // 只含 ES5 語法（由 tests/browser-support.test.ts 檢查），刻意不用 next/script：
+          // 這裡需要「框架 bundle 解析失敗時仍然執行」的保證。
+          dangerouslySetInnerHTML={{ __html: buildLegacyBrowserWatchdogScript() }}
+        />
       </body>
     </html>
   );

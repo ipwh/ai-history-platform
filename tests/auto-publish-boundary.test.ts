@@ -14,6 +14,7 @@
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("auto-publish");
 process.env.LLM_PROVIDER = "mock";
@@ -49,10 +50,8 @@ beforeAll(async () => {
   seed = await import("@/server/seed");
   types = await import("@/lib/types");
   seed.ensureBootstrap();
-  // 生成流程需要教材內容作依據（與其他出題測試一致）
-  const materialService = await import("@/server/services/material-service");
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案，無法測試自動發布流程");
+  // 生成流程需要教材內容作依據；使用合成教材，不依賴受版權保護的 materials/
+  await importTestPilotMaterial();
 });
 
 beforeEach(() => {

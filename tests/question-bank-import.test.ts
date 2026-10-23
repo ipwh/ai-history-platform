@@ -11,6 +11,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("qbank");
 process.env.LLM_PROVIDER = "mock";
@@ -19,7 +20,6 @@ delete process.env.ADMIN_TOKEN;
 type BankModule = typeof import("@/server/materials/question-bank");
 type ImportService = typeof import("@/server/services/question-bank-import-service");
 type Seed = typeof import("@/server/seed");
-type MaterialService = typeof import("@/server/services/material-service");
 type QuestionRepo = typeof import("@/server/repositories/questions");
 type SectionTopicRepo = typeof import("@/server/repositories/topics");
 
@@ -28,7 +28,6 @@ let importService: ImportService;
 let seed: Seed;
 let questions: QuestionRepo;
 let topicsRepo: SectionTopicRepo;
-let materialService: MaterialService;
 
 const MCQ_TEXT = `選擇題
 A. 石器時代的演進
@@ -194,7 +193,6 @@ beforeAll(async () => {
   seed = await import("@/server/seed");
   questions = await import("@/server/repositories/questions");
   topicsRepo = await import("@/server/repositories/topics");
-  materialService = await import("@/server/services/material-service");
   seed.ensureBootstrap();
   seed.seedCurriculum();
 });
@@ -557,7 +555,7 @@ t:mc; nil:1
     expect(before.length).toBeGreaterThan(0);
     expect(before.every((question) => !question.sourceVerified)).toBe(true);
 
-    const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
+    const imported = await importTestPilotMaterial({ excerptsFromTopic: "topic-5" });
     expect(imported).not.toBeNull();
 
     const after = questions.listQuestions({ topicId: "topic-5", origins: ["demo"] });

@@ -11,6 +11,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("report-revision");
 process.env.LLM_PROVIDER = "mock";
@@ -130,10 +131,8 @@ beforeAll(async () => {
   reports = await import("@/server/services/question-report-service");
   reportsRepo = await import("@/server/repositories/reports");
   seed.ensureBootstrap();
-  // 題目需要引用真實教材段落（重新驗證會核對段落是否存在及節錄是否仍在其中）
-  const materialService = await import("@/server/services/material-service");
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案");
+  // 題目需要引用教材段落（重新驗證會核對段落是否存在及節錄是否仍在其中）
+  await importTestPilotMaterial();
 });
 
 describe("回報綁定題目版本與作答", () => {

@@ -12,6 +12,7 @@
  */
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { freshTestDatabasePath } from "./test-database";
+import { writeGoldenCandidatesFile } from "./fixtures/golden-candidates";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("golden-approval");
 process.env.LLM_PROVIDER = "mock";
@@ -163,6 +164,8 @@ beforeAll(async () => {
 beforeEach(() => {
   getDb().prepare("DELETE FROM golden_fixture_reviews").run();
   questionId = createQuestion();
+  // 候選清單是依版權政策不入庫的產生檔；測試以合成清單指向本題，令路由可以載入候選
+  writeGoldenCandidatesFile(candidatesFor(questionId));
 });
 
 describe("權限", () => {

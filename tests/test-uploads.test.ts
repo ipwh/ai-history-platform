@@ -91,12 +91,18 @@ describe("建立及刪除（不會碰別人的檔案）", () => {
     fs.mkdirSync(otherName, { recursive: true });
     fs.writeFileSync(path.join(otherName, "keep.txt"), "keep");
 
+    // 乾淨 checkout 沒有 data/uploads（data/ 不入版本控制），因此不能假設它存在。
+    // 契約是「不會被刪除」，也就是狀態不變：本來沒有就不應被建立，本來有就要保留。
+    const projectDirExistedBefore = fs.existsSync(projectUploadsDir);
+
     try {
       removeTestUploadsDir(projectUploadsDir);
       removeTestUploadsDir(os.tmpdir());
       removeTestUploadsDir(otherName);
 
-      expect(fs.existsSync(projectUploadsDir), "專案的 data/uploads 必須保留").toBe(true);
+      expect(fs.existsSync(projectUploadsDir), "專案的 data/uploads 狀態必須不變").toBe(
+        projectDirExistedBefore,
+      );
       expect(fs.existsSync(os.tmpdir()), "暫存目錄本身必須保留").toBe(true);
       expect(fs.existsSync(path.join(otherName, "keep.txt")), "無關資料夾必須保留").toBe(true);
     } finally {

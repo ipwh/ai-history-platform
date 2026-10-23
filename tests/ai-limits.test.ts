@@ -12,6 +12,7 @@
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 const testDbPath = freshTestDatabasePath("ai-limits");
 process.env.APP_DATABASE_PATH = testDbPath;
@@ -28,14 +29,12 @@ process.env.AI_GRADINGS_GLOBAL = "100";
 type PracticeService = typeof import("@/server/services/practice-service");
 type AiLimits = typeof import("@/server/services/ai-limits");
 type AiOperations = typeof import("@/server/repositories/ai-operations");
-type MaterialService = typeof import("@/server/services/material-service");
 type Seed = typeof import("@/server/seed");
 type Connection = typeof import("@/server/db/connection");
 
 let practice: PracticeService;
 let aiLimits: AiLimits;
 let aiOperations: AiOperations;
-let materialService: MaterialService;
 let seed: Seed;
 let getDb: Connection["getDb"];
 
@@ -110,12 +109,10 @@ beforeAll(async () => {
   practice = await import("@/server/services/practice-service");
   aiLimits = await import("@/server/services/ai-limits");
   aiOperations = await import("@/server/repositories/ai-operations");
-  materialService = await import("@/server/services/material-service");
   seed = await import("@/server/seed");
   getDb = (await import("@/server/db/connection")).getDb;
   seed.ensureBootstrap();
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案，無法測試 AI 用量上限");
+  await importTestPilotMaterial();
 });
 
 beforeEach(() => {

@@ -183,6 +183,21 @@
 - 沒有改寫任何 `correct_answer`、選項、`explanation` 或技能標籤（第三節只刪題幹的年份）。
 - 沒有把任何題目由草稿發布、或把待確認題目標成已確認（補題一律留在草稿）。
 - 沒有偽造 Golden 或覆核紀錄。
+
+## 七之二、待歷史科審核者決定（Sprint 20）
+
+上述兩題在正式環境**仍為草稿**，在具名的歷史科審核者完成逐項核對前不得發布。程式層的
+`checkQuestionServable` 只證明題目**結構上可作答**（例如題幹沒有印出年份），不能證明事件
+定義、時序、選項及標準答案在史實上成立。
+
+待辦清單：[chronology-review-flags-2026-10-23.json](../teacher-review/chronology-review-flags-2026-10-23.json)
+（`status = pending-history-review`；測試 [tests/chronology-review-flags.test.ts](../tests/chronology-review-flags.test.ts)
+會在有人把狀態改成「已核准」時失敗）。
+
+最需要人手判斷的一項：`q_2753d4272a1b4291`（第二次世界大戰）把「盟軍發動反攻」與「美國和
+日本展開太平洋戰爭」寫成同一項事件——太平洋戰爭始於 1941 年 12 月，而盟軍反攻一般指 1942
+年起。這一項的定義是否成立，必須由審核者依權威資料判斷；本輪**沒有**改寫史實描述，亦沒有
+以自動檢查代替審核。
 - 沒有改動 `EXPLANATION_HOLD_POLICY` 等政策預設。
 - 沒有對 `data/app.db` 執行 migration／flag／apply／publish；本輪只按擁有者指示刪去 4 題題幹的
   年份（經清單工具，預設模擬、`--apply` 需 `--actor`）及產生 14 題**草稿**。

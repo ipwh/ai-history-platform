@@ -24,6 +24,7 @@ import type { MaterialUnit } from "@/server/llm/provider";
 
 import { freshTestDatabasePath } from "./test-database";
 import { openDocumentForStudents } from "./material-distribution";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 const testDbPath = freshTestDatabasePath("practice-withheld-delivery");
 process.env.APP_DATABASE_PATH = testDbPath;
 // 假 provider：沒有真實 API key，只有一個被 stub 的 HTTP 回應（見下方 fetchStub）
@@ -37,7 +38,6 @@ type PracticeService = typeof import("@/server/services/practice-service");
 type PracticeRepo = typeof import("@/server/repositories/practice");
 type QuestionsRepo = typeof import("@/server/repositories/questions");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
-type MaterialService = typeof import("@/server/services/material-service");
 type MaterialUnits = typeof import("@/server/services/material-units");
 type TextUtils = typeof import("@/server/materials/text-utils");
 type TopicsRepo = typeof import("@/server/repositories/topics");
@@ -47,7 +47,6 @@ let practice: PracticeService;
 let practiceRepo: PracticeRepo;
 let questionsRepo: QuestionsRepo;
 let materialsRepo: MaterialsRepo;
-let materialService: MaterialService;
 let materialUnits: MaterialUnits;
 let textUtils: TextUtils;
 let topicsRepo: TopicsRepo;
@@ -144,15 +143,13 @@ beforeAll(async () => {
   practiceRepo = await import("@/server/repositories/practice");
   questionsRepo = await import("@/server/repositories/questions");
   materialsRepo = await import("@/server/repositories/materials");
-  materialService = await import("@/server/services/material-service");
   materialUnits = await import("@/server/services/material-units");
   textUtils = await import("@/server/materials/text-utils");
   topicsRepo = await import("@/server/repositories/topics");
   seed = await import("@/server/seed");
 
   seed.ensureBootstrap();
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案");
+  await importTestPilotMaterial();
   for (const block of materialsRepo.listGroundingBlocksForSections(TOPIC, [])) {
     openDocumentForStudents(materialsRepo, block.documentId);
   }

@@ -71,8 +71,8 @@ function main(): void {
   const argv = process.argv.slice(2);
   const databasePath = path.resolve(readArg(argv, "--database") ?? path.join(repo, "data", "app.db"));
   const candidatesPath = path.resolve(
-    repo,
-    "docs/teacher-review/golden-candidates-2026-10-19.json",
+    process.env.GOLDEN_CANDIDATES_FILE?.trim() ||
+      path.join(repo, "docs/teacher-review/golden-candidates-2026-10-19.json"),
   );
   if (!fs.existsSync(candidatesPath)) throw new Error("找不到 golden 候選清單");
   if (!fs.existsSync(databasePath)) throw new Error(`找不到資料庫：${databasePath}`);

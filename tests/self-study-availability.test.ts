@@ -13,6 +13,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { openDocumentForStudents, closeDocumentForStudents } from "./material-distribution";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 const testDbPath = freshTestDatabasePath("self-study");
 process.env.APP_DATABASE_PATH = testDbPath;
@@ -23,7 +24,6 @@ type QuestionService = typeof import("@/server/services/question-service");
 type QuestionRepo = typeof import("@/server/repositories/questions");
 type PracticeService = typeof import("@/server/services/practice-service");
 type PracticeRepo = typeof import("@/server/repositories/practice");
-type MaterialService = typeof import("@/server/services/material-service");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
 type Seed = typeof import("@/server/seed");
 
@@ -31,7 +31,6 @@ let questions: QuestionService;
 let questionsRepo: QuestionRepo;
 let practice: PracticeService;
 let practiceRepo: PracticeRepo;
-let materialService: MaterialService;
 let materialsRepo: MaterialsRepo;
 let seed: Seed;
 
@@ -43,12 +42,10 @@ beforeAll(async () => {
   questionsRepo = await import("@/server/repositories/questions");
   practice = await import("@/server/services/practice-service");
   practiceRepo = await import("@/server/repositories/practice");
-  materialService = await import("@/server/services/material-service");
   materialsRepo = await import("@/server/repositories/materials");
   seed = await import("@/server/seed");
   seed.ensureBootstrap();
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案");
+  await importTestPilotMaterial();
   for (const block of materialsRepo.listGroundingBlocksForSections("topic-5", [])) {
     openDocumentForStudents(materialsRepo, block.documentId);
   }

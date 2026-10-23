@@ -12,6 +12,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { openDocumentForStudents } from "./material-distribution";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 import { questionStemKey } from "@/server/llm/question-dedupe";
 import { normalizeForMatch } from "@/server/materials/text-utils";
@@ -22,13 +23,11 @@ process.env.LLM_PROVIDER = "mock";
 
 type PracticeService = typeof import("@/server/services/practice-service");
 type PracticeRepo = typeof import("@/server/repositories/practice");
-type MaterialService = typeof import("@/server/services/material-service");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
 type Seed = typeof import("@/server/seed");
 
 let practice: PracticeService;
 let practiceRepo: PracticeRepo;
-let materialService: MaterialService;
 let materialsRepo: MaterialsRepo;
 let seed: Seed;
 
@@ -37,12 +36,10 @@ const SECTIONS = ["topic-5-industrial", "topic-5-industrial"];
 beforeAll(async () => {
   practice = await import("@/server/services/practice-service");
   practiceRepo = await import("@/server/repositories/practice");
-  materialService = await import("@/server/services/material-service");
   materialsRepo = await import("@/server/repositories/materials");
   seed = await import("@/server/seed");
   seed.ensureBootstrap();
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案，無法測試即時生成的去重");
+  await importTestPilotMaterial();
   // 學生自行觸發即時生成只可使用已確認可向學生發布的教材
   for (const block of materialsRepo.listGroundingBlocksForSections("topic-5", [])) {
     openDocumentForStudents(materialsRepo, block.documentId);

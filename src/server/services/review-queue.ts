@@ -307,8 +307,31 @@ export function listReviewQueue(  queue: ReviewQueue,
     };
   }
 
+  // 候選清單是**產生檔**（依版權政策不納入版本控制）：檔案不存在時必須如實回報
+  // available=false 及原因，而不是令整個佇列 API 以 500 失敗（2026-10-23 CI 發現：
+  // 乾淨 checkout 沒有 docs/teacher-review/golden-candidates-*.json）。
+  let goldenCandidates;
+  try {
+    goldenCandidates = listGoldenCandidateViews();
+  } catch (error) {
+    return {
+      queue,
+      available: false,
+      limitation:
+        `無法讀取 Golden 候選清單：${error instanceof Error ? error.message : String(error)}` +
+        "這不代表沒有候選；請在產生候選清單的環境執行 `npm run golden:candidates`。",
+      asOf: null,
+      total: 0,
+      page,
+      pageSize,
+      items: [],
+      counts: {},
+      skippedMissing: 0,
+    };
+  }
+
   const missingGolden = matchReportToDatabase(
-    listGoldenCandidateViews().map((view) => ({ ...view, id: view.questionId })),
+    goldenCandidates.map((view) => ({ ...view, id: view.questionId })),
   );
   const views = missingGolden.items;
   if (missingGolden.databaseMismatch) {

@@ -13,6 +13,7 @@ import {
   type QuestionStatus,
   type QuestionType,
 } from "../../lib/types";
+import { deleteFindingsForQuestion, purgeOrphanedFindings } from "./question-quality-findings";
 
 interface QuestionRow {
   id: string;
@@ -393,10 +394,13 @@ export function recordQuestionAutoValidation(input: {
 
 export function deleteQuestion(questionId: string): void {
   getDb().prepare("DELETE FROM questions WHERE id = ?").run(questionId);
+  // 診斷列不參與題目內容，但題目被刪除後不應留下孤兒列（Sprint 25）。
+  deleteFindingsForQuestion(questionId);
 }
 
 export function deleteQuestionsByOrigin(origin: QuestionOrigin): void {
   getDb().prepare("DELETE FROM questions WHERE origin = ?").run(origin);
+  purgeOrphanedFindings();
 }
 
 export function knowledgePointExists(topicId: string, knowledgePoint: string): boolean {

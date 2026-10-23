@@ -31,13 +31,20 @@ import {
 } from "../../lib/types";
 import { questionFingerprint as fingerprint } from "../quality/question-fingerprint";
 
-import { nowIso, newId } from "../db/connection";
+import { nowIso, newId, getDb, withTransaction } from "../db/connection";
 import { getServerConfig, isProductionRuntime } from "../config";
 import { resolveProvider } from "../llm";
 import { analyseMaterial } from "../llm/material-analysis";
 import { LlmProviderError, type LlmProvider } from "../llm/provider";
 import type { QuestionGenerationInput } from "../llm/provider";
 import { checkQuestionQuality, isMachineRevisableIssue, qualityOutcome } from "../llm/question-quality";
+import {
+  OPTION_QUALITY_CODES,
+  mergeOptionQualityWarnings,
+  parseOptionQualityWarning,
+  type OptionQualityCode,
+} from "../quality/option-quality";
+import { replaceRevalidationFindings } from "../repositories/question-quality-findings";
 import { validateLlmQuestions } from "../llm/validation";
 import { categorizeLlmError, logLlmUsage } from "./llm-usage";
 import {
@@ -57,6 +64,7 @@ import {
   updateQuestion,
 } from "../repositories/questions";
 import { getBlocksByIds } from "../repositories/materials";
+import { insertQuestionMutation } from "../repositories/question-mutations";
 import { countQuestionRevisionDrift } from "../repositories/practice";
 import { expandSectionIds, getSection, getTopic, listSections } from "../repositories/topics";
 import { normalizeForMatch, truncate } from "../materials/text-utils";
@@ -1045,12 +1053,52 @@ export function revalidateQuestion(questionId: string): {
     validatedAt: nowIso(),
   });
   if (!validated) throw new QuestionServiceError("自動驗證紀錄寫入失敗", 500);
+
+  // 表面線索警告的可追溯性（Sprint 24／25）：教師按「重新檢查」時，以目前版本的規則
+  // 重新評估，並把結果寫回 `quality_warnings_json`（人類可讀）與
+  // `question_quality_findings`（可查詢的診斷中繼資料）。
+  //
+  // 為甚麼安全：
+  //   - `quality_warnings_json` **不在** `questionFingerprint` 之內，因此寫入警告
+  //     不會令既有教師覆核變成 stale-approval；
+  //   - `setQualityWarnings` 只更新這個欄位，不改 revision、狀態、內容或覆核紀錄；
+  //   - 只替換「本模組自己產生的」警告，其他品質警告原樣保留；
+  //   - 兩個寫入在同一個交易內完成：不會出現「文字警告已更新但診斷列未更新」的半套狀態。
+  // 生成時已寫入的警告（Sprint 23）同樣不受影響；已在題庫中的舊題目要由教師
+  // 主動重新檢查才會取得這些警告（不會自動掃描或改動任何題目）。
+  const optionWarnings = quality.issues
+    .filter((issue) => OPTION_QUALITY_CODES.includes(issue.code as OptionQualityCode))
+    .map((issue) => `品質檢查提示：${issue.message}`);
+  const optionFindings = optionWarnings
+    .map((warning) => parseOptionQualityWarning(warning))
+    .filter((parsed): parsed is { code: OptionQualityCode; version: string } => parsed !== null)
+    .map((parsed) => ({ code: parsed.code, ruleVersion: parsed.version, severity: "warning" }));
+  const mergedWarnings = mergeOptionQualityWarnings(existing.qualityWarnings, optionWarnings);
+  const warningsChanged =
+    mergedWarnings.length !== existing.qualityWarnings.length ||
+    mergedWarnings.some((warning, index) => warning !== existing.qualityWarnings[index]);
+
+  const withWarnings = withTransaction(getDb(), () => {
+    const updatedQuestion = warningsChanged
+      ? (setQualityWarnings(validated.id, mergedWarnings) ?? validated)
+      : validated;
+    replaceRevalidationFindings(
+      {
+        questionId: existing.id,
+        questionRevision: existing.revision,
+        findings: optionFindings,
+      },
+      { withinTransaction: true },
+    );
+    return updatedQuestion;
+  });
+
   return {
     autoValidated: true,
     decision: "auto-validated",
     sourceIssues: [],
     qualityIssues: [],
-    view: teacherQuestionView(validated),
+    view: teacherQuestionView(withWarnings),
   };
 }
 
@@ -1095,6 +1143,156 @@ export function removeQuestion(questionId: string): void {
   const existing = getQuestion(questionId);
   if (!existing) throw new QuestionServiceError("找不到指定的題目", 404);
   deleteQuestion(questionId);
+}
+
+/** 批次修改題幹的一項（含套用時要核對的預期狀態） */
+export interface QuestionStemChange {
+  questionId: string;
+  /** 清單產生時看到的題幹；套用時必須仍然相同，否則拒絕（題目已被改動） */
+  expectedQuestion: string;
+  /** 清單產生時看到的版本；套用時必須相同，否則拒絕 */
+  expectedRevision: number;
+  /** 清單產生時看到的狀態；套用時必須相同，否則拒絕 */
+  expectedStatus: QuestionStatus;
+  /** 新的題幹 */
+  nextQuestion: string;
+}
+
+export interface QuestionStemBatchActor {
+  /** 實際操作者（人類）的電郵 */
+  email: string;
+  /** 這次變更的機制身分（例如 automation），不是教師角色 */
+  role: string;
+}
+
+export interface QuestionStemBatchResultItem {
+  questionId: string;
+  beforeRevision: number;
+  afterRevision: number;
+  status: QuestionStatus;
+}
+
+/**
+ * 以**單一資料庫交易**套用一批題幹修改（Sprint 20）。
+ *
+ * 為甚麼需要這個函式：`scripts/fix-chronology-stem-years.ts` 以往先在交易外逐項核對，
+ * 再逐項呼叫 `updateManualQuestion`。每一項都是獨立的寫入，若第 N 項失敗（例如題目
+ * 在核對後被其他人修改），第 1 至 N-1 項已經寫入，批次只套用了一半——而工具的輸出
+ * 會說「整批不會寫入」。這正是本函式要消除的落差。
+ *
+ * 契約：
+ *   1. 交易內**重新讀取**每一題，核對題幹、版本及狀態與呼叫端看到的一致；任何一項
+ *      不符即整批回滾（`QuestionServiceError`，409）。
+ *   2. `validate` 由呼叫端提供領域檢查（例如「修改後仍不可洩漏時序答案」）；回傳
+ *      錯誤訊息即視為失敗，同樣整批回滾。
+ *   3. 每一項成功寫入後，同時寫入一筆 `question_mutations`（操作者、工具、改動前後
+ *      的版本／指紋／題幹）。**不會**寫入任何 `question_reviews` 紀錄：腳本改寫題幹
+ *      不是教師覆核。
+ *   4. 題目一律回到 `draft`（內容已改變，舊覆核随即可失效）。
+ */
+export function applyQuestionStemBatch(input: {
+  changes: QuestionStemChange[];
+  actor: QuestionStemBatchActor;
+  /** 變更來源（例如 `scripts/fix-chronology-stem-years.ts`） */
+  source: string;
+  reason?: string | null;
+  validate?: (question: Question, nextQuestion: string) => string | null;
+}): { updated: QuestionStemBatchResultItem[] } {
+  const actorEmail = input.actor.email.trim();
+  const actorRole = input.actor.role.trim();
+  const source = input.source.trim();
+  if (actorEmail.length === 0 || actorRole.length === 0) {
+    throw new QuestionServiceError("缺少操作者身分，無法記錄題目變更。", 400);
+  }
+  if (source.length === 0) {
+    throw new QuestionServiceError("缺少變更來源（工具名稱），無法記錄題目變更。", 400);
+  }
+  if (input.changes.length === 0) return { updated: [] };
+
+  const seen = new Set<string>();
+  for (const change of input.changes) {
+    if (seen.has(change.questionId)) {
+      throw new QuestionServiceError(
+        `同一題在清單中出現多於一次（${change.questionId}），拒絕套用以免產生不明確的結果。`,
+        409,
+      );
+    }
+    seen.add(change.questionId);
+  }
+
+  return withTransaction(getDb(), () => {
+    // 第一階段：在交易內重新核對所有項目，任何一項不符即整批回滾
+    const planned: Array<{ change: QuestionStemChange; current: Question }> = [];
+    for (const change of input.changes) {
+      const current = getQuestion(change.questionId);
+      if (!current) {
+        throw new QuestionServiceError(
+          `題庫找不到題目 ${change.questionId}，整批沒有寫入任何變更。`,
+          409,
+        );
+      }
+      if (current.question.trim() !== change.expectedQuestion.trim()) {
+        throw new QuestionServiceError(
+          `題目 ${change.questionId} 的題幹與清單不同（題目已被修改），整批沒有寫入任何變更。`,
+          409,
+        );
+      }
+      if (current.revision !== change.expectedRevision) {
+        throw new QuestionServiceError(
+          `題目 ${change.questionId} 的版本已改變（清單為第 ${change.expectedRevision} 版，目前為第 ${current.revision} 版），整批沒有寫入任何變更。`,
+          409,
+        );
+      }
+      if (current.status !== change.expectedStatus) {
+        throw new QuestionServiceError(
+          `題目 ${change.questionId} 的狀態已改變（清單為 ${change.expectedStatus}，目前為 ${current.status}），整批沒有寫入任何變更。`,
+          409,
+        );
+      }
+      if (change.nextQuestion.trim().length === 0) {
+        throw new QuestionServiceError(`題目 ${change.questionId} 的新題幹不可為空。`, 400);
+      }
+      const failure = input.validate?.(current, change.nextQuestion) ?? null;
+      if (failure !== null) {
+        throw new QuestionServiceError(
+          `題目 ${change.questionId} 未通過檢查（${failure}），整批沒有寫入任何變更。`,
+          409,
+        );
+      }
+      planned.push({ change, current });
+    }
+
+    // 第二階段：寫入。任何一個例外都會令整個交易回滾（見 withTransaction）
+    const updated: QuestionStemBatchResultItem[] = [];
+    for (const { change, current } of planned) {
+      const written = updateQuestion(change.questionId, {
+        ...current,
+        question: change.nextQuestion,
+        status: "draft",
+      });
+      insertQuestionMutation({
+        questionId: change.questionId,
+        action: "update-question-stem",
+        beforeRevision: current.revision,
+        afterRevision: written.revision,
+        beforeFingerprint: questionFingerprint(current),
+        afterFingerprint: questionFingerprint(written),
+        beforeQuestion: current.question,
+        afterQuestion: written.question,
+        actorEmail,
+        actorRole,
+        source,
+        reason: input.reason ?? null,
+      });
+      updated.push({
+        questionId: change.questionId,
+        beforeRevision: current.revision,
+        afterRevision: written.revision,
+        status: written.status,
+      });
+    }
+    return { updated };
+  });
 }
 
 /**

@@ -14,6 +14,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 // 依 Sprint 3／4 的要求，**沒有**加入 retry 掩蓋問題。
 import fs from "node:fs";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 const testDbPath = freshTestDatabasePath("bank");
 for (const suffix of ["", "-wal", "-shm"]) {
@@ -24,25 +25,19 @@ process.env.LLM_PROVIDER = "mock";
 
 type QuestionBankService = typeof import("@/server/services/question-bank");
 type QuestionRepository = typeof import("@/server/repositories/questions");
-type MaterialService = typeof import("@/server/services/material-service");
 type Seed = typeof import("@/server/seed");
 
 let bank: QuestionBankService;
 let questionsRepo: QuestionRepository;
-let materialService: MaterialService;
 let seed: Seed;
 
 beforeAll(async () => {
   bank = await import("@/server/services/question-bank");
   questionsRepo = await import("@/server/repositories/questions");
-  materialService = await import("@/server/services/material-service");
   seed = await import("@/server/seed");
   seed.ensureBootstrap();
-  // 題庫生成需要教材內容作依據，因此匯入課題5的書本內容
-  const imported = await materialService.importPilotMaterialFromDisk({
-    runOcr: false,
-  });
-  if (!imported) throw new Error("找不到課題5的教材檔案，無法測試題庫生成");
+  // 題庫生成需要教材內容作依據；使用合成教材（不依賴受版權保護的 materials/）
+  const imported = await importTestPilotMaterial();
 
   // 明確驗證教材真的成功擷取：若擷取失敗（例如檔案讀取或解析問題），
   // 之後的「生成 0 題」會難以診斷。這裡先擋下來，令失敗原因一目了然。

@@ -9,19 +9,18 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { openDocumentForStudents } from "./material-distribution";
 import { freshTestDatabasePath } from "./test-database";
+import { importTestPilotMaterial } from "./fixtures/pilot-material";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("bank-topup-count");
 process.env.LLM_PROVIDER = "mock";
 
 type PracticeService = typeof import("@/server/services/practice-service");
 type QuestionRepo = typeof import("@/server/repositories/questions");
-type MaterialService = typeof import("@/server/services/material-service");
 type MaterialsRepo = typeof import("@/server/repositories/materials");
 type Seed = typeof import("@/server/seed");
 
 let practice: PracticeService;
 let questionsRepo: QuestionRepo;
-let materialService: MaterialService;
 let materialsRepo: MaterialsRepo;
 let seed: Seed;
 
@@ -32,13 +31,11 @@ const SECTION = "topic-5-french-revolution";
 beforeAll(async () => {
   practice = await import("@/server/services/practice-service");
   questionsRepo = await import("@/server/repositories/questions");
-  materialService = await import("@/server/services/material-service");
   materialsRepo = await import("@/server/repositories/materials");
   seed = await import("@/server/seed");
 
   seed.ensureBootstrap();
-  const imported = await materialService.importPilotMaterialFromDisk({ runOcr: false });
-  if (!imported) throw new Error("找不到課題5的教材檔案");
+  await importTestPilotMaterial();
   for (const block of materialsRepo.listGroundingBlocksForSections(TOPIC, [])) {
     openDocumentForStudents(materialsRepo, block.documentId);
   }
