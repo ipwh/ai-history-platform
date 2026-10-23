@@ -51,6 +51,35 @@
     "practiceRecordsLost": 0,
     "stagingPrefixRemoved": "gs://pccss-ai-history-history-backup/content-sync-20261023 已刪除"
   },
+  "questionBankSync20261023T0325": {
+    "method": "下載正式快照為基底 → 只加入本機獨有題目（不覆寫任何正式題目）→ 補回本機覆核歷史 → 擁有者授權批次發布可作答草稿 → 上載暫存 prefix → 切換 revision 由暫存 prefix 還原 → 複製回 history/ → 切回 history 並重新下載核對",
+    "before": { "questions": 2850, "published": 2822, "reviews": 77 },
+    "localBefore": { "questions": 2179, "published": 2144, "reviews": 3161 },
+    "overlap": { "shared": 1782, "localOnly": 397, "productionOnly": 1068, "sharedWithDifferentStem": 22 },
+    "after": {
+      "questions": 3247,
+      "published": 3205,
+      "draftsAwaitingTeacherConfirmation": 42,
+      "reviews": 3234,
+      "attempts": 210,
+      "practiceSessions": 38,
+      "materialDocuments": 46,
+      "materialBlocks": 26599
+    },
+    "policy": [
+      "正式環境的題目內容全部保留：22 題題幹差異沒有以本機版本覆寫（保留正式版本，待教師決定）",
+      "本機 3,157 筆覆核紀錄全部帶入正式資料庫；因題目其後曾被自動修復改動（revision 遞增），當中沒有一筆對目前版本有效，正式環境目前有效的逐題核准為 59 題",
+      "21 題草稿由擁有者授權批次發布（紀錄：docs/teacher-review/owner-publication-overrides.json 第 17 筆），不會建立任何覆核紀錄",
+      "42 題品質閘門判定未確定（待教師確認）沒有發布，仍需教師逐題確認"
+    ],
+    "rollbackObject": "gs://pccss-ai-history-history-backup/history/data/app.db.pre-sync-20261023T0325",
+    "revisions": [
+      "history-self-study-00051-2zz（暫存 prefix content-sync-20261023T0325）",
+      "history-self-study-00052-9tj（BACKUP_PREFIX=history）"
+    ],
+    "verifiedBy": "下載 gs://…/history/data/app.db 後以 node:sqlite 唯讀核對（3,247 題／3,205 已發布／3,234 筆覆核／210 作答／38 次練習／46 份教材／26,599 段；integrity_check ok、foreign_key_check 0 違規）；/api/health persistence.restore=restored",
+    "localAfter": "data/app.db 已同步為同一份資料庫；同步前備份 data/backups/local-app-before-sync-20261023T0340.db"
+  },
   "gate": {
     "verdict": "NOT READY",
     "questionServability": "PASS（0／2,820）",
