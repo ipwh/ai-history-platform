@@ -135,8 +135,40 @@ npx tsx scripts/audit-governance-evidence.ts --out <dir>     # 另存完整清�
 
 ---
 
-## 7. 建議的補齊方式（依來源）
+## 7. 候選版本與部署閘門（Sprint 26 記錄）
 
+| 項目 | 狀態 |
+| --- | --- |
+| 候選版本 commit | `4c893f91251381d4d0ed82795d02ed2f3523fa47`（`chore(release): Sprints 20-26 release candidate`） |
+| Push | 已推送到 `origin/main`（`354c36f..4c893f9`） |
+| 遠端 CI（run #48，`CI` workflow） | **success** — job「Test, typecheck, lint, build」在 `ubuntu-latest` 乾淨 checkout 上完成 `npm ci`、測試、typecheck、lint、build 及 `verify:build` |
+| Playwright job | **skipped**（需要 self-hosted runner 與內容資料庫；本機已另行執行 40 passed） |
+| `npm run release:gate` | **NOT READY**：`question-isolation` FAIL（42 題待確認）、`review-provenance` FAIL、`source-traceability`／`metadata`／`provenance-risk` POLICY_PENDING、`copyright` WARN、`golden-evaluation` INSUFFICIENT_EVIDENCE |
+| 正式環境 migration | 備份快照顯示只到 `0028`；`0029`、`0030` **未套用** |
+| 部署 | **未執行**（內容、版權、覆核 gate 仍開啟） |
+
+### 部署會發生甚麼（由程式碼確認）
+
+1. 容器啟動 → `src/instrumentation.ts` 的 `restoreOnStartup()` 由 GCS 下載 `history/data/app.db`（目前 schema `0028`）；
+2. 第一個請求 → `getDb()` → `runMigrations()` **自動套用 `0029` 與 `0030`**（見
+   [src/server/db/connection.ts](../src/server/db/connection.ts) 第 72 行）。
+
+即：部署**必然**會改動正式環境 schema，不是可選步驟。兩支 migration 都只是
+`CREATE TABLE`／`CREATE INDEX`（新增、不改既有表），因此舊版本程式碼可以忽略新表，
+image 回滾在 schema 層面安全；若要回到舊 schema，需還原 bucket 內的
+`app.db.pre-*` 物件。
+
+### 部署前仍缺的證據
+
+- 42 題待教師確認（41 題 + 1 題 golden 候選相關）未解決；
+- 1,438 題缺現行版本證據；
+- 版權 gate 為 WARN（22／46 份教材獲准向學生發布）；
+- `review-provenance` FAIL；
+- 部署前備份物件未建立（bucket 內最新 `app.db` 為執行期自動上載，需在部署前另存
+  `app.db.pre-deploy-<timestamp>` 作為回滾點）；
+- iPad 第 8 代實機驗收未完成。
+
+## 8. 建議的補齊方式（依來源）
 | 來源 | 建議 | 為何不可自動化 |
 | --- | --- | --- |
 | `school-paper`（1,372） | 這些題目有**舊 revision** 的教師批准。需要教師決定：現行版本的改動是否屬「不影響學生作答」的技術性修正。若屬，應以**批次教師決策**記錄（範圍、依據、排除條件、負責人、適用版本），並由教師在介面逐批確認 | 批次決策必須由教師發出；系統不可代為決定哪些改動「無關痛癢」 |
@@ -147,7 +179,7 @@ npx tsx scripts/audit-governance-evidence.ts --out <dir>     # 另存完整清�
 
 ---
 
-## 8. 這些結果**不是**甚麼
+## 9. 這些結果**不是**甚麼
 
 - 不是內容錯誤的證明，也不是侵權的證明；
 - 不是教師批准的替代品；
