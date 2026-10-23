@@ -1,19 +1,24 @@
 {
   "generatedAt": "2026-10-23T01:45:00.000Z",
-  "notice": "只記錄實際執行並觀察到的部署證據；本輪只部署程式碼，未上載資料庫快照（正式資料庫比本機新）。",
+  "notice": "只記錄實際執行並觀察到的部署證據。本輪分兩步：① 部署程式碼（Next.js 16.4.1）；② 以快照方式同步內容修正（見 contentSync）。",
   "target": {
     "provider": "Google Cloud Run",
     "project": "pccss-ai-history",
     "region": "asia-east2",
     "service": "history-self-study",
     "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
-    "revision": "history-self-study-00048-lsr",
+    "revision": "history-self-study-00050-n9w",
+    "revisionsThisRound": [
+      "history-self-study-00048-lsr（程式碼：Next.js 16.4.1）",
+      "history-self-study-00049-vvd（暫切 BACKUP_PREFIX=content-sync-20261023，由暫存快照還原）",
+      "history-self-study-00050-n9w（切回 BACKUP_PREFIX=history，由已更新的正式快照還原）"
+    ],
     "previousRevision": "history-self-study-00047-769",
     "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:08dc5a30-8560-4926-be2b-0465a58098c6",
     "imageDigest": "sha256:8fcfe09adb61b2857a4b332b682ab9801eabf8c859446ed8ffaadf7c18be8386",
     "previousImageDigest": "sha256:6e7f9490675213d964c79c16b59d17d727a1398e0cc13582ea4034e2170074a8",
     "deployedWith": "./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply -AdminEmails ipwh@pochiu.edu.hk -ReviewerEmails ipwh@pochiu.edu.hk -StaffAccessPolicy school-domain -StaffDomains pochiu.edu.hk",
-    "traffic": "100% → history-self-study-00048-lsr"
+    "traffic": "100% → history-self-study-00050-n9w"
   },
   "source": {
     "branch": "main",
@@ -21,18 +26,55 @@
     "commitSubject": "fix(question-bank): make --draft-only truly keep drafts; add chronology-stem fix CLI",
     "nextVersion": "16.4.1"
   },
+  "contentSync": {
+    "method": "下載 gs://phase-backup 的正式快照 → 在快照副本上套用題幹修正清單 → 上載到暫存 prefix → 切換 BACKUP_PREFIX 令新 revision 由暫存 prefix 還原 → 核對 → 複製到 history/ → 切回 BACKUP_PREFIX=history → 再次核對",
+    "snapshotSource": "gs://pccss-ai-history-history-backup/history/data/app.db（update_time 2026-10-23T01:29:41Z，17,711,104 bytes）",
+    "manifest": "docs/teacher-review/chronology-stem-fixes-prod-2026-10-23.json（2 項）",
+    "changedQuestions": [
+      "q_6e575d744fa24f5a（hs-topic-2 改革開放時序）：刪去 1977／1978／1980 年，並打亂題幹列出次序",
+      "q_2753d4272a1b4291（hs-topic-4 二戰時序）：刪去 1941–1945 年，並打亂題幹列出次序"
+    ],
+    "unchanged": "答案、選項、解釋、知識點、教材依據、其他 2,818 題、46 份教材、26,599 段、37 次練習記錄",
+    "resultBefore": {
+      "questions": "published 2,822 / draft 28",
+      "publishedUnservable": 2,
+      "practiceSessions": 37
+    },
+    "resultAfter": {
+      "questions": "published 2,820 / draft 30",
+      "publishedUnservable": 0,
+      "practiceSessions": 37,
+      "materialDocuments": 46,
+      "materialBlocks": 26599
+    },
+    "verifiedBy": "下載 gs://…/history/data/app.db 後以 node:sqlite 唯讀核對（status/revision/servability/練習記錄/教材段落），並以 scripts/release-gate.ts 唯讀重跑發布閘門",
+    "practiceRecordsLost": 0,
+    "stagingPrefixRemoved": "gs://pccss-ai-history-history-backup/content-sync-20261023 已刪除"
+  },
+  "gate": {
+    "verdict": "NOT READY",
+    "questionServability": "PASS（0／2,820）",
+    "servabilityAdjudication": "PASS（0 題）",
+    "remainingFailures": [
+      "question-isolation：27 題待教師確認（不會派給學生）",
+      "teacher-decisions：1 筆未結回報",
+      "review-provenance：沒有教師逐題覆核證據（需教師逐題處理，非程式問題）"
+    ],
+    "note": "發布閘門餘下的 FAIL 全部屬內容治理（需教師逐題決定），不是程式缺陷。"
+  },
   "notes": [
-    "本輪包含 Next.js 16.4.0 → 16.4.1 安全修補（同批 commit 595687d、fe71397、7e541ef、07672df）。",
-    "部署後 GET /api/health 200：llmProvider=deepseek、authEnabled=true、demoMode=false、persistence.restore=restored。",
-    "未登入 GET / → 307（轉 /login）；未登入 GET /api/topics → 401。與 AUTH_REQUIRE_SIGN_IN=true 一致。",
-    "環境變數沿用既有設定（AUTH_STAFF_ACCESS_POLICY=school-domain、STUDENT_ROSTER_SHEET_ID 已設定、MATERIAL_AUTO_OPEN_POLICY=lesson-content）。",
-    "Secret Manager 各自新增一個版本；已用 SHA-256 比對新舊版本內容，四個 Secret（Google client id／secret、DeepSeek key、名冊服務帳戶）**值完全沒有改變**。",
-    "正式資料庫：materials={documents:46, blocks:26599, studentVisibleDocuments:22}，比本機（36 份文件）新，因此本輪**沒有**上載本機資料庫快照。",
-    "因此本機的內容修正（4 題刪去年份、14 題補題草稿）**尚未**進入正式環境；同步方法見 docs/quality/content-governance-2026-10-23.md 第六節。"
+    "本輪包含 Next.js 16.4.0 → 16.4.1 安全修補（commit 595687d、fe71397、7e541ef、07672df）。",
+    "部署後實測：GET /api/health 200（llmProvider=deepseek、authEnabled=true、demoMode=false、persistence.restore=restored、documents=46、blocks=26,599、studentVisibleDocuments=22）。",
+    "未登入存取：/ → 307、/teacher → 307、/admin → 307；/api/topics、/api/teacher/overview、/api/admin/materials、/api/practice/new 全部 401（符合 AUTH_REQUIRE_SIGN_IN=true）。",
+    "Secret Manager 各自新增一個版本；以 SHA-256 比對新舊版本內容，四個 Secret（Google client id／secret、DeepSeek key、名冊服務帳戶）值完全沒有改變。",
+    "**重要**：本機 data/app.db 是較舊、較小的副本（2,144 題已發布、12 個課題、高中未發布），正式環境為 2,820 題已發布（含高中 448 題）。本輪**沒有**上載本機資料庫；所有內容修正都在正式快照上重新套用。",
+    "本機的 4 題題幹修正與 14 題草稿補題（見 content-governance-2026-10-23.md）只屬本機；正式環境不需要該次補題（正式題庫各格均遠高於 8 題）。"
   ],
   "unverified": [
     "未以真實 Google 帳戶完成登入流程（只驗證未登入時被轉到 /login、API 回 401）。",
     "學生名冊載入狀態：部署後 health.roster.loaded=false（未觸發載入）。",
-    "冷啟動時間、配額與成本未量度。"
+    "冷啟動時間、配額與成本未量度。",
+    "兩個修正後的題目現為草稿，未在教師端以登入工作階段實際覆核發布。"
   ]
 }
+

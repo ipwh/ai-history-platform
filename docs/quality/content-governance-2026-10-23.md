@@ -121,34 +121,62 @@
   **只改題幹**、題目回到草稿、`revision` +1。
 - 三者的說明已完整記錄於 `README.md`，本輪**沒有**執行任何大批 `--apply`。
 
-## 六之二、把本機內容同步到正式環境（**本輪未執行**）
+## 六之二、正式環境內容同步（**已於 2026-10-23 完成**）
 
-本輪已部署程式碼（rev `history-self-study-00048-lsr`，Next.js 16.4.1，見
-[deployment-evidence-2026-10-23.json](../deployment-evidence-2026-10-23.json)），
-但**沒有**上載資料庫快照：正式資料庫（46 份教材文件、26,599 段）比本機（36 份）新，
-直接上載本機 `data/app.db` 會令正式環境遺失較新的教材內容。
+### 關鍵發現：本機資料庫是較舊的副本
 
-因此本輪的內容修正（4 題題幹、14 題補題草稿）目前只在本機 `data/app.db`。要同步，請在
-**非上課時段**（沒有學生正在作答）按以下順序執行，並全程以正式快照為起點：
+下載正式快照後發現，正式環境與本機資料庫**不是同一份資料**：
 
-```powershell
-# 1. 先下載正式環境最新的資料庫快照（不要用本機的 app.db 作起點）
-gcloud storage cp gs://pccss-ai-history-history-backup/history/data/app.db .\prod-snapshot.db
+| | 本機 `data/app.db` | 正式環境快照 |
+| --- | --- | --- |
+| 已發布題目 | 2,144 | **2,822** |
+| 課題 | 12（高中未發布） | 17（**高中 5 個課題已發布，448 題**） |
+| 教材文件／段落 | 36／7,346 | **46／26,599** |
 
-# 2. 在快照副本上套用同一份清單（預設模擬，確認後加 --apply）
-npx tsx scripts/fix-chronology-stem-years.ts --manifest docs/teacher-review/chronology-stem-fixes-2026-10-23.json --database .\prod-snapshot.db
-npx tsx scripts/fix-chronology-stem-years.ts --manifest docs/teacher-review/chronology-stem-fixes-2026-10-23.json --database .\prod-snapshot.db --apply --actor ipwh@pochiu.edu.hk
+因此：
+- **不可**上載本機 `data/app.db`（會令正式環境遺失較新的教材、448 題高中題目及期間的學生記錄）。
+- 本機第三節修正的 4 題（`q_50f32ae95b34472e` 等）**在正式環境不存在**；本機第三之二節的
+  14 題草稿亦只屬本機，正式題庫各格遠高於 8 題，不需要該次補題。
 
-# 3. 上載並立即以新 revision 重新啟動，令容器由新快照還原
-gcloud storage cp .\prod-snapshot.db gs://pccss-ai-history-history-backup/history/data/app.db
-gcloud run services update history-self-study --project pccss-ai-history --region asia-east2 --update-env-vars DEPLOY_MARKER=<時間戳>
+### 正式環境的實際問題與處理
 
-# 4. 重新下載核對（例如已發布但不可作答的題目應為 0）
-npx tsx scripts/audit-servability.ts --database .\prod-snapshot.db
-```
+對正式快照跑 `checkQuestionServable`：已發布 2,822 題中有 **2 題**結構上不可作答（同為
+「時序題題幹印出年份」）。已用同一支清單工具在**正式快照**上修正：
 
-注意：舊 revision 每 60–300 秒可能寫入自己的備份，因此第 3 步的上載與重新啟動必須連續完成；
-14 題補題草稿亦要由教師在正式環境逐題覆核後才可發布。
+| question_id | 課題 | 處理 |
+| --- | --- | --- |
+| `q_6e575d744fa24f5a` | hs-topic-2（改革開放） | 刪去 1977／1978／1980 年，並打亂題幹列出次序（原本次序＝正確答案） |
+| `q_2753d4272a1b4291` | hs-topic-4（二次大戰） | 刪去 1941–1945 年，並打亂六項事件的列出次序（原本次序＝正確答案） |
+
+清單：[chronology-stem-fixes-prod-2026-10-23.json](../teacher-review/chronology-stem-fixes-prod-2026-10-23.json)。
+只改題幹；答案、選項、解釋、知識點、教材依據完全不變；兩題回到草稿（`revision` 1→2），
+需教師覆核後才可再發布（修正前它們本來就派不到學生，對學生沒有影響）。
+
+### 同步步驟（零學生記錄遺失）
+
+為避免舊 revision 在部署期間以自身備份覆寫上載的快照，改用**暫存 prefix**：
+
+1. 下載 `gs://…/history/data/app.db`（17,711,104 bytes，update_time 2026-10-23T01:29:41Z）
+2. 在**下載的副本**上套用清單（先模擬，後 `--apply --actor`）
+3. 上載修正後的快照到 `gs://…/content-sync-20261023/data/app.db`
+4. `gcloud run services update … --update-env-vars BACKUP_PREFIX=content-sync-20261023`
+   → rev `00049-vvd` 由暫存快照還原（舊 revision 仍寫入 `history/`，無法覆寫）
+5. 核對：暫存物件含 `draft=30 / published=2,820`、0 題不可作答、37 次練習記錄
+6. 把已核對的物件複製到 `gs://…/history/data/app.db`，再切回 `BACKUP_PREFIX=history`
+   → rev `00050-n9w` 由正式 prefix 還原
+7. 重新下載 `history/data/app.db` 核對：`draft=30 / published=2,820`、**0 題不可作答**、
+   `practice_sessions=37`、`material_documents=46`、`material_blocks=26,599`
+
+### 結果
+
+- 已發布但不可作答的題目：**2 → 0**
+- 練習記錄、教材、其他 2,818 題：**完全保留**（`practice_sessions=37` 前後一致）
+- 發布閘門重跑：`question-servability` **PASS（0／2,820）**、`servability-adjudication` **PASS**；
+  餘下的 FAIL 全部屬內容治理（27 題待教師確認、1 筆未結回報、無教師逐題覆核證據），需教師處理。
+
+詳見 [deployment-evidence-2026-10-23.json](../deployment-evidence-2026-10-23.json)。
+
+> 日後若要再次同步內容，請**一律以下載的正式快照為起點**，不要用本機 `data/app.db`。
 
 ## 七、本輪沒有做的事
 
