@@ -1321,7 +1321,9 @@ npm run approve:verified -- \
 
 **政策決定**：擁有者對「校內試題沒有教材段落」「技能欄空白」「覆核屬擁有者批次」「題幹曾修改的風險分級」四項的決定及處理紀錄，見 [docs/teacher-review/policy-decisions-2026-10-24.md](docs/teacher-review/policy-decisions-2026-10-24.md)。
 
-**上線（2026-10-24）**：commit `55271b0` 部署為 revision `history-self-study-00053-wr7`（Cloud Build `4e145ef6`）。部署前先把正式資料庫備份為 `gs://…/history/data/app.db.pre-s28-20261024T0619Z`，再上載本機一致性快照；新執行個體由雲端還原（`persistence.restore=restored`，日誌「已由雲端還原（27516 KB）」）。部署後重新下載正式資料庫核對：3,282 題全部 published、9,256 筆覆核、Golden 15 個、54 名學習者／461 個練習／2,334 次作答，題目內容及覆核紀錄雜湊與本機快照完全相同。證據見 [docs/deployment-evidence-2026-10-19.json](docs/deployment-evidence-2026-10-19.json)。
+**上線（2026-10-24）**：commit `55271b0` 部署為 revision `history-self-study-00054-22l`（Cloud Build `4e145ef6`、`1beb69bd`，兩次皆 SUCCESS；第二次把 `materials/` 的 36 份 docx 一併納入映像檔）。部署前先把正式資料庫備份為 `gs://…/history/data/app.db.pre-s28-20261024T0619Z`，再上載本機一致性快照；新執行個體由雲端還原（`persistence.restore=restored`，日誌「已由雲端還原（27560 KB）」）。部署後重新下載正式資料庫核對：3,282 題全部 published、9,256 筆覆核、Golden 15 個、54 名學習者／461 個練習／2,334 次作答，題目內容及覆核紀錄雜湊與本機快照完全相同。證據見 [docs/deployment-evidence-2026-10-19.json](docs/deployment-evidence-2026-10-19.json)。
+
+> 建置環境限制：本機 `materials/` 有 10 份 docx 是 OneDrive 雲端預留檔，複製時無法讀取，因此映像檔只含 36 份（與上一次部署相同）。資料庫已存有全部 46 份教材的段落，學生及教師端內容不受影響；如要以該 10 份原檔重新匯入／OCR，需先把檔案下載到本機再部署。
 
 ### 題庫：讓每個課題都有題目
 
