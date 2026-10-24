@@ -39,8 +39,11 @@ export function appVersion(): string {
       path.join(process.cwd(), "..", "package.json"),
     ];
     for (const candidate of candidates) {
-      if (!fs.existsSync(candidate)) continue;
-      const parsed = JSON.parse(fs.readFileSync(candidate, "utf8")) as { version?: unknown };
+      // turbopackIgnore：執行時才讀取的檔案，不需要在建置時把整個專案納入追蹤圖。
+      if (!fs.existsSync(/*turbopackIgnore: true*/ candidate)) continue;
+      const parsed = JSON.parse(
+        fs.readFileSync(/*turbopackIgnore: true*/ candidate, "utf8"),
+      ) as { version?: unknown };
       if (typeof parsed.version === "string" && parsed.version.length > 0) return parsed.version;
     }
   } catch {
@@ -87,11 +90,12 @@ export function describeDeployment(): DeploymentInfo {
  */
 function materialsBundlePresent(materialsDir: string): boolean {
   try {
-    if (!fs.existsSync(materialsDir)) return false;
+    // turbopackIgnore：映像檔內容在執行時檢查，不應在建置時追蹤整個專案。
+    if (!fs.existsSync(/*turbopackIgnore: true*/ materialsDir)) return false;
     // 只作單層檢查（教材不隨執行期改變，深層掃描會令健康檢查變慢）：
     // 除 `materials/README.md` 外有任何項目即視為映像檔已附教材。
     return fs
-      .readdirSync(materialsDir, { withFileTypes: true })
+      .readdirSync(/*turbopackIgnore: true*/ materialsDir, { withFileTypes: true })
       .some((entry) => entry.name !== "README.md");
   } catch {
     // 無法讀取時不當作「缺少教材」，避免產生誤導的警告

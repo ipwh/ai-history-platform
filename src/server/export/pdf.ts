@@ -50,7 +50,8 @@ export function pdfFontPath(): string {
 
 function assertFontAvailable(): string {
   const fontPath = pdfFontPath();
-  if (!fs.existsSync(fontPath)) {
+  // turbopackIgnore：字型由映像檔提供，執行時才檢查，不需在建置時追蹤。
+  if (!fs.existsSync(/*turbopackIgnore: true*/ fontPath)) {
     console.error("[export] 找不到 PDF 中文字型：", fontPath);
     throw new ApiRouteError(
       "伺服器未有可用的中文字型，暫時未能產生 PDF。請改用 Excel（XLSX）或 Word（DOCX）匯出，兩者同樣包含全部欄位。",

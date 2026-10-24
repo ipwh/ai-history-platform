@@ -62,7 +62,8 @@ export function collectMaterialFiles(materialsDir: string): MaterialFileEntry[] 
   const walk = (directory: string, inheritedTopic: string | null): void => {
     let children: fs.Dirent[];
     try {
-      children = fs.readdirSync(directory, { withFileTypes: true });
+      // turbopackIgnore：教材目錄在執行時掃描（可由環境變數指向），不應在建置時追蹤整個專案。
+      children = fs.readdirSync(/*turbopackIgnore: true*/ directory, { withFileTypes: true });
     } catch {
       return;
     }

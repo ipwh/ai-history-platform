@@ -101,6 +101,8 @@ npm run dev          # 啟動開發伺服器
 | `npm run apply:question-queue` | 套用題目修正動作清單（改寫／更新用詞／修正教材依據／刪除；`--manifest`、`--require-open`、預設模擬、要 `--apply`；見第十節） |
 | `npm run snapshot:production` | 匯出正式環境用的乾淨資料庫快照（清除教材開放紀錄；只適用於全新正式環境，見第十節） |
 | `docker build -t hk-history-self-study .` | 建立 Cloud Run 用的容器映像檔（見第十節） |
+| `npm run build:webpack` | 以 webpack 建置（不追蹤整個專案；OneDrive 目錄有讀不到的雲端預留檔時可用，見第十節「在 OneDrive 工作目錄開發」） |
+| `npx tsx scripts/check-onedrive-health.ps1`（PowerShell） | 列出專案內的 OneDrive 雲端預留檔；加 `-Pin` 會標記為「永遠保留在此裝置」（見第十節） |
 | `./scripts/deploy-cloud-run.ps1 -Project <專案ID>` | 部署到 Google Cloud Run（預設只顯示指令，加 `-Apply` 才執行） |
 
 端對端測試可自行啟動伺服器：
@@ -1736,6 +1738,41 @@ node scripts/e2e-flow.mjs --start         # 端對端流程（會自行啟動 ne
   $env:APP_DATABASE_PATH="$env:TEMP\hist-e2e.db"; $env:APP_UPLOADS_DIR="$env:TEMP\hist-e2e-uploads"
   node scripts/e2e-flow.mjs --start
   ```
+
+### 在 OneDrive 工作目錄開發（兩部電腦交替工作）
+
+專案可以整個放在 OneDrive，兩部電腦輪流使用；但 OneDrive 的「檔案隨選」會把長期未讀取的檔案變成**雲端預留檔**，而 git、建置及測試都會直接讀取專案內的檔案，因此預留檔會造成看似無關的錯誤（2026-10-24 實際發生）：
+
+| 位置 | 預留檔造成的錯誤 |
+| --- | --- |
+| `.git/` | `fatal: mmap failed: Invalid argument`、`loose object … is corrupt`（fetch／push 失敗，嚴重時只能重建 `.git`） |
+| `node_modules/` | `Cannot find module 'pdfkit'`、`雲端檔案提供者未執行 (os error 362)` |
+| `materials/`、`data/` | `next build` 讀不到 docx（Turbopack 會追蹤整個專案）而失敗 |
+
+**保持可用的做法（每部電腦各做一次）**：
+
+1. 把專案資料夾標記為「永遠保留在此裝置」：在檔案總管右鍵 →「永遠保留在此裝置」；或執行
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\check-onedrive-health.ps1 -Pin
+   ```
+   這個指令碼會檢查 `.git`、`node_modules`、`materials`、`assets`、`data`、`docs` 內的預留檔，並可把它們標記為保留在本機（OneDrive 隨即開始下載）。
+2. 若出現「雲端檔案提供者未執行」而無法下載，**結束 `OneDrive.exe` 再重新開啟**（同步引擎卡住時的唯一可靠解法），然後重新執行上一步。
+3. 每部電腦第一次使用時執行 `npm ci`（依賴以本機檔案形式安裝），之後只同步原始碼。
+
+**建置**：`npm run build`（Turbopack）會追蹤整個專案，專案內有任何讀不到的預留檔都會失敗；確認 `scripts\check-onedrive-health.ps1` 顯示 0 個預留檔後再建置。若一時無法下載全部檔案，可用 `npm run build:webpack`（webpack 不會追蹤整個專案，只需 `node_modules`）。建置產物 `.next` **必須留在專案目錄內**（放到 junction 會令模組路徑失效），如出現 `Failed to open database .next/...` 或 `os error 362`，刪除 `.next` 後重新建置。
+
+**git 版本庫損壞時**（`mmap failed`／`loose object … is corrupt`）：同步引擎修好後仍無法修復的話，以 GitHub 上的版本重建（本機的 `data/`、`materials/`、`.env.local` 不受影響，因為它們不受版本控制）：
+
+```powershell
+# 先把 .git 搬走作備份，再重新取得版本庫
+Rename-Item .git .git-broken
+git clone --no-checkout https://github.com/ipwh/ai-history-platform.git .git-clone
+Move-Item .git-clone\.git .git
+Remove-Item .git-clone -Recurse -Force
+git fetch origin main; git reset --hard origin/main
+```
+
+**不建議**把 `.git` 或 `node_modules` 改成指向 C: 的 junction：雖然可避開同步，但 Next.js 會以絕對路徑解析模組（webpack 會出現 `Can't resolve './C:/…/node_modules/…'`），而且另一部電腦就沒有版本庫。
 
 ### 部署邊界（Cloud Run）
 

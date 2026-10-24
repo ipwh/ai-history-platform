@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:webpack": "next build --webpack",
     "verify:build": "node scripts/verify-build-routes.mjs",
     "start": "next start",
     "lint": "eslint",

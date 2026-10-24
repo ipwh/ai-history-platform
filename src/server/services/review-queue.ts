@@ -53,10 +53,15 @@ export interface QueuePage {
 }
 
 function readReport<T>(relativePath: string): { data: T | null; error: string | null } {
-  const full = path.resolve(process.cwd(), relativePath);
-  if (!fs.existsSync(full)) return { data: null, error: `找不到報告 ${relativePath}；請先執行對應的 audit 指令。` };
+  // turbopackIgnore：報告是執行時由稽核指令產生的檔案，不是建置產物。
+  const full = path.resolve(/*turbopackIgnore: true*/ process.cwd(), relativePath);
+  if (!fs.existsSync(/*turbopackIgnore: true*/ full))
+    return { data: null, error: `找不到報告 ${relativePath}；請先執行對應的 audit 指令。` };
   try {
-    return { data: JSON.parse(fs.readFileSync(full, "utf8")) as T, error: null };
+    return {
+      data: JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ full, "utf8")) as T,
+      error: null,
+    };
   } catch (error) {
     return {
       data: null,
