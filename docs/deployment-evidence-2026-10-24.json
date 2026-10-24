@@ -1,0 +1,91 @@
+{
+  "generatedAt": "2026-10-24T09:42:00.000Z",
+  "notice": "只記錄實際執行並觀察到的部署證據。本輪只有程式碼及文件改動：沒有上載本機資料庫、沒有修改任何題目或教材內容；新 revision 啟動時由既有 BACKUP_BUCKET 快照還原。",
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00056-8rx",
+    "previousRevision": "history-self-study-00055-s9c",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:b3b32762-1ca5-4839-86cd-f40b4539c14e",
+    "imageDigest": "sha256:78a6494423a2f6bb98a777b6b7e4fa336b498de16a0500dcba95ee41985ccb55",
+    "build": {
+      "buildId": "b3b32762-1ca5-4839-86cd-f40b4539c14e",
+      "duration": "3M48S",
+      "status": "SUCCESS",
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/b3b32762-1ca5-4839-86cd-f40b4539c14e?project=784175190534"
+    },
+    "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
+    "configSource": "沿用線上現有設定（runtime SA、AUTH_ADMIN_EMAILS、AUTH_TEACHER_EMAILS、AUTH_STAFF_ACCESS_POLICY、BACKUP_BUCKET、BACKUP_PREFIX、BACKUP_INTERVAL_SECONDS、名冊設定）；指令碼會在必要設定讀不到時拒絕部署。",
+    "traffic": "100% → history-self-study-00056-8rx"
+  },
+  "source": {
+    "branch": "main",
+    "commit": "b57a29e",
+    "commitSubject": "安全性：題目脫敏、獨立批改端點、SQLite／備份加固與歷史科專名同義詞庫",
+    "pushed": "279dfd8..b57a29e main -> main",
+    "nextVersion": "16.4.1",
+    "report": "docs/sprint-28-report-2026-10-24.md"
+  },
+  "changes": {
+    "p0": [
+      "學生端題目改為白名單序列化（src/lib/student-question.ts）；不再傳送 correctAnswer／acceptedAnswers／explanation／gradingPoints／knowledgePoint／sourceExcerpt 等",
+      "新增 POST /api/quiz/submit：伺服器比對標準答案後才回傳答案及解釋，只接受已發布課題中已發布且可作答的題目",
+      "GET /api/practice/{sessionId}/result 只回傳已作答題目的回饋"
+    ],
+    "p1": [
+      "SQLite 連線加入 PRAGMA synchronous = NORMAL（WAL 及 busy_timeout = 5000 保留）",
+      "備份改以 VACUUM INTO 匯出到作業系統暫存目錄，重試改為指數退避加隨機抖動，並清理殘留快照"
+    ],
+    "p2": [
+      "新增 src/lib/history-lexicon.ts（232 組歷史科專名同義詞，含簡繁字元對照）並整合至填充題評分及批改端點"
+    ]
+  },
+  "verification": {
+    "local": {
+      "typecheck": "通過（next typegen + tsc --noEmit）",
+      "lint": "0 error（1 個既有 warning：scripts/verify-questionbank-sync.ts 未使用的 import）",
+      "tests": "130 個測試檔、1572 項通過、4 項略過",
+      "build": "成功；路由表包含 /api/quiz/submit"
+    },
+    "production": {
+      "GET /api/health": "200",
+      "health.ok": true,
+      "health.database": "sqlite / ok",
+      "health.authEnabled": true,
+      "health.staffApiOpen": false,
+      "health.demoMode": false,
+      "health.llmProvider": "deepseek",
+      "health.materials": {
+        "documents": 46,
+        "blocks": 26599,
+        "studentVisibleDocuments": 22
+      },
+      "health.persistence": {
+        "backupEnabled": true,
+        "restore": "restored",
+        "lastSuccessAt": "2026-10-24T09:37:57.466Z",
+        "backupsUploaded": 1,
+        "lastError": null
+      },
+      "unauthorisedAccess": {
+        "GET /api/topics": 401,
+        "POST /api/quiz/submit": 401
+      },
+      "backupEvidence": "新 revision 啟動後已完成 1 次備份，restore = restored、lastError = null：確認 VACUUM INTO 至暫存目錄的路徑在正式環境可運作。"
+    }
+  },
+  "database": {
+    "changed": false,
+    "restore": "由 gs://pccss-ai-history-history-backup/history/data/app.db 既有快照還原",
+    "materials": "46 份教材、26,599 段、學生可見 22 份（與上一 revision 相同）"
+  },
+  "unverified": [
+    "未以真實 Google 帳戶完成登入後流程（只驗證未登入時 API 回 401）。",
+    "未在正式環境以登入工作階段實際提交答案，因此未直接觀察學生端題目 JSON（脫敏由本機真實 route handler 測試覆蓋：tests/question-sanitization.test.ts）。",
+    "學生名冊載入狀態：health.roster.loaded = false（未觸發載入，與上一 revision 相同）。",
+    "冷啟動時間、配額與成本未量度。"
+  ]
+}

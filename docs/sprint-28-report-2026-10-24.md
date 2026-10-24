@@ -84,12 +84,20 @@ npm test           130 個測試檔、1572 項通過、4 項略過
 npm run build      成功；路由表包含 ƒ /api/quiz/submit
 ```
 
-## 5. 部署
+## 5. 部署（2026-10-24 已執行）
 
-見 [deployment-evidence-2026-10-24.json](./deployment-evidence-2026-10-24.json)（部署後補上實際 revision、映像 digest、健康檢查結果）。
+| 項目 | 結果 |
+| --- | --- |
+| 部署方式 | `scripts/deploy-preserving-config.ps1`（讀取線上現有環境變數 → `gcloud builds submit`），沿用既有 Cloud Run 設定，避免用到 `cloudbuild.yaml` 的空預設值 |
+| Cloud Build | `b3b32762-1ca5-4839-86cd-f40b4539c14e`，SUCCESS（3 分 48 秒） |
+| 新 revision | `history-self-study-00056-8rx`（前一版 `00055-s9c`），100% 流量 |
+| 映像 digest | `sha256:78a6494423a2f6bb98a777b6b7e4fa336b498de16a0500dcba95ee41985ccb55` |
+| 資料庫 | 本次**沒有**上載任何本機資料庫；新 revision 啟動時由 `BACKUP_BUCKET` 既有快照還原（`persistence.restore = restored`） |
+| `/api/health` | 200；`database = sqlite/ok`、`authEnabled = true`、`staffApiOpen = false`、教材 46 份／26,599 段／學生可見 22 份（與上一版相同） |
+| 備份實測 | 新 revision 啟動後完成 1 次備份（`backupsUploaded = 1`、`lastError = null`），確認 `VACUUM INTO` 至暫存目錄的路徑在正式環境可運作 |
+| 未登入存取 | `GET /api/topics` → 401、`POST /api/quiz/submit` → 401（符合 `AUTH_REQUIRE_SIGN_IN = true`） |
 
-- 部署方式：`scripts/deploy-preserving-config.ps1`（讀取線上現有環境變數 → `gcloud builds submit`），沿用既有 Cloud Run 設定，避免用到 `cloudbuild.yaml` 的空預設值。
-- 資料庫：本次**沒有**上載任何本機資料庫；新 revision 啟動時由 `BACKUP_BUCKET` 既有快照還原。
+完整證據：[deployment-evidence-2026-10-24.json](./deployment-evidence-2026-10-24.json)。
 
 ## 6. 已知限制（如實說明）
 
