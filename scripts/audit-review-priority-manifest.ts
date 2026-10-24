@@ -1,12 +1,13 @@
 /**
- * 623 題 provenance 風險的覆核優先次序 manifest（Sprint 15，唯讀）。
+ * 只有自動修復證據題目的覆核優先次序 manifest（Sprint 15，唯讀）。
  *
  * 目的：把「只有自動修復證據」的題目轉成**可執行的人類覆核清單**，每題附上
- * 明確的證據契約（要核對甚麼、缺甚麼、需要誰決定），並避免把 124 題重疊
- * （provenance × 來源待核實）當成額外的獨立組別。
+ * 明確的證據契約（要核對甚麼、缺甚麼、需要誰決定），並避免把 provenance ×
+ * 來源待核實的重疊題目當成額外的獨立組別。
  *
  * 資料來源（全部唯讀）：
- *   - docs/quality/provenance-risk-2026-10-19.json（623 題分級及 diff 摘要）
+ *   - docs/quality/provenance-risk-2026-10-19.json（風險人口的分級及 diff 摘要；
+ *     2026-10-24 起所有題目都有擁有者指示的覆核紀錄，此清單為 0 題）
  *   - docs/quality/content-audit-2026-10-19.json（來源狀態）
  *   - docs/quality/review-provenance-2026-10-19.json（目前版本的審核證據來源）
  *   - docs/quality/servability-remediation-2026-10-19.json（目前可作答性）

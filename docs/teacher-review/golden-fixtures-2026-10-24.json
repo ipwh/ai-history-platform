@@ -1,0 +1,135 @@
+{
+  "generatedAt": "2026-10-24T05:20:59.572Z",
+  "applied": true,
+  "reviewer": "ipwh@pochiu.edu.hk",
+  "notice": "由擁有者授權建立：每題 2 個類別（7 類 × 2 題 = 14 題）。grading 直接取自題目現行標準答案及錯誤選項；reasoning 取自題目解釋；distractorNotes／knownEdgeCases 留空，不代填教師判斷。",
+  "created": 14,
+  "fixtures": [
+    {
+      "category": "chronology",
+      "questionId": "q_5a85495eee7a4ec9",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "challenge",
+      "status": "created",
+      "reference": "blk_78f4b62d330a4d6d"
+    },
+    {
+      "category": "chronology",
+      "questionId": "q_24a64957313c498c",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "challenge",
+      "status": "created",
+      "reference": "blk_520465e2affc42f3"
+    },
+    {
+      "category": "cause-consequence",
+      "questionId": "q_67b5973ae2c746b6",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "challenge",
+      "status": "created",
+      "reference": "blk_04aad76de8c44ce6"
+    },
+    {
+      "category": "cause-consequence",
+      "questionId": "q_b056738e1bd64335",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "challenge",
+      "status": "created",
+      "reference": "blk_88b76c9a2aa04f27"
+    },
+    {
+      "category": "significance",
+      "questionId": "q_cd3a9e6dc9dc4948",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "advanced",
+      "status": "created",
+      "reference": "blk_4b51ac20168b4964"
+    },
+    {
+      "category": "significance",
+      "questionId": "q_9bfdfa997f6f48d6",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "challenge",
+      "status": "created",
+      "reference": "blk_a0bb1b13a1b84584"
+    },
+    {
+      "category": "comparison",
+      "questionId": "q_fa6b106a9fd34797",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "challenge",
+      "status": "created",
+      "reference": "blk_8fa6e8f6977d4b2d"
+    },
+    {
+      "category": "comparison",
+      "questionId": "q_0633d947c6bc4100",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "challenge",
+      "status": "created",
+      "reference": "blk_a973932357db45d7"
+    },
+    {
+      "category": "people",
+      "questionId": "q_a645eb2e5a994bf4",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "advanced",
+      "status": "created",
+      "reference": "blk_d3c2ce95734144bc"
+    },
+    {
+      "category": "people",
+      "questionId": "q_a249b6f683ba4a7c",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "advanced",
+      "status": "created",
+      "reference": "blk_9ea8eb90ef9d41f1"
+    },
+    {
+      "category": "treaty",
+      "questionId": "q_905096f8645a412a",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "challenge",
+      "status": "created",
+      "reference": "blk_24b35cfa1a934216"
+    },
+    {
+      "category": "treaty",
+      "questionId": "q_c0819a5755994a28",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "challenge",
+      "status": "created",
+      "reference": "blk_2d9b2997ad134f6d"
+    },
+    {
+      "category": "plausible-distractors",
+      "questionId": "q_cad771ada70d4b05",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "challenge",
+      "status": "created",
+      "reference": "blk_2d44dfad15d946a5"
+    },
+    {
+      "category": "plausible-distractors",
+      "questionId": "q_329238f7108748eb",
+      "revision": 1,
+      "type": "mc",
+      "difficulty": "challenge",
+      "status": "created",
+      "reference": "blk_b027b156fe534393"
+    }
+  ]
+}

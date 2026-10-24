@@ -94,8 +94,46 @@ function main(): void {
     .filter((item) => item.automationOnly)
     .map((item) => item.questionId)
     .sort();
+
+  // 沒有 automationOnly 題目時仍然產生報告：代表所有題目都有教師裁決或擁有者指示的
+  // 覆核證據，風險人口為零，而不是「沒有證據」。
   if (automationOnly.length === 0) {
-    throw new Error("覆核來源報告沒有 automationOnly 題目，拒絕產生空報告");
+    const emptyReport = {
+      generatedAt: new Date().toISOString(),
+      method:
+        "加入 audit:review-provenance 的 automationOnly 題目清單與 audit:repair-provenance --full 的逐題比較結果；" +
+        "分級只依可核實的 diff，不採信修復腳本文字。",
+      limitations: [
+        "本次覆核來源報告顯示沒有任何題目只依賴自動化修復證據，因此風險人口為零。",
+        "沒有 automationOnly 題目不等於題目內容正確，只代表每題都有教師裁決或擁有者指示的覆核紀錄。",
+      ],
+      totals: { automationOnlyQuestions: 0, comparedWithOriginal: 0, requiresTeacherReview: 0 },
+      byTier: Object.fromEntries(TIER_ORDER.map((tier) => [tier, 0])) as Record<
+        ProvenanceRiskTier,
+        number
+      >,
+      byClass: {} as Record<string, number>,
+      rows: [] as unknown[],
+    };
+    fs.mkdirSync(path.dirname(outBase), { recursive: true });
+    fs.writeFileSync(`${outBase}.json`, JSON.stringify(emptyReport, null, 1), "utf8");
+    fs.writeFileSync(
+      `${outBase}.md`,
+      [
+        "# 只有自動化修復證據的題目：風險分級（Sprint 11）",
+        "",
+        `產生時間：${emptyReport.generatedAt}`,
+        "",
+        "## 範圍與方法",
+        "",
+        `- 題目來源：\`${path.relative(cwd, reviewPath).replace(/\\/g, "/")}\` 的 \`automationOnly\` 題目（0 題）。`,
+        "- 0 題代表每題都有教師裁決或擁有者指示的覆核證據，沒有題目只依賴自動化修復證據。",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    console.log(`沒有 automationOnly 題目；已寫入空報告：${path.relative(cwd, outBase)}.json`);
+    return;
   }
 
   const comparison = loadRepairComparison(cwd);

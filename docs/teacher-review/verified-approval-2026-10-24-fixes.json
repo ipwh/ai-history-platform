@@ -1,0 +1,213 @@
+{
+  "generatedAt": "2026-10-24T04:49:51.985Z",
+  "applied": true,
+  "database": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+  "reviewer": {
+    "email": "ipwh@pochiu.edu.hk",
+    "role": "admin"
+  },
+  "reason": "擁有者指示（2026-10-24）：按建議修正題幹／選項／答案／解釋後，依逐題核對紀錄重新覆核並發布",
+  "thresholds": {
+    "minConfidence": 80,
+    "verdict": "correct"
+  },
+  "verificationFiles": [
+    "docs/quality/answer-verification-2026-10-21.jsonl",
+    "docs/quality/answer-verification-2026-10-24.jsonl",
+    "docs/quality/answer-verification-2026-10-24-fixes.jsonl"
+  ],
+  "totals": {
+    "approved": 13,
+    "held": 0,
+    "alreadyApproved": 3269
+  },
+  "approvedByOrigin": {
+    "AI 生成（已驗證教材依據）": 7,
+    "校內試題（題庫匯入）": 6
+  },
+  "approvedByTopic": {
+    "hs-topic-1": 1,
+    "hs-topic-2": 1,
+    "hs-topic-5": 1,
+    "topic-10": 2,
+    "topic-11": 2,
+    "topic-12": 1,
+    "topic-2": 1,
+    "topic-4": 2,
+    "topic-5": 1,
+    "topic-7": 1
+  },
+  "heldByReason": {},
+  "approved": [
+    {
+      "id": "q_f817c8ec3f354aa7",
+      "topicId": "hs-topic-1",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "published-unreviewed",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 97,
+      "verifiedAt": "2026-10-24T04:47:57.216Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "q_92cb2f05f087486d",
+      "topicId": "hs-topic-2",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "published-unreviewed",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 95,
+      "verifiedAt": "2026-10-24T04:47:57.217Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "q_0235026dfc904764",
+      "topicId": "hs-topic-5",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "published-unreviewed",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 98,
+      "verifiedAt": "2026-10-24T04:47:57.217Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "q_eba4871f220a43c5",
+      "topicId": "topic-10",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "published-unreviewed",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 95,
+      "verifiedAt": "2026-10-24T04:47:57.795Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "q_7124941bb26744ee",
+      "topicId": "topic-10",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "published-unreviewed",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 95,
+      "verifiedAt": "2026-10-24T04:47:57.795Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "qb-NJCMN0110000046",
+      "topicId": "topic-11",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewStateBefore": "stale-approval",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 90,
+      "verifiedAt": "2026-10-24T04:47:57.795Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "qb-NJCMN0110000033",
+      "topicId": "topic-11",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewStateBefore": "stale-approval",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 85,
+      "verifiedAt": "2026-10-24T04:49:24.775Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "qb-NJCMN0120000108",
+      "topicId": "topic-12",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewStateBefore": "stale-approval",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 95,
+      "verifiedAt": "2026-10-24T04:49:30.085Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "qb-NJCMN0020000019",
+      "topicId": "topic-2",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewStateBefore": "stale-approval",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 98,
+      "verifiedAt": "2026-10-24T04:49:32.584Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "qb-NJCMN0040000023",
+      "topicId": "topic-4",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewStateBefore": "stale-approval",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 95,
+      "verifiedAt": "2026-10-24T04:47:59.941Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "q_234e963879fe4d9b",
+      "topicId": "topic-4",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "published-unreviewed",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 97,
+      "verifiedAt": "2026-10-24T04:47:59.941Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "q_07fde7eb8159470b",
+      "topicId": "topic-5",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "published-unreviewed",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 96,
+      "verifiedAt": "2026-10-24T04:47:59.941Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    },
+    {
+      "id": "qb-NJCMN0070000007",
+      "topicId": "topic-7",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewStateBefore": "stale-approval",
+      "statusBefore": "published",
+      "verdict": "correct",
+      "confidence": 98,
+      "verifiedAt": "2026-10-24T04:47:59.679Z",
+      "evidence": "answer-verification-2026-10-24-fixes.jsonl",
+      "publicationChanged": false
+    }
+  ],
+  "held": []
+}

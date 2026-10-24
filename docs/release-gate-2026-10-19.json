@@ -1,69 +1,69 @@
 {
-  "generatedAt": "2026-10-23T08:14:34.060Z",
+  "generatedAt": "2026-10-24T06:06:27.043Z",
   "notice": "唯讀發布閘門：沒有修改題目、覆核或發布狀態。未定義標準或沒有證據的項目不會當作通過。",
-  "verdict": "NOT READY",
+  "verdict": "READY WITH LIMITATIONS",
   "scope": {
-    "database": "C:\\Users\\TC-37\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
-    "testsEvidence": "C:\\Users\\TC-37\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\release-evidence-2026-10-19.json",
-    "deploymentEvidence": "C:\\Users\\TC-37\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\deployment-evidence-2026-10-19.json",
-    "golden": "C:\\Users\\TC-37\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\golden-questions.v2.json",
-    "provenance": "C:\\Users\\TC-37\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\repair-provenance-2026-10-19.json",
-    "contentQueue": "C:\\Users\\TC-37\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\content-quality-queue-2026-10-19.json",
-    "servabilityEvidence": "C:\\Users\\TC-37\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\quality\\servability-evidence-2026-10-19.json",
-    "provenanceRisk": "C:\\Users\\TC-37\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\quality\\provenance-risk-2026-10-19.json",
-    "goldenCandidates": "C:\\Users\\TC-37\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\golden-candidates-2026-10-19.json"
+    "database": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+    "testsEvidence": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\release-evidence-2026-10-19.json",
+    "deploymentEvidence": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\deployment-evidence-2026-10-19.json",
+    "golden": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\golden-questions.v2.json",
+    "provenance": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\repair-provenance-2026-10-19.json",
+    "contentQueue": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\content-quality-queue-2026-10-19.json",
+    "servabilityEvidence": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\quality\\servability-evidence-2026-10-19.json",
+    "provenanceRisk": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\quality\\provenance-risk-2026-10-19.json",
+    "goldenCandidates": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\docs\\teacher-review\\golden-candidates-2026-10-19.json"
   },
   "auditSummary": {
-    "questions": 3247,
-    "published": 3205,
-    "teacherConfirmationRequired": 42,
+    "questions": 3282,
+    "published": 3282,
+    "teacherConfirmationRequired": 0,
     "source": {
-      "traceable": 1559,
-      "partial": 304,
+      "traceable": 3282,
+      "partial": 0,
       "unknown": 0,
-      "pending_verification": 1384
+      "pending_verification": 0
     },
     "explanation": {
       "placeholder": 0,
       "answer_only": 0,
       "insufficient": 0,
       "potentially_inconsistent": 0,
-      "not_assessed": 3247
+      "not_assessed": 3282
     },
     "metadata": {
-      "skillMissing": 1915,
+      "skillMissing": 1917,
       "bySeverity": {
         "blocking": 0,
-        "needs_review": 2607,
-        "warning": 1915
+        "needs_review": 0,
+        "warning": 1917
       },
       "difficulty": {
-        "basic": 2125,
-        "advanced": 560,
-        "challenge": 562
+        "basic": 2134,
+        "advanced": 575,
+        "challenge": 573
       }
     },
     "policy": {
       "byCategory": {
-        "hard_block": 44,
-        "teacher_review": 4295,
-        "warning": 1915,
+        "hard_block": 0,
+        "teacher_review": 0,
+        "warning": 1917,
         "policy_pending": 0
       },
-      "questionsWithHardBlock": 42,
-      "questionsWithTeacherReview": 3013,
-      "questionsReleasable": 234
+      "questionsWithHardBlock": 0,
+      "questionsWithTeacherReview": 0,
+      "questionsReleasable": 3282
     },
-    "inputFingerprint": "8ffd228977055f1b42f2f87b3d7e9dbc2113854aea4c51f3f5554dc38155f22b"
+    "inputFingerprint": "d6a84dd798e9349be253972d03ef2969878f85c60bc92ad97d3d3f119de9ea82"
   },
   "gates": [
     {
       "id": "question-isolation",
       "title": "隔離／待教師確認",
-      "status": "FAIL",
-      "summary": "42 題仍待教師確認",
-      "numerator": 42,
-      "denominator": 3247,
+      "status": "PASS",
+      "summary": "沒有題目帶待教師確認標記",
+      "numerator": 0,
+      "denominator": 3282,
       "evidence": [
         "questions.teacher_confirmation_required"
       ],
@@ -77,7 +77,7 @@
       "status": "PASS",
       "summary": "所有已發布題目均可作答",
       "numerator": 0,
-      "denominator": 3205,
+      "denominator": 3282,
       "evidence": [
         "checkQuestionServable()"
       ],
@@ -103,10 +103,10 @@
     {
       "id": "source-traceability",
       "title": "來源可追溯性",
-      "status": "POLICY_PENDING",
-      "summary": "可定位 1559／3247；待核實 1688；無法追溯 0",
-      "numerator": 1559,
-      "denominator": 3247,
+      "status": "PASS",
+      "summary": "可定位 3282／3282；待核實 0；無法追溯 0",
+      "numerator": 3282,
+      "denominator": 3282,
       "evidence": [
         "source_location",
         "source_block_ids",
@@ -114,7 +114,7 @@
         "material_documents"
       ],
       "recommendations": [
-        "為校內試題建立文件紀錄（檔名、題號、雜湊）及匯入批次，或由教師確認來源"
+        "維持來源連結"
       ]
     },
     {
@@ -123,7 +123,7 @@
       "status": "PASS",
       "summary": "佔位 0、只列答案 0、疑似矛盾 0",
       "numerator": 0,
-      "denominator": 3247,
+      "denominator": 3282,
       "evidence": [
         "explanation 分類（placeholder／answer_only／potentially_inconsistent）"
       ],
@@ -135,10 +135,10 @@
     {
       "id": "metadata",
       "title": "元數據完整性",
-      "status": "POLICY_PENDING",
-      "summary": "技能空白 1915；難度值 basic／advanced／challenge；阻擋級關聯錯誤 0",
-      "numerator": 1915,
-      "denominator": 3247,
+      "status": "WARN",
+      "summary": "技能空白 1917；難度值 basic／advanced／challenge；阻擋級關聯錯誤 0",
+      "numerator": 1917,
+      "denominator": 3282,
       "evidence": [
         "skill",
         "difficulty",
@@ -169,10 +169,10 @@
     {
       "id": "review-provenance",
       "title": "審核證據來源",
-      "status": "FAIL",
-      "summary": "教師逐題裁決 0；只有擁有者批次 0；只有自動修復 0；完全沒有證據 3247",
+      "status": "WARN",
+      "summary": "教師逐題裁決 0；只有擁有者批次 3282；只有自動修復 0；完全沒有證據 0",
       "numerator": 0,
-      "denominator": 3247,
+      "denominator": 3282,
       "evidence": [
         "docs/quality/review-provenance-2026-10-19.json",
         "question_reviews"
@@ -186,9 +186,9 @@
     {
       "id": "copyright",
       "title": "版權與教材發行權",
-      "status": "WARN",
-      "summary": "擁有者已確認版權；可向學生發布 22／46 份；逐份權利紀錄 22 份",
-      "numerator": 22,
+      "status": "PASS",
+      "summary": "擁有者已確認版權；可向學生發布 22／46 份；逐份權利紀錄 46 份",
+      "numerator": 46,
       "denominator": 46,
       "evidence": [
         "docs/teacher-review/copyright-owner-attestation-2026-10-19.md"
@@ -201,10 +201,10 @@
     {
       "id": "golden-evaluation",
       "title": "Golden evaluation dataset",
-      "status": "INSUFFICIENT_EVIDENCE",
-      "summary": "資料集為空：評估證據不足（不是零錯誤）",
-      "numerator": 0,
-      "denominator": 0,
+      "status": "PASS",
+      "summary": "已覆核 15／15（2026-10-19.1）",
+      "numerator": 15,
+      "denominator": 15,
       "evidence": [
         "docs/teacher-review/golden-questions.v1.json"
       ],
@@ -233,10 +233,10 @@
     {
       "id": "provenance-risk",
       "title": "自動修復證據的風險分布",
-      "status": "POLICY_PENDING",
-      "summary": "P0（可能改變答案／評分）0；P1（題幹改變但考核答案不變）530；P2（原始證據不足）0；P3（純格式／內容相同）93",
-      "numerator": 530,
-      "denominator": 623,
+      "status": "PASS",
+      "summary": "P0（可能改變答案／評分）0；P1（題幹改變但考核答案不變）0；P2（原始證據不足）0；P3（純格式／內容相同）0",
+      "numerator": 0,
+      "denominator": 0,
       "evidence": [
         "docs/quality/provenance-risk-2026-10-19.json",
         "audit:repair-provenance"
@@ -250,9 +250,9 @@
       "id": "golden-approval",
       "title": "Golden Dataset 人工核准",
       "status": "PASS",
-      "summary": "已核准 fixture 1；待教師核准候選 41；裁決因題目改動而失效 0",
-      "numerator": 1,
-      "denominator": 42,
+      "summary": "已核准 fixture 15；待教師核准候選 41；裁決因題目改動而失效 0",
+      "numerator": 15,
+      "denominator": 56,
       "evidence": [
         "golden_fixture_reviews",
         "POST /api/teacher/golden/[questionId]",
@@ -451,8 +451,8 @@
       "label": "content-quality-queue-2026-10-19",
       "metric": "技能空白",
       "previous": 1882,
-      "current": 1915,
-      "change": 33
+      "current": 1917,
+      "change": 35
     },
     {
       "label": "content-quality-queue-2026-10-19",

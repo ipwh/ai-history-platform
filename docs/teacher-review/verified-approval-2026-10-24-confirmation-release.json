@@ -1,0 +1,284 @@
+{
+  "generatedAt": "2026-10-24T04:17:21.316Z",
+  "applied": true,
+  "database": "D:\\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\\AI\\AI History Platform\\data\\app.db",
+  "reviewer": {
+    "email": "ipwh@pochiu.edu.hk",
+    "role": "admin"
+  },
+  "reason": "擁有者指示（2026-10-24）：依逐題 AI 核對紀錄及人工裁決，覆核本批題目——題幹、選項、標示答案及解釋與教材／公認史實一致",
+  "thresholds": {
+    "minConfidence": 80,
+    "verdict": "correct"
+  },
+  "verificationFiles": [
+    "docs/quality/answer-verification-2026-10-21.jsonl",
+    "docs/quality/answer-verification-2026-10-24.jsonl"
+  ],
+  "totals": {
+    "approved": 8,
+    "held": 13,
+    "alreadyApproved": 3261
+  },
+  "approvedByOrigin": {
+    "AI 生成（已驗證教材依據）": 8
+  },
+  "approvedByTopic": {
+    "hs-topic-2": 7,
+    "topic-5": 1
+  },
+  "heldByReason": {
+    "excluded-by-adjudication": 13
+  },
+  "approved": [
+    {
+      "id": "q_ef29043ddef04929",
+      "topicId": "hs-topic-2",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "fill",
+      "reviewStateBefore": "pending-review",
+      "statusBefore": "draft",
+      "verdict": "correct",
+      "confidence": 99,
+      "verifiedAt": "2026-10-24T03:47:28.237Z",
+      "evidence": "answer-verification-2026-10-24.jsonl",
+      "publicationChanged": true
+    },
+    {
+      "id": "q_ff8e12c9b9424fe3",
+      "topicId": "hs-topic-2",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "pending-review",
+      "statusBefore": "draft",
+      "verdict": "correct",
+      "confidence": 99,
+      "verifiedAt": "2026-10-24T03:47:28.237Z",
+      "evidence": "answer-verification-2026-10-24.jsonl",
+      "publicationChanged": true
+    },
+    {
+      "id": "q_af471685a4b442dc",
+      "topicId": "hs-topic-2",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "pending-review",
+      "statusBefore": "draft",
+      "verdict": "correct",
+      "confidence": 99,
+      "verifiedAt": "2026-10-24T03:47:36.714Z",
+      "evidence": "answer-verification-2026-10-24.jsonl",
+      "publicationChanged": true
+    },
+    {
+      "id": "q_29384ef6d5b44a4f",
+      "topicId": "hs-topic-2",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "fill",
+      "reviewStateBefore": "pending-review",
+      "statusBefore": "draft",
+      "verdict": "correct",
+      "confidence": 98,
+      "verifiedAt": "2026-10-24T03:47:24.841Z",
+      "evidence": "answer-verification-2026-10-24.jsonl",
+      "publicationChanged": true
+    },
+    {
+      "id": "q_0452ef60c0b54eaf",
+      "topicId": "hs-topic-2",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "fill",
+      "reviewStateBefore": "pending-review",
+      "statusBefore": "draft",
+      "verdict": "correct",
+      "confidence": 97,
+      "verifiedAt": "2026-10-24T03:47:22.010Z",
+      "evidence": "answer-verification-2026-10-24.jsonl",
+      "publicationChanged": true
+    },
+    {
+      "id": "q_e5234b9366164e31",
+      "topicId": "hs-topic-2",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "pending-review",
+      "statusBefore": "draft",
+      "verdict": "correct",
+      "confidence": 99,
+      "verifiedAt": "2026-10-24T03:47:36.714Z",
+      "evidence": "answer-verification-2026-10-24.jsonl",
+      "publicationChanged": true
+    },
+    {
+      "id": "q_22d1f9d4c5d944e4",
+      "topicId": "hs-topic-2",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "pending-review",
+      "statusBefore": "draft",
+      "verdict": "correct",
+      "confidence": 96,
+      "verifiedAt": "2026-10-24T03:47:24.841Z",
+      "evidence": "answer-verification-2026-10-24.jsonl",
+      "publicationChanged": true
+    },
+    {
+      "id": "q_0240d5ff4ee847c7",
+      "topicId": "topic-5",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewStateBefore": "pending-review",
+      "statusBefore": "draft",
+      "verdict": "correct",
+      "confidence": 98,
+      "verifiedAt": "2026-10-24T03:49:59.826Z",
+      "evidence": "answer-verification-2026-10-24.jsonl",
+      "publicationChanged": true
+    }
+  ],
+  "held": [
+    {
+      "id": "q_f817c8ec3f354aa7",
+      "topicId": "hs-topic-1",
+      "sectionId": "hs-topic-1-culture",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewState": "published-unreviewed",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "q_92cb2f05f087486d",
+      "topicId": "hs-topic-2",
+      "sectionId": "hs-topic-2-may-fourth",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewState": "published-unreviewed",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "q_0235026dfc904764",
+      "topicId": "hs-topic-5",
+      "sectionId": "hs-topic-5-economic",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewState": "published-unreviewed",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "q_eba4871f220a43c5",
+      "topicId": "topic-10",
+      "sectionId": "topic-10-coldwar-background",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewState": "published-unreviewed",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "q_7124941bb26744ee",
+      "topicId": "topic-10",
+      "sectionId": "topic-10-coldwar-end",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewState": "published-unreviewed",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "qb-NJCMN0110000046",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-challenges",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewState": "stale-approval",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "qb-NJCMN0110000033",
+      "topicId": "topic-11",
+      "sectionId": "topic-11-united-nations",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewState": "stale-approval",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "qb-NJCMN0120000108",
+      "topicId": "topic-12",
+      "sectionId": "topic-12-japanese-occupation",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewState": "stale-approval",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "qb-NJCMN0020000019",
+      "topicId": "topic-2",
+      "sectionId": "topic-2-medieval-europe",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewState": "stale-approval",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "qb-NJCMN0040000023",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewState": "stale-approval",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "q_234e963879fe4d9b",
+      "topicId": "topic-4",
+      "sectionId": "topic-4-clans",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewState": "published-unreviewed",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "q_07fde7eb8159470b",
+      "topicId": "topic-5",
+      "sectionId": "topic-5-science-enlightenment",
+      "origin": "AI 生成（已驗證教材依據）",
+      "questionType": "mc",
+      "reviewState": "published-unreviewed",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    },
+    {
+      "id": "qb-NJCMN0070000007",
+      "topicId": "topic-7",
+      "sectionId": "topic-7-revolution-early",
+      "origin": "校內試題（題庫匯入）",
+      "questionType": "mc",
+      "reviewState": "stale-approval",
+      "status": "published",
+      "reason": "excluded-by-adjudication",
+      "detail": "人工裁決列為需教師處理（見 --exclude-ids 對應的裁決紀錄）"
+    }
+  ]
+}

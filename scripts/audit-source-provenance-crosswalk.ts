@@ -1,12 +1,13 @@
 /**
  * Provenance 風險 × 來源可追溯性 交叉分析（Sprint 14，唯讀）。
  *
- * 目的：回答「623 題只有自動修復證據」與「1,003 題來源待核實」之間的關係，
+ * 目的：回答「只有自動修復證據」與「來源待核實」兩份清單之間的關係，
  * 避免同一題在多份清單被重複計數，並找出「必須先補來源才可能有效覆核」的題目。
+ * 2026-10-24 起所有題目都有擁有者指示的覆核證據，因此 provenance 清單為 0 題。
  *
  * 輸入（全部唯讀，不連資料庫）：
- *   - docs/quality/provenance-risk-2026-10-19.json（623 題逐題分級）
- *   - docs/quality/content-audit-2026-10-19.json（1,880 題來源／解釋／元數據）
+ *   - docs/quality/provenance-risk-2026-10-19.json（風險人口逐題分級）
+ *   - docs/quality/content-audit-2026-10-19.json（來源／解釋／元數據快照）
  *   - docs/quality/review-provenance-2026-10-19.json（目前版本的審核證據來源）
  *
  * 輸出：docs/quality/source-provenance-crosswalk-2026-10-19.{json,md}

@@ -27,6 +27,28 @@ type Connection = typeof import("@/server/db/connection");
 let connection: Connection;
 const TSX_CLI = path.join(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs");
 
+/** 讀取來源交叉分析的輸入報告（內容稽核快照，唯讀）。 */
+function loadContentAuditSnapshot() {
+  return JSON.parse(
+    fs.readFileSync(
+      path.join(process.cwd(), "docs", "quality", "content-audit-2026-10-19.json"),
+      "utf8",
+    ),
+  ) as { questions: { sourceStatus: string }[] };
+}
+
+/** 讀取 provenance 風險分級報告（來源交叉分析及 manifest 的輸入）。 */
+function loadProvenanceRiskRows() {
+  return (
+    JSON.parse(
+      fs.readFileSync(
+        path.join(process.cwd(), "docs", "quality", "provenance-risk-2026-10-19.json"),
+        "utf8",
+      ),
+    ) as { rows: unknown[] }
+  ).rows;
+}
+
 function runScript(script: string, args: string[], databasePath: string) {
   return spawnSync(process.execPath, [TSX_CLI, script, "--database", databasePath, ...args], {
     cwd: process.cwd(),
@@ -222,8 +244,12 @@ describe("Sprint 14 唯讀報告不寫資料庫", () => {
     const report = JSON.parse(fs.readFileSync(`${outBase}.json`, "utf8")) as {
       totals: { provenanceQuestions: number; sourcePendingQuestions: number };
     };
-    expect(report.totals.provenanceQuestions).toBe(623);
-    expect(report.totals.sourcePendingQuestions).toBe(1003);
+    expect(report.totals.provenanceQuestions).toBe(loadProvenanceRiskRows().length);
+    const auditSnapshot = loadContentAuditSnapshot();
+    expect(report.totals.sourcePendingQuestions).toBe(
+      auditSnapshot.questions.filter((question) => question.sourceStatus === "pending_verification")
+        .length,
+    );
   });
 
   it("Golden 準備度：產生報告，資料庫與裁決紀錄不變", () => {
@@ -263,8 +289,12 @@ describe("Sprint 14 唯讀報告不寫資料庫", () => {
     // 2026-10-21：manifest 只列出**尚未按現時版本核對**的題目。
     // 測試資料庫是新鮮的示範題庫，不含來源清單內的校內試題，因此全部落在 notInDatabase，
     // 佇列為 0；已核對的題目不會重生（核對紀錄綁定 revision 及 fingerprint）。
-    expect(report.totals.sourceRows).toBe(623);
-    expect(report.totals.notInDatabase).toBe(623);
+    // 2026-10-21：manifest 只列出**尚未按現時版本核對**的題目。
+    // 測試資料庫是新鮮的示範題庫，不含來源清單內的校內試題，因此全部落在 notInDatabase，
+    // 佇列為 0；已核對的題目不會重生（核對紀錄綁定 revision 及 fingerprint）。
+    // 來源列數由風險分級報告推導，報告重新產生後毋須改測試。
+    expect(report.totals.sourceRows).toBe(loadProvenanceRiskRows().length);
+    expect(report.totals.notInDatabase).toBe(loadProvenanceRiskRows().length);
     expect(report.totals.clearedByVerification).toBe(0);
     expect(report.totals.rows).toBe(0);
     expect(report.totals.uniqueQuestions).toBe(0);

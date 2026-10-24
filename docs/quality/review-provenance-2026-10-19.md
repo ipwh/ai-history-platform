@@ -2,18 +2,21 @@
 
 > 唯讀審核來源稽核：只分類既有紀錄，沒有修改、刪除或重新標記任何審核紀錄。
 
-紀錄 **3168** 筆；套用於目前版本 **1880** 筆。
+紀錄 **9256** 筆；套用於目前版本 **3366** 筆。
 
 | 來源類別 | 數量 |
 | --- | --- |
-| owner_batch | 1882 |
-| automation_repair | 1266 |
+| owner_batch | 7802 |
+| automation_repair | 1260 |
 | teacher_adjudication | 20 |
+| unknown | 174 |
 
 | Provenance 分類 | 數量 |
 | --- | --- |
-| verified_human_review | 1902 |
-| verified_automation | 1266 |
+| verified_human_review | 7822 |
+| verified_automation | 1260 |
+| legacy_origin_uncertain | 2 |
+| not_enough_evidence | 172 |
 
 ## Sprint 9 的 1,279 筆：核對結果
 
@@ -23,10 +26,10 @@
 
 | 情況 | 題數 |
 | --- | --- |
-| 有人工證據（教師或擁有者批次） | 1257 |
-| 其中教師逐題裁決 | 16 |
-| 只有擁有者批次（非逐題） | 1241 |
-| 只有自動修復紀錄 | 623 |
+| 有人工證據（教師或擁有者批次） | 3282 |
+| 其中教師逐題裁決 | 0 |
+| 只有擁有者批次（非逐題） | 3282 |
+| 只有自動修復紀錄 | 0 |
 | 沒有目前版本核准紀錄 | 0 |
 
 ## 限制

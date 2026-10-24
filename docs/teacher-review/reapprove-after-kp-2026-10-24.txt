@@ -1,0 +1,5 @@
+# 2026-10-24：三題已完成答案裁決（見 docs/teacher-review/answer-adjudication-2026-10-24.json），
+# 知識點元數據校正後需重新記錄覆核。
+qb-NJCMN0110000031
+qb-NJCFN0110000021
+q_72a68301c046410a

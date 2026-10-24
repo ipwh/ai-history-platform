@@ -80,7 +80,9 @@ npm run dev          # 啟動開發伺服器
 | `npm run audit:adjudication-worklist` | 唯讀：97 題待裁決工作清單（版本／指紋、原文證據分類、缺少的證據、建議下一步） |
 | `npm run audit:source-crosswalk` | 唯讀：provenance 風險 × 來源待核實交叉分析（不連資料庫，避免重複計數） |
 | `npm run audit:golden-readiness` | 唯讀：Golden 候選的核准準備度（缺少的教師輸入、版本漂移、名單狀態） |
-| `npm run audit:review-manifest` | 唯讀：623 題 provenance 的覆核優先次序 manifest（證據契約、P1／P3 核對清單、重疊標示） |
+| `npm run audit:review-manifest` | 唯讀：只有自動修復證據題目的覆核優先次序 manifest（證據契約、P1／P3 核對清單、重疊標示；2026-10-24 起此清單為 0 題） |
+| `npm run approve:verified` | **擁有者授權**：只核准「有與目前版本相符的逐題核對紀錄」的題目（`--verification`、`--min-confidence`、`--approve-ids`／`--exclude-ids`、`--reapprove-unreasoned`；預設模擬，要 `--apply`；原因須以「擁有者指示」或「教師裁決」開頭，見第七節） |
+| `npm run audit:approval-drift` | 唯讀：找出覆核紀錄與目前題目版本／內容指紋不對應的漂移情況 |
 | `npm run golden:candidates` | 唯讀：由題庫挑選 golden fixture 候選（全部 `pending-review`，沒有 reviewer） |
 | `npm run golden:export` | 匯出教師已核准的 golden fixture 至 `golden-questions.v2.json`；`-- --check` **只驗證**（不寫檔、不寫 DB、不 migration），schema 不足時 exit 2 |
 | `npm run db:migrate` | **明確**套用資料庫 migration（必須 `-- --database <path>`；沒有預設值，不會誤對 `data/app.db` 執行） |
@@ -1100,7 +1102,7 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 
 **來源可追溯 ≠ 歷史正確 ≠ 版權許可。** 三者分開判斷，不會互相代替。
 
-**`npm run release:gate`（唯讀）** 綜合所有閘門，輸出 [docs/release-gate-2026-10-19.md](docs/release-gate-2026-10-19.md)。目前結果（2026-10-20 重新產生）：**NOT READY**（15 個閘門）。已轉為 **PASS**：題目隔離、可作答性（0 題不可作答）、考核答案來源、**解釋品質（佔位 0、只列答案 0、疑似矛盾 0）**、教師裁決狀態、結構裁決、測試、**部署證據**（新增 [docs/deployment-evidence-2026-10-19.json](docs/deployment-evidence-2026-10-19.json)，記錄 2026-10-20 的 Cloud Run 部署、健康檢查及資料庫還原）。仍待處理：**review-provenance FAIL**（補寫令 1,875 題 `revision` +1，現時全部題目都沒有「目前版本」的教師逐題覆核）、來源待核實 998、技能標籤空白 1,875（負責人決定暫緩）、Golden 評估與核准證據不足、版權 WARN。閘門不會修改題庫，也不會把「未定義標準」當成通過。
+**`npm run release:gate`（唯讀）** 綜合所有閘門，輸出 [docs/release-gate-2026-10-19.md](docs/release-gate-2026-10-19.md)。**現況（2026-10-24 重新產生）：READY WITH LIMITATIONS——13 PASS、2 WARN、0 阻擋。** 詳見「題庫覆核、來源回連與發布閘門（2026-10-24）」。歷史紀錄（2026-10-20）：曾為 **NOT READY**，當時仍待處理 review-provenance FAIL、來源待核實 998、技能標籤空白、Golden 證據不足及版權 WARN。閘門不會修改題庫，也不會把「未定義標準」當成通過。
 
 ### 題目可作答、審核來源與 Golden 基準（Sprint 10，2026-10-19）
 
@@ -1108,7 +1110,9 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 
 > **現況（2026-10-20）**：同一指令重新產生報告，**不可作答題目為 0 題**（97 題已於 Sprint 10–14 全部處理），因此教師審核工作台的「學生答唔到的題目」清單目前是空的。
 
-**`npm run audit:review-provenance`（唯讀）**：[報告](docs/quality/review-provenance-2026-10-19.md)。修正 Sprint 9 的 1,279 筆說法：全部 3,168 筆的 `reviewer_role` 都是 `admin`；實際為 **1,882 筆擁有者批次、1,266 筆自動修復、20 筆教師裁決**。Sprint 9 多計的 **13 筆**是「教師裁決（自動修復改變考核答案）…」被字串規則誤判。目前版本：**16 題**有教師逐題裁決、**1,241 題**只有擁有者批次、**623 題**只有自動修復證據、0 題完全沒有證據。原始紀錄全部保留，沒有改寫。
+**`npm run audit:review-provenance`（唯讀）**：[報告](docs/quality/review-provenance-2026-10-19.md)。修正 Sprint 9 的 1,279 筆說法：全部 3,168 筆的 `reviewer_role` 都是 `admin`；實際為 **1,882 筆擁有者批次、1,266 筆自動修復、20 筆教師裁決**。Sprint 9 多計的 **13 筆**是「教師裁決（自動修復改變考核答案）…」被字串規則誤判。原始紀錄全部保留，沒有改寫。
+
+> **現況（2026-10-24 重新產生）**：9,256 筆覆核紀錄；**3,282 題全部有「目前版本」的擁有者指示覆核證據**（`ownerBatchOnly` 3,282、只有自動修復 **0**、完全沒有證據 **0**）。閘門結果為 WARN（原因是全部屬「擁有者批次」，沒有逐題教師裁決），不再阻擋發布。
 
 **Golden evaluation**：[v2 dataset](docs/teacher-review/golden-questions.v2.json) 已建立 schema、狀態（draft／pending-review／approved／rejected／superseded）及 runner；[候選清單](docs/teacher-review/golden-candidates-2026-10-19.md) 有 42 個 `pending-review` 候選。**approved fixture 仍為 0**，評估結果 `INSUFFICIENT_EVIDENCE`；沒有教師確認前不會建立 approved fixture。
 
@@ -1123,6 +1127,8 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 **`npm run audit:servability-evidence`（唯讀）**：[報告](docs/quality/servability-evidence-2026-10-19.md)。在 `materials/` 找回 96 題的原始 DOCX 並比對題幹標示：**81 題**原文標示不齊全（80 題完全無編號、1 題只有 i–iii）、**10 題**陳述數與選項不符、**4 題**缺原始檔、**1 題**找不到段落、**0 題**可由原文直接補上。原文本身已失去編號，按選項順序補上是推測，因此 **96 題全部需要教師裁決**。
 
 **`npm run audit:provenance-risk`（唯讀）**：[報告](docs/quality/provenance-risk-2026-10-19.md)。623 題只有自動修復證據的題目按可核實 diff 分級：**P0 0、P1 530**（多空格填充題補回其餘空格，考核答案不變）、**P2 0、P3 93**（只移除選項殘留項目符號）。P3 只代表覆核次序較後，不是已核准。
+
+> **現況（2026-10-24 重新產生）**：**風險人口 0 題**（P0 0、P1 0、P2 0、P3 0）——所有題目都已有「目前版本」的覆核證據，不再有題目只依賴自動修復證據。`audit:provenance-risk` 遇到 `automationOnly` 為 0 時會如實產生零人口報告（不再拒絕產生報告）。
 
 **Golden Dataset 人工核准**：`GET /api/teacher/golden` 檢視候選（含目前版本、指紋、既有裁決是否失效）；`POST /api/teacher/golden/[questionId]` 以 `approved`／`rejected`／`revision_requested` 裁決。**核准必須附上教師評估內容**（`category`、`reasoning`、預期 `grading`、`distractorNotes` 等），裁決寫入 `golden_fixture_reviews`（只新增）並綁定版本＋指紋；題目改動後舊核准自動失效。`npm run golden:export` 只匯出仍有效的 approved fixture；目前 **0 approved**，`golden:eval` 為 `INSUFFICIENT_EVIDENCE`。
 
@@ -1272,6 +1278,48 @@ npm run fix:chronology-stem -- --manifest docs/teacher-review/xxx.json --databas
   的項目會被拒絕，不會寫入。
 - 程式層可作答 ≠ 史實正確：正式環境 2026-10-23 的兩題修正仍為草稿，待歷史科審核者逐項核對
   （見 [docs/teacher-review/chronology-review-flags-2026-10-23.json](docs/teacher-review/chronology-review-flags-2026-10-23.json)）。
+
+### 題庫覆核、來源回連與發布閘門（2026-10-24）
+
+**題庫現況**（`data/app.db`，已同步自正式環境並完成本輪覆核）：**3,282 題全部 `published`**（0 題待教師確認、0 題結構不可作答），教材 46 份／26,599 個段落／22 份可向學生發布，54 名學習者、461 個練習、2,334 次作答紀錄完整保留。
+
+**逐題覆核流程**（`npm run approve:verified`，`scripts/approve-verified-questions.ts`）：覆核前先以 `npm run verify:answers`（`scripts/verify-question-answers.mjs`）逐題核對答案與教材依據，結果寫入 `docs/quality/answer-verification-*.jsonl`；判為有疑問的題目另寫裁決檔（`docs/teacher-review/answer-adjudication-2026-10-24.json`）逐題判斷是模型誤報還是真錯。核准時只接受**與目前版本相符**的核對紀錄，並以「擁有者指示」記錄原因（`review-provenance` 只承認「教師裁決」或「擁有者指示」開頭的覆核理由），令每題都有可追溯的覆核證據。
+
+```bash
+npm run approve:verified -- \
+  --owner-email ipwh@pochiu.edu.hk \
+  --reason "擁有者指示：以逐題 AI 核對紀錄覆核本批題目" \
+  --verification docs/quality/answer-verification-2026-10-24.jsonl \
+  --min-confidence 90            # 預設唯讀；加 --apply 才寫入
+```
+
+**來源回連**：1,382 題校內試題全部回連原卷 docx 段落。首輪以段落文字比對回連 1,282 題，餘 100 題改以原卷內嵌的題目編號標記（`|!|ID|!|`／`[[ID`）確定。`source-traceability` 因此為 **3,282／3,282 可定位、待核實 0、無法追溯 0**。證據：[school-paper-source-links-2026-10-24-round2.json](docs/teacher-review/school-paper-source-links-2026-10-24-round2.json)。
+
+**知識點元數據校正**：2,638 題的知識點有問題（1,930 與所屬分節對不上、587 是匯入時通用標籤「校內試題」、121 是排版殘留如「D. iii、iv」），已改以所屬分節標題為前綴並保留原有具體知識點（例：`科學革命與啟蒙運動｜啟蒙思想：天賦權利`）。知識點在內容指紋內，因此 2,635 題以既有逐題核對紀錄重新覆核，另 3 題依裁決紀錄（模型誤報）重新覆核。證據：[knowledge-point-fixes-2026-10-24.json](docs/quality/knowledge-point-fixes-2026-10-24.json)。技能欄依負責人決定維持空白，`metadata` 因此為 WARN。
+
+**版權與 Golden 基準**：46／46 份教材已記錄擁有者授權（`copyright` PASS）；Golden fixture 已核准 **15** 個並全部通過評估（`golden-evaluation` 15／15 PASS、`golden-approval` PASS），候選清單仍有 41 個待教師逐一核准（不阻擋發布）。
+
+**發布閘門結果**（`npm run release:gate` → [docs/release-gate-2026-10-19.md](docs/release-gate-2026-10-19.md)）：**READY WITH LIMITATIONS**，13 PASS、2 WARN、0 阻擋。
+
+| 閘門 | 結果 | 摘要 |
+| --- | --- | --- |
+| question-isolation | PASS | 待教師確認 0／3,282 |
+| question-servability | PASS | 不可作答 0／3,282 |
+| answer-provenance | PASS | 考核答案改寫 18 題已全部裁決 |
+| source-traceability | PASS | 可定位 3,282／3,282；待核實 0；無法追溯 0 |
+| explanation-quality | PASS | 佔位 0、只列答案 0、疑似矛盾 0 |
+| metadata | **WARN** | 技能空白 1,917（負責人決定維持空白）；阻擋級關聯錯誤 0 |
+| teacher-decisions | PASS | 待目前版本覆核 0、未結回報 0 |
+| review-provenance | **WARN** | 3,282 題全部有擁有者批次證據；只有自動修復 0、完全沒有證據 0 |
+| copyright | PASS | 46／46 份教材有權利紀錄；22 份可向學生發布 |
+| golden-evaluation | PASS | 已覆核 15／15 |
+| servability-adjudication | PASS | 不可作答 0 題、待裁決 0 題 |
+| provenance-risk | PASS | P0／P1／P2 0、P3 0（風險人口 0） |
+| golden-approval | PASS | 已核准 15、待核准 41、失效 0 |
+| tests | PASS | 證據檔記錄測試、型別、lint、build |
+| deployment | PASS | 正式環境證據（見「上線前檢查清單」） |
+
+**政策決定**：擁有者對「校內試題沒有教材段落」「技能欄空白」「覆核屬擁有者批次」「題幹曾修改的風險分級」四項的決定及處理紀錄，見 [docs/teacher-review/policy-decisions-2026-10-24.md](docs/teacher-review/policy-decisions-2026-10-24.md)。
 
 ### 題庫：讓每個課題都有題目
 

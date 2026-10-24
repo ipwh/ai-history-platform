@@ -1,0 +1,152 @@
+{
+  "generatedAt": "2026-10-24",
+  "reviewer": "ipwh@pochiu.edu.hk",
+  "notice": "逐題 AI 核對（docs/quality/answer-verification-2026-10-21.jsonl 及 2026-10-24.jsonl）中被標示為 incorrect／uncertain 的 13 題，逐題對照題幹、選項、解釋及所引教材段落後的人工裁決。decision = approve 代表判定為模型誤報、內容無誤；decision = hold 代表內容確有問題或存在爭議，不代為核准，交由教師處理。",
+  "resolution": "2026-10-24 擁有者指示「按你的建議修正」後，13 題已全部按下列 action 修正（內容清單見 docs/quality/content-fixes-2026-10-24.json，套用紀錄見 docs/quality/content-fixes-applied.json），修正後 revision +1 並以逐題核對紀錄重新覆核通過（見 docs/teacher-review/verified-approval-2026-10-24-fixes.md）。其中 4、5、7 題另重新指定教材段落（原段落已失效），第 12 題補上教材段落。",
+  "decisions": [
+    {
+      "questionId": "q_f817c8ec3f354aa7",
+      "decision": "hold",
+      "aiVerdict": "incorrect",
+      "aiIssue": "stem-error",
+      "aiConfidence": 97,
+      "adjudication": "題幹寫「二十世紀初」，但所引教材段落為 1895 年設立興中會總部及同年策劃第一次廣州起義（十九世紀末）；答案「興中會」本身正確。屬題幹史實錯誤。",
+      "action": "建議把題幹「二十世紀初」改為「十九世紀末」，並保留解釋所述年份，改動後需重新核對。"
+    },
+    {
+      "questionId": "q_92cb2f05f087486d",
+      "decision": "hold",
+      "aiVerdict": "incorrect",
+      "aiIssue": "wrong-answer",
+      "aiConfidence": 97,
+      "adjudication": "題幹問 1928 至 1937 年南京政府的外交措施，但標示答案「收回漢口、九江及鎮江的英國租界」在解釋中明言屬 1927 年武漢國民政府所為；所引教材段落中南京政府的外交措施是 1930 年收回廈門英租界及威海衛租借地、1931 年收復天津比利時租界。答案與題幹時段不符，選項亦沒有涵蓋教材所述措施。",
+      "action": "建議把外交選項改為教材所述 1930 年措施，或把題幹時段改為 1927 年並調整解釋。"
+    },
+    {
+      "questionId": "q_0235026dfc904764",
+      "decision": "hold",
+      "aiVerdict": "incorrect",
+      "aiIssue": "multiple-correct",
+      "aiConfidence": 95,
+      "adjudication": "選項 2「馬歇爾計劃」與選項 3「歐洲復興計劃」指同一計劃（後者為正式名稱），兩個選項同樣正確。",
+      "action": "建議把選項 3 換成另一個 1947 年後但不同性質的計劃（例如 1924 年道威斯計劃），使答案唯一。"
+    },
+    {
+      "questionId": "q_eba4871f220a43c5",
+      "decision": "hold",
+      "aiVerdict": "incorrect",
+      "aiIssue": "explanation-error",
+      "aiConfidence": 95,
+      "adjudication": "標示答案（選項 4）正確，但解釋末段「兩國領土都沒有成為主要戰場」對蘇聯不成立——蘇聯國土正是第二次世界大戰歐洲主戰場。解釋與史實矛盾。",
+      "action": "建議把該句改為「美國本土未成戰場，蘇聯則承受主要戰事損失」，其餘解釋保留。"
+    },
+    {
+      "questionId": "q_7124941bb26744ee",
+      "decision": "hold",
+      "aiVerdict": "incorrect",
+      "aiIssue": "multiple-correct",
+      "aiConfidence": 82,
+      "adjudication": "題幹問「下列哪一項是東歐劇變期間出現的轉變」，選項 3（1991 年華沙公約組織解散）及選項 4（1990 年兩德統一）同樣發生於 1989-91 年劇變期間；解釋亦承認兩者屬劇變期間事件，只是「不如答案概括」。答案因此不唯一。",
+      "action": "建議把題幹改為「最能概括東歐劇變期間各國政治體制的整體轉變」，或替換選項 3、4 為劇變以外的事件。"
+    },
+    {
+      "questionId": "qb-NJCMN0110000031",
+      "decision": "approve",
+      "aiVerdict": "incorrect",
+      "aiIssue": "wrong-answer",
+      "aiConfidence": 85,
+      "adjudication": "校內試題官方答案為 i、ii。模型以「聯合國人類環境會議並非每十年召開」判錯，但 1972 年斯德哥爾摩會議、1992 年里約會議、2002 年約翰內斯堡會議正是約每十年一次，教材亦沿用這種概括描述；ii 的敘述成立，i、ii 為正確組合。判為模型誤報。",
+      "action": "維持原答案並記錄覆核通過。"
+    },
+    {
+      "questionId": "qb-NJCMN0110000033",
+      "decision": "hold",
+      "aiVerdict": "incorrect",
+      "aiIssue": "wrong-answer",
+      "aiConfidence": 78,
+      "adjudication": "題幹問「根據以下哪項條約」，而標示答案 ii、iii 中的《里約宣言》並非條約（模型認為應為 i、ii）；但題目解釋明確以 1992 年聯合國環境與發展會議同時通過《聯合國氣候變化框架公約》及《里約宣言》為依據。兩種解讀都成立，無法由核對紀錄判定，需教師依校內試卷原意決定。",
+      "action": "交由教師確認答案應為 i、ii 或 ii、iii。"
+    },
+    {
+      "questionId": "qb-NJCFN0110000021",
+      "decision": "approve",
+      "aiVerdict": "incorrect",
+      "aiIssue": "wrong-answer",
+      "aiConfidence": 60,
+      "adjudication": "模型建議「授權採取軍事行動」，但該文字無法填入題幹「甚至派遣＿＿＿制止衝突」的句式。聯合國安理會派遣維持和平部隊制止衝突屬公認史實，校內試題官方答案亦為「維持和平部隊」。判為模型誤報。",
+      "action": "維持原答案並記錄覆核通過。"
+    },
+    {
+      "questionId": "q_72a68301c046410a",
+      "decision": "approve",
+      "aiVerdict": "incorrect",
+      "aiIssue": "multiple-correct",
+      "aiConfidence": 80,
+      "adjudication": "所引教材段落以「文化差異」及「社會差異」兩項並列解釋，而題幹明確問「最能解釋未能建立統一政府」，教材對該結果直接給出的理由是文化差異（「由於文化差異顯著，古希臘人難以團結建立統一國家」）。答案與教材一致，模型以「多項原因並列」判為多於一個正確屬誤報。",
+      "action": "維持原答案並記錄覆核通過。"
+    },
+    {
+      "questionId": "qb-NJCMN0020000019",
+      "decision": "hold",
+      "aiVerdict": "uncertain",
+      "aiIssue": "unclear",
+      "aiConfidence": 60,
+      "adjudication": "標示答案「公元 1453 年結束」正確；但如教材把中古時代劃為早期、盛期、晚期三段，選項「分為三段時期」亦同樣正確。校內試題沒有附教材段落可供核對，無法確定。",
+      "action": "交由教師依教材用語確認哪一項才是唯一正確描述。"
+    },
+    {
+      "questionId": "q_234e963879fe4d9b",
+      "decision": "hold",
+      "aiVerdict": "incorrect",
+      "aiIssue": "wrong-answer",
+      "aiConfidence": 90,
+      "adjudication": "題幹問水上人與福佬的「共同特點」，但四個選項都以聚居地點加生活方式作描述；本題解釋亦說「兩者的共同點是以船艇為家，但聚居地點不同」，即無法支持標示答案（選項 3，稱兩者都聚居新界與香港島海灣）。答案與解釋自相矛盾，所引段落亦已不存在（blk_7541e12637c94ffa）。",
+      "action": "建議改寫題幹為「兩者都以甚麼為家」或調整選項，並重新指定教材段落。"
+    },
+    {
+      "questionId": "q_07fde7eb8159470b",
+      "decision": "hold",
+      "aiVerdict": "incorrect",
+      "aiIssue": "multiple-correct",
+      "aiConfidence": 90,
+      "adjudication": "所引教材段落明列「倫敦皇家自然知識促進學會（即皇家學會）」及「法國科學院」兩個例子；選項 1（法國科學院）及選項 3（英國皇家學會，與答案指同一機構）同樣正確。",
+      "action": "建議把選項 1、3 換成非科學革命時期的機構，或把題幹改為「以下哪一項不是」。"
+    },
+    {
+      "questionId": "qb-NJCMN0070000007",
+      "decision": "hold",
+      "aiVerdict": "incorrect",
+      "aiIssue": "multiple-correct",
+      "aiConfidence": 90,
+      "adjudication": "題幹問「哪項不是英國曾推行的經濟政策」；選項 4「禁止由法國輸入原材料」其實是重商主義貿易壟斷的一部分（殖民地只可與英國及其殖民地貿易），同樣屬「推行過的限制」，因此「不是」的判斷有爭議。解釋雖以「不是獨立政策」自圓其說，但學生難以區分。",
+      "action": "交由教師依校內試卷原意決定是否換掉選項 4。"
+    },
+    {
+      "questionId": "qb-NJCMN0040000023",
+      "decision": "hold",
+      "aiVerdict": "correct",
+      "aiIssue": "none",
+      "aiConfidence": 70,
+      "adjudication": "題幹為「圖中的人在慶祝甚麼節日？」，但平台不提供題目附圖，學生無法作答；解釋可推知答案為長洲太平清醮，但題目本身缺少作答依據（同 2026-10-21 已刪除的兩題同類缺陷）。",
+      "action": "建議刪題，或改寫題幹以文字描述圖片內容。"
+    },
+    {
+      "questionId": "qb-NJCMN0110000046",
+      "decision": "hold",
+      "aiVerdict": "correct",
+      "aiIssue": "none",
+      "aiConfidence": 75,
+      "adjudication": "標示答案「國際和平會議」是會議而非組織，解釋另提「各國議會聯盟」；同題組的「各國和平聯盟」亦是民間組織名稱。答案與題幹「哪個組織」不完全對應，核對信心僅 75，未能確定。",
+      "action": "交由教師依校內試卷及教材用語確認。"
+    },
+    {
+      "questionId": "qb-NJCMN0120000108",
+      "decision": "hold",
+      "aiVerdict": "correct",
+      "aiIssue": "none",
+      "aiConfidence": 78,
+      "adjudication": "標示答案 ii、iii 只涵蓋「以華制華」的措施，但 iv「推行目的是為了加強對地區的控制」同樣是對該方針的正確描述，選項中沒有 ii、iii、iv 組合；解釋以「分區制度屬管治措施」排除 i，卻未處理 iv。",
+      "action": "交由教師確認應否修訂題幹（例如「以下哪項是以華制華的具體措施」）。"
+    }
+  ]
+}

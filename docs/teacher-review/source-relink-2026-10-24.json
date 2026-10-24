@@ -1,0 +1,1811 @@
+{
+  "generatedAt": "2026-10-24T05:04:09.750Z",
+  "applied": true,
+  "totals": {
+    "applied": 300,
+    "skipped": 0
+  },
+  "appliedItems": [
+    {
+      "id": "q_0063b52bffd9430f",
+      "block": "blk_ad9c2fbe005b4598",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_00c60f7f5cb34d63",
+      "block": "blk_753800a8f0d4412b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_019a92d3b8b84f79",
+      "block": "blk_15c84e962ba74c55",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_01d165f100e34922",
+      "block": "blk_0fe19afcae054b9f",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_021e311d3b854f7d",
+      "block": "blk_232f985359324cf7",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_033cd0b537824e98",
+      "block": "blk_06b1486af0724fff",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_058799688d4d4856",
+      "block": "blk_188489d0cd004b7d",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_07fc172385aa4b7b",
+      "block": "blk_37256cde427d40ea",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_09d98d942a1d40ab",
+      "block": "blk_6e11e0d610a34b54",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_09ec26340db344a0",
+      "block": "blk_eb68cb3fb29f43e4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_0a22c2952b8e4529",
+      "block": "blk_222a3bb5124e4fe9",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_0b155e54846d4402",
+      "block": "blk_900d86facf664c23",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_0b74d4b10a5e47e7",
+      "block": "blk_878a3ca124564ee8",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_0c037fc156554732",
+      "block": "blk_6d3a3c24b4c54e8a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_0cf3ef8e23e44acc",
+      "block": "blk_c058f906f7d94297",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_0d305a85f3f74837",
+      "block": "blk_f65e36da621d4ff7",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_0d43888d4f8541d9",
+      "block": "blk_fb75208e54af4533",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_0d726755133b4c47",
+      "block": "blk_70eb7ba510e7405a",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_0e54fd28fa3f4bde",
+      "block": "blk_ba4a2ba50b9045f1",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_0eb493f0d78948c2",
+      "block": "blk_49f375d3412d4b4d",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_0fc7577f6d314697",
+      "block": "blk_3599cd8aac09417d",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_12ffa79918c3431b",
+      "block": "blk_f6f765c2140241f4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_1425339ceefb4192",
+      "block": "blk_c169eca448ab4ba8",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_1545928279334c5b",
+      "block": "blk_387fc9ca3f3f46bb",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_15b1580711f1465c",
+      "block": "blk_f33a976a73994019",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_1657cf226987451c",
+      "block": "blk_32f6f3926ddf4009",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_16cd11676ab445c4",
+      "block": "blk_de169d6d52434f9b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_179ea11c884241cc",
+      "block": "blk_d96af4ad2df54739",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_1804722f6ab34761",
+      "block": "blk_d0cfbe6f68e240e4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_18cfa1ca0e8b4b47",
+      "block": "blk_b51f99fd6a6b4f42",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_19502cb9d8db4844",
+      "block": "blk_45bbc3262e1b4856",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_195b9fbccb914739",
+      "block": "blk_2c710ccfd42f4a0e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_19a7ea445043490b",
+      "block": "blk_888a3fe5dd394fdb",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_1b41f14729354395",
+      "block": "blk_496a94dcd2c44f3c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_1c3eaaf0143b4f1e",
+      "block": "blk_7ed3719a16494b4f",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_1ca400f49ac24c09",
+      "block": "blk_d96af4ad2df54739",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_1d7ab7637aa346d6",
+      "block": "blk_2c710ccfd42f4a0e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_1f945466fa6b4716",
+      "block": "blk_9e4499adcdc849ca",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_2073b12a6d974eca",
+      "block": "blk_20e45a246aab420a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_2315aa96f1264327",
+      "block": "blk_b4b551efb93f4219",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_25a43d5e1c9342a7",
+      "block": "blk_eddc66cc9bcf4672",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_25ebe0f583bc4b51",
+      "block": "blk_2725e37563ef4cad",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_26044db100104c65",
+      "block": "blk_9ea8eb90ef9d41f1",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_2623f600a255419a",
+      "block": "blk_eb80cc52600f4986",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_26d510e639f34c9e",
+      "block": "blk_a595a0f6b9144570",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_2776abc8787d49cd",
+      "block": "blk_1a43250e565b485e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_27bdc2e95cf8422c",
+      "block": "blk_bab94e58d6694cd1",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_281c617afe7049a6",
+      "block": "blk_eca8b68c11024452",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_285cdc89931f4c20",
+      "block": "blk_f03a73485ad34cd8",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_29660195fb2148da",
+      "block": "blk_286800f68d294fc2",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_2b11d5973bf4413e",
+      "block": "blk_fb75208e54af4533",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_2bcc98109d314419",
+      "block": "blk_888a3fe5dd394fdb",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_2db4ee9235de43e9",
+      "block": "blk_397d3c5b58f6431d",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_2e23932bc6d34864",
+      "block": "blk_300d13f452db4d95",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_2eeab60063534e33",
+      "block": "blk_17353433dd7a4226",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_2f70c36b53174300",
+      "block": "blk_2c710ccfd42f4a0e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_30f936fc2be24f06",
+      "block": "blk_f4d50f30cdd444e8",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_311846aa874449b3",
+      "block": "blk_ada74608392b464d",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_32037f507009467f",
+      "block": "blk_05984f6d62f949f4",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 3 個）"
+    },
+    {
+      "id": "q_329fc69f05654f88",
+      "block": "blk_6c9b71bf136d46f1",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_3319a03359454f8b",
+      "block": "blk_a4e79542fddb48ea",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_335a0faa582c406c",
+      "block": "blk_496a94dcd2c44f3c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_33622f8298144903",
+      "block": "blk_70b899a9288243f5",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_34630e232208463c",
+      "block": "blk_b49d6175c4704759",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_3511ff840d8545d5",
+      "block": "blk_a3a1e5e59e3e4c4c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_3557a23ea5f74729",
+      "block": "blk_286800f68d294fc2",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_358d38d7541f4202",
+      "block": "blk_65d604aed69e42b4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_35ffe53ec8884372",
+      "block": "blk_222a3bb5124e4fe9",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_36b6c8753abc436f",
+      "block": "blk_7bd054e6a29943b4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_372112a05895458b",
+      "block": "blk_6eaa3f7ecf7645ce",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_374b383c15be417d",
+      "block": "blk_6c9b71bf136d46f1",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_3a036a2bc010467d",
+      "block": "blk_b39a32fa8a7e4b2e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_3a7aad072fde46d6",
+      "block": "blk_d75901debea94448",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_3ac08443796f4b21",
+      "block": "blk_8e737ec049784ed5",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_3b9ffc6943be40cd",
+      "block": "blk_b165f11a9622444b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_3c79e6e5e3514e33",
+      "block": "blk_c7f126f21f774218",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_3cdeba1de7d9450e",
+      "block": "blk_888a3fe5dd394fdb",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_3e0ef0d57a4142df",
+      "block": "blk_b653f71382464e8b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_423a9a34828144e3",
+      "block": "blk_745fceb732604226",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_4256606989a248d0",
+      "block": "blk_6eaa3f7ecf7645ce",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_42a09ae2d90a49e5",
+      "block": "blk_4c133e6a39164ba6",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_43f8401ca1194539",
+      "block": "blk_31013c320c1a4133",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_4493f2171cd6431e",
+      "block": "blk_7a7fb0a51f754c47",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_45112709f6734d03",
+      "block": "blk_42dfd679de72474b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_461d2bc2c8064779",
+      "block": "blk_2725e37563ef4cad",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_4645a1070daf4fda",
+      "block": "blk_d7d4db95b28b4f8f",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_46d42a9553184830",
+      "block": "blk_04aad76de8c44ce6",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_4782865e71e74f6b",
+      "block": "blk_db7ada10aea04078",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_490e67c4438545e7",
+      "block": "blk_c978b6266869475f",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_499442506b474214",
+      "block": "blk_06b1486af0724fff",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_4a4050b7d4e6478d",
+      "block": "blk_7ecda5ee7ae644ec",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_4c8fb55a17194504",
+      "block": "blk_dbae724cb81b45ad",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_4de13628a88a47a8",
+      "block": "blk_2c710ccfd42f4a0e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_4e0b41c467b3485f",
+      "block": "blk_0dcfeda1063c4c8b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_4e5190e8964543b0",
+      "block": "blk_b653f71382464e8b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_4fc4040274534aad",
+      "block": "blk_a95864dc6bfb4c02",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_50f32ae95b34472e",
+      "block": "blk_b41aeedf3ccd4fad",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_51f19017647e498c",
+      "block": "blk_3be6c01c83754d51",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_53e2e69c37304f4d",
+      "block": "blk_929ac967fcc2434a",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 3 個）"
+    },
+    {
+      "id": "q_54acc8723ee6425d",
+      "block": "blk_e8b6b71734264fe3",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_55874901a57b4c23",
+      "block": "blk_5510b83791b849bc",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_55963714d1e24c4e",
+      "block": "blk_819626c658624e4a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5796daf5d48c49c1",
+      "block": "blk_320ce02c6d7041c2",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_58a3bc8df2b349b1",
+      "block": "blk_8f424e1122184a9e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_590affd62ac840e2",
+      "block": "blk_4ea07c63c7634cae",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5a03cc3cc0f54ee1",
+      "block": "blk_eddc66cc9bcf4672",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5a996fdb3bd4464f",
+      "block": "blk_dcd47b231b9449f2",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5b7ac84cff484693",
+      "block": "blk_188489d0cd004b7d",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5bb88c45b7454ba8",
+      "block": "blk_57d14a37d19d4495",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5bf9466e8d24437e",
+      "block": "blk_5510b83791b849bc",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5c29b020113e40bb",
+      "block": "blk_185d5882a0224f4d",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5c7ac222b5924a8b",
+      "block": "blk_16348a7d5f534677",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5c92dca87075489b",
+      "block": "blk_69daadc6e49c466e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5e24621659984697",
+      "block": "blk_06b1486af0724fff",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5e29edc49d47498e",
+      "block": "blk_7c3bdd57dd724810",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_5fabba7513024bab",
+      "block": "blk_a4e79542fddb48ea",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_600bc90bb3ca401e",
+      "block": "blk_db7ada10aea04078",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_617eec344ed64ebc",
+      "block": "blk_6beee82cdfc64b0b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_62b5c292b5f64f29",
+      "block": "blk_2406b2e584ff464c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_64a34e8de1f54e17",
+      "block": "blk_18d31d89064340d7",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_64a59122ae854981",
+      "block": "blk_e9e5fbe90cbe4aa9",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_65d656fb01464b3c",
+      "block": "blk_4769d8e86b064b3f",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_65d7885f6cba40a5",
+      "block": "blk_16348a7d5f534677",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_67331b1f1d684522",
+      "block": "blk_05984f6d62f949f4",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 3 個）"
+    },
+    {
+      "id": "q_686a276916a5499b",
+      "block": "blk_0b3de8ef35144bdc",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_686bd3cdedf5469a",
+      "block": "blk_17353433dd7a4226",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_687fd4752a9947c7",
+      "block": "blk_474545c50b3c4661",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_68d1f356d1f94dd4",
+      "block": "blk_286800f68d294fc2",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_6996c28dcb3641ce",
+      "block": "blk_8778d030062044f4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_6a66958d538e42cf",
+      "block": "blk_f4793afd27d5413a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_6b20fd0e63e44469",
+      "block": "blk_720c8d507c1343e4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_6c82f0cf91c74df3",
+      "block": "blk_878a3ca124564ee8",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_6d01d34c89da49d7",
+      "block": "blk_16348a7d5f534677",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_6db17ba121fc4a4c",
+      "block": "blk_3ec0e512448246a1",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_6e0d2a0572a040f9",
+      "block": "blk_07584d73a02647f3",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_746473d156cc44bd",
+      "block": "blk_db7ada10aea04078",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_74f2de891b9c443a",
+      "block": "blk_836ae3793dab411c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_771063be43204334",
+      "block": "blk_b9f149175c674a89",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_7844cb66c67345a1",
+      "block": "blk_1c32928db7a44acc",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_78b19cce9c5043d2",
+      "block": "blk_bc1f42a2b714472e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_79f5443a42a049a0",
+      "block": "blk_ad9c2fbe005b4598",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_79fd0747e1c74b96",
+      "block": "blk_16348a7d5f534677",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_7a91122bc7584c1f",
+      "block": "blk_11a03498ab6a4a5f",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_7b170ab2f44e4e2e",
+      "block": "blk_496a94dcd2c44f3c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_7be31c6c79bb4ff8",
+      "block": "blk_0766dfdb0cb24190",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_7c1e14ab425d4613",
+      "block": "blk_a3a1e5e59e3e4c4c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_7c4c69b20a3148b2",
+      "block": "blk_113a66d1a2ac456b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_7df48edb267f4a0f",
+      "block": "blk_472f9722f1dd4df2",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_7e0275bae8544c44",
+      "block": "blk_db7ada10aea04078",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_7e147cbb36c14af2",
+      "block": "blk_e39b4861baa546c7",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_7fcf863ddfc6414a",
+      "block": "blk_b165f11a9622444b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_8095c47edc994a76",
+      "block": "blk_3b3c905b794e4bd1",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_81e5a1df46644fc1",
+      "block": "blk_5e5c815e7a04469e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_82aebebaa66f4851",
+      "block": "blk_7ed7183619d34682",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_8420a0ac3ea242c6",
+      "block": "blk_db7ada10aea04078",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_84fe2a534a6f48e8",
+      "block": "blk_1a43250e565b485e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_85f17a01cce24e99",
+      "block": "blk_232f985359324cf7",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_87ac0c5a0e004f9a",
+      "block": "blk_7a7fb0a51f754c47",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_8835fdb1acbf4e00",
+      "block": "blk_2e221a5c88104c3e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_888c81b874be49d2",
+      "block": "blk_3a9004f35a81434f",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_8b14242d24d64cdd",
+      "block": "blk_ca492bd3fb774152",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_8c1d039dcf764bb7",
+      "block": "blk_70abaad28d7e491c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_8cd00618fb154fd0",
+      "block": "blk_adbb860edf5c4b80",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_8dd1ad43434843a2",
+      "block": "blk_a95455172a4e4c3d",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_8ded2145cf3f402b",
+      "block": "blk_4b3775c3f3914058",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_903df22a4c6f4873",
+      "block": "blk_22c0aea8c9e542b4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_905096f8645a412a",
+      "block": "blk_24b35cfa1a934216",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_93602cabbd5b489c",
+      "block": "blk_a2f2d37e9b5d4a6a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_93d89906a2254a4a",
+      "block": "blk_06b1486af0724fff",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_948bb68264674d3e",
+      "block": "blk_3a9004f35a81434f",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_950f432e77b543d7",
+      "block": "blk_7bd054e6a29943b4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_978d86217f14494e",
+      "block": "blk_16348a7d5f534677",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_9807f3bada2c4c85",
+      "block": "blk_e2f79ea7b3664918",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_982032d5cfd24274",
+      "block": "blk_8f424e1122184a9e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_991d4550418543cf",
+      "block": "blk_6f38c312212b452d",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_9bf869ae721a4b7b",
+      "block": "blk_883f5941b30d4ce8",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_9f59f10871ec4508",
+      "block": "blk_7ed7183619d34682",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_a0679ba45a76446a",
+      "block": "blk_af535c745512474d",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_a126b2f1cf8541a1",
+      "block": "blk_6654ea052ee54dda",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_a249b6f683ba4a7c",
+      "block": "blk_9ea8eb90ef9d41f1",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_a2a3da92e8e74596",
+      "block": "blk_fac5052083da4cb9",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_a2e06d90884f486a",
+      "block": "blk_b91bdf66264f4c65",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_a2f0988fe4c54082",
+      "block": "blk_d4630ef3c079424b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_a3ba1e576fed40e6",
+      "block": "blk_d7e5f681972c4e76",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_a494cdfb5e3c4824",
+      "block": "blk_5519c96d998d4647",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_a7f4cb94730e4403",
+      "block": "blk_0b3de8ef35144bdc",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_a7f9edfef4324b0f",
+      "block": "blk_27f7f6c374a646a2",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_aadeb6434a284925",
+      "block": "blk_04f7555512f94abb",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ab49b61cc8264d65",
+      "block": "blk_de7fbf1c17534f22",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_abc2145a6ba340cc",
+      "block": "blk_dd04f259908b4ea8",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_abff8338e6ff4cf9",
+      "block": "blk_aec9d4354f684afe",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ac25aefaf8174685",
+      "block": "blk_28157ad8c84e481e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ac3bd3dc5cd14767",
+      "block": "blk_8778d030062044f4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_acc988a1baa448b8",
+      "block": "blk_4769d8e86b064b3f",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_aef361ba1adb4aee",
+      "block": "blk_b4cdf9c5e282454a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_b0281e79ba2a4916",
+      "block": "blk_b26c1b19b8384e47",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_b0f0639199a14ba0",
+      "block": "blk_f0886f7f14a44305",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_b1fd5d3b4c084a62",
+      "block": "blk_b653f71382464e8b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_b43f50c30bb343cd",
+      "block": "blk_6b513347d2654077",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_b458384658404d5f",
+      "block": "blk_5a014e3f25804211",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_b47d1239ae414ffc",
+      "block": "blk_c57f7cdf4f734481",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_b716d45c2a984dee",
+      "block": "blk_e5775a527a284422",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_b7a081fe550143ba",
+      "block": "blk_891dcfaddb914c1f",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_b87260fa897d4a34",
+      "block": "blk_adbb860edf5c4b80",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_bad05d82f9ea4125",
+      "block": "blk_c93ecc1ce0c4439f",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_bae73a48d5b04890",
+      "block": "blk_a3a1e5e59e3e4c4c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_bafb53c77f7d46eb",
+      "block": "blk_2804f939dae4414c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_bc6ce7134a9d4a1c",
+      "block": "blk_2406b2e584ff464c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_bcc8f26645fd410a",
+      "block": "blk_8217f1fe185e4758",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_bd2205c836904fbd",
+      "block": "blk_491803410f2143df",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_bff52732368f4781",
+      "block": "blk_e654e695b05d4e50",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c07e1231c96944b4",
+      "block": "blk_aef5c62c7f1d4c64",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c1b698d90923421f",
+      "block": "blk_bba9fae954d3493b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c2232c69d80a46d1",
+      "block": "blk_ece5eb1c83a8429a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c223ff6cabb24132",
+      "block": "blk_d9597a0dab454173",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c25375ed8a0f4e8b",
+      "block": "blk_429ec01dd2b946b1",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c46f8d5630e042a5",
+      "block": "blk_56ddbdb7b83e4c61",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c4a01b7ed65148e4",
+      "block": "blk_4ea07c63c7634cae",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c52c5f677be941d6",
+      "block": "blk_baf792fbeba845e0",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c5690a16b32a4438",
+      "block": "blk_222a3bb5124e4fe9",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c63682545f644704",
+      "block": "blk_300d13f452db4d95",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c63a61280eb1462f",
+      "block": "blk_f4793afd27d5413a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c690a91bf8484dec",
+      "block": "blk_528c3004727f4cbf",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c6e5b48c367e4b0e",
+      "block": "blk_300d13f452db4d95",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c70c321de79348fa",
+      "block": "blk_69daadc6e49c466e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c8056c0b5a244931",
+      "block": "blk_b4b551efb93f4219",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_c9b348a3e6d142d1",
+      "block": "blk_3a9004f35a81434f",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_ca44ecf97db34cd9",
+      "block": "blk_87514207d82e44ea",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_cbaf6c5d1edb4b0f",
+      "block": "blk_4bbd7a4d70824711",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d0135db7b7164cac",
+      "block": "blk_7cc889567a224826",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d01c6634e9884f2d",
+      "block": "blk_1a43250e565b485e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d0ce4bfa6edd4693",
+      "block": "blk_16348a7d5f534677",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d14e1139af1748d3",
+      "block": "blk_154308e8b06943d8",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d195b067f1c24bbc",
+      "block": "blk_2ef94734fd2b45cb",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d1aca005a5374f90",
+      "block": "blk_d4630ef3c079424b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d1ee325aa0ff4f07",
+      "block": "blk_8778d030062044f4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d3bd41970f444a2c",
+      "block": "blk_b653f71382464e8b",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d51d356830fe47ef",
+      "block": "blk_0d5e07263ed9432a",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_d60bddee890c4dab",
+      "block": "blk_8739398ad17f4c58",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d79a43bafdfc4f41",
+      "block": "blk_7a7fb0a51f754c47",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d86ef62c78b648af",
+      "block": "blk_7379e4e5a4804d34",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d87e8f90231b43bd",
+      "block": "blk_37256cde427d40ea",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d99d748f4c66420c",
+      "block": "blk_5519c96d998d4647",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_d9dc819547b64d73",
+      "block": "blk_51698435c0414e38",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_da3ed01f31814f5b",
+      "block": "blk_06b1486af0724fff",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_dbda3bcbd1924f2d",
+      "block": "blk_2ca24d0997ce43f9",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_dc53a326a0f04c51",
+      "block": "blk_6b796e4fb3684bc4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_dd397761a0b94f41",
+      "block": "blk_db68f319dc3e45b5",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ddbaf6a656cd4909",
+      "block": "blk_2c710ccfd42f4a0e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_de2df6422f294c39",
+      "block": "blk_a3a1e5e59e3e4c4c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_de3baf6d6e7646e1",
+      "block": "blk_4902b628cde1423f",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_deab8513ffca4381",
+      "block": "blk_819626c658624e4a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_decd7eb69a65456c",
+      "block": "blk_b9f149175c674a89",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e040c3f2488f4af7",
+      "block": "blk_a4e79542fddb48ea",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e2ce20af7dc74096",
+      "block": "blk_d3c2ce95734144bc",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e340ba83981347c8",
+      "block": "blk_81415995a2c442fe",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e372294e7d35465a",
+      "block": "blk_b60147c319174bfd",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e4b8869c2d1640c2",
+      "block": "blk_1ace779f0b734c8a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e5fe6fc1bfe04b62",
+      "block": "blk_d0cfbe6f68e240e4",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e6508a43d1a4426d",
+      "block": "blk_7a0a7b3466c04bdd",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e69b38e7358d4e07",
+      "block": "blk_3a9004f35a81434f",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 2 個）"
+    },
+    {
+      "id": "q_e6f95bbaf2f04a0e",
+      "block": "blk_1915fac74de64aeb",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e71014210f0d407e",
+      "block": "blk_db68f319dc3e45b5",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e722f9b4775b4b62",
+      "block": "blk_d7d4db95b28b4f8f",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e82dba22c96f488e",
+      "block": "blk_300d13f452db4d95",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_e976afe605b647ab",
+      "block": "blk_d5c0efec48b44195",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ea47eb71d8904ef9",
+      "block": "blk_71f7fb97e5d14d62",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_eaf442370d9848ef",
+      "block": "blk_17a18423e6da44f8",
+      "kind": "demo",
+      "how": "多個相同文本段落，取最短者（原 3 個）"
+    },
+    {
+      "id": "q_ec941856d2f74336",
+      "block": "blk_b2e20b14999b4923",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ecad5e4a73374b0c",
+      "block": "blk_3d702a8dcd584599",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_eccb8273ab764e93",
+      "block": "blk_30f9f6d099cc4d00",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ecd892f2c7d54a09",
+      "block": "blk_87e09bb767974568",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ed44bfa0772c4c0c",
+      "block": "blk_232f985359324cf7",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ed4bdd3131a64922",
+      "block": "blk_300d13f452db4d95",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ed8b1ea46b0d438b",
+      "block": "blk_778449cfea9d41da",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ee5d1dfcb4f64fd5",
+      "block": "blk_0b3de8ef35144bdc",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ef041fc8c0da40ec",
+      "block": "blk_b2e20b14999b4923",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_f34134c2e5fa45f7",
+      "block": "blk_06b1486af0724fff",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_f4fa9d8fa9e44703",
+      "block": "blk_695c93baeadf4adc",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_f523e88f93ab4308",
+      "block": "blk_2c710ccfd42f4a0e",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_f58d4a042bd04ab5",
+      "block": "blk_cd0c223b014642e0",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_f5db29c8c6b34cd7",
+      "block": "blk_b91bdf66264f4c65",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_f5db7adbba864a81",
+      "block": "blk_ba4a2ba50b9045f1",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_f6607b624cc7488c",
+      "block": "blk_45bbc3262e1b4856",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_f72fa21d968840a2",
+      "block": "blk_fb75208e54af4533",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_f8426fb19d1d4882",
+      "block": "blk_dda4ca19ee7e4ca6",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_f86356d9a4954161",
+      "block": "blk_300d13f452db4d95",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_f885855acb5f4793",
+      "block": "blk_eb80cc52600f4986",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_fa4a7ffdc57b4883",
+      "block": "blk_4d999d500a0343bb",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_faf4a131bf7d4048",
+      "block": "blk_eac08220767d4153",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_fc00be2f82a740d1",
+      "block": "blk_491803410f2143df",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_fc23cbe98c44491b",
+      "block": "blk_80f3229794d04a5c",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_fc3f08a833fe440c",
+      "block": "blk_f4793afd27d5413a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_fcadace41db8448b",
+      "block": "blk_6d3a3c24b4c54e8a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_fdbaa11c4c004233",
+      "block": "blk_7bc15408b40f4914",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_fe1f76063a884635",
+      "block": "blk_6217738a70db4900",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_fe830714e0b44139",
+      "block": "blk_ad4d95c04f9f4f23",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_fe9aaa4c7a2c44e5",
+      "block": "blk_c2dae6f777fb4833",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_fed9f61a82464086",
+      "block": "blk_edd3fd5c8944467a",
+      "kind": "demo",
+      "how": "節錄全文"
+    },
+    {
+      "id": "q_ff3822275c434a2a",
+      "block": "blk_295808779f184f33",
+      "kind": "demo",
+      "how": "節錄全文"
+    }
+  ],
+  "skippedItems": []
+}
