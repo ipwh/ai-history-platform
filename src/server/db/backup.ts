@@ -4,13 +4,18 @@
  * 背景：Cloud Run 的容器檔案系統是暫時性的，重新部署或縮容後資料庫會消失。
  * 這個模組用最小的成本把資料保留在 Google Cloud 內：
  *   1. 啟動時（Next.js instrumentation）由 Cloud Storage 還原資料庫。
- *   2. 執行期間每隔 `BACKUP_INTERVAL_SECONDS` 以 `db.backup()` 產生一致快照並上傳。
+ *   2. 執行期間每隔 `BACKUP_INTERVAL_SECONDS` 以 `VACUUM INTO` 產生一致快照並上傳。
  *   3. 收到 SIGTERM／SIGINT（Cloud Run 部署或縮容時會收到）時立即做最後一次備份。
+ *
+ * 鎖定防護：備份**不會**直接複製主資料庫檔案。WAL 模式下主檔案本身不含最新交易日誌，
+ * 直接複製（或在寫入途中讀取）會得到損毀或過期的資料；因此一律以
+ * `VACUUM INTO` 在單一交易內匯出到暫存目錄，再把該快照上傳。
  *
  * 認證：使用執行環境的服務帳戶（Cloud Run 的 metadata server）取得存取權杖，
  * 不需要在映像檔或程式碼內放置任何金鑰；本機未設定 BACKUP_BUCKET 時完全不會啟用。
  */
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 import { getServerConfig, type BackupConfig } from "../config";
@@ -20,8 +25,12 @@ const METADATA_TOKEN_URL =
   "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token";
 const STORAGE_API_BASE = "https://storage.googleapis.com";
 const UPLOAD_BASE = "https://storage.googleapis.com/upload/storage/v1";
-/** 資料庫快照的暫存檔名（與資料庫同目錄，確保同一個檔案系統） */
+/** 舊版快照檔名後綴（與資料庫同目錄）；只在還原時清理殘留檔案，新版本改用暫存目錄 */
 const SNAPSHOT_SUFFIX = ".backup";
+/** 快照暫存目錄名稱（位於作業系統的暫存目錄下） */
+const SNAPSHOT_DIR_NAME = "history-platform-backup";
+/** 殘留快照的最長保留時間：逾時即清除，避免程序被強制終止後暫存檔不斷累積 */
+const SNAPSHOT_MAX_AGE_MS = 60 * 60 * 1000;
 
 export interface BackupStatus {
   enabled: boolean;
@@ -132,14 +141,28 @@ function describeFetchError(error: unknown): string {
   return `${error.message}：${String(cause)}`;
 }
 
+/** HTTP 4xx（權限、bucket 不存在等設定問題）重試沒有意義；408／429 屬暫時性，仍會重試 */
+function isPermanentClientError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const match = /（HTTP (\d{3})）/.exec(error.message);
+  if (!match) return false;
+  const status = Number(match[1]);
+  if (status < 400 || status >= 500) return false;
+  return status !== 408 && status !== 429;
+}
+
 /**
- * 上載失敗時重試（網絡抖動或 Google 端 5xx 不應令備份失敗）。
- * 4xx（權限、bucket 不存在等）屬設定問題，重試沒有意義，會立即回報。
+ * 上載／下載失敗時重試（網絡抖動或 Google 端 5xx 不應令備份失敗）。
+ *
+ * 採用**指數退避**（300ms、600ms、1200ms…，上限 30 秒）並加入 20% 隨機抖動：
+ * 多個執行個體同時失敗時不會在同一刻一起重試，避免再次打爆對方。
+ * 4xx（權限、bucket 不存在等）屬設定問題，重試沒有意義，會立即回報；
+ * 408／429 屬暫時性，仍然重試。每次重試都會記錄原因，方便由日誌追查。
  */
 async function withRetry<T>(
   operation: () => Promise<T>,
-  attempts = 3,
-  delayMs = 300,
+  attempts = 4,
+  baseDelayMs = 300,
 ): Promise<T> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -147,9 +170,13 @@ async function withRetry<T>(
       return await operation();
     } catch (error) {
       lastError = error;
-      const clientError = error instanceof Error && error.message.includes("（HTTP 4");
-      if (clientError || attempt === attempts) break;
-      await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+      if (isPermanentClientError(error) || attempt === attempts) break;
+      const delay = Math.min(baseDelayMs * 2 ** (attempt - 1), 30_000);
+      const jitter = Math.round(delay * 0.2 * Math.random());
+      console.warn(
+        `[backup] 第 ${attempt}/${attempts} 次嘗試失敗，${delay + jitter} 毫秒後重試：${describeFetchError(error)}`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay + jitter));
     }
   }
   throw lastError;
@@ -227,13 +254,48 @@ export async function uploadBackup(
   }
 }
 
+/** 快照暫存目錄：使用作業系統的暫存目錄，避免在主資料庫旁邊產生大檔案並與 WAL 争用空間 */
+function snapshotDirectory(): string {
+  return path.join(os.tmpdir(), SNAPSHOT_DIR_NAME);
+}
+
+/** 每次備份使用獨立檔名，避免同一部機器上的多個執行個體互相覆寫快照 */
+function nextSnapshotPath(): string {
+  return path.join(snapshotDirectory(), `app-${process.pid}-${Date.now()}.db`);
+}
+
+/**
+ * 清除殘留的快照（程序被強制終止時 `finally` 不會執行）。
+ * 只在備份前順手清理，成本為一次資料夾讀取，失敗不影響備份。
+ */
+function pruneStaleSnapshots(now = Date.now()): void {
+  const directory = snapshotDirectory();
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(directory);
+  } catch {
+    return;
+  }
+  for (const entry of entries) {
+    const filePath = path.join(directory, entry);
+    try {
+      if (now - fs.statSync(filePath).mtimeMs > SNAPSHOT_MAX_AGE_MS) {
+        fs.rmSync(filePath, { force: true });
+      }
+    } catch {
+      // 個別檔案清理失敗不影響備份
+    }
+  }
+}
+
 /**
  * 產生一致的資料庫快照。
  *
  * 使用 SQLite 的 `VACUUM INTO`：它會在單一交易內把資料庫完整複製到新檔案，
- * 因此即使同時有寫入，備份內容仍然一致（node:sqlite 在這個 Node 版本沒有 backup()）。
+ * 因此即使同時有寫入，備份內容仍然一致，亦**不會**直接讀取正在寫入的主資料庫
+ * （WAL 模式下主檔案本身不含最新交易日誌，直接複製會得到過期或損毀的資料）。
  */
-export async function snapshotDatabase(databasePath: string, snapshotPath: string): Promise<number> {
+export async function snapshotDatabase(snapshotPath: string): Promise<number> {
   fs.rmSync(snapshotPath, { force: true });
   fs.mkdirSync(path.dirname(snapshotPath), { recursive: true });
   getDb().prepare("VACUUM INTO ?").run(snapshotPath);
@@ -263,9 +325,10 @@ export async function backupNow(io: BackupIO = {}, options: { force?: boolean } 
     return;
   }
 
-  const snapshotPath = `${databasePath}${SNAPSHOT_SUFFIX}`;
+  pruneStaleSnapshots();
+  const snapshotPath = nextSnapshotPath();
   try {
-    const bytes = await snapshotDatabase(databasePath, snapshotPath);
+    const bytes = await snapshotDatabase(snapshotPath);
     // 網絡抖動不應令一次備份失敗（失敗會累積成資料遺失風險）
     await withRetry(() => uploadBackup(config, snapshotPath, io));
     status.lastSuccessAt = new Date().toISOString();

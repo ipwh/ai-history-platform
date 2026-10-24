@@ -80,7 +80,9 @@ describe("教師測試學生端", () => {
     const result = practice.getPracticeResult(created.session.id, TEACHER);
     expect(result.totalQuestions).toBe(created.questions.length);
     expect(result.answeredCount).toBe(1);
-    expect(result.feedback.length).toBe(created.questions.length);
+    // 未作答的題目不會提供回饋：回饋含標準答案及解釋，若在作答前就回傳，
+    // 學生可在提交答案前先讀取結果端點取得答案（見 getPracticeResult 的說明）。
+    expect(result.feedback).toHaveLength(1);
     expect(result.feedback.filter((item) => item.answer.length > 0)).toHaveLength(1);
 
     // 重做錯題

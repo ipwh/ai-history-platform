@@ -617,22 +617,32 @@ export const questionSchema = questionBaseSchema.superRefine((value, ctx) => {
 });
 export type Question = z.infer<typeof questionBaseSchema>;
 
+/**
+ * 學生端題目只允許出現的欄位（**白名單**）。
+ *
+ * 刻意不用「從完整題目剔除敏感欄位」的寫法：題目結構日後新增欄位（例如新的教師
+ * 查核資訊）時，剔除清單不會自動更新，新欄位就會靜默外洩到學生端。以白名單列出
+ * 作答真正需要的欄位，新增欄位預設不會出現在學生端，必須明確加入才可外洩。
+ *
+ * 注意：`question` 是題幹（stem）；`correctAnswer`、`acceptedAnswers`、`explanation`、
+ * `sourceExcerpt` 等一律不在此列，作答前不可傳給瀏覽器。`knowledgePoint`（考核的知識點）
+ * 亦刻意不在此列：它往往就是標準答案（例如填「＿＿＿是1914至1918年的世界大戰」時
+ * 知識點寫「第一次世界大戰」），作答前傳給瀏覽器等於直接給出答案；作答後由回饋提供。
+ */
+export const studentQuestionFields = {
+  id: true,
+  topicId: true,
+  sectionId: true,
+  questionType: true,
+  difficulty: true,
+  question: true,
+  options: true,
+  origin: true,
+  skill: true,
+} as const;
+
 /** 提供給學生作答的題目（不含答案，避免未作答前洩露） */
-export const studentQuestionSchema = questionBaseSchema.omit({
-  correctAnswer: true,
-  acceptedAnswers: true,
-  explanation: true,
-  gradingPoints: true,
-  sourceExcerpt: true,
-  // 來源位置及段落 ID 同樣是教材依據的一部分：未作答前不需要，作答後由回饋提供
-  // （且只在來源文件已確認可向學生發布時才提供，見 studentExcerptVisibility）
-  sourceLocation: true,
-  sourceBlockIds: true,
-  // 品質警告屬教師查核資訊，學生端不會看到
-  qualityWarnings: true,
-  // 自動發布暫緩狀態同樣屬教師查核資訊
-  teacherConfirmationRequired: true,
-});
+export const studentQuestionSchema = questionBaseSchema.pick(studentQuestionFields);
 export type StudentQuestion = z.infer<typeof studentQuestionSchema>;
 
 /** 教師建立／修改題目時提交的內容（自動品質驗證欄位由伺服器管理，不接受前端提供） */

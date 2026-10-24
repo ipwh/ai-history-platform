@@ -6,7 +6,6 @@
  */
 import {
   practiceSetupSchema,
-  studentQuestionSchema,
   QUESTION_TYPE_LABELS,
   type AiGrading,
   type AssembledPractice,
@@ -40,7 +39,8 @@ import {
 } from "../repositories/practice";
 import { getQuestion, listQuestions } from "../repositories/questions";
 import { expandSectionIds, getTopic, sectionTitleMap } from "../repositories/topics";
-import { calculateAccuracy, gradeAnswer, type GradeOutcome } from "./grading";
+import { toStudentQuestions } from "../../lib/student-question";
+import { calculateAccuracy, gradeAnswer, gradeSubmittedAnswer, type GradeOutcome } from "./grading";
 import { gradeWithAi } from "./ai-grading";
 import { generateQuestions } from "./question-service";
 import { checkQuestionServable } from "./question-servability";
@@ -106,10 +106,6 @@ function shuffle<T>(items: T[]): T[] {
 function shuffleQuestionOptions(question: Question): Question {
   if (question.questionType !== "mc" || question.options.length < 2) return question;
   return { ...question, options: shuffle(question.options) };
-}
-
-function toStudentQuestion(question: Question): StudentQuestion {
-  return studentQuestionSchema.parse(question);
 }
 
 function getCompleteSessionQuestions(session: PracticeSession): Question[] {
@@ -738,7 +734,7 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
 
   return {
     session,
-    questions: prepared.map(toStudentQuestion),
+    questions: toStudentQuestions(prepared),
     notice: session ? (notices.length > 0 ? notices.join(" ") : null) : null,
   };
 }
@@ -764,7 +760,7 @@ export function getPracticeView(sessionId: string, learnerId: string): PracticeV
 
   return {
     session,
-    questions: questions.map(toStudentQuestion),
+    questions: toStudentQuestions(questions),
     notice: getSessionNotice(sessionId),
     feedback: questions
       .filter((question) => attemptByQuestion.has(question.id))
@@ -788,7 +784,7 @@ export async function submitAnswer(
   sessionId: string,
   learnerId: string,
   questionId: string,
-  answer: string,
+  answer: string | string[],
 ): Promise<SubmitAnswerResult> {
   const session = getSession(sessionId);
   if (!session) throw new PracticeServiceError("找不到這次練習記錄", 404);
@@ -833,12 +829,12 @@ export async function submitAnswer(
     );
   }
 
-  const trimmed = answer.trim();
+  const trimmed = (typeof answer === "string" ? answer : answer.join(" ／ ")).trim();
   if (trimmed.length === 0) {
     throw new PracticeServiceError("請先作答再提交。", 400);
   }
 
-  const outcome = gradeAnswer(question, trimmed);
+  const outcome = gradeSubmittedAnswer(question, answer);
 
   // 填充題在逐字比對不合格時，會以 AI 按語意再判斷一次，
   // 避免因為用字、詞序或補充說明等與答案無關的差異而被判錯。
@@ -908,10 +904,15 @@ export function getPracticeResult(sessionId: string, learnerId: string): Practic
   const attemptByQuestion = new Map(attempts.map((attempt) => [attempt.questionId, attempt]));
   const titles = sectionTitleMap(session.topicId);
 
-  const feedback = questions.map((question) => {
-    const attempt = attemptByQuestion.get(question.id) ?? null;
-    return buildFeedback(question, attempt?.answer ?? "", attempt, questionUsesOcr(question));
-  });
+  // 未作答的題目**不會**提供回饋：`buildFeedback` 包含標準答案及解釋，而
+  // `/api/practice/{sessionId}/result` 在練習完成前亦可呼叫，若連未作答的題目一併回傳，
+  // 學生只須在作答前讀取回應即可取得全部答案（防作弊缺口）。
+  const feedback = questions
+    .filter((question) => attemptByQuestion.has(question.id))
+    .map((question) => {
+      const attempt = attemptByQuestion.get(question.id)!;
+      return buildFeedback(question, attempt.answer, attempt, questionUsesOcr(question));
+    });
 
   const graded = feedback.filter((item) => item.autoGraded);
   const correctCount = graded.filter((item) => item.isCorrect === true).length;

@@ -347,10 +347,12 @@ describe("D 批改失敗", () => {
     expect(gradeAnswer(question({}), "公共衛生局").isCorrect).toBe(true);
   });
 
-  it("D2 簡繁差異（只差一個字）不會被靜默判錯，會標示不確定", () => {
+  it("D2 簡繁差異（只差一個字）現已由歷史科專名同義詞庫接受", () => {
+    // 2026-10-24：加入繁簡容錯（lib/history-lexicon 的簡體→繁體字元對照）後，
+    // 學生以簡體字輸入同一答案會直接判為正確，毋須再標示不確定。
     const outcome = gradeAnswer(question({}), "公共卫生局");
-    expect(outcome.isCorrect).toBe(false);
-    expect(outcome.uncertain).toBe(true);
+    expect(outcome.isCorrect).toBe(true);
+    expect(outcome.uncertain).toBeUndefined();
   });
 
   it("D3 同義異稱（廟號對課本用語）目前無法批改 → 記錄為限制", () => {

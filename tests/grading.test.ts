@@ -189,3 +189,43 @@ describe("緊貼答案的無關英文字元", () => {
     expect(hasAttachedLatinJunk("", ["文字"])).toBe(false);
   });
 });
+
+/**
+ * 歷史科專名同義詞庫（lib/history-lexicon）整合：填充題應該接受同一專名的其他
+ * 正確寫法；但名稱相近而指不同事件的答案不可因此得分。
+ */
+describe("歷史專名同義詞", () => {
+  const fill = (correctAnswer: string, acceptedAnswers: string[] = []) =>
+    buildQuestion({
+      questionType: "fill",
+      options: [],
+      correctAnswer,
+      acceptedAnswers,
+      question: "＿＿＿是課堂提及的重要事件。",
+    });
+
+  it("填充題接受簡稱、舊譯名及英文寫法", () => {
+    expect(gradeAnswer(fill("第一次世界大戰"), "一戰").isCorrect).toBe(true);
+    expect(gradeAnswer(fill("第一次世界大戰"), "WWI").isCorrect).toBe(true);
+    expect(gradeAnswer(fill("南京條約"), "江寧條約").isCorrect).toBe(true);
+    expect(gradeAnswer(fill("明治維新"), "明治變法").isCorrect).toBe(true);
+  });
+
+  it("同義詞寫法不會被標示為需要覆核（已確定為正確）", () => {
+    expect(gradeAnswer(fill("第一次世界大戰"), "一戰").uncertain).toBeUndefined();
+  });
+
+  it("不同事件不會因同義詞庫而互相匹配", () => {
+    expect(gradeAnswer(fill("第一次世界大戰"), "第二次世界大戰").isCorrect).toBe(false);
+  });
+
+  it("選擇題不接受同義詞（避免名稱相近但錯誤的選項得分）", () => {
+    const question = buildQuestion({
+      options: ["第一次世界大戰", "第二次世界大戰"],
+      correctAnswer: "第二次世界大戰",
+      question: "1939年至1945年間發生的是哪一場戰爭？",
+    });
+    expect(gradeAnswer(question, "第二次世界大戰").isCorrect).toBe(true);
+    expect(gradeAnswer(question, "二戰").isCorrect).toBe(false);
+  });
+});

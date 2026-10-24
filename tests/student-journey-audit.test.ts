@@ -469,11 +469,12 @@ describe("批改契約（第 6 節）", () => {
       feedbackOf(await answer(learnerId, synonymSession, fill.id, "另一個同義詞語")).isCorrect,
     ).toBe(false);
 
-    // 簡體字答案不會被當成正確（現行行為；HK 課程使用繁體，屬已知限制）
+    // 簡體字答案現已判為正確（歷史科專名同義詞庫提供繁簡容錯；
+    // 見 src/lib/history-lexicon.ts 的簡體→繁體字元對照）
     const simplifiedSession = await sessionContaining(learnerId, fill.id, ["fill"]);
     expect(
       feedbackOf(await answer(learnerId, simplifiedSession, fill.id, "合成契约词语")).isCorrect,
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("空白答案會被拒絕（400）而不是當成答錯記錄", async () => {

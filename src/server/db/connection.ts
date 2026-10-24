@@ -64,8 +64,12 @@ export function openReadOnlyDatabase(databasePath: string): DatabaseSync {
 function openDatabase(databasePath: string): DatabaseSync {
   fs.mkdirSync(path.dirname(databasePath), { recursive: true });
   const db = new DatabaseSync(databasePath);
+  // WAL：讀寫不再互相阻塞，讀取不會被寫入鎖擋住。
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA foreign_keys = ON;");
+  // WAL 之下 synchronous = NORMAL 已能保證崩潰後資料庫不會損毀，同時避免每次交易
+  // 都強制 fsync；配合 busy_timeout，並發寫入會排隊重試而不是即時以 SQLITE_BUSY 失敗。
+  db.exec("PRAGMA synchronous = NORMAL;");
   // 兩個程序（例如備份腳本與伺服器，或同一磁碟上的兩個執行個體）同時啟動時，
   // migration 需要短暫的寫入鎖；沒有 busy_timeout 會立即以 SQLITE_BUSY 失敗。
   db.exec("PRAGMA busy_timeout = 5000;");

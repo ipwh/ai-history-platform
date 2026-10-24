@@ -1,7 +1,9 @@
 /**
- * 自動評分。選擇題及填充題以逐字比對（正規化後）自動評分。
+ * 自動評分。選擇題及填充題以逐字比對（正規化後）自動評分；填充題另有歷史科
+ * 專名同義詞庫（見 lib/history-lexicon）處理簡稱、舊譯名及繁簡差異。
  */
 import type { Question } from "../../lib/types";
+import { historyAnswersMatch } from "../../lib/history-lexicon";
 
 /** 全形轉半形（處理英文字母及數字） */
 function toHalfWidth(value: string): string {
@@ -129,16 +131,27 @@ export function gradeAnswer(question: Question, answer: string): GradeOutcome {
     return { autoGraded: true, isCorrect: false };
   }
 
-  const accepted = [
+  const acceptedCandidates = [
     ...(question.questionType === "fill"
       ? answerAlternatives(question.correctAnswer)
       : [question.correctAnswer]),
     ...question.acceptedAnswers.flatMap((candidate) => answerAlternatives(candidate)),
-  ]
+  ];
+  const accepted = acceptedCandidates
     .map((candidate) => normalizeAnswer(candidate))
     .filter((candidate) => candidate.length > 0);
 
   if (accepted.includes(normalizedAnswer)) {
+    return { autoGraded: true, isCorrect: true };
+  }
+
+  // 歷史科專名同義詞（例如「一戰」＝「第一次世界大戰」、「江寧條約」＝「南京條約」）。
+  // 只套用於填充題：選擇題的選項是互斥的完整文字，若容許同義詞，學生揀了一個
+  // 名稱相近但錯誤的選項（例如把「第二次世界大戰」當成「第一次世界大戰」）亦會得分。
+  if (
+    question.questionType === "fill" &&
+    acceptedCandidates.some((candidate) => historyAnswersMatch(answer, candidate))
+  ) {
     return { autoGraded: true, isCorrect: true };
   }
 
@@ -149,6 +162,38 @@ export function gradeAnswer(question: Question, answer: string): GradeOutcome {
   }
 
   return { autoGraded: true, isCorrect: false };
+}
+
+/**
+ * 依學生提交的作答評分（支援多個空格）。
+ *
+ * 陣列代表多個空白依序作答（例如「＿＿＿條約」加上「＿＿＿年」）：
+ *   - 標準答案同樣以「/」列出多項時，逐項比對，全部正確才算正確；
+ *   - 項數不一致或題型不是填充題時，把各項串接後比對，行為與單一答案相同。
+ */
+export function gradeSubmittedAnswer(
+  question: Question,
+  answer: string | string[],
+): GradeOutcome {
+  if (typeof answer === "string") return gradeAnswer(question, answer);
+
+  const parts = answer.map((part) => part.trim()).filter((part) => part.length > 0);
+  if (parts.length === 0) return { autoGraded: true, isCorrect: false };
+  if (question.questionType !== "fill" || parts.length === 1) {
+    return gradeAnswer(question, parts.join(""));
+  }
+
+  const expected = answerAlternatives(question.correctAnswer);
+  if (expected.length !== parts.length) {
+    return gradeAnswer(question, parts.join(""));
+  }
+
+  const outcomes = parts.map((part, index) =>
+    gradeAnswer({ ...question, correctAnswer: expected[index]! }, part),
+  );
+  const isCorrect = outcomes.every((outcome) => outcome.isCorrect === true);
+  const uncertain = !isCorrect && outcomes.some((outcome) => outcome.uncertain === true);
+  return uncertain ? { autoGraded: true, isCorrect, uncertain } : { autoGraded: true, isCorrect };
 }
 
 /** 正確率（只計可自動評分的題目） */

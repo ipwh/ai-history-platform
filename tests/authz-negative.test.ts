@@ -499,6 +499,8 @@ const PUBLIC_API_ROUTES = new Set([
   "POST /api/practice/[sessionId]/answers",
   "POST /api/practice/[sessionId]/complete",
   "GET /api/practice/[sessionId]/result",
+  // 伺服器端批改：答案只在伺服器比對，提交後才回傳正確答案（見 quiz-submission-service）
+  "POST /api/quiz/submit",
   "POST /api/reports",
   // 學生自己的學習進度、重溫佇列及建議（學習者身分由工作階段推導，不接受偽造）
   "GET /api/progress",
@@ -654,6 +656,25 @@ describe("練習資源的擁有權（跨學生）", () => {
         run: async () => {
           const { GET } = await import("@/app/api/practice/[sessionId]/result/route");
           return GET(new Request(`http://localhost:3000/api/practice/${sessionId}/result`, { headers: { cookie: otherCookie } }), { params });
+        },
+      },
+      {
+        // 獨立批改端點接受 sessionId；其他學生不可藉此讀取或提交他人的練習
+        label: "POST /api/quiz/submit",
+        run: async () => {
+          const { POST } = await import("@/app/api/quiz/submit/route");
+          return POST(
+            new Request("http://localhost:3000/api/quiz/submit", {
+              method: "POST",
+              headers: { cookie: otherCookie, "content-type": "application/json" },
+              body: JSON.stringify({
+                learnerId: "attacker-supplied",
+                sessionId,
+                questionId,
+                studentAnswer: "人文主義",
+              }),
+            }),
+          );
         },
       },
     ];
