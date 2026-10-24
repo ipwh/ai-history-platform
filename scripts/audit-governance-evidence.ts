@@ -22,11 +22,22 @@ import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
+import { questionFingerprint } from "../src/server/quality/question-fingerprint";
+
 interface QuestionRow {
   id: string;
   topic_id: string;
   section_id: string | null;
   question_type: string;
+  difficulty: string;
+  question: string;
+  options_json: string | null;
+  correct_answer: string;
+  accepted_answers_json: string | null;
+  explanation: string;
+  knowledge_point: string;
+  grading_points_json: string | null;
+  skill: string | null;
   origin: string;
   status: string;
   revision: number;
@@ -82,6 +93,17 @@ export interface GovernanceRow {
   /** 第一項品質警告（只用於顯示暫緩原因，不含題目內容） */
   primaryReason: string;
   approvedReviewAtCurrentRevision: string | null;
+  /**
+   * 現行版本內容是否與「最近一次 approved 覆核」所見的內容完全相同
+   * （以 `questionFingerprint` 比對，涵蓋分節、題型、難度、題幹、選項、答案、
+   * 可接受寫法、解釋、知識點、技能）。
+   *
+   * `null` = 完全沒有 approved 覆核紀錄可比對。
+   *
+   * 注意：這是**事實比對**（內容有否改動），不是批准判斷。內容相同也不代表
+   * 舊批准自動適用於現行版本——那是需要歷史科主任決定的政策問題。
+   */
+  contentMatchesApproved: boolean | null;
   staleApprovedRevisions: number[];
   autoValidatedRevision: number | null;
   hasSourceBlocks: boolean;
@@ -128,6 +150,24 @@ export function buildGovernanceRows(
     const autoCurrent = question.auto_validated_revision === question.revision;
     const sourceBlocks = parseArray(question.source_block_ids_json);
     const warnings = parseArray(question.quality_warnings_json);
+    // 與最近一次 approved 覆核的內容指紋比對（純函式，不讀寫資料庫）。
+    const latestApproved = approved[approved.length - 1];
+    const currentFingerprint = questionFingerprint({
+      topicId: question.topic_id,
+      sectionId: question.section_id,
+      questionType: question.question_type,
+      difficulty: question.difficulty,
+      question: question.question,
+      options: parseArray(question.options_json),
+      correctAnswer: question.correct_answer,
+      acceptedAnswers: parseArray(question.accepted_answers_json),
+      explanation: question.explanation,
+      knowledgePoint: question.knowledge_point,
+      gradingPoints: parseArray(question.grading_points_json),
+      skill: question.skill,
+    } as unknown as Parameters<typeof questionFingerprint>[0]);
+    const contentMatchesApproved =
+      latestApproved === undefined ? null : latestApproved.question_fingerprint === currentFingerprint;
     return {
       id: question.id,
       origin: question.origin,
@@ -136,6 +176,7 @@ export function buildGovernanceRows(
       state: classify(question, approvedAtCurrent, staleApprovedRevisions, autoCurrent),
       teacherConfirmationRequired: Number(question.teacher_confirmation_required) === 1,
       primaryReason: warnings[0] ?? "（沒有品質警告記錄）",
+      contentMatchesApproved,
       approvedReviewAtCurrentRevision: approvedAtCurrent
         ? `${approvedAtCurrent.created_at} ${approvedAtCurrent.reviewer_email}`
         : null,
@@ -170,7 +211,9 @@ function main(): void {
   try {
     questions = db
       .prepare(
-        `SELECT id, topic_id, section_id, question_type, origin, status, revision,
+        `SELECT id, topic_id, section_id, question_type, difficulty, question, options_json,
+                correct_answer, accepted_answers_json, explanation, knowledge_point,
+                grading_points_json, skill, origin, status, revision,
                 auto_validated_at, auto_validated_revision, teacher_confirmation_required,
                 source_block_ids_json, source_excerpt, source_verified, quality_warnings_json,
                 created_at
@@ -238,6 +281,20 @@ function main(): void {
       publishedWithoutSourceExcerpt: published.filter((row) => !row.hasSourceExcerpt).length,
       publishedSourceNotVerified: published.filter((row) => !row.sourceVerified).length,
     },
+    /**
+     * 舊版批准與現行內容的事實比對（Sprint 27）。
+     *
+     * `staleApprovalContentIdentical`：只有舊 revision 批准，但**現行內容的指紋與
+     * 最後一次批准完全相同**——即改動沒有觸及學生看到的內容（例如只改狀態或分類）。
+     * `staleApprovalContentChanged`：內容確實已改動。
+     * 兩者都仍是「舊版批准」，是否可覆蓋現行版本屬**政策決定**，不由工具判定。
+     */
+    staleApprovalBreakdown: {
+      contentIdentical: gaps.filter((row) => row.state === "stale-approval-only" && row.contentMatchesApproved === true).length,
+      contentChanged: gaps.filter((row) => row.state === "stale-approval-only" && row.contentMatchesApproved === false).length,
+      unknown: gaps.filter((row) => row.state === "stale-approval-only" && row.contentMatchesApproved === null).length,
+      neverApproved: gaps.filter((row) => row.state === "no-current-evidence").length,
+    },
   };
 
   if (argv.includes("--json")) {
@@ -273,6 +330,12 @@ function main(): void {
     console.log(`  沒有教材段落 ID：${summary.provenanceFlags.publishedWithoutSourceBlocks}`);
     console.log(`  沒有來源節錄：${summary.provenanceFlags.publishedWithoutSourceExcerpt}`);
     console.log(`  未經來源核對（source_verified=0）：${summary.provenanceFlags.publishedSourceNotVerified}`);
+    console.log("");
+    console.log("舊版批准與現行內容的事實比對（不代表批准有效，屬政策決定）：");
+    console.log(`  內容指紋與最後一次批准完全相同：${summary.staleApprovalBreakdown.contentIdentical}`);
+    console.log(`  內容已改動：${summary.staleApprovalBreakdown.contentChanged}`);
+    console.log(`  無法比對（無指紋）：${summary.staleApprovalBreakdown.unknown}`);
+    console.log(`  從未有任何批准：${summary.staleApprovalBreakdown.neverApproved}`);
     console.log("");
     console.log("注意：本工具只指出**證據缺口**，不代表內容錯誤、侵權或已獲批准。");
     console.log("      「有 approved 覆核」亦不代表史實正確或版權已清。");

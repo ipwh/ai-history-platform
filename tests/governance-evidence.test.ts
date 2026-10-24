@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildGovernanceRows } from "../scripts/audit-governance-evidence";
+import { questionFingerprint } from "@/server/quality/question-fingerprint";
 
 /**
  * 治理證據分類的單元測試（Sprint 26）。
@@ -128,5 +129,54 @@ describe("已發布題目的證據分類", () => {
     );
     expect(row?.primaryReason).toContain("唯一");
     expect(row?.primaryReason).not.toContain("第二項");
+  });
+
+  it("可以判定現行內容是否與最後一次批准完全相同（事實比對，不是批准判斷）", () => {
+    const base = question();
+    const sameFingerprint = questionFingerprint({
+      topicId: "topic-5",
+      sectionId: "topic-5-renaissance",
+      questionType: "mc",
+      difficulty: "basic",
+      question: "（合成）題幹",
+      options: ["甲", "乙", "丙", "丁"],
+      correctAnswer: "甲",
+      acceptedAnswers: [],
+      explanation: "解釋",
+      knowledgePoint: "知識點",
+      gradingPoints: [],
+      skill: null,
+    } as unknown as Parameters<typeof questionFingerprint>[0]);
+
+    const [identical] = buildGovernanceRows(
+      [
+        question({
+          revision: 3,
+          question: "（合成）題幹",
+          options_json: '["甲","乙","丙","丁"]',
+          correct_answer: "甲",
+          accepted_answers_json: "[]",
+          explanation: "解釋",
+          knowledge_point: "知識點",
+          grading_points_json: "[]",
+          skill: null,
+          topic_id: "topic-5",
+          section_id: "topic-5-renaissance",
+          difficulty: "basic",
+          question_type: "mc",
+        }),
+      ],
+      [review({ revision: 2, question_fingerprint: sameFingerprint })],
+    );
+    // 內容指紋與批准時相同 → 事實比對為「未改動」；但狀態仍是 stale-approval-only，
+    // 因為「舊版批准可否覆蓋」屬政策決定，工具不代為判定。
+    expect(identical?.contentMatchesApproved).toBe(true);
+    expect(identical?.state).toBe("stale-approval-only");
+
+    const [changed] = buildGovernanceRows([base], [review({ revision: 2, question_fingerprint: "different" })]);
+    expect(changed?.contentMatchesApproved).toBe(false);
+
+    const [neverApproved] = buildGovernanceRows([base], []);
+    expect(neverApproved?.contentMatchesApproved).toBeNull();
   });
 });
