@@ -504,6 +504,10 @@ const PUBLIC_API_ROUTES = new Set([
   "POST /api/reports",
   // 學生自己的學習進度、重溫佇列及建議（學習者身分由工作階段推導，不接受偽造）
   "GET /api/progress",
+  // AI 歷史自學學伴：只限已登入且在名冊內的學生（身分由工作階段推導）。
+  // 負向授權（401／跨學生 session 404／超額 429）見 tests/tutor-chat.test.ts。
+  "GET /api/tutor/chat",
+  "POST /api/tutor/chat",
 ]);
 
 /** 由檔案系統取得完整的 API 路由清單（route.ts 及其匯出的 HTTP 方法） */

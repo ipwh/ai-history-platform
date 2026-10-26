@@ -81,8 +81,10 @@ export function flagKey(questionId: string, flag: ContentFlag): string {
 /**
  * 由事件序列推導現行狀態。
  *
- * 事件必須已按時間排序（舊→新）；同一時間以輸入次序為準（呼叫端由 `created_at, id`
- * 排序即可）。每一題每一種標記只保留最後一個事件。
+ * 事件必須已按時間排序（舊→新）；同一時間以輸入次序為準（呼叫端由
+ * `created_at, rowid` 排序即可——**不可**用隨機的 `id` 作次要鍵，兩個事件在同一個
+ * 毫秒內寫入時，`id` 的隨機次序會令「先標記、後解除」被反轉成「已標記」）。
+ * 每一題每一種標記只保留最後一個事件。
  */
 export function deriveFlagStatuses(
   events: ContentFlagEvent[],
