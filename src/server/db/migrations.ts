@@ -1502,6 +1502,30 @@ export const MIGRATIONS: Migration[] = [
          ON question_quality_findings(detected_at DESC)`,
     ],
   },
+  {
+    id: "0031-ai-history-tutor",
+    statements: [
+      `CREATE TABLE IF NOT EXISTS tutor_sessions (
+        id TEXT PRIMARY KEY,
+        learnerId TEXT NOT NULL REFERENCES learners(id) ON DELETE CASCADE,
+        createdAt TEXT NOT NULL,
+        topicId TEXT REFERENCES topics(id) ON DELETE SET NULL,
+        lastTurnOnTopic INTEGER NOT NULL DEFAULT 1 CHECK (lastTurnOnTopic IN (0, 1))
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_tutor_sessions_learner_created
+         ON tutor_sessions(learnerId, createdAt DESC)`,
+      `CREATE TABLE IF NOT EXISTS tutor_messages (
+        id TEXT PRIMARY KEY,
+        sessionId TEXT NOT NULL REFERENCES tutor_sessions(id) ON DELETE CASCADE,
+        role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+        content TEXT NOT NULL,
+        tokensUsed INTEGER NOT NULL DEFAULT 0 CHECK (tokensUsed >= 0),
+        createdAt TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_tutor_messages_session_created
+         ON tutor_messages(sessionId, createdAt)`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {
