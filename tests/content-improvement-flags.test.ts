@@ -235,6 +235,25 @@ describe("applyContentFlags（套用）", () => {
     expect(service.hasOpenFlag("q-placeholder", "explanation_needs_rewrite")).toBe(false);
   });
 
+  it("同一毫秒內的標記與解除，按寫入次序判定（不受隨機 id 次序影響）", () => {
+    // 迴歸測試：`id` 由隨機 UUID 產生，若以 `created_at, id` 排序，兩個事件落在同一個
+    // 毫秒時「先標記、後解除」會被隨機次序反轉成「仍標記」，令這個測試偶爾失敗
+    // （CI 曾出現 expected 'open' to be 'cleared'）。排序的次要鍵必須是寫入次序（rowid）。
+    const createdAt = "2026-10-26T03:00:00.000Z";
+    const insert = getDb().prepare(
+      `INSERT INTO question_content_flags
+         (id, question_id, revision, question_fingerprint, flag, state, reason, actor_email, actor_role, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    // id 刻意與寫入次序相反
+    insert.run("qcf_zzz_mark", "q-placeholder", 1, "fingerprint-same-ms", "explanation_needs_rewrite", "open", "先標記", ACTOR.email, ACTOR.role, createdAt);
+    insert.run("qcf_aaa_clear", "q-placeholder", 1, "fingerprint-same-ms", "explanation_needs_rewrite", "cleared", "後解除", ACTOR.email, ACTOR.role, createdAt);
+
+    const [view] = service.listCurrentFlags(["q-placeholder"]);
+    expect(view.state).toBe("cleared");
+    expect(service.hasOpenFlag("q-placeholder", "explanation_needs_rewrite")).toBe(false);
+  });
+
   it("缺少理由時失敗，而且不會寫入", () => {
     const report = service.applyContentFlags(
       [

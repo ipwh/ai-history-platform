@@ -131,7 +131,7 @@ export function listContentFlagEvents(filter: {
   const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const rows = db
     .prepare(
-      `SELECT * FROM question_content_flags ${where} ORDER BY created_at ASC, id ASC`,
+      `SELECT * FROM question_content_flags ${where} ORDER BY created_at ASC, rowid ASC`,
     )
     .all(...params) as unknown as ContentFlagRow[];
   return rows.map(mapEvent);
@@ -150,7 +150,7 @@ export function countLatestFlagsByFlag(): Record<ContentFlag, number> {
         WHERE id = (
           SELECT id FROM question_content_flags AS latest
            WHERE latest.question_id = event.question_id AND latest.flag = event.flag
-           ORDER BY latest.created_at DESC, latest.id DESC LIMIT 1
+           ORDER BY latest.created_at DESC, latest.rowid DESC LIMIT 1
         )`,
     )
     .all() as unknown as { flag: string; state: string }[];
