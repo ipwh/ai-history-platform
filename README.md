@@ -2393,17 +2393,18 @@ gcloud run services update history-self-study --project pccss-ai-history --regio
 
 | 項目 | 值 |
 | --- | --- |
-| 來源 | `feat/ai-history-tutor`（commit `5d23131`），**未合併 `main`**；PR [#1](https://github.com/ipwh/ai-history-platform/pull/1) 仍為 Draft |
-| 建置 | Cloud Build `23e1053b-4dff-4517-b976-9797ec2f29b3`，**SUCCESS**（3M19S） |
-| Revision | **`history-self-study-00057-pxr`**（前一個：`00056-8rx`），100% 流量 |
+| 來源 | `feat/ai-history-tutor`（commit `4dcc49d` 之後的工作目錄），**未合併 `main`**；PR [#1](https://github.com/ipwh/ai-history-platform/pull/1) 仍為 Draft |
+| 建置 | 兩次 Cloud Build：`23e1053b`（3M19S）及 `e8ec992a`（4M17S），皆 **SUCCESS** |
+| Revision | **`history-self-study-00059-77s`**（100% 流量）；序列 `00056-8rx` → `00057-pxr` → `00058-kwh`（只改環境變數）→ `00059-77s` |
 | 部署指令 | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1` |
-| 資料庫 | 由既有 `BACKUP_BUCKET` 快照還原；啟動時自動套用 migration **`0031-ai-history-tutor`**（只新增 `tutor_sessions`、`tutor_messages`，不改既有表） |
+| 資料庫 | 由既有 `BACKUP_BUCKET` 快照還原；`00057-pxr` 啟動時自動套用 migration **`0031-ai-history-tutor`**（只新增 `tutor_sessions`、`tutor_messages`，不改既有表） |
 | 教材／題庫 | 未上載本機資料庫、未修改任何題目或教材；`/api/health` 顯示 46 份教材、26,599 段、學生可見 22 份（與上一 revision 相同） |
 
-驗證：`/api/health` 200（`ok`、`database: sqlite/ok`、`demoMode=false`、DeepSeek 已設定）；`GET`／`POST /api/tutor/chat`
-未登入均回 **401**；`GET /tutor` 200 且含「歷史科自學學伴」「僅供課後複習參考」「今日剩餘提問次數」；該 revision
-在 Cloud Logging **沒有** ERROR 級記錄。未驗證：真實學校帳戶登入後的串流對話、每日 15 次配額的正式環境行為、
-模型回應質素的科組覆核。完整證據（含未驗證清單及附帶發現）見
+驗證：`/api/health` 200（`ok`、`database: sqlite/ok`、`demoMode=false`、DeepSeek 已設定、備份 `restored`）；
+`GET /tutor` 未登入回 **307 → `/login?next=%2Ftutor`**（不再先送介面骨架，回應不含免責聲明或配額文字）；
+`GET`／`POST /api/tutor/chat` 未登入均回 **401**；`00059-77s` 在 Cloud Logging **沒有** ERROR 級記錄；
+`HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk` 已在該 revision。未驗證：真實學校帳戶登入後的串流對話、
+每日 15 次配額的正式環境行為、模型回應質素的科組覆核。完整證據（含未驗證清單及附帶發現）見
 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json)。
 
 回滾（只改流量，不影響資料）：
@@ -2413,11 +2414,16 @@ gcloud run services update-traffic history-self-study --project pccss-ai-history
   --to-revisions history-self-study-00056-8rx=100
 ```
 
-> **部署時發現的既有落差（本輪未改動）**：正式環境的 `HISTORY_REVIEWER_EMAILS` 現時是**空字串**。
-> 第十節曾記錄它已寫入執行中的 revision，但 `scripts/deploy-preserving-config.ps1` **沒有**讀取及傳遞這個值，
-> 因此自 revision `00056-8rx` 起已被回落為 `cloudbuild.yaml` 的預設 `""`，本輪沿用同一指令碼，`00057-pxr` 亦一樣。
-> 影響：Golden fixture 及「已修復並核准」的學科裁決一律 fail-closed 回 403，連擁有者都無法核准。修法見該證據檔的
-> `incidentalFindings`。
+> **同日修正的兩個部署缺陷（已修，並已在正式環境驗證）**
+>
+> 1. **`HISTORY_REVIEWER_EMAILS` 被清空**：`scripts/deploy-preserving-config.ps1` 只沿用部分線上設定，
+>    該變數回落到 `cloudbuild.yaml` 的預設 `""`，自 revision `00056-8rx` 起正式環境失去學科審核者，
+>    Golden fixture 及「已修復並核准」的學科裁決一律 fail-closed 403（連擁有者都無法核准）。
+>    已先以 `gcloud run services update --update-env-vars` 即時修復（`00058-kwh`），再修正指令碼令它讀取並
+>    傳遞 `_REVIEWER_EMAILS`、留空時輸出警告，然後重新部署（`00059-77s`）確認值仍在。
+> 2. **指令碼失去 UTF-8 BOM**：PowerShell 5.1 會把無 BOM 的 UTF-8 當 ANSI，中文註解令腳本無法解析
+>    （`The string is missing the terminator`）。已補回 BOM，並以 `Parser::ParseFile` 驗證 `PARSE_OK`。
+>    注意 `scripts/check-onedrive-health.ps1` 同樣無 BOM，本輪未改動，建議另行處理。
 
 ---
 
