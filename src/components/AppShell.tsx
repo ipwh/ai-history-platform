@@ -86,6 +86,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/", label: isStaff || demoMode ? "學生端測試" : "課題首頁", exact: true },
     { href: "/review", label: "重溫", exact: false },
+    // 歷史自學學伴：只顯示給已登入的學生。教師／管理員的 API 一律 403
+    // （見 src/lib/tutor-access.ts），因此不在此顯示，避免點了才發現不可用。
+    ...(role === "student" ? [{ href: "/tutor", label: "歷史學伴", exact: false }] : []),
     ...(authEnabled ? [{ href: "/account", label: "我的帳戶", exact: false }] : []),
     ...(showAdminNav ? ADMIN_NAV_ITEMS : []),
     ...(showTeacherNav ? TEACHER_NAV_ITEMS : []),
