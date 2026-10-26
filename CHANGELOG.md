@@ -22,7 +22,7 @@
 **分支**：`feat/ai-history-tutor`
 **Pull Request**：`#1`（Draft）<https://github.com/ipwh/ai-history-platform/pull/1>
 **基準**：`origin/main` = `ad34050`
-**狀態**：**未合併 `main`**（`main` 仍為 `ad34050`），但已由功能分支直接建置並部署為 Cloud Run revision **`history-self-study-00057-pxr`**（2026-10-26，預覽用途；證據見 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json)）。回滾只需把 100% 流量指回 `00056-8rx`。
+**狀態**：**未合併 `main`**（`main` 仍為 `ad34050`），但已由功能分支直接建置並部署為 Cloud Run revision **`history-self-study-00059-77s`**（2026-10-26，預覽用途；中間經 `00057-pxr` 首次部署及 `00058-kwh` 修復環境變數。證據見 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json)）。回滾只需把 100% 流量指回 `00056-8rx`。
 
 > 本功能的定位是「課後自學學伴」，**不是**全知老師，亦**不是**批改系統。介面及文件一律標示為 Beta，史實以課本與科任老師為準。
 
@@ -32,7 +32,7 @@
 | --- | --- |
 | `GET /api/tutor/chat` | 讀取自己的學伴對話（最近 40 則）及當日剩餘提問次數；同時回報 `windowLimitReached`，令前端可預先顯示時間窗已滿 |
 | `POST /api/tutor/chat` | 送出歷史提問；通過硬閘及配額檢查後以 **SSE** 串流回傳 DeepSeek 回應（`stream: true`、`temperature: 0.4`） |
-| `/tutor` 頁面 | 學生自學介面：Beta 標籤、免責聲明、剩餘次數、逐字串流、基本 Markdown（粗體／斜體／行內程式碼／列點／引號）；超額或時間窗已滿時輸入框轉為唯讀 |
+| `/tutor` 頁面 | 學生自學介面：Beta 標籤、免責聲明、剩餘次數、逐字串流、基本 Markdown（粗體／斜體／行內程式碼／列點／引號）；超額或時間窗已滿時輸入框轉為唯讀。頁面為 server component 並呼叫 `guardStudentPage("/tutor")`，未登入者由伺服器端 `307` 導向 `/login?next=%2Ftutor` |
 | [src/server/services/tutor.ts](src/server/services/tutor.ts) | 歷史主題硬閘、短跟進判定、香港時區日界線及每日配額計算 |
 | [src/server/repositories/tutor.ts](src/server/repositories/tutor.ts) | `tutor_sessions`／`tutor_messages` 的資料存取及當日提問計數 |
 | [tests/tutor-chat.test.ts](tests/tutor-chat.test.ts) | 14 項學伴測試（**全部 mock LLM**，不會發出真實 API 請求） |
@@ -85,6 +85,9 @@
 | --- | --- |
 | 內容標記事件次序不穩定（既有缺陷，CI 偶發失敗） | `question_content_flags` 事件原本以 `created_at, id` 排序，而 `id` 是隨機 UUID；同一毫秒內的「先標記、後解除」會被隨機次序反轉，令現行狀態誤報為 `open`（CI 出現 `expected 'open' to be 'cleared'`）。改為 `created_at, rowid`（符合原註解「同一時間以輸入次序為準」），並新增迴歸測試；已用舊排序驗證該測試會失敗、新排序穩定通過 |
 | 新路由未列入授權契約 | [tests/authz-negative.test.ts](tests/authz-negative.test.ts) 要求每個 API handler 必須在特權表格或公開清單聲明；已加入 `GET`／`POST /api/tutor/chat`，否則 CI 會以「有沒有人測試過這條特權路由」失敗 |
+| 部署指令碼會清空 `HISTORY_REVIEWER_EMAILS`（既有缺陷） | [scripts/deploy-preserving-config.ps1](scripts/deploy-preserving-config.ps1) 只沿用部分線上設定，`HISTORY_REVIEWER_EMAILS` 回落到 `cloudbuild.yaml` 的預設 `""`；自 revision `00056-8rx` 起正式環境因而失去學科審核者，Golden 及學科裁決一律 fail-closed 403。已令指令碼讀取並傳遞 `_REVIEWER_EMAILS`，並在留空時輸出警告；正式環境先以 `--update-env-vars` 即時修復（`00058-kwh`），再隨 `00059-77s` 保留 |
+| `deploy-preserving-config.ps1` 失去 UTF-8 BOM | PowerShell 5.1 會把無 BOM 的 UTF-8 當作 ANSI，中文註解令整份腳本無法解析（`The string is missing the terminator`）。已補回 BOM 並以 `Parser::ParseFile` 驗證 `PARSE_OK`；另 `scripts/check-onedrive-health.ps1` 同樣無 BOM，但本輪未觸及，建議另行處理 |
+| `/tutor` 原本沒有伺服器端頁面守衛 | client component 令未登入者先收到介面骨架（200）；已改為 server component 呼叫 `guardStudentPage`，並新增 [tests/tutor-page-guard.test.ts](tests/tutor-page-guard.test.ts) 斷言 `NEXT_REDIRECT` 及 `%2Ftutor` |
 
 ### 已知限制（MVP，刻意接受）
 
@@ -96,7 +99,6 @@
 | 不注入教材 | 模型沒有教材依據，史實可能有誤；這是防範「第二條洩教材路徑」的刻意取捨，介面已明示僅供參考 |
 | `tokensUsed` 暫存為 0 | 串流期間無法即時取得準確用量，故如實寫 0（schema 允許），不填入估算值假裝精確 |
 | 前端未加入全站導覽 | P0 驗收只要求能以 `/tutor` 直達；未改動全站選單 |
-| `/tutor` 沒有伺服器端頁面守衛 | 其他學生頁面以 `guardStudentPage` 在伺服器端導向登入頁；`/tutor` 是 client component，未登入者會看到介面骨架（HTTP 200）但所有 API 回 `401`，介面顯示錯誤及登入連結。不構成資料外洩，屬體驗及一致性落差 |
 | 前端狀態只有 API 契約保證 | 免責聲明、剩餘次數、超額唯讀均有自動測試覆蓋 API 行為，但**未**加入瀏覽器 e2e；合併前建議做一次登入後人工煙霧 |
 | 對話保留期 | 目前**沒有**自動清理 `tutor_*`；如要與 `ai_operations` 的 30 天保留期一致，需另立維護工作 |
 
@@ -110,11 +112,11 @@
 
 | 檢查 | 結果 |
 | --- | --- |
-| `npm test`（全套） | 131 files、**1,587 passed**、4 skipped、0 failed |
+| `npm test`（全套） | 132 files、**1,588 passed**、4 skipped、0 failed |
 | `npm run typecheck` | 通過（`next typegen` + `tsc --noEmit`） |
 | `npm run lint` | 0 error；1 個**既有** warning（[scripts/verify-questionbank-sync.ts](scripts/verify-questionbank-sync.ts) 第 29 行 `fs` 未使用，非本功能引入，未修改） |
-| 學伴相關測試 | `tests/tutor-chat.test.ts` 14 項、`tests/content-improvement-flags.test.ts` 14 項（含新增迴歸測試） |
+| 學伴相關測試 | `tests/tutor-chat.test.ts` 14 項、`tests/tutor-page-guard.test.ts` 1 項、`tests/content-improvement-flags.test.ts` 14 項（含新增迴歸測試） |
 | GitHub Actions | PR `#1` 的 `Test, typecheck, lint, build` **success**（最新 commit） |
 | 真實 API | **沒有**在任何測試或驗證中呼叫 DeepSeek；所有 LLM 回應均由 mock 提供 |
 | 正式資料庫 | 唯讀開啟 `data/app.db` 確認 `tutor_*` 表不存在、`schema_migrations` 最高為 `0028` |
-| **部署（2026-10-26）** | Cloud Build `23e1053b` **SUCCESS**（3M19S）→ revision **`history-self-study-00057-pxr`**（100% 流量）。`/api/health` 200／`database: sqlite/ok`／`demoMode=false`／DeepSeek 已設定；`GET` 與 `POST /api/tutor/chat` 未登入均回 `401`；`GET /tutor` 200 且含免責聲明字串；該 revision 無 ERROR 級日誌。證據見 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json) |
+| **部署（2026-10-26）** | Cloud Build `23e1053b` **SUCCESS**（3M19S）→ `00057-pxr`；環境變數修復 → `00058-kwh`；守衛修正後重建 `e8ec992a` **SUCCESS**（4M17S）→ **`history-self-study-00059-77s`**（100% 流量）。`/api/health` 200／`database: sqlite/ok`／`demoMode=false`／DeepSeek 已設定；`GET /tutor` 未登入 **307 → /login?next=%2Ftutor**（不再回介面骨架）；`GET`／`POST /api/tutor/chat` 未登入 `401`；`00059-77s` 無 ERROR 級日誌；`HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk` 已在該 revision。證據見 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json) |
