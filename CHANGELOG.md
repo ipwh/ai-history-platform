@@ -22,7 +22,7 @@
 **分支**：`feat/ai-history-tutor`
 **Pull Request**：`#1`（Draft）<https://github.com/ipwh/ai-history-platform/pull/1>
 **基準**：`origin/main` = `ad34050`
-**狀態**：**未合併 `main`**（`main` 仍為 `ad34050`），但已由功能分支直接建置並部署為 Cloud Run revision **`history-self-study-00059-77s`**（2026-10-26，預覽用途；中間經 `00057-pxr` 首次部署及 `00058-kwh` 修復環境變數。證據見 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json)）。回滾只需把 100% 流量指回 `00056-8rx`。
+**狀態**：**已合併至 `main`**（2026-10-26，PR [#1](https://github.com/ipwh/ai-history-platform/pull/1)，功能 commit `4d295a1`）。部署為 Cloud Run revision **`history-self-study-00059-77s`**（2026-10-26，中間經 `00057-pxr` 首次部署及 `00058-kwh` 修復環境變數；證據見 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json)）。回滾只需把 100% 流量指回 `00056-8rx`。
 
 > 本功能的定位是「課後自學學伴」，**不是**全知老師，亦**不是**批改系統。介面及文件一律標示為 Beta，史實以課本與科任老師為準。
 

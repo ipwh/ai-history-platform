@@ -2389,11 +2389,11 @@ gcloud run services update history-self-study --project pccss-ai-history --regio
 
 ### 2026-10-26 預覽部署：AI 歷史自學學伴（Beta）由功能分支直接部署
 
-依擁有者指示「commit、push、deploy」，本輪把**功能分支**直接建置部署，`main` 完全沒有改動：
+依擁有者指示「commit、push、deploy」，本輪先把**功能分支**直接建置部署，`main` 當時沒有改動；部署驗證通過後才合併至 `main`（2026-10-26，PR [#1](https://github.com/ipwh/ai-history-platform/pull/1)）：
 
 | 項目 | 值 |
 | --- | --- |
-| 來源 | `feat/ai-history-tutor`（commit `4dcc49d` 之後的工作目錄），**未合併 `main`**；PR [#1](https://github.com/ipwh/ai-history-platform/pull/1) 仍為 Draft |
+| 來源 | `feat/ai-history-tutor`，**已合併至 `main`**（2026-10-26） |
 | 建置 | 兩次 Cloud Build：`23e1053b`（3M19S）及 `e8ec992a`（4M17S），皆 **SUCCESS** |
 | Revision | **`history-self-study-00059-77s`**（100% 流量）；序列 `00056-8rx` → `00057-pxr` → `00058-kwh`（只改環境變數）→ `00059-77s` |
 | 部署指令 | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1` |
