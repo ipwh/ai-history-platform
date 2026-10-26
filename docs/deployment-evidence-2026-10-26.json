@@ -65,6 +65,7 @@
       "5d23131 docs: add Chinese CHANGELOG starting with the tutor MVP"
     ],
     "merged": false,
+    "mergedLater": "2026-10-26 部署驗證通過後合併至 main（PR #1）",
     "pullRequest": "https://github.com/ipwh/ai-history-platform/pull/1",
     "pushed": "origin/feat/ai-history-tutor 已同步（5d23131）",
     "changelog": "CHANGELOG.md"
