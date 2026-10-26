@@ -22,7 +22,7 @@
 **分支**：`feat/ai-history-tutor`
 **Pull Request**：`#1`（Draft）<https://github.com/ipwh/ai-history-platform/pull/1>
 **基準**：`origin/main` = `ad34050`
-**狀態**：**未合併 `main`、未部署**。合併後仍須於目標環境自行執行 migration（見「資料庫」一節）。
+**狀態**：**未合併 `main`**（`main` 仍為 `ad34050`），但已由功能分支直接建置並部署為 Cloud Run revision **`history-self-study-00057-pxr`**（2026-10-26，預覽用途；證據見 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json)）。回滾只需把 100% 流量指回 `00056-8rx`。
 
 > 本功能的定位是「課後自學學伴」，**不是**全知老師，亦**不是**批改系統。介面及文件一律標示為 Beta，史實以課本與科任老師為準。
 
@@ -74,9 +74,10 @@
 | `tutor_sessions` | `id`（PK）、`learnerId`（FK → `learners`，`ON DELETE CASCADE`）、`createdAt`、`topicId`（可空，FK → `topics`）、`lastTurnOnTopic`（0/1，供短跟進判定）及 `(learnerId, createdAt DESC)` 索引 |
 | `tutor_messages` | `id`（PK）、`sessionId`（FK → `tutor_sessions`，`ON DELETE CASCADE`）、`role`（`user`／`assistant`）、`content`、`tokensUsed`、`createdAt` 及 `(sessionId, createdAt)` 索引 |
 | 時間格式 | 以 `+08:00` 表示的香港時間 ISO 8601 字串；每日額度以香港日期 00:00 作界線，避免伺服器 UTC 造成重置時間位移 |
-| **未套用** | 本分支**沒有**對正式／本機 `data/app.db` 執行 migration。唯讀檢查顯示本機 `app.db` 的 `schema_migrations` 最高仍為 **`0028`**，`tutor_sessions`／`tutor_messages` 均**不存在** |
+| 正式環境（**已套用**） | 2026-10-26 部署 revision `00057-pxr` 時，由啟動流程（`getDb()` → `runMigrations`）自動套用；串流前後的 `/api/health` 均報告 `database: sqlite / ok`（若 0031 失敗，`getDb()` 會拋錯並令資料庫狀態變為 unavailable） |
+| 本機／其他環境（**未套用**） | 本分支**沒有**對本機 `data/app.db` 執行 migration。唯讀檢查顯示本機 `app.db` 的 `schema_migrations` 最高仍為 **`0028`**，`tutor_sessions`／`tutor_messages` 均**不存在** |
 
-> 部署或合併後，請於**目標環境**執行 `npm run db:migrate`（或沿用既有啟動流程）；切勿假設任何環境已套用 `0031`。
+> 正式環境已於 2026-10-26 的部署自動套用 `0031`；**本機及其他環境**仍需執行 `npm run db:migrate`（或沿用既有啟動流程），切勿假設已套用。
 
 ### 修正
 
@@ -95,6 +96,7 @@
 | 不注入教材 | 模型沒有教材依據，史實可能有誤；這是防範「第二條洩教材路徑」的刻意取捨，介面已明示僅供參考 |
 | `tokensUsed` 暫存為 0 | 串流期間無法即時取得準確用量，故如實寫 0（schema 允許），不填入估算值假裝精確 |
 | 前端未加入全站導覽 | P0 驗收只要求能以 `/tutor` 直達；未改動全站選單 |
+| `/tutor` 沒有伺服器端頁面守衛 | 其他學生頁面以 `guardStudentPage` 在伺服器端導向登入頁；`/tutor` 是 client component，未登入者會看到介面骨架（HTTP 200）但所有 API 回 `401`，介面顯示錯誤及登入連結。不構成資料外洩，屬體驗及一致性落差 |
 | 前端狀態只有 API 契約保證 | 免責聲明、剩餘次數、超額唯讀均有自動測試覆蓋 API 行為，但**未**加入瀏覽器 e2e；合併前建議做一次登入後人工煙霧 |
 | 對話保留期 | 目前**沒有**自動清理 `tutor_*`；如要與 `ai_operations` 的 30 天保留期一致，需另立維護工作 |
 
@@ -115,3 +117,4 @@
 | GitHub Actions | PR `#1` 的 `Test, typecheck, lint, build` **success**（最新 commit） |
 | 真實 API | **沒有**在任何測試或驗證中呼叫 DeepSeek；所有 LLM 回應均由 mock 提供 |
 | 正式資料庫 | 唯讀開啟 `data/app.db` 確認 `tutor_*` 表不存在、`schema_migrations` 最高為 `0028` |
+| **部署（2026-10-26）** | Cloud Build `23e1053b` **SUCCESS**（3M19S）→ revision **`history-self-study-00057-pxr`**（100% 流量）。`/api/health` 200／`database: sqlite/ok`／`demoMode=false`／DeepSeek 已設定；`GET` 與 `POST /api/tutor/chat` 未登入均回 `401`；`GET /tutor` 200 且含免責聲明字串；該 revision 無 ERROR 級日誌。證據見 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json) |

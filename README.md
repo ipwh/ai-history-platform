@@ -2387,6 +2387,40 @@ gcloud run services update history-self-study --project pccss-ai-history --regio
 
 ---
 
+### 2026-10-26 預覽部署：AI 歷史自學學伴（Beta）由功能分支直接部署
+
+依擁有者指示「commit、push、deploy」，本輪把**功能分支**直接建置部署，`main` 完全沒有改動：
+
+| 項目 | 值 |
+| --- | --- |
+| 來源 | `feat/ai-history-tutor`（commit `5d23131`），**未合併 `main`**；PR [#1](https://github.com/ipwh/ai-history-platform/pull/1) 仍為 Draft |
+| 建置 | Cloud Build `23e1053b-4dff-4517-b976-9797ec2f29b3`，**SUCCESS**（3M19S） |
+| Revision | **`history-self-study-00057-pxr`**（前一個：`00056-8rx`），100% 流量 |
+| 部署指令 | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1` |
+| 資料庫 | 由既有 `BACKUP_BUCKET` 快照還原；啟動時自動套用 migration **`0031-ai-history-tutor`**（只新增 `tutor_sessions`、`tutor_messages`，不改既有表） |
+| 教材／題庫 | 未上載本機資料庫、未修改任何題目或教材；`/api/health` 顯示 46 份教材、26,599 段、學生可見 22 份（與上一 revision 相同） |
+
+驗證：`/api/health` 200（`ok`、`database: sqlite/ok`、`demoMode=false`、DeepSeek 已設定）；`GET`／`POST /api/tutor/chat`
+未登入均回 **401**；`GET /tutor` 200 且含「歷史科自學學伴」「僅供課後複習參考」「今日剩餘提問次數」；該 revision
+在 Cloud Logging **沒有** ERROR 級記錄。未驗證：真實學校帳戶登入後的串流對話、每日 15 次配額的正式環境行為、
+模型回應質素的科組覆核。完整證據（含未驗證清單及附帶發現）見
+[docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json)。
+
+回滾（只改流量，不影響資料）：
+
+```powershell
+gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 `
+  --to-revisions history-self-study-00056-8rx=100
+```
+
+> **部署時發現的既有落差（本輪未改動）**：正式環境的 `HISTORY_REVIEWER_EMAILS` 現時是**空字串**。
+> 第十節曾記錄它已寫入執行中的 revision，但 `scripts/deploy-preserving-config.ps1` **沒有**讀取及傳遞這個值，
+> 因此自 revision `00056-8rx` 起已被回落為 `cloudbuild.yaml` 的預設 `""`，本輪沿用同一指令碼，`00057-pxr` 亦一樣。
+> 影響：Golden fixture 及「已修復並核准」的學科裁決一律 fail-closed 回 403，連擁有者都無法核准。修法見該證據檔的
+> `incidentalFindings`。
+
+---
+
 ### 需要擁有者決定的事項（尚未決定者一律視為未完成）
 
 以下項目**無法由程式自行決定**，需要校方／擁有者以書面確認。在取得決定前，相關功能保持 fail-closed（不顯示教材、不發布未覆核題目、不開放教師端給匿名使用者）。

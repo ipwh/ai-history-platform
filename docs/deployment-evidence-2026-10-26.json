@@ -1,0 +1,132 @@
+{
+  "generatedAt": "2026-10-26T05:51:55.090Z",
+  "notice": "本輪由功能分支 feat/ai-history-tutor 直接建置部署（**未合併 main**，main 仍為 ad34050）。只有程式碼及文件改動：沒有上載本機資料庫、沒有修改任何題目或教材內容、沒有寫入題庫。新 revision 啟動時由既有 BACKUP_BUCKET 快照還原，並於 getDb() 首次連線時自動套用 migration 0031（只新增兩張表）。",
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00057-pxr",
+    "previousRevision": "history-self-study-00056-8rx",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:23e1053b-4dff-4517-b976-9797ec2f29b3",
+    "imageDigest": "sha256:47ec7addf616329d02114a61a5d5a95193afec56d131351e14a7e12147dec0fa",
+    "build": {
+      "buildId": "23e1053b-4dff-4517-b976-9797ec2f29b3",
+      "startTime": "2026-10-26T05:46:52.016165893Z",
+      "finishTime": "2026-10-26T05:50:11.232900Z",
+      "duration": "3M19S",
+      "status": "SUCCESS",
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/23e1053b-4dff-4517-b976-9797ec2f29b3?project=784175190534"
+    },
+    "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
+    "configSource": "沿用線上現有設定（runtime SA、AUTH_ADMIN_EMAILS、AUTH_TEACHER_EMAILS、AUTH_STAFF_ACCESS_POLICY／AUTH_STAFF_DOMAINS、BACKUP_BUCKET、BACKUP_PREFIX、BACKUP_INTERVAL_SECONDS、名冊設定）。部署前已逐項比對：指令碼未傳遞的 substitutions 會回落到 cloudbuild.yaml 預設值，而該等預設值（_REVIEWER_EMAILS=\"\"、_MEMORY=1Gi、_CPU=1、_MIN_INSTANCES=0、_BACKUP_MIN_SPACING_SECONDS=60 及 5 個 secret 名稱）與上一次成功建置完全相同。",
+    "traffic": "100% → history-self-study-00057-pxr"
+  },
+  "source": {
+    "branch": "feat/ai-history-tutor",
+    "commit": "5d23131",
+    "commitSubject": "docs: add Chinese CHANGELOG starting with the tutor MVP",
+    "featureCommits": [
+      "b45843d feat(tutor): add AI history self-study companion (Beta) MVP",
+      "fe3c5ca fix: declare tutor routes for authz contract and order content-flag events deterministically",
+      "5d23131 docs: add Chinese CHANGELOG starting with the tutor MVP"
+    ],
+    "merged": false,
+    "pullRequest": "https://github.com/ipwh/ai-history-platform/pull/1",
+    "pushed": "origin/feat/ai-history-tutor 已同步（5d23131）",
+    "changelog": "CHANGELOG.md"
+  },
+  "changes": {
+    "api": [
+      "GET /api/tutor/chat：讀取自己的學伴對話（最近 40 則）及當日剩餘次數，並回報 windowLimitReached",
+      "POST /api/tutor/chat：歷史硬閘 → 每日配額 → reserveAiOperation(\"generation\") → DeepSeek SSE 串流"
+    ],
+    "ui": [
+      "/tutor：Beta 標籤、免責聲明、剩餘次數、逐字串流、基本 Markdown；超額或時間窗已滿時輸入框唯讀"
+    ],
+    "database": [
+      "migration 0031-ai-history-tutor：新增 tutor_sessions（含 lastTurnOnTopic）及 tutor_messages 及索引；未改動任何既有表或欄位"
+    ],
+    "governance": [
+      "學伴提問與 AI 出題共用 ai_operations 的 generation 個人／全域時間窗（TUTOR_OPERATION_KIND 集中標示）"
+    ],
+    "fixes": [
+      "question_content_flags 事件改以 created_at, rowid 排序（原本以隨機 id 作次要鍵，同毫秒的標記／解除次序會被反轉）",
+      "tests/authz-negative.test.ts 的公開路由清單加入 GET／POST /api/tutor/chat"
+    ]
+  },
+  "verification": {
+    "local": {
+      "typecheck": "通過（next typegen + tsc --noEmit）",
+      "lint": "0 error（1 個既有 warning：scripts/verify-questionbank-sync.ts 未使用的 import；未修改）",
+      "tests": "131 個測試檔、1587 項通過、4 項略過（含 tests/tutor-chat.test.ts 14 項，全部 mock LLM）",
+      "realLlmCalls": "無（所有 LLM 回應均由 mock 提供）"
+    },
+    "ci": {
+      "workflowJob": "Test, typecheck, lint, build",
+      "conclusion": "success",
+      "headSha": "5d23131"
+    },
+    "production": {
+      "GET /api/health": "200",
+      "health.ok": true,
+      "health.database": "sqlite / ok",
+      "health.demoMode": false,
+      "health.llmProvider": "deepseek",
+      "health.llmProviderLabel": "DeepSeek API（deepseek-flash）",
+      "health.materials": {
+        "documents": 46,
+        "blocks": 26599,
+        "studentVisibleDocuments": 22
+      },
+      "health.persistence": {
+        "backupEnabled": true,
+        "restore": "restored",
+        "backupsUploaded": 1
+      },
+      "health.maintenance": {
+        "kind": "ai-operation-retention",
+        "lastStatus": "ok",
+        "runs": 182,
+        "failures": 0
+      },
+      "tutorRoutes": {
+        "GET /api/tutor/chat（未登入）": "401",
+        "POST /api/tutor/chat（未登入）": "401",
+        "GET /tutor": "200（HTML 含「歷史科自學學伴」「僅供課後複習參考」「今日剩餘提問次數」）"
+      },
+      "errorLogs": "revision history-self-study-00057-pxr 於 severity>=ERROR 無任何記錄",
+      "migrationApplied": "推論已套用：getDb() 在首次連線時同步執行 runMigrations，而 /api/health 的 database 為 sqlite/ok（若 0031 失敗，getDb() 會拋錯並令 database 報告 unavailable）。未直接查詢正式資料庫的 schema_migrations。"
+    }
+  },
+  "database": {
+    "changed": true,
+    "changeType": "只新增資料表（migration 0031）",
+    "restore": "由 gs://pccss-ai-history-history-backup/history/data/app.db 既有快照還原（persistence.restore = restored）",
+    "materials": "46 份教材、26,599 段、學生可見 22 份（與上一 revision 相同）",
+    "questionBank": "未讀取、未修改、未匯入"
+  },
+  "rollback": {
+    "command": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00056-8rx=100",
+    "note": "回滾只影響流量，不會移除 migration 0031 新增的兩張表（新增表不影響舊版程式碼，舊版不會讀寫它們）。"
+  },
+  "unverified": [
+    "未以真實學校 Google 帳戶完成登入後的串流對話（只驗證未登入時 401）。",
+    "每日 15 次上限、短跟進放行、跨學生 session 404 在正式環境未實測（由本機 route handler 測試覆蓋）。",
+    "正式環境的 DeepSeek 實際回應品質（鷹架提問、拒答、不背誦教材）未經科組人工覆核。",
+    "tokensUsed 在串流期間寫入 0，未量度實際 token 用量與成本。",
+    "冷啟動時間與併發行為未量度。"
+  ],
+  "incidentalFindings": [
+    {
+      "item": "HISTORY_REVIEWER_EMAILS 於正式環境為空字串",
+      "detail": "README 第十節曾記錄該值已寫入執行中的 revision（ipwh@pochiu.edu.hk），但以 deploy-preserving-config.ps1 部署的 revision 00056-8rx 已被回落為空（該指令碼沒有讀取 HISTORY_REVIEWER_EMAILS，於是使用 cloudbuild.yaml 的預設值 \"\"）。本輪沿用同一指令碼，因此 00057-pxr 亦為空。影響：Golden fixture 及「已修復並核准」的學科裁決一律 fail-closed 回 403，連擁有者亦無法核准。本輪**沒有**改動此設定。",
+      "suggestedFix": "修正 scripts/deploy-preserving-config.ps1 讀取並傳遞 _REVIEWER_EMAILS（並補測試／檢查），或先以 gcloud run services update --update-env-vars HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk 即時修復。"
+    },
+    {
+      "item": "/tutor 沒有伺服器端頁面守衛",
+      "detail": "其他學生頁面以 guardStudentPage 在伺服器端導向登入頁；/tutor 是 client component，未登入者會看到介面骨架（200），但所有 API 呼叫回 401，介面顯示錯誤及登入連結。不構成資料外洩（API 已強制身分），只在體驗及一致性上有落差。"
+    }
+  ]
+}
