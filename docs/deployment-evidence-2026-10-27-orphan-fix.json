@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-10-27T02:20:00.000Z",
+  "notice": "修正使用者 2026-10-27 第二次回報：上一次請求失敗留下的提問被下一輪一併回答，並令整個回覆被誤標為「課本未涵蓋」。映像由 commit 1fd143c 建置。",
+  "reportedIssue": {
+    "reportedAt": "2026-10-27T10:05:06+08:00",
+    "symptom": "對話中「凡爾賽條約如何約束德國？」只有學生訊息、沒有回覆；之後問「我想知道文藝復興如何導致宗教革命的出現。」，回覆同時回答兩題（第一部分標明「課本這部分沒有提及」），整則回覆被標示為「➕ 課本未涵蓋此部分」且沒有列出課題5 的教材節錄。",
+    "rootCause": [
+      "學生提問在呼叫模型前就寫入資料庫；該次請求失敗（上游錯誤／逾時／串流中斷）後只留下沒有回覆的提問。",
+      "送上下文時直接使用資料庫內全部訊息，模型見到連續兩則學生訊息，於是同時回答上一則已失敗的問題。",
+      "answerDeclaresNotCovered 原本檢查回覆開首 60 字；分段作答時「課本這部分沒有提及」出現在第 40 字左右，於是把整段降為 not-covered 並隱藏仍然相關的課題5 節錄。"
+    ]
+  },
+  "fix": {
+    "commit": "1fd143c",
+    "changes": [
+      "新增 answeredTurnsOnly（services/tutor.ts）：連續學生訊息只保留最新一則；結尾未回覆的提問丟棄。上下文及教材依據的課題判斷只用「有回覆」的提問。",
+      "不刪除資料庫內的提問：避免每日提問次數被回退，與 ai_operations 用量語意不一致；提問仍留在對話紀錄，只是不再送去模型。",
+      "answerDeclaresNotCovered 收窄至最開首 24 字，分段作答時不再把整段降級。",
+      "基礎提示詞加上「只可使用繁體字，不可夾雜簡體字」（回報的答案出現「单靠人文主義」）。",
+      "迴歸測試：answeredTurnsOnly 兩種情況、分段作答不降級、失敗提問不會送去模型（API 層斷言 messages 只有 system 及本次提問），以及教材依據仍為課題5。"
+    ]
+  },
+  "finalState": {
+    "revision": "history-self-study-00064-bfn",
+    "previousRevision": "history-self-study-00063-qfc"
+  },
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00064-bfn",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:731cc7c6-d42d-4e70-9d55-0c76b916fc12",
+    "imageDigest": "sha256:29f7ce7ccc88a54263547063a877e2b3e647cea6188ed463b8556cfd2c8a3376",
+    "sourceCommit": "1fd143c",
+    "build": {
+      "buildId": "731cc7c6-d42d-4e70-9d55-0c76b916fc12",
+      "startTime": "2026-10-27T02:11:24Z",
+      "duration": "4M25S",
+      "status": "SUCCESS",
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/731cc7c6-d42d-4e70-9d55-0c76b916fc12?project=784175190534"
+    },
+    "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
+    "traffic": "100% -> history-self-study-00064-bfn"
+  },
+  "verification": [
+    {
+      "check": "本機教材依據（真實教材副本）",
+      "command": "tsx 以 data/app.db 副本執行 findTutorGrounding",
+      "result": "「我想知道文藝復興如何導致宗教革命的出現。」→ grounded、課題5，段落為第664／118／668段（第118段提到傳統權威下降、重新思考教會）"
+    },
+    {
+      "check": "測試",
+      "command": "npx vitest run",
+      "result": "135 files、1,629 passed、4 skipped、0 failed"
+    },
+    {
+      "check": "靜態檢查及建置",
+      "command": "npx tsc --noEmit ／ npx eslint src tests ／ npm run build",
+      "result": "全部通過；建置首次因 .next 檔案被鎖定（OneDrive／Windows）出現 EPERM，清除 .next 後成功，與程式碼無關"
+    },
+    {
+      "check": "流量",
+      "command": "gcloud run services describe … --format value(status.traffic)",
+      "result": "100% -> history-self-study-00064-bfn"
+    },
+    {
+      "check": "健康檢查",
+      "command": "GET /api/health",
+      "result": "ok=true；database.status=ok；llmConfigured=true；demoMode=false；documents=46／blocks=26599／studentVisibleDocuments=22；restore=restored、lastError=null"
+    },
+    {
+      "check": "守衛",
+      "command": "GET /tutor ／ POST /api/tutor/chat",
+      "result": "307（→ /login?next=%2Ftutor）／401"
+    },
+    {
+      "check": "ERROR 級日誌",
+      "command": "gcloud logging read 'resource.labels.revision_name=history-self-study-00064-bfn AND severity>=ERROR'",
+      "result": "沒有記錄"
+    },
+    {
+      "check": "未驗證（如實記錄）",
+      "command": "（需登入）",
+      "result": "介面行為未在正式環境人工驗證。建議開啟新對話測試：(1) 問「文藝復興如何導致宗教改革？」應顯示 ✅ 及課題5 節錄；(2) 若某次請求失敗，下一輪只會回答新問題"
+    }
+  ],
+  "rollback": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00063-qfc=100"
+}

@@ -224,3 +224,18 @@
 | 未驗證（如實記錄） | 介面行為仍需登入人工驗證：依序問「文藝復興…」→「文藝復興藝術家」→「凡爾賽條約如何約束德國？」，第三個回覆應以課題9 為依據 |
 | 證據 | [docs/deployment-evidence-2026-10-27-hotfix.json](docs/deployment-evidence-2026-10-27-hotfix.json) |
 | 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00062-5b9=100` |
+
+### 熱修部署 2（2026-10-27，修正第二次回報）
+
+| 項目 | 結果 |
+| --- | --- |
+| 回報 | 一次失敗的提問（「凡爾賽條約」）在下一個問題（「文藝復興如何導致宗教改革」）被一併回答，並令整個回覆誤標為「課本未涵蓋」。根因及修法見上「修正」表 |
+| Commit | `1fd143c`（`main`，已推送 `cbbcd08..1fd143c`） |
+| Cloud Build | `731cc7c6-d42d-4e70-9d55-0c76b916fc12` **SUCCESS**（4M25S） |
+| Cloud Run revision | **`history-self-study-00064-bfn`**，100% 流量（回滾目標：`00063-qfc`） |
+| 本機教材依據 | 「文藝復興如何導致宗教改革」→ 課題5，第664／118／668段（第118段：傳統權威下降、重新思考教會） |
+| 測試 | 135 files、**1,629 passed**、4 skipped、0 failed |
+| 煙霧測試 | `GET /tutor` **307**；`POST /api/tutor/chat` **401**；`/api/health` `ok=true`、`database: sqlite/ok`、教材 `26,599` 段／`22` 份、備份 `restored`、`lastError=null`；該 revision **沒有** ERROR 級日誌 |
+| 未驗證（如實記錄） | 介面行為仍需登入人工驗證：建議開新對話，問「文藝復興如何導致宗教改革？」應顯示 ✅ 及課題5 節錄 |
+| 證據 | [docs/deployment-evidence-2026-10-27-orphan-fix.json](docs/deployment-evidence-2026-10-27-orphan-fix.json) |
+| 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00063-qfc=100` |
