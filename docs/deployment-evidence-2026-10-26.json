@@ -2,9 +2,9 @@
   "generatedAt": "2026-10-26T06:16:07.819Z",
   "notice": "本輪由功能分支 feat/ai-history-tutor 直接建置部署（**未合併 main**，main 仍為 ad34050）。只有程式碼及文件改動：沒有上載本機資料庫、沒有修改任何題目或教材內容、沒有寫入題庫。新 revision 啟動時由既有 BACKUP_BUCKET 快照還原，並於 getDb() 首次連線時自動套用 migration 0031（只新增兩張表）。同日其後有兩次跟進：以 --update-env-vars 修復 HISTORY_REVIEWER_EMAILS（不重建），以及補上 /tutor 伺服器端頁面守衛並重新建置；下表以**最終狀態**為準。",
   "finalState": {
-    "revision": "history-self-study-00060-mln",
-    "revisionCount": 5,
-    "imagesBuilt": 3
+    "revision": "history-self-study-00061-s9t",
+    "revisionCount": 6,
+    "imagesBuilt": 4
   },
   "target": {
     "provider": "Google Cloud Run",
@@ -12,21 +12,21 @@
     "region": "asia-east2",
     "service": "history-self-study",
     "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
-    "revision": "history-self-study-00060-mln",
-    "previousRevision": "history-self-study-00059-77s",
-    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:a1183497-6770-44f1-9153-51919507aa67",
-    "imageDigest": "sha256:1b314db217cd1d586c1a9845da08607857efd06151ac1df6de953bacbffc2529",
+    "revision": "history-self-study-00061-s9t",
+    "previousRevision": "history-self-study-00060-mln",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:a3d823a5-6c22-4669-9bc8-402f0bcb7da2",
+    "imageDigest": "sha256:93b24859f70f0e82b322bf1dd15fc938edbe1447fc505c710e21acf9ab6f38a2",
     "build": {
-      "buildId": "a1183497-6770-44f1-9153-51919507aa67",
-      "startTime": "2026-10-27T00:02:56.273575998Z",
-      "finishTime": "2026-10-27T00:07:02.678139Z",
-      "duration": "4M06S",
+      "buildId": "a3d823a5-6c22-4669-9bc8-402f0bcb7da2",
+      "startTime": "2026-10-27T00:26:54.979607565Z",
+      "finishTime": "2026-10-27T00:31:00.123046Z",
+      "duration": "4M05S",
       "status": "SUCCESS",
-      "logUrl": "https://console.cloud.google.com/cloud-build/builds/a1183497-6770-44f1-9153-51919507aa67?project=784175190534"
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/a3d823a5-6c22-4669-9bc8-402f0bcb7da2?project=784175190534"
     },
     "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
     "configSource": "沿用線上現有設定（runtime SA、AUTH_ADMIN_EMAILS、AUTH_TEACHER_EMAILS、HISTORY_REVIEWER_EMAILS、AUTH_STAFF_ACCESS_POLICY／AUTH_STAFF_DOMAINS、BACKUP_BUCKET、BACKUP_PREFIX、BACKUP_INTERVAL_SECONDS、名冊設定）。部署前已逐項比對：指令碼未傳遞的 substitutions 會回落到 cloudbuild.yaml 預設值，而該等預設值（_MEMORY=1Gi、_CPU=1、_MIN_INSTANCES=0、_BACKUP_MIN_SPACING_SECONDS=60 及 5 個 secret 名稱）與上一次成功建置完全相同。第一次部署（00057-pxr）時 HISTORY_REVIEWER_EMAILS 尚未被指令碼傳遞，因而回落為空；已於同日修正指令碼並重新部署。",
-    "traffic": "100% → history-self-study-00060-mln"
+    "traffic": "100% → history-self-study-00061-s9t"
   },
   "deploymentSequence": [
     {
@@ -63,6 +63,16 @@
       "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:a1183497-6770-44f1-9153-51919507aa67",
       "imageDigest": "sha256:1b314db217cd1d586c1a9845da08607857efd06151ac1df6de953bacbffc2529",
       "deployedOn": "2026-10-27"
+    },
+    {
+      "revision": "history-self-study-00061-s9t",
+      "buildId": "a3d823a5-6c22-4669-9bc8-402f0bcb7da2",
+      "duration": "4M05S",
+      "status": "SUCCESS",
+      "purpose": "依擁有者指示開放教師／管理員測試學伴（PR #5）：API 守衛改為 requireTutorAccess、介面顯示教師測試身分、導覽對教職員可見",
+      "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:a3d823a5-6c22-4669-9bc8-402f0bcb7da2",
+      "imageDigest": "sha256:93b24859f70f0e82b322bf1dd15fc938edbe1447fc505c710e21acf9ab6f38a2",
+      "deployedOn": "2026-10-27"
     }
   ],
   "source": {
@@ -83,10 +93,12 @@
   "changes": {
     "api": [
       "GET /api/tutor/chat：讀取自己的學伴對話（最近 40 則）及當日剩餘次數，並回報 windowLimitReached",
-      "POST /api/tutor/chat：歷史硬閘 → 每日配額 → reserveAiOperation(\"generation\") → DeepSeek SSE 串流"
+      "POST /api/tutor/chat：歷史硬閘 → 每日配額 → reserveAiOperation(\"generation\") → DeepSeek SSE 串流",
+      "存取守衛 requireTutorAccess（原 requireRosterStudent）：學生須名冊核對；教師及管理員可作科組測試（2026-10-27）"
     ],
     "ui": [
-      "/tutor：Beta 標籤、免責聲明、剩餘次數、逐字串流、基本 Markdown；超額或時間窗已滿時輸入框唯讀"
+      "/tutor：Beta 標籤、免責聲明、剩餘次數、逐字串流、基本 Markdown；超額或時間窗已滿時輸入框唯讀；教職員另見「教師測試身分」橫額及返回後台連結",
+      "全站導覽「歷史學伴」對學生、教師及管理員顯示（教師供測試）"
     ],
     "database": [
       "migration 0031-ai-history-tutor：新增 tutor_sessions（含 lastTurnOnTopic）及 tutor_messages 及索引；未改動任何既有表或欄位"
@@ -106,9 +118,9 @@
     "local": {
       "typecheck": "通過（next typegen + tsc --noEmit）",
       "lint": "0 error（1 個既有 warning：scripts/verify-questionbank-sync.ts 未使用的 import；未修改）",
-      "tests": "132 個測試檔、1588 項通過、4 項略過（含 tests/tutor-chat.test.ts 14 項、tests/tutor-page-guard.test.ts 1 項及 tests/tutor-access.test.ts 4 項；全部 mock LLM）",
+      "tests": "133 個測試檔、1595 項通過、4 項略過（含 tests/tutor-chat.test.ts 16 項、tests/tutor-page-guard.test.ts 1 項及 tests/tutor-access.test.ts 5 項；全部 mock LLM）",
       "realLlmCalls": "無（所有 LLM 回應均由 mock 提供）",
-      "navEntryTests": "tests/tutor-access.test.ts 覆蓋 allowed／anonymous／staff／unverified 四種狀態，確保介面判斷與 API 守衛（requireRosterStudent）同語意"
+      "staffAccessTests": "tests/tutor-chat.test.ts 斷言教師可完成串流（200）、記錄落在 teacher: learnerId、且學生的每日用量仍為 0；名冊未核對的學生仍回 403 且不呼叫 LLM"
     },
     "ci": {
       "workflowJob": "Test, typecheck, lint, build",
@@ -145,8 +157,8 @@
         "GET /api/tutor/chat（未登入）": "401",
         "POST /api/tutor/chat（未登入）": "401"
       },
-      "navEntry": "已下載 /login 頁面引用的 12 個 /_next/static 資源並逐一搜尋：/_next/static/chunks/2fy-ovcgcn6lg.js 含字面字串「歷史學伴」，證實導覽程式已隨 00060-mln 上線（未登入的首頁會 307 到登入頁，故 HTML 不會有該連結——導覽只對已登入學生顯示）。教師說明字串位於 server component，不會出現在前端 JS，屬正常。",
-      "errorLogs": "revision history-self-study-00060-mln 於 severity>=ERROR 無任何記錄（00059-77s 及 00057-pxr 亦無）",
+      "navEntry": "已下載頁面引用的 /_next/static 資源逐一搜尋：00060-mln 的 /_next/static/chunks/2fy-ovcgcn6lg.js、以及 00061-s9t 的 /_next/static/chunks/0rr-u3y4w683n.js 均含字面字串「歷史學伴」（chunk 檔名每次建置會變）。教職員專屬的「教師測試身分」橫額位於 /tutor 的 client component，該 chunk 不會被 /login 引用，因此未在 /login 的資源中出現，屬預期。",
+      "errorLogs": "revision history-self-study-00061-s9t 於 severity>=ERROR 無任何記錄（00060-mln、00059-77s 及 00057-pxr 亦無）",
       "migrationApplied": "推論已套用：getDb() 在首次連線時同步執行 runMigrations，而 /api/health 的 database 為 sqlite/ok（若 0031 失敗，getDb() 會拋錯並令 database 報告 unavailable）。未直接查詢正式資料庫的 schema_migrations。"
     }
   },
@@ -158,17 +170,22 @@
     "questionBank": "未讀取、未修改、未匯入"
   },
   "rollback": {
-    "command": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00059-77s=100",
+    "command": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00060-mln=100",
     "note": "回滾只影響流量，不會移除 migration 0031 新增的兩張表（新增表不影響舊版程式碼，舊版不會讀寫它們）。回滾後 HISTORY_REVIEWER_EMAILS 會隨所選 revision 的值而定，如需保留請另以 --update-env-vars 設定。"
   },
   "unverified": [
-    "未以真實學校 Google 帳戶完成登入後的串流對話，亦未在瀏覽器中以學生身分目視確認導覽連結（只以線上 JS chunk 搜尋證實「歷史學伴」字串存在，以及頁面守衛／401／307 行為）。",
+    "未以真實學校 Google 帳戶完成登入後的串流對話；亦未在瀏覽器中以教師身分目視確認「教師測試身分」橫額（只以測試斷言教師可完成串流、記錄落在 teacher: learnerId、學生配額不受影響）。",
     "每日 15 次上限、短跟進放行、跨學生 session 404 在正式環境未實測（由本機 route handler 測試覆蓋）。",
     "正式環境的 DeepSeek 實際回應品質（鷹架提問、拒答、不背誦教材）未經科組人工覆核。",
     "tokensUsed 在串流期間寫入 0，未量度實際 token 用量與成本。",
     "冷啟動時間與併發行為未量度。"
   ],
   "incidentalFindings": [
+    {
+      "item": "學伴曾只限學生，教師無法測試（**已按指示開放**）",
+      "detail": "原守衛 `requireRosterStudent` 對任何 `role !== \"student\"` 一律回 403，教師無法在正式環境試用，科組無法在學生使用前檢視回應質素。",
+      "resolution": "守衛改為 `requireTutorAccess`：學生須名冊核對，教師及管理員放行（2026-10-27 擁有者指示）。教師對話記在 `teacher:`／`admin:` learnerId，每日 15 次獨立計算，測試已斷言不影響學生用量。介面顯示「教師測試身分」橫額，避免誤以為這是學生資料。部署為 `00061-s9t`。"
+    },
     {
       "item": "功能上線但全站沒有入口（**已修復**）",
       "detail": "`/tutor` 於 2026-10-26 首次部署後一直可用，但因為依 P0「不強制修改全站選單」的取捨，全站沒有任何連結指向它，導致師生找不到功能（2026-10-27 由擁有者回報）。實測首頁與 /login 的 HTML 均不含 `href=\"/tutor\"`。",

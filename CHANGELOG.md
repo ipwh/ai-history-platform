@@ -32,7 +32,7 @@
 | --- | --- |
 | `GET /api/tutor/chat` | 讀取自己的學伴對話（最近 40 則）及當日剩餘提問次數；同時回報 `windowLimitReached`，令前端可預先顯示時間窗已滿 |
 | `POST /api/tutor/chat` | 送出歷史提問；通過硬閘及配額檢查後以 **SSE** 串流回傳 DeepSeek 回應（`stream: true`、`temperature: 0.4`） |
-| `/tutor` 頁面 | 學生自學介面：Beta 標籤、免責聲明、剩餘次數、逐字串流、基本 Markdown（粗體／斜體／行內程式碼／列點／引號）；超額或時間窗已滿時輸入框轉為唯讀。頁面為 server component 並呼叫 `guardStudentPage("/tutor")`，未登入者由伺服器端 `307` 導向 `/login?next=%2Ftutor`；全站導覽對已登入學生顯示「歷史學伴」連結，教師／管理員及名冊未核對的學生會看到原因說明（不是每次送出都收到 403 的對話框） |
+| `/tutor` 頁面 | 自學介面：Beta 標籤、免責聲明、剩餘次數、逐字串流、基本 Markdown（粗體／斜體／行內程式碼／列點／引號）；超額或時間窗已滿時輸入框轉為唯讀。頁面為 server component 並呼叫 `guardStudentPage("/tutor")`，未登入者由伺服器端 `307` 導向 `/login?next=%2Ftutor`；全站導覽對學生、教師及管理員顯示「歷史學伴」，教師另見「教師測試身分」橫額，名冊未核對的學生會看到原因說明 |
 | [src/server/services/tutor.ts](src/server/services/tutor.ts) | 歷史主題硬閘、短跟進判定、香港時區日界線及每日配額計算 |
 | [src/server/repositories/tutor.ts](src/server/repositories/tutor.ts) | `tutor_sessions`／`tutor_messages` 的資料存取及當日提問計數 |
 | [tests/tutor-chat.test.ts](tests/tutor-chat.test.ts) | 14 項學伴測試（**全部 mock LLM**，不會發出真實 API 請求） |
@@ -51,14 +51,15 @@
 | --- | --- |
 | AI 用量語意（**產品上知情**） | 學伴提問在呼叫 DeepSeek 前使用 `reserveAiOperation(learnerId, "generation")`，因此與「AI 即時出題／補題」**共用**同一個個人及全域時間窗；管理員儀表板的 `generation` 數字亦已包含聊天用量。程式以常數 `TUTOR_OPERATION_KIND` 集中標示，日後要分開只需改一處 |
 | [README.md](README.md)「AI 用量上限」 | 新增上述共用配額的說明，並列明學伴另有獨立的**每日 15 次**（`Asia/Hong_Kong` 日期）上限 |
+| 教師／管理員可測試（2026-10-27） | 依擁有者指示開放。API 守衛改為 `requireTutorAccess`：學生仍須名冊核對，教職員放行；介面顯示「教師測試身分」橫額及返回後台連結；全站導覽對學生、教師及管理員均顯示「歷史學伴」。對話記錄分別記在 `teacher:`／`admin:` learnerId，每日 15 次獨立計算，**不會**扣減任何學生的額度 |
 
 ### 安全
 
 | 項目 | 行為 |
 | --- | --- |
-| 身分 | 只接受**已登入且在學生名冊內核對過**的學生（`rosterVerified`）；身分一律由既有 session／`requireStudentOrTeacher` 推導，**不**採信前端傳來的電郵、學習者 ID 或角色 |
+| 身分 | 只接受**已登入**的帳戶：學生須在名冊內核對過（`rosterVerified`），教師及管理員可作科組測試；身分一律由既有 session／`requireStudentOrTeacher` 推導，**不**採信前端傳來的電郵、學習者 ID 或角色 |
 | 未登入 | `401`（沿用既有文案「請先以學校 Google 帳戶登入」） |
-| 教師／管理員 | `403`：本階段只限學生使用（見「已知限制」） |
+| 教師／管理員 | 可作科組測試（2026-10-27 起）：GET／POST 均放行，記錄記在 `teacher:`／`admin:` learnerId |
 | 跨學生存取 | 讀取或寫入他人的 `sessionId` 一律回傳 **`404`**（不用 `403`，避免洩漏該對話是否存在） |
 | 離題 | **不呼叫 LLM、不寫入提問紀錄、不扣每日額度**；只有「通過硬閘且成功 `reserve`」的提問才計次 |
 | 超額 | 每日上限 → `429`；既有 `ai_operations` 個人或全域時間窗上限 → 同樣 `429` 並沿用既有文案 |
@@ -94,7 +95,7 @@
 | 限制 | 影響／理由 |
 | --- | --- |
 | 與 AI 出題共用 `generation` 配額 | 學生多做即時出題會壓縮學伴可用次數，反之亦然；管理員儀表板無法區分兩者。要分開需新增 `AiOperationKind: "tutor"` 及對應環境變數，**不可**改寫既有 `generation` 紀錄 |
-| 教師／管理員不可使用 | 與專案「教師可測試學生端」的慣例不同；本階段只開放已核對名冊的學生，教師開 `/tutor` 會看到說明頁而非對話介面（API 回 403），以免與學生配額及對話記錄混用。如要開放需另立決定 |
+| 教師／管理員 | 可進入測試（2026-10-27 起，見下節），並顯示「教師測試身分」橫額 |
 | 歷史硬閘是關鍵詞比對 | 不是語意分類：可能誤擋冷僻但合理的歷史問題，亦可能放行含歷史詞彙的非歷史問題。系統 prompt 仍會拒絕跨科，但**伺服器端不再攔截**，因此該次會計次 |
 | 不注入教材 | 模型沒有教材依據，史實可能有誤；這是防範「第二條洩教材路徑」的刻意取捨，介面已明示僅供參考 |
 | `tokensUsed` 暫存為 0 | 串流期間無法即時取得準確用量，故如實寫 0（schema 允許），不填入估算值假裝精確 |
@@ -111,11 +112,11 @@
 
 | 檢查 | 結果 |
 | --- | --- |
-| `npm test`（全套） | 132 files、**1,588 passed**、4 skipped、0 failed |
+| `npm test`（全套） | 133 files、**1,595 passed**、4 skipped、0 failed |
 | `npm run typecheck` | 通過（`next typegen` + `tsc --noEmit`） |
 | `npm run lint` | 0 error；1 個**既有** warning（[scripts/verify-questionbank-sync.ts](scripts/verify-questionbank-sync.ts) 第 29 行 `fs` 未使用，非本功能引入，未修改） |
-| 學伴相關測試 | `tests/tutor-chat.test.ts` 14 項、`tests/tutor-page-guard.test.ts` 1 項、`tests/tutor-access.test.ts` 4 項、`tests/content-improvement-flags.test.ts` 14 項（含迴歸測試） |
+| 學伴相關測試 | `tests/tutor-chat.test.ts` 16 項、`tests/tutor-page-guard.test.ts` 1 項、`tests/tutor-access.test.ts` 5 項、`tests/content-improvement-flags.test.ts` 14 項（含迴歸測試） |
 | GitHub Actions | PR `#1` 的 `Test, typecheck, lint, build` **success**（最新 commit） |
 | 真實 API | **沒有**在任何測試或驗證中呼叫 DeepSeek；所有 LLM 回應均由 mock 提供 |
 | 正式資料庫 | 唯讀開啟 `data/app.db` 確認 `tutor_*` 表不存在、`schema_migrations` 最高為 `0028` |
-| **部署（2026-10-26／27）** | Cloud Build `23e1053b` **SUCCESS**（3M19S）→ `00057-pxr`；環境變數修復 → `00058-kwh`；守衛修正後重建 `e8ec992a` **SUCCESS**（4M17S）→ `00059-77s`；導覽入口修正後重建 `a1183497` **SUCCESS** → **`history-self-study-00060-mln`**（100% 流量）。`/api/health` 200／`database: sqlite/ok`／`demoMode=false`／DeepSeek 已設定；`GET /tutor` 未登入 **307 → /login?next=%2Ftutor**；`GET`／`POST /api/tutor/chat` 未登入 `401`；`00059-77s` 及 `00060-mln` 均無 ERROR 級日誌；`HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk` 已在該 revision；已確認部署的 JS chunk 含導覽標籤「歷史學伴」。證據見 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json) |
+| **部署（2026-10-26／27）** | Cloud Build `23e1053b` **SUCCESS**（3M19S）→ `00057-pxr`；環境變數修復 → `00058-kwh`；守衛修正後重建 `e8ec992a` **SUCCESS**（4M17S）→ `00059-77s`；導覽入口修正後重建 `a1183497` **SUCCESS** → `00060-mln`；教師測試開放後重建 `a3d823a5` **SUCCESS** → **`history-self-study-00061-s9t`**（100% 流量）。`/api/health` 200／`database: sqlite/ok`／`demoMode=false`／DeepSeek 已設定；`GET /tutor` 未登入 **307 → /login?next=%2Ftutor**；`GET`／`POST /api/tutor/chat` 未登入 `401`；上述 revision 均無 ERROR 級日誌；`HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk` 已保留；已確認部署的 JS chunk 含導覽標籤「歷史學伴」。證據見 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json) |
