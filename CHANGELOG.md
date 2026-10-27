@@ -255,3 +255,18 @@
 | 未驗證（如實記錄） | 按鈕的點擊行為未經瀏覽器測試或登入後人工驗證（UI 測試環境的學生帳戶 `rosterVerified=false`，`/tutor` 的 client chunk 亦不在登入頁 HTML 內）。需登入確認標題列出現「＋ 新對話」 |
 | 證據 | [docs/deployment-evidence-2026-10-27-new-conversation.json](docs/deployment-evidence-2026-10-27-new-conversation.json) |
 | 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00064-bfn=100` |
+
+### 熱修部署 4（2026-10-27，第三次回報：教材召回與空白回應）
+
+| 項目 | 結果 |
+| --- | --- |
+| 回報 | 「列出藝術家」回覆斷言課本沒有提及（教材其實有「藝術三傑」）；另有一次 DeepSeek 空白回應。根因及修法見上「修正」表 |
+| Commit | `63d45a1`（`main`，已推送 `382ac71..63d45a1`） |
+| Cloud Build | `f4dec20c-7b99-4607-a0ef-0ce08505bcf9` **SUCCESS**（4M5S） |
+| Cloud Run revision | **`history-self-study-00066-j7j`**，100% 流量（回滾目標：`00065-tmz`） |
+| 本機真實教材 | 「列出藝術家」現取到第596段（視窗含「達文西（1452-1519年）」）、第602段（達文西與麥開蘭基羅）、第78段；其餘 9 條測試問題未見退步 |
+| 測試 | 135 files、**1,633 passed**、4 skipped、0 failed |
+| 煙霧測試 | `GET /tutor` **307**；`/api/health` `ok=true`、`database: sqlite/ok`、教材 `26,599` 段／`22` 份、`restore=restored`、`lastError=null`；該 revision **沒有** ERROR 級日誌 |
+| 未驗證（如實記錄） | 需登入人工確認「列出藝術家」的標示與節錄 |
+| 證據 | [docs/deployment-evidence-2026-10-27-grounding-recall.json](docs/deployment-evidence-2026-10-27-grounding-recall.json) |
+| 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00065-tmz=100` |

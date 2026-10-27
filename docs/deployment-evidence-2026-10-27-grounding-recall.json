@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-10-27T02:52:00.000Z",
+  "notice": "修正使用者 2026-10-27 第三次回報：①「列出藝術家」回覆斷言課本沒有提及（教材其實有「藝術三傑」）；②一次 DeepSeek 空白回應。映像由 commit 63d45a1 建置。",
+  "reportedIssue": {
+    "reportedAt": "2026-10-27T10:30:27+08:00",
+    "symptoms": [
+      "問「列出文藝復興時期著名的藝術家」，回覆稱「課本這部分沒有提及任何文藝復興藝術家的名字」，並標示「➕ 課本未涵蓋此部分」。教材（課題5 筆記）實際有「達文西、米開蘭基羅與拉斐爾被合稱為『藝術三傑』」及三人簡介表。",
+      "下一條問題收到「DeepSeek 回傳了空白回應，請稍後重試（TUTOR_LLM_EMPTY_RESPONSE）」。"
+    ],
+    "rootCause": [
+      "召回失敗：學生問「藝術家」，教材寫「藝術三傑」或直接寫名字；純字詞重疊找不到那幾段。",
+      "長度偏差：分數未按段落長度折算，長表格與純標題（例如 9 字的「文藝復興時期的繪畫：」）壓過真正在講該主題的段落。",
+      "措辭不誠實：提示詞要求模型把片段當成「唯一依據」，並在不足時說「課本這部分沒有提及」，令模型把「片段沒有」說成「課本沒有」。",
+      "空白回應：學伴自行組裝 DeepSeek 請求，沒有沿用 llm/chat-client.ts 的參數處理——沒有傳送 thinking:{type:'disabled'}（思考 token 會佔盡 max_tokens），亦沒有該檔案既有的空白內容重試。"
+    ]
+  },
+  "fix": {
+    "commit": "63d45a1",
+    "changes": [
+      "類別詞展開（只用於檢索）：藝術家→藝術三傑／畫家／雕塑家／建築師／繪畫；文學家、作家、科學家、航海家同理。",
+      "評分：raw / sqrt(max(len,40)/40)，純標題乘 0.6；避免長表格與標題的偶然命中。",
+      "詞庫：米開蘭基羅改為教材寫法（米開朗基羅為別名）、新增拉斐爾、達文西範圍改為課題5。",
+      "提示詞：片段不足時只可說「我在教材片段中找不到這部分」，明確禁止斷言課本沒有提及。",
+      "介面：「➕ 課本未涵蓋此部分」改為「➕ 未找到教材依據（屬補充，非課本說法）」；免責聲明同步。",
+      "上游請求：傳送 thinking（DeepSeek 預設 disabled）、思考模式不傳 temperature、空白回應重試一次（LLM_EMPTY_RETRIES，只在未送出任何文字時重試）。"
+    ]
+  },
+  "finalState": {
+    "revision": "history-self-study-00066-j7j",
+    "previousRevision": "history-self-study-00065-tmz"
+  },
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00066-j7j",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:f4dec20c-7b99-4607-a0ef-0ce08505bcf9",
+    "imageDigest": "sha256:f480286d810967cabf8343eb1409f1b4f6a42af5ad09c0a49ad683f85a5c29fb",
+    "sourceCommit": "63d45a1",
+    "build": {
+      "buildId": "f4dec20c-7b99-4607-a0ef-0ce08505bcf9",
+      "startTime": "2026-10-27T02:43:43Z",
+      "duration": "4M5S",
+      "status": "SUCCESS",
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/f4dec20c-7b99-4607-a0ef-0ce08505bcf9?project=784175190534"
+    },
+    "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
+    "traffic": "100% -> history-self-study-00066-j7j"
+  },
+  "verification": [
+    {
+      "check": "本機真實教材檢索（data/app.db 副本）",
+      "command": "tsx 執行 findTutorGrounding",
+      "result": "「列出文藝復興時期著名的藝術家」→ grounded、課題5；段落為第596段（意大利著名畫家…，視窗含第595段「達文西（1452-1519年）」）、第602段（…在研究達文西與麥開蘭基羅的作品特色後…）、第78段（繪畫技巧）。修復前同樣問題只取到文藝復興定義、繪畫技巧等不含人名的段落。「達文西有甚麼作品？」「米開朗基羅是誰？」均取到「藝術三傑」及三人簡介。"
+    },
+    {
+      "check": "其他課題未見退步",
+      "command": "同一批次檢索 10 條問題",
+      "result": "凡爾賽條約（課題9，第117／327／85段）、冷戰（課題10）、明治維新（課題3）、文藝復興→宗教改革（課題5）、絲綢之路（課題3）、香港開埠後經濟（課題8）均維持合理結果；每次 12–40ms。"
+    },
+    {
+      "check": "測試",
+      "command": "npx vitest run",
+      "result": "135 files、1,633 passed、4 skipped、0 failed（新增：類別詞展開、「藝術三傑」段落檢索、空白回應重試、兩次皆空才報錯、thinking 參數）"
+    },
+    {
+      "check": "靜態檢查及建置",
+      "command": "npx tsc --noEmit ／ npx eslint src tests ／ npm run build",
+      "result": "全部通過（只有既有的 backup.ts 動態檔案存取警告）"
+    },
+    {
+      "check": "流量及健康",
+      "command": "gcloud run services describe ／ GET /api/health",
+      "result": "100% -> history-self-study-00066-j7j；ok=true、database.status=ok、llmConfigured=true、demoMode=false、documents=46／blocks=26599／studentVisibleDocuments=22、restore=restored、lastError=null（新執行個體尚未到期備份，backupsUploaded=0）"
+    },
+    {
+      "check": "守衛及日誌",
+      "command": "GET /tutor ／ gcloud logging read severity>=ERROR",
+      "result": "307（→ /login?next=%2Ftutor）；沒有 ERROR 級日誌"
+    },
+    {
+      "check": "未驗證（如實記錄）",
+      "command": "（需登入）",
+      "result": "介面在正式環境的行為未人工驗證。建議登入後問「列出文藝復興時期著名的藝術家」，預期：標示「✅ 已對照課本教材」並可看到含達文西／米開蘭基羅／拉斐爾的節錄；若仍顯示「未找到教材依據」，請回報該問題文字以便檢視檢索結果。"
+    }
+  ],
+  "rollback": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00065-tmz=100"
+}
