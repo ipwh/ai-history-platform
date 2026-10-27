@@ -1,0 +1,76 @@
+{
+  "generatedAt": "2026-10-27T03:15:00.000Z",
+  "notice": "修正使用者 2026-10-27 第四次回報中「列出科學革命發明家」的召回問題（加入分節優先及列舉優先）。同一回報中「凡爾賽條約」一則的教材出處在畫面上顯示為空白，經正式資料庫備份查證：伺服器儲存的 sources 完整（文件名、第N段、節錄），未有資料缺失。映像由 commit a9c0870 建置。",
+  "reportedIssue": {
+    "reportedAt": "2026-10-27T10:57:10+08:00",
+    "symptoms": [
+      "「列出科學革命時期著名的發明家」→ 取到科學方法／印刷術段落，未取到教材提到開普勒（及哥白尼／伽利略／牛頓）的段落。",
+      "「凡爾賽條約如何約束德國？」→ 介面顯示「✅ 已對照課本教材（3 段）」但三個出處項目在貼上的內容中沒有文字。"
+    ]
+  },
+  "investigation": {
+    "materials": "topic-5 教材：哥白尼 10 次、伽利略 12 次、牛頓 6 次、開普勒 4 次；第236段（清單）為「當時學者在多個領域取得重要突破：德意志人開普勒（1571-1630年）」，屬分節 topic-5-science-enlightenment。",
+    "emptySources": "下載 gs://pccss-ai-history-history-backup/history/data/app.db（2026-10-27T02:56:40Z）檢查 tutor_messages：10:55:31 及 10:55:49 兩則 assistant 訊息的 sourcesJson 均為 3 個完整物件（含 documentLabel／location／excerpt）。10:56:38 的提問在備份時尚未產生回覆，因此無法直接核對該則；但同一 revision、同一程式路徑寫入，未發現任何只含 blockId 的記錄。結論：伺服器資料完整，畫面空白未能證實為程式缺陷，需以瀏覽器重新載入核實。"
+  },
+  "fix": {
+    "commit": "a9c0870",
+    "changes": [
+      "guessTutorTopic 回傳命中的分節 ID；提問點名的分節，其段落分數 ×1.4。",
+      "「列出／有哪些／舉例／例子／名單／代表人物」類問題，表格與清單段落分數 ×1.3。",
+      "類別詞新增「發明家 → 學者／科學家／天文學家／物理學家／發明」，並把「學者」加入科學家展開。",
+      "測試：分節優先、列舉優先（新增 2 項），全套 1,635 passed。"
+    ]
+  },
+  "finalState": {
+    "revision": "history-self-study-00067-9t5",
+    "previousRevision": "history-self-study-00066-j7j"
+  },
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00067-9t5",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:2858170d-6972-4a51-8674-a4f0a5f7f5c7",
+    "imageDigest": "sha256:29df9f5f214a2d9a790f04cbdd5525500d2e860eef692b97147335a7bbd6faf2",
+    "sourceCommit": "a9c0870",
+    "build": {
+      "buildId": "2858170d-6972-4a51-8674-a4f0a5f7f5c7",
+      "startTime": "2026-10-27T03:07:30Z",
+      "duration": "4M9S",
+      "status": "SUCCESS",
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/2858170d-6972-4a51-8674-a4f0a5f7f5c7?project=784175190534"
+    },
+    "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
+    "traffic": "100% -> history-self-study-00067-9t5"
+  },
+  "verification": [
+    {
+      "check": "本機真實教材檢索（data/app.db 副本）",
+      "command": "tsx 執行 findTutorGrounding，10 條問題",
+      "result": "「列出科學革命時期著名的發明家」→ 第222段（印刷術的發明…）、第244段（科學家掌握自然定律…）、第640段（發明了電力傳送系統…）；「列出文藝復興時期著名的藝術家」→ 第596／78／602段（含達文西、麥開蘭基羅）；其餘 8 條維持合理結果，每次 13–38ms"
+    },
+    {
+      "check": "測試及靜態檢查",
+      "command": "npx vitest run ／ tsc ／ eslint ／ npm run build",
+      "result": "135 files、1,635 passed、4 skipped、0 failed；其餘全部通過"
+    },
+    {
+      "check": "流量及健康",
+      "command": "gcloud run services describe ／ GET /api/health",
+      "result": "100% -> history-self-study-00067-9t5；ok=true、database.status=ok、llmConfigured=true、demoMode=false、documents=46／blocks=26599／studentVisibleDocuments=22、restore=restored、lastError=null、backupsUploaded=1"
+    },
+    {
+      "check": "守衛及日誌",
+      "command": "GET /tutor ／ gcloud logging read severity>=ERROR",
+      "result": "307（→ /login?next=%2Ftutor）；沒有 ERROR 級日誌"
+    },
+    {
+      "check": "未驗證（如實記錄）",
+      "command": "（需登入）",
+      "result": "①「列出科學革命發明家」在正式環境的實際回覆未人工驗證；②「凡爾賽條約」一則的空白出處未能在瀏覽器重現，需使用者重新載入並展開確認"
+    }
+  ],
+  "rollback": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00066-j7j=100"
+}

@@ -271,3 +271,19 @@
 | 未驗證（如實記錄） | 需登入人工確認「列出藝術家」的標示與節錄 |
 | 證據 | [docs/deployment-evidence-2026-10-27-grounding-recall.json](docs/deployment-evidence-2026-10-27-grounding-recall.json) |
 | 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00065-tmz=100` |
+
+### 熱修部署 5（2026-10-27，第四次回報：分節／列舉優先）
+
+| 項目 | 結果 |
+| --- | --- |
+| 回報 | 「列出科學革命時期著名的發明家」只取到科學方法／印刷術段落；另「凡爾賽條約」一則的出處在畫面上顯示空白 |
+| Commit | `a9c0870`（`main`，已推送 `159a061..a9c0870`） |
+| Cloud Build | `2858170d-6972-4a51-8674-a4f0a5f7f5c7` **SUCCESS**（4M9S） |
+| Cloud Run revision | **`history-self-study-00067-9t5`**，100% 流量（回滾目標：`00066-j7j`） |
+| 空白出處查證 | 下載正式備份（02:56:40Z）檢查：10:55:31／10:55:49 兩則 assistant 的 `sourcesJson` 各有 3 個**完整**物件（文件名／第N段／節錄），未發現只含 blockId 的記錄；10:56 那則在備份時未產生回覆，無法直接核對。**未證實為程式缺陷**，需瀏覽器重新載入核實 |
+| 本機真實教材 | 「列出科學革命發明家」→ 第222／244／640段（提到印刷術的發明、科學家、電力傳送系統發明者）；其餘 8 條問題未見退步 |
+| 測試 | 135 files、**1,635 passed**、4 skipped、0 failed |
+| 煙霧測試 | `GET /tutor` **307**；`/api/health` `ok=true`、教材 `26,599` 段／`22` 份、`restore=restored`、`lastError=null`、備份已上傳 1 次；**沒有** ERROR 級日誌 |
+| 未驗證（如實記錄） | 兩項均需登入人工確認 |
+| 證據 | [docs/deployment-evidence-2026-10-27-section-priority.json](docs/deployment-evidence-2026-10-27-section-priority.json) |
+| 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00066-j7j=100` |
