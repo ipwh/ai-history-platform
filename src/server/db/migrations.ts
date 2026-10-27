@@ -1526,6 +1526,17 @@ export const MIGRATIONS: Migration[] = [
          ON tutor_messages(sessionId, createdAt)`,
     ],
   },
+  {
+    id: "0032-tutor-grounding-metadata",
+    statements: [
+      // 學伴回答的教材依據（出處節錄）、依據狀態（grounded／not-covered）及課本用語對照。
+      // 存起來是為了重新載入對話時仍顯示同一組標示：只在前端即時顯示會令學生以為
+      // 「之前有引用、現在沒有」，反而更難判斷哪些內容有課本依據。
+      `ALTER TABLE tutor_messages ADD COLUMN sourcesJson TEXT NOT NULL DEFAULT '[]'`,
+      `ALTER TABLE tutor_messages ADD COLUMN groundingStatus TEXT NOT NULL DEFAULT 'none'`,
+      `ALTER TABLE tutor_messages ADD COLUMN termNotesJson TEXT NOT NULL DEFAULT '[]'`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

@@ -729,8 +729,9 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     scope: "課題7",
   },
   {
-    canonical: "美國獨立戰爭",
-    aliases: ["美國革命", "獨立戰爭", "american revolutionary war", "american war of independence"],
+    // 本校課程及教材用「美國革命」（教材 44 處，分節題為「美國革命與建國」）。
+    canonical: "美國革命",
+    aliases: ["美國獨立戰爭", "獨立戰爭", "american revolutionary war", "american war of independence"],
     category: "event",
     scope: "課題7",
   },
@@ -901,8 +902,9 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     scope: "課題9",
   },
   {
-    canonical: "薩拉熱窩事件",
-    aliases: ["塞拉耶佛事件", "薩拉熱窩刺殺事件", "assassination of archduke franz ferdinand"],
+    // 本校教材用「塞拉耶佛事件」（10 處）；「薩拉熱窩」為內地／台灣譯名。
+    canonical: "塞拉耶佛事件",
+    aliases: ["薩拉熱窩事件", "塞拉耶佛刺殺事件", "薩拉熱窩刺殺事件", "assassination of archduke franz ferdinand"],
     category: "event",
     scope: "課題9",
   },
@@ -991,8 +993,9 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     scope: "課題9",
   },
   {
-    canonical: "希特勒",
-    aliases: ["希特拉", "阿道夫希特勒", "adolf hitler", "hitler"],
+    // 本校教材及香港教科書用「希特拉」（教材 41 處），「希特勒」為台灣／內地譯名。
+    canonical: "希特拉",
+    aliases: ["希特勒", "阿道夫希特拉", "阿道夫希特勒", "adolf hitler", "hitler"],
     category: "person",
     scope: "課題9",
   },
@@ -1003,8 +1006,9 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     scope: "課題9",
   },
   {
-    canonical: "史達林",
-    aliases: ["斯大林", "史太林", "joseph stalin", "stalin"],
+    // 本校教材用「史太林」（37 處），「史達林」「斯大林」為其他地區譯名。
+    canonical: "史太林",
+    aliases: ["史達林", "斯大林", "joseph stalin", "stalin"],
     category: "person",
     scope: "課題9",
   },

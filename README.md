@@ -298,7 +298,24 @@ materials/
 | 練習作答 | `/practice/[sessionId]` | 一次一題、進度顯示、提交後顯示答案／解釋／知識點／教材來源；填充題另有 **AI 語意批改**；每題可**回報問題**；答案與標準答案極為接近時會標示「需要教師覆核」 |
 | 練習結果 | `/practice/[sessionId]/result` | 完成題數、答對題數、正確率、需重溫知識點、逐題回顧（含 AI 批改結果）、針對錯題再練習；教師／管理員測試時另有返回後台首頁的入口 |
 | 我的帳戶 | `/account` | 登入狀態及身分（學生／教師／管理員）、**班別及學號（來自學生名冊）**、登出；教師及管理員另有後台入口 |
-| **AI 歷史自學學伴 (Beta)** | `/tutor` | 只限名冊已核對學生；歷史主題硬閘、每日最多 15 個已預留提問，並共用 `ai_operations` 的 generation 全域時間窗上限；不連接題庫、不注入教材，AI 回答僅供參考 |
+| **AI 歷史自學學伴 (Beta)** | `/tutor` | 只限名冊已核對學生；歷史主題硬閘、每日最多 15 個已預留提問，並共用 `ai_operations` 的 generation 全域時間窗上限；**以已開放給學生的教材段落為依據**，回覆會標示「已對照課本教材」（附節錄及出處）或「課本未涵蓋」，另會提示課本用語；不連接題庫，AI 回答僅供參考 |
+
+#### AI 歷史自學學伴：教材依據與課本用語（2026-10-27）
+
+學伴原本只用模型自身知識作答，會出現兩種落差：**用詞**（模型寫「希特勒」，課本寫「希特拉」）及**內容**（教材沒有涵蓋的說法）。現在每次提問都會先檢索本校教材，並在回覆下方如實標示依據：
+
+| 標示 | 意思 | 學生應該怎樣用 |
+| --- | --- | --- |
+| ✅ 已對照課本教材（N 段） | 回答有事實依據，可展開查看每段節錄（≤60 字）及出處（例如「第42段」） | 這部分可以照著溫習 |
+| ➕ 課本未涵蓋此部分（屬補充） | 教材找不到相關段落，回答屬一般背景知識 | 知道有這回事即可，不必背 |
+| 📖 課本用語：X（回覆用了「Y」） | 模型用了課本以外的寫法 | 考試請用課本的寫法 |
+
+- **只使用學生看得到的教材**（[tutor-grounding.ts](src/server/services/tutor-grounding.ts)）：已開放、已確認版權（教師版另需內容覆核）、排除校內試題檔、排除練習題目／評分參考／教師專用文字——與題目來源節錄使用同一套政策。教材找不到時**不會假裝有依據**，提示詞要求模型在開首明說「課本這部分沒有提及」。
+- **節錄上限**：顯示給學生 60 字（與示範模式的解釋引用一致）、送去模型的段落組 240 字；教材原文不會整段外泄。
+- **檢索方法**：以課題／分節關鍵詞、歷史專名同義詞庫（[history-lexicon.ts](src/lib/history-lexicon.ts)）及中文 n-gram 做確定性字詞比對，再把相鄰段落合併成段落組。**不呼叫任何外部服務**，教材不離開伺服器，亦無額外費用或延遲。限制是**召回率**不及語意檢索：換一個說法可能找不到段落，此時一律標示「課本未涵蓋」。
+- **詞庫譯名修正**：核對教材原文後修正了四個以台灣／內地譯名作「課本寫法」的詞條——希特拉（原「希特勒」）、史太林（原「史達林」）、塞拉耶佛事件（原「薩拉熱窩事件」）、美國革命（原「美國獨立戰爭」）。教材原文出現 41 次「希特拉」、0 次「希特勒」，其餘同理；填充題批改的同義詞比對不受影響（同一組內互為別名）。
+- 測試：[tests/tutor-grounding.test.ts](tests/tutor-grounding.test.ts)（檢索、段落合併、過濾、用語對照，另驗證未確認版權及校內試題檔不會被引用）及 [tests/tutor-grounding-api.test.ts](tests/tutor-grounding-api.test.ts)（SSE 標示、提示詞內容、保存後重新載入）。
+
 
 #### 教材內容政策：只使用課文內容（不顯示練習題目及評分參考）
 
@@ -313,10 +330,11 @@ materials/
 | 教師專用內容（答案、評分參考） | 沿用 `isTeacherOnlyBlockText` |
 
 - 判斷是**模式比對**，偏向不採用；教師端仍可在 `/admin/materials` 看到完整段落。
-- **同一個政策套用於三處**（[content-policy.ts](src/server/materials/content-policy.ts)），避免「出題不用、但學生仍看得到節錄」的不一致：
+- **同一個政策套用於四處**（[content-policy.ts](src/server/materials/content-policy.ts)），避免「出題不用、但學生仍看得到節錄」的不一致：
   1. **出題素材**（`material-units.ts`）：不會以這些段落出題（教師生成題目時亦同）；
   2. **題目來源節錄**（`source-visibility.ts`）：引用這些段落的節錄不顯示，教師端會顯示原因「來源段落是練習題目、評分參考或零散文字」；
-  3. **學生端可用性計數**（`repositories/materials.ts` 的 `studentMaterialBlockCounts`）：與出題素材使用同一套判斷，介面不會承諾做不到的出題。
+  3. **學生端可用性計數**（`repositories/materials.ts` 的 `studentMaterialBlockCounts`）：與出題素材使用同一套判斷，介面不會承諾做不到的出題；
+  4. **學伴的教材依據**（`services/tutor-grounding.ts`）：這些段落不會進入提示詞，亦不會顯示在回覆下方的教材節錄。
 - 課題清單的「有沒有教材」與上述判斷一致，因此不會出現「清單顯示有教材，但實際上出不到題」。
 - 影響（2026-10-16 更新教材後實測，12 課書本內容）：
   - 學生可用於出題的段落共 3,150 段；**每個主題都有可用教材**（2026-10-20 整合後，課題1 及課題5 的主題已無子分節，教材段落直接掛在主題上）；
@@ -781,6 +799,8 @@ scripts/deploy-cloud-run.ps1      Cloud Build + Cloud Run 部署（見第十節�
 | `POST /api/practice/[sessionId]/complete` | 完成練習並取得成績 |
 | `GET /api/practice/[sessionId]/result?learnerId=` | 重看成績 |
 | `POST /api/reports` | 學生回報題目（`{ learnerId, questionId, sessionId, reason, detail }`；已登入時忽略前端 learnerId；題庫題目及 AI 即時生成的題目都可回報） |
+| `GET /api/tutor/chat?sessionId=` | 學伴對話（最近 40 則，每則附教材依據 `sources`／`groundingStatus`／`termNotes`）、每日剩餘次數及全域時間窗狀態；只限名冊已核對學生（教師／管理員可作科組測試） |
+| `POST /api/tutor/chat` | 學伴提問：先檢索已開放給學生的教材段落，再以 SSE 串流回覆。事件依次為 `meta`（`grounding`／`sources`／`topicTitle`）、`delta`（文字）、`done`（剩餘次數 `remaining` 及課本用語對照 `termNotes`） |
 | `GET/POST /api/admin/materials` | 教材清單／上載（亦可用 `source=pilot` 匯入專案內試點教材）—**管理員** |
 | `GET/POST /api/admin/materials/[documentId]/ocr` | 查詢 OCR 狀態／開始辨識（背景執行，`?wait=1` 為同步） |
 | `GET/POST /api/admin/materials/import` | 列出 `materials/` 內可匯入檔案／批次匯入（`{ "all": true, "runOcr": true }`） |

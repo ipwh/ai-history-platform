@@ -3,9 +3,16 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import type { TutorGroundingStatus, TutorSource, TutorTermNote } from "@/lib/types";
+
 interface TutorMessage {
   role: "user" | "assistant";
   content: string;
+  /** 回覆所依據的教材出處（由伺服器提供，重新載入對話後仍然存在） */
+  sources?: TutorSource[];
+  grounding?: TutorGroundingStatus;
+  topicTitle?: string | null;
+  termNotes?: TutorTermNote[];
 }
 
 interface TutorState {
@@ -13,9 +20,28 @@ interface TutorState {
   dailyLimit: number;
 }
 
+/** 伺服器回傳的訊息格式（`GET /api/tutor/chat`） */
+interface TutorWireMessage {
+  role: "user" | "assistant";
+  content: string;
+  sources?: TutorSource[];
+  groundingStatus?: TutorGroundingStatus;
+  termNotes?: TutorTermNote[];
+}
+
+function toTutorMessage(message: TutorWireMessage): TutorMessage {
+  return {
+    role: message.role,
+    content: message.content,
+    sources: message.sources ?? [],
+    grounding: message.groundingStatus ?? "none",
+    termNotes: message.termNotes ?? [],
+  };
+}
+
 const SESSION_STORAGE_KEY = "history-tutor-session";
 const DISCLAIMER =
-  "⚠️ 內容由 AI 輔助生成，僅供課後複習參考；正式史實與作答標準請以課本及科任老師教授為準。";
+  "⚠️ 內容由 AI 輔助生成，僅供課後複習參考。標示「已對照課本教材」的回覆會列出教材節錄及出處可供核對；標示「課本未涵蓋」的部分屬補充。正式史實與作答標準請以課本及科任老師教授為準。";
 
 function readStoredSessionId(): string | null {
   if (typeof window === "undefined") return null;
@@ -70,6 +96,68 @@ function TutorMarkdown({ content }: { content: string }) {
   );
 }
 
+/**
+ * 教材依據標示。
+ *
+ * 三種狀態直接對應學生要做的判斷：這句可否照背（已對照課本）、這只是補充
+ * （課本未涵蓋）、用字是否要跟課本（用語對照）。
+ */
+function TutorEvidence({ message }: { message: TutorMessage }) {
+  const sources = message.sources ?? [];
+  const termNotes = message.termNotes ?? [];
+  const grounded = message.grounding === "grounded";
+  const notCovered = message.grounding === "not-covered";
+  if (!grounded && !notCovered && termNotes.length === 0) return null;
+
+  return (
+    <div
+      className="mt-3 space-y-2 border-t pt-2"
+      style={{ borderColor: "var(--border-strong)" }}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        {grounded ? (
+          <span className="badge badge-success">✅ 已對照課本教材（{sources.length} 段）</span>
+        ) : null}
+        {notCovered ? (
+          <span className="badge badge-warning">➕ 課本未涵蓋此部分（屬補充）</span>
+        ) : null}
+        {message.topicTitle ? (
+          <span className="text-xs text-gray-500">{message.topicTitle}</span>
+        ) : null}
+      </div>
+      {sources.length > 0 ? (
+        <details className="text-sm">
+          <summary className="cursor-pointer text-gray-600">查看教材節錄及出處</summary>
+          <ul className="mt-2 space-y-2">
+            {sources.map((source, index) => (
+              <li
+                key={`${source.blockId}-${index}`}
+                className="rounded-lg bg-white px-3 py-2"
+                style={{ border: "1px solid var(--border-strong)" }}
+              >
+                <p className="text-xs font-semibold text-gray-500">
+                  {(source.documentLabel.length > 0 ? `${source.documentLabel} · ` : "") +
+                    source.location}
+                </p>
+                <p className="mt-1 text-gray-700">「{source.excerpt}」</p>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+      {termNotes.length > 0 ? (
+        <ul className="space-y-1 text-xs text-gray-600">
+          {termNotes.map((note) => (
+            <li key={note.canonical}>
+              📖 課本用語：<strong>{note.canonical}</strong>（回覆用了「{note.used}」）
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 function responseError(payload: unknown, status: number): string {
   if (typeof payload === "object" && payload !== null && "error" in payload) {
     const message = (payload as { error?: unknown }).error;
@@ -113,13 +201,13 @@ export function TutorView({
       }
       const payload = (await response.json()) as {
           error?: string;
-          messages?: TutorMessage[];
+          messages?: TutorWireMessage[];
           remaining?: number;
           dailyLimit?: number;
           windowLimitReached?: boolean;
       };
       if (!response.ok) throw new Error(responseError(payload, response.status));
-      setMessages(payload.messages ?? []);
+      setMessages((payload.messages ?? []).map(toTutorMessage));
       setQuota({
         remaining: payload.remaining ?? 0,
         dailyLimit: payload.dailyLimit ?? 15,
@@ -198,7 +286,28 @@ export function TutorView({
       const decoder = new TextDecoder();
       let buffer = "";
       let event = "";
-      let answer = "";
+
+      /**
+       * 更新（或建立）最後一則學伴訊息。
+       *
+       * `meta` 事件比第一段文字先到，所以這裡需要能在沒有內容時先建立氣泡，
+       * 之後再逐段附加文字。
+       */
+      const updateAssistant = (
+        patch: Partial<Pick<TutorMessage, "sources" | "grounding" | "topicTitle" | "termNotes">>,
+        append = "",
+      ) => {
+        setMessages((current) => {
+          const next = [...current];
+          const last = next[next.length - 1];
+          if (last?.role === "assistant") {
+            next[next.length - 1] = { ...last, ...patch, content: last.content + append };
+          } else {
+            next.push({ role: "assistant", content: append, ...patch });
+          }
+          return next;
+        });
+      };
 
       const handleSseLine = (line: string) => {
         if (line.startsWith("event:")) {
@@ -210,21 +319,24 @@ export function TutorView({
           text?: string;
           error?: string;
           remaining?: number;
+          grounding?: TutorGroundingStatus;
+          topicTitle?: string | null;
+          sources?: TutorSource[];
+          termNotes?: TutorTermNote[];
         };
         if (event === "delta" && typeof data.text === "string") {
-          answer += data.text;
-          setMessages((current) => {
-            const next = [...current];
-            const last = next[next.length - 1];
-            if (last?.role === "assistant") {
-              next[next.length - 1] = { ...last, content: answer };
-            } else {
-              next.push({ role: "assistant", content: answer });
-            }
-            return next;
+          updateAssistant({}, data.text);
+        } else if (event === "meta") {
+          updateAssistant({
+            grounding: data.grounding ?? "none",
+            topicTitle: typeof data.topicTitle === "string" ? data.topicTitle : null,
+            sources: Array.isArray(data.sources) ? data.sources : [],
           });
-        } else if (event === "done" && typeof data.remaining === "number") {
-          setQuota((current) => ({ ...current, remaining: data.remaining as number }));
+        } else if (event === "done") {
+          if (typeof data.remaining === "number") {
+            setQuota((current) => ({ ...current, remaining: data.remaining as number }));
+          }
+          if (Array.isArray(data.termNotes)) updateAssistant({ termNotes: data.termNotes });
         } else if (event === "error") {
           throw new Error(data.error ?? "DeepSeek 串流發生錯誤，請稍後再試。");
         }
@@ -242,6 +354,14 @@ export function TutorView({
       buffer += decoder.decode();
       if (buffer.length > 0) handleSseLine(buffer);
     } catch (cause) {
+      // 串流開始時已先建立空白回覆（教材依據先到）；失敗時不可留下空白氣泡
+      setMessages((current) => {
+        const last = current[current.length - 1];
+        if (last?.role === "assistant" && last.content.trim().length === 0) {
+          return current.slice(0, -1);
+        }
+        return current;
+      });
       setError(cause instanceof Error ? cause.message : "傳送失敗，請稍後再試。");
     } finally {
       setSending(false);
@@ -309,7 +429,8 @@ export function TutorView({
             <p className="mb-1 text-xs font-semibold text-gray-500">
               {message.role === "user" ? "你" : "歷史自學學伴"}
             </p>
-            <TutorMarkdown content={message.content} />
+            {message.content.length > 0 ? <TutorMarkdown content={message.content} /> : null}
+            {message.role === "assistant" ? <TutorEvidence message={message} /> : null}
           </article>
         ))}
         {error ? (
@@ -343,7 +464,9 @@ export function TutorView({
           style={{ borderColor: "var(--border-strong)" }}
         />
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-gray-500">不會向學伴提供題庫、標準答案、評分參考或課本全文。</p>
+          <p className="text-xs text-gray-500">
+            學伴只會引用已開放給學生的教材節錄（每段最多 60 字），不會取得題庫、標準答案或評分參考。
+          </p>
           <button
             type="submit"
             className="btn btn-primary"

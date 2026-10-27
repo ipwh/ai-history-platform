@@ -1457,6 +1457,36 @@ export const questionReportInputSchema = z.object({
 });
 export type QuestionReportInput = z.input<typeof questionReportInputSchema>;
 
+/**
+ * 學伴回答的教材依據狀態（`none` 代表這則訊息沒有教材依據資訊，例如離題回覆）。
+ *
+ * - `grounded`：回答已對照本校教材段落，學生可核對出處；
+ * - `not-covered`：本校教材找不到相關段落，回答屬一般背景補充，**必須如實標示**。
+ */
+export const tutorGroundingStatusSchema = z.enum(["grounded", "not-covered", "none"]);
+export type TutorGroundingStatus = z.infer<typeof tutorGroundingStatusSchema>;
+
+/** 學生可見的教材出處（節錄上限由 services/tutor-grounding.ts 控制，不存原文全文） */
+export const tutorSourceSchema = z.object({
+  blockId: z.string().min(1),
+  /** 教材文件名稱（不含副檔名），供學生辨認出自哪一份筆記 */
+  documentLabel: z.string().default(""),
+  /** 精簡後的來源位置，例如「第42段」 */
+  location: z.string().default(""),
+  /** 教材原文節錄（有長度上限，不是整段原文） */
+  excerpt: z.string().default(""),
+});
+export type TutorSource = z.infer<typeof tutorSourceSchema>;
+
+/** 模型用了課本以外的寫法時顯示的對照（只作提示，不改寫答案） */
+export const tutorTermNoteSchema = z.object({
+  /** 課本慣用寫法 */
+  canonical: z.string().min(1),
+  /** 模型使用的寫法 */
+  used: z.string().min(1),
+});
+export type TutorTermNote = z.infer<typeof tutorTermNoteSchema>;
+
 export const questionReportSchema = z.object({
   id: z.string().min(1),
   questionId: z.string().min(1),

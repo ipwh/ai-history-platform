@@ -338,6 +338,86 @@ export function getBlocksByIds(blockIds: string[]): MaterialBlock[] {
   return rows.map(mapBlock);
 }
 
+/**
+ * 學伴檢索用的教材段落（只取回答所需的欄位）。
+ *
+ * 與 `listGroundingBlocksByTopic` 的分別：
+ *   - 以文件為單位篩走校內試題檔（`kind = 'question-bank'`），並只在
+ *     `student_distribution = 1` 的文件中找——學伴引用的內容一律要經得起
+ *     「學生真的看得到這份教材」的檢查；
+ *   - **不**剖析整份 `MaterialBlock`（`table_json` 的 zod 驗證對上萬段教材而言是多餘開銷），
+ *     只回傳比對及顯示所需的欄位。
+ *
+ * 版權確認、教師版內容覆核等其餘可見性規則由呼叫端以
+ * `listStudentDistributableDocumentIds()` 再篩一次（見 services/tutor-grounding.ts）。
+ */
+export interface TutorCandidateBlock {
+  id: string;
+  documentId: string;
+  documentFileName: string;
+  topicId: string | null;
+  sectionId: string | null;
+  order: number;
+  type: string;
+  text: string;
+  table: TableCell[][] | null;
+  sourceLocation: string;
+  extractionMethod: ExtractionMethod;
+}
+
+interface TutorCandidateRow {
+  id: string;
+  document_id: string;
+  file_name: string;
+  topic_id: string | null;
+  section_id: string | null;
+  sort_order: number;
+  type: string;
+  text: string;
+  table_json: string | null;
+  source_location: string;
+  extraction_method: string | null;
+}
+
+export function listTutorCandidateBlocks(topicId: string): TutorCandidateBlock[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT blocks.id, blocks.document_id, documents.file_name, blocks.topic_id,
+              blocks.section_id, blocks.sort_order, blocks.type, blocks.text,
+              blocks.table_json, blocks.source_location, blocks.extraction_method
+         FROM material_blocks AS blocks
+         INNER JOIN material_documents AS documents ON documents.id = blocks.document_id
+        WHERE blocks.topic_id = ?
+          AND documents.kind <> 'question-bank'
+          AND documents.student_distribution = 1
+        ORDER BY blocks.document_id ASC, blocks.sort_order ASC`,
+    )
+    .all(topicId) as unknown as TutorCandidateRow[];
+  return rows.map((row) => {
+    let table: TableCell[][] | null = null;
+    if (row.table_json) {
+      try {
+        table = JSON.parse(row.table_json) as TableCell[][];
+      } catch {
+        table = null;
+      }
+    }
+    return {
+      id: row.id,
+      documentId: row.document_id,
+      documentFileName: row.file_name,
+      topicId: row.topic_id,
+      sectionId: row.section_id,
+      order: row.sort_order,
+      type: row.type,
+      text: row.text,
+      table,
+      sourceLocation: row.source_location,
+      extractionMethod: (row.extraction_method as ExtractionMethod) ?? "native",
+    };
+  });
+}
+
 export function updateBlock(
   blockId: string,
   changes: { text?: string; sectionId?: string | null; topicId?: string | null },
