@@ -27,6 +27,8 @@ import {
   buildTutorSystemPrompt,
   detectTermMismatches,
   findTutorGrounding,
+  loadTutorCurriculumIndex,
+  matchesCurriculumTerms,
 } from "@/server/services/tutor-grounding";
 import { ApiRouteError, handleRoute, jsonOk, parseJsonBody, privateResponseHeaders } from "@/server/http";
 
@@ -126,8 +128,11 @@ export async function POST(request: Request) {
       history = getTutorMessages(sessionId, 20);
     }
 
+    // 課程索引（已發布課題及分節）：主題硬閘及教材依據共用，只需讀取一次。
+    const curriculum = loadTutorCurriculumIndex();
     const isOnTopic =
       isHistoryTopicPrompt(body.message) ||
+      matchesCurriculumTerms(curriculum, body.message) ||
       (history.length > 0 &&
         sessionId !== null &&
         isTutorSessionLastTurnOnTopic(sessionId) &&
@@ -191,6 +196,7 @@ export async function POST(request: Request) {
     const grounding = findTutorGrounding(
       body.message,
       promptHistory.filter((message) => message.role === "user").map((message) => message.content),
+      curriculum,
     );
     const glossary = buildTutorGlossary(
       grounding.topicId,

@@ -86,6 +86,11 @@ beforeAll(async () => {
     `INSERT INTO topics (id, title, description, published, sort_order, created_at, updated_at)
      VALUES ('topic-9', '課題9：20世紀的國際紛爭及危機(I)–兩次世界大戰', '', 1, 9, ?, ?)`,
   ).run(now, now);
+  // 分節關鍵詞：主題硬閘會接受課程用語（例如「極權」），避免誤擋合法提問
+  db.prepare(
+    `INSERT INTO sections (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+     VALUES ('topic-9-interwar', 'topic-9', NULL, '兩次大戰期間', '', '["極權","巴黎和會"]', 1, ?, ?)`,
+  ).run(now, now);
   db.prepare(
     `INSERT INTO material_documents
        (id, file_name, kind, status, created_at, student_distribution, rights_confirmed_at)
@@ -335,6 +340,19 @@ describe("學伴 API：教材依據", () => {
     };
     expect(meta.grounding).toBe("grounded");
     expect(meta.sources.every((source) => source.documentLabel.includes("課題5"))).toBe(true);
+  });
+
+  it("課程用語（分節關鍵詞「極權」）不會被主題硬閘誤擋", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      mockStreamingAnswer("極權主義的特點包括一黨專政、領袖崇拜與思想控制。"),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(requestFor("POST", { message: "我想知道極權主義的特點" }));
+
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(await response.text()).toContain("極權主義的特點包括");
   });
 
   it("空白回應會自動重試一次，並在請求中明確停用思考模式", async () => {

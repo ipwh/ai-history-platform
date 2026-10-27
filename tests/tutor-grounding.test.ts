@@ -205,6 +205,19 @@ describe("學伴教材依據：課題推斷", () => {
     ["topic-5", [{ title: "文藝復興", matchKeywords: ["人文主義"] }]],
   ]);
 
+  it("課程用語（分節關鍵詞）可通過主題硬閘", () => {
+    const index = {
+      topics,
+      sectionsByTopic: new Map([
+        ["topic-9", [{ id: "topic-9-interwar", title: "兩次大戰期間", matchKeywords: ["極權"] }]],
+        ["topic-5", [{ id: "topic-5-renaissance", title: "文藝復興", matchKeywords: ["人文主義"] }]],
+      ]),
+    };
+    expect(groundingModule.matchesCurriculumTerms(index, "我想知道極權主義的特點")).toBe(true);
+    expect(groundingModule.matchesCurriculumTerms(index, "今天天氣如何")).toBe(false);
+    expect(groundingModule.matchesCurriculumTerms(index, "幫我寫 Python")).toBe(false);
+  });
+
   it("以課本專名推斷所屬課題", () => {
     expect(
       groundingModule.guessTutorTopic("凡爾賽條約如何約束德國？", topics, sections)?.topicId,

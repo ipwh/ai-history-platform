@@ -1013,6 +1013,13 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     scope: "課題9",
   },
   {
+    // 學生常問「極權主義的特點」，但詞庫原本沒有此詞，令主題硬閘誤判離題
+    canonical: "極權主義",
+    aliases: ["極權", "極權統治", "極權政體", "totalitarianism"],
+    category: "institution",
+    scope: "課題9",
+  },
+  {
     canonical: "邱吉爾",
     aliases: ["丘吉爾", "溫斯頓邱吉爾", "winston churchill", "churchill"],
     category: "person",

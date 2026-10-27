@@ -123,6 +123,7 @@ const RETRIEVAL_CONCEPT_TERMS: readonly { trigger: string; expansions: string[] 
   { trigger: "畫家", expansions: ["藝術三傑", "繪畫"] },
   { trigger: "發明家", expansions: ["學者", "科學家", "天文學家", "物理學家", "發明"] },
   { trigger: "科學家", expansions: ["學者", "科學革命", "天文學家", "物理學家"] },
+  { trigger: "懲罰", expansions: ["處分", "制裁", "賠償"] },
   { trigger: "文學家", expansions: ["作家", "詩人", "文學"] },
   { trigger: "作家", expansions: ["文學家", "詩人"] },
   { trigger: "航海家", expansions: ["航海", "探險"] },
@@ -571,21 +572,24 @@ export function answerDeclaresNotCovered(answer: string): boolean {
   );
 }
 
+export interface TutorCurriculumIndex {
+  topics: { id: string; title: string }[];
+  sectionsByTopic: Map<string, { id: string; title: string; matchKeywords: string[] }[]>;
+}
+
 /**
- * 為一條提問找出教材依據。
+ * 讀取已發布課題及分節（教材依據與主題硬閘共用同一份）。
  *
- * `context` 是同一對話中較早的**學生提問**，用於理解「咁之後呢？」這類跟進問題。
- * 任何步驟出錯都回傳 `not-covered`：寧可如實說沒有依據，也不可聲稱查過教材。
+ * 任何錯誤都回傳空索引：索引只用於判斷主題及檢索，失敗時應退化为「找不到教材依據」，
+ * 而不是令整個請求失敗。
  */
-export function findTutorGrounding(message: string, context: string[] = []): TutorGrounding {
+export function loadTutorCurriculumIndex(): TutorCurriculumIndex {
+  const sectionsByTopic = new Map<
+    string,
+    { id: string; title: string; matchKeywords: string[] }[]
+  >();
   try {
     const topics = listTopics({ publishedOnly: true });
-    if (topics.length === 0) return notCovered(null, null);
-
-    const sectionsByTopic = new Map<
-      string,
-      { id: string; title: string; matchKeywords: string[] }[]
-    >();
     for (const topic of topics) {
       sectionsByTopic.set(
         topic.id,
@@ -596,6 +600,52 @@ export function findTutorGrounding(message: string, context: string[] = []): Tut
         })),
       );
     }
+    return { topics, sectionsByTopic };
+  } catch {
+    return { topics: [], sectionsByTopic: new Map() };
+  }
+}
+
+/**
+ * 提問是否命中課程用語（課題標題片段、分節標題及教師維護的關鍵詞）。
+ *
+ * 主題硬閘本來只用詞庫專名，於是「極權主義」（詞庫沒有、但課題9 的分節關鍵詞是
+ * 「極權」）會被誤判離題——學生問正當歷史課題卻收到「只能討論歷史科」。改為同時
+ * 接受課程本身的用語。寧可放行（系統提示仍會拒絕跨科），也不要擋住合法提問。
+ */
+export function matchesCurriculumTerms(index: TutorCurriculumIndex, message: string): boolean {
+  const normalized = normalizeForMatch(message);
+  if (normalized.length === 0) return false;
+  for (const topic of index.topics) {
+    for (const segment of topic.title.split(/[：:–—()（）及]/)) {
+      const key = normalizeForMatch(stripPageReferences(segment));
+      if (key.length >= 3 && normalized.includes(key)) return true;
+    }
+    for (const section of index.sectionsByTopic.get(topic.id) ?? []) {
+      for (const value of [section.title, ...section.matchKeywords]) {
+        const key = normalizeForMatch(stripPageReferences(value));
+        if (key.length < 2 || isStopTerm(key)) continue;
+        if (normalized.includes(key)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * 為一條提問找出教材依據。
+ *
+ * `context` 是同一對話中較早的**學生提問**，用於理解「咁之後呢？」這類跟進問題。
+ * 任何步驟出錯都回傳 `not-covered`：寧可如實說沒有依據，也不可聲稱查過教材。
+ */
+export function findTutorGrounding(
+  message: string,
+  context: string[] = [],
+  curriculum: TutorCurriculumIndex = loadTutorCurriculumIndex(),
+): TutorGrounding {
+  try {
+    const { topics, sectionsByTopic } = curriculum;
+    if (topics.length === 0) return notCovered(null, null);
 
     const recentContext = context.slice(-2);
     // **當前提問優先**：對話歷史只用於「點解？」這類沒有課題線索的跟進問題。

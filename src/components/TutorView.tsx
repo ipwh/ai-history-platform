@@ -103,7 +103,10 @@ function TutorMarkdown({ content }: { content: string }) {
  * （課本未涵蓋）、用字是否要跟課本（用語對照）。
  */
 function TutorEvidence({ message }: { message: TutorMessage }) {
-  const sources = message.sources ?? [];
+  // 只顯示真正有內容的出處：若資料殘缺，寧可顯示一句說明，也不要留下一列空白項目
+  const sources = (message.sources ?? []).filter(
+    (source) => source.excerpt.trim().length > 0 || source.location.trim().length > 0,
+  );
   const termNotes = message.termNotes ?? [];
   const grounded = message.grounding === "grounded";
   const notCovered = message.grounding === "not-covered";
@@ -136,14 +139,21 @@ function TutorEvidence({ message }: { message: TutorMessage }) {
                 style={{ border: "1px solid var(--border-strong)" }}
               >
                 <p className="text-xs font-semibold text-gray-500">
-                  {(source.documentLabel.length > 0 ? `${source.documentLabel} · ` : "") +
-                    source.location}
+                  {source.documentLabel.length > 0
+                    ? `${source.documentLabel}${source.location.length > 0 ? ` · ${source.location}` : ""}`
+                    : source.location.length > 0
+                      ? source.location
+                      : "教材段落"}
                 </p>
                 <p className="mt-1 text-gray-700">「{source.excerpt}」</p>
               </li>
             ))}
           </ul>
         </details>
+      ) : grounded ? (
+        <p className="text-xs text-gray-500">
+          未能顯示教材出處，請重新載入頁面再試；如持續出現請通知老師。
+        </p>
       ) : null}
       {termNotes.length > 0 ? (
         <ul className="space-y-1 text-xs text-gray-600">
