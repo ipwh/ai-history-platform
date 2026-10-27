@@ -10,6 +10,8 @@
  *   - 原檔以圖片或表格排版，解析後選項全部變成「.」，學生無法作答。
  *   - 時序題把每項事件的年份一併印在題幹（「1946年……、1966年及1967年……、1984年……」），
  *     學生只須比較題幹印出的年份即可排序，題目沒有考核時序（見 llm/chronology-stem.ts）。
+ *   - 選擇題的正確選項比其他選項長很多，學生只選最長那項就答對，完全不用讀歷史內容
+ *     （見 `checkOptionLengthNeutral`；2026-10-27 用家指示要徹底解決）。
  *
  * 這些題目**不是**史實問題，而是結構上無法作答，因此在派給學生前一律攔下；
  * 題目仍留在題庫，由教師修正（見 scripts/repair-question-bank.ts）。
@@ -19,6 +21,7 @@
 import type { QuestionType } from "../../lib/types";
 import { chronologyGivenAwayReason } from "../llm/chronology-stem";
 import { answerLeaksIntoStem, countBlankMarkers } from "../llm/fill-question";
+import { analyseOptionQuality, isSevereLengthAsymmetry } from "../quality/option-quality";
 
 export interface ServabilityCheck {
   /** false = 不可派給學生 */
@@ -160,4 +163,58 @@ export function checkQuestionServable(question: {
   }
 
   return SERVABLE;
+}
+
+/**
+ * 選擇題「選項長度不得洩露答案」的檢查（2026-10-27 用家指示）。
+ *
+ * 背景：AI 生成的選擇題長期有「正確答案就是唯一最長那項」的現象（本機快照
+ * 1,210 條 `origin=material-ai` 題目：正確項唯一最長 59.8%；學生一律選最長，
+ * 命中率 72.5%，而隨機作答的基準是 25%）。打亂選項次序**不能**解決，因為線索是
+ * 長度本身，不是位置。
+ *
+ * 為甚麼分開一支函數、而不放進 `checkQuestionServable`：`checkQuestionServable`
+ * 同時用於教師端的發布檢查（`question-service.changeQuestionStatus`）。長度不對稱
+ * 是「這條題目對學生沒有考核作用」，不是「這條題目結構上無法作答」——教師仍可
+ * 保留及修訂該題，但派題時一律攔下。這樣就不會因為一次修訂而使整批題目無法發布。
+ *
+ * 這裡同時涵蓋**已在題庫**的舊題目：即使沒有重新生成，學生也不會再遇到
+ * 「選最長那項」就能答對的題目。
+ */
+export function checkOptionLengthNeutral(question: {
+  questionType: QuestionType;
+  options: string[];
+  correctAnswer: string;
+}): ServabilityCheck {
+  if (question.questionType !== "mc") return SERVABLE;
+  const metrics = analyseOptionQuality({
+    questionType: "mc",
+    options: question.options,
+    correctAnswer: question.correctAnswer,
+  }).metrics;
+  if (!isSevereLengthAsymmetry(metrics) || metrics === null) return SERVABLE;
+  return {
+    ok: false,
+    reason:
+      `選擇題的正確選項（${metrics.correctLength} 字）明顯長於最長的錯誤選項` +
+      `（${metrics.longestDistractorLength} 字），學生只選最長那項就答對，題目失去考核作用；` +
+      "請把四個選項改寫成字數相若、句式相同的同類寫法",
+  };
+}
+
+/**
+ * 派給學生前的最終檢查：結構上可以作答，而且選項長度沒有洩露答案。
+ *
+ * `practice-service` 的每一條派題路徑都應使用這一支，而非只呼叫
+ * `checkQuestionServable`。
+ */
+export function checkQuestionDeliverable(question: {
+  questionType: QuestionType;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+}): ServabilityCheck {
+  const servability = checkQuestionServable(question);
+  if (!servability.ok) return servability;
+  return checkOptionLengthNeutral(question);
 }

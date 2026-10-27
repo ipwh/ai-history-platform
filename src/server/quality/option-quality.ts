@@ -206,6 +206,25 @@ export interface OptionQualityResult {
 const EMPTY_RESULT: OptionQualityResult = { applicable: false, metrics: null, findings: [] };
 
 /**
+ * 「正確選項唯一最長，而且長得明顯」——學生可以只用長度作答，毋須讀懂歷史內容。
+ *
+ * 這是**唯一**會令選擇題不可派給學生的表面線索（見 question-servability.ts）：
+ * 其他線索（句式、絕對化用語）只影響題目質素，不會令學生「零知識也可答對」；
+ * 但「選最長那項」是一個確定、可重複、成功率極高的策略（本機快照實測 72.5%），
+ * 若不攔下，學生會用它代替思考。
+ *
+ * 門檻與 `analyseOptionQuality` 的警告完全一致，避免「有警告但不攔」的分歧。
+ */
+export function isSevereLengthAsymmetry(metrics: OptionLengthMetrics | null): boolean {
+  if (metrics === null) return false;
+  return (
+    metrics.uniquelyLongest &&
+    metrics.ratioToLongestDistractor >= LENGTH_ASYMMETRY_RATIO &&
+    metrics.correctLength - metrics.longestDistractorLength >= LENGTH_ASYMMETRY_MIN_DELTA
+  );
+}
+
+/**
  * 句式判定：是否像一句完整說明（而非名詞短語）。
  *
  * 與 `question-quality.ts` 的 `isExplanatoryDefinition` 刻意採用同一標準
@@ -288,8 +307,10 @@ export function analyseOptionQuality(input: {
       code: "option-length-asymmetry",
       message:
         `正確選項（${correctLength} 字）明顯長於最長的錯誤選項（${longestDistractorLength} 字），` +
-        "學生可能只憑「哪一項最長」作答而毋須讀題。請確認各選項的資訊量相若；" +
-        "這只是可讀性提示，未經核實前不代表答案有問題，也不可因此改寫正確答案。",
+        "學生只憑「哪一項最長」就可以答對，毋須讀懂歷史內容。請把這道題的四個選項**一併改寫**" +
+        "成字數相若（差距不超過三成）、句式相同的同類寫法；錯誤選項要同樣具體（同類的人物／" +
+        "事件／制度／年份），不可用加長錯誤選項的方式湊字數，也不可把正確答案縮短至失去關鍵史實。" +
+        "若無法在教材範圍內做到，請改出另一條只涉及單一史實的題目。",
     });
   }
 

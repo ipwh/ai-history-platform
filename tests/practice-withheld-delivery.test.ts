@@ -77,13 +77,33 @@ let fact2: MaterialFact;
  * 合成題目：一條乾淨的選擇題（標準答案逐字見於教材）＋一條未確定的選擇題
  * （解釋只是重複答案 → 閘門判為需教師確認，暫緩自動發布）。
  */
+/**
+ * 測試選項的長度平衡（2026-10-27）。
+ *
+ * 這裡的合成題目原本用「與本題無關的敘述甲」這類短句作錯誤選項，而正確選項是教材原文
+ * （16–40 字），正好觸發新的「正確選項唯一最長」規則（見 question-servability.ts 的
+ * checkOptionLengthNeutral），令題目被攔下。本檔測試的是「未確定題目不會交付學生」，
+ * 與選項長度無關，因此把錯誤選項補長至與正確選項相若，避免因無關原因失敗。
+ */
+function padOption(label: string, targetLength: number): string {
+  const filler = "，與本題資料不符";
+  let text = label;
+  while (text.length < targetLength) text += filler;
+  return text;
+}
+
 function syntheticQuestions() {
   return [
     {
       questionType: "mc",
       difficulty: "basic",
       question: "以下哪一項描述最符合這個課題的內容？",
-      options: [fact.excerpt, "與本題無關的敘述甲", "與本題無關的敘述乙", "與本題無關的敘述丙"],
+      options: [
+        fact.excerpt,
+        padOption("與本題無關的敘述甲", fact.excerpt.length),
+        padOption("與本題無關的敘述乙", fact.excerpt.length),
+        padOption("與本題無關的敘述丙", fact.excerpt.length),
+      ],
       correctAnswerIndex: 0,
       correctAnswer: fact.excerpt,
       explanation: `課文原文這樣說明：${fact.excerpt}`,
@@ -96,7 +116,12 @@ function syntheticQuestions() {
       questionType: "mc",
       difficulty: "basic",
       question: UNCERTAIN_STEM,
-      options: [fact2.excerpt, "與本題無關的敘述丁", "與本題無關的敘述戊", "與本題無關的敘述己"],
+      options: [
+        fact2.excerpt,
+        padOption("與本題無關的敘述丁", fact2.excerpt.length),
+        padOption("與本題無關的敘述戊", fact2.excerpt.length),
+        padOption("與本題無關的敘述己", fact2.excerpt.length),
+      ],
       correctAnswerIndex: 0,
       correctAnswer: fact2.excerpt,
       explanation: fact2.excerpt,
@@ -247,7 +272,12 @@ describe("題庫不足時的即時補題（questionSource: bank）", () => {
       questionType: "mc",
       difficulty: "basic",
       question: "工業化令城市出現甚麼變化？",
-      options: [excerpt, "人口全面減少", "農業完全消失", "城市不再擴張"],
+      options: [
+        excerpt,
+        padOption("人口全面減少", excerpt.length),
+        padOption("農業完全消失", excerpt.length),
+        padOption("城市不再擴張", excerpt.length),
+      ],
       correctAnswer: excerpt,
       acceptedAnswers: [],
       explanation: `課文說明：${excerpt}`,

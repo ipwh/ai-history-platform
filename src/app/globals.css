@@ -26,6 +26,30 @@
   --font-sans: var(--font-sans);
 }
 
+/*
+ * Safari 16.4 以前不支援 CSS `@property`（iPad Air 2 最高只能安裝 iPadOS 15.8.3，
+ * 其 Safari 永遠不會支援）。Tailwind 4 用 `@property` 為 `--tw-*` 變數註冊
+ * initial-value；在不支援的引擎上，這些變數從未定義，`border-style: var(--tw-border-style)`
+ * 這類宣告會整條失效，令邊框、space-y 間距及陰影消失（版面仍可用，但會走樣）。
+ *
+ * 這裡以一般宣告提供同一批初始值：自訂屬性本身會繼承，而效用類別在自己的元素上
+ * 設定時仍然會覆蓋，因此在支援 `@property` 的瀏覽器上結果完全一樣。
+ */
+:root {
+  --tw-border-style: solid;
+  --tw-space-y-reverse: 0;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-alpha: 100%;
+  --tw-inset-shadow: 0 0 #0000;
+  --tw-inset-shadow-alpha: 100%;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-inset-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-drop-shadow-alpha: 100%;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }

@@ -1159,7 +1159,13 @@ export function checkQuestionQuality(
 
   // 表面線索（Sprint 23）：長度／句式／絕對化用語／重複。全部只作 warning——
   // 既不影響 qualityOutcome（因此不改變自動發布政策），亦不寫入 teacherConfirmationRequired、
-  // 不觸發重寫、不改動任何題目內容（見 src/server/quality/option-quality.ts 的說明）。
+  // 不改動任何題目內容（見 src/server/quality/option-quality.ts 的說明）。
+  //
+  // 2026-10-27：長度不對稱的**實際攔截**不在這裡做，而在兩個地方——
+  //   1. question-service 會就這條警告要求模型把四個選項一併重寫一次；
+  //   2. practice-service 派題前會檢查（question-servability.ts 的
+  //      `checkOptionLengthNeutral`），重寫後仍然「正確項唯一最長」的題目不會到學生手上。
+  // 這樣教師端的發布判定不變，但學生永遠不會見到「選最長那項」就能答對的題目。
   if (candidate.questionType === "mc") {
     const optionQuality = analyseOptionQuality({
       questionType: candidate.questionType,

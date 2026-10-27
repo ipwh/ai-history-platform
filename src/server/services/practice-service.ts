@@ -43,7 +43,7 @@ import { toStudentQuestions } from "../../lib/student-question";
 import { calculateAccuracy, gradeAnswer, gradeSubmittedAnswer, type GradeOutcome } from "./grading";
 import { gradeWithAi } from "./ai-grading";
 import { generateQuestions } from "./question-service";
-import { checkQuestionServable } from "./question-servability";
+import { checkQuestionDeliverable } from "./question-servability";
 import { studentExcerptIsVisible } from "./source-visibility";
 import {
   classifyExplanation,
@@ -254,8 +254,8 @@ function collectQuestionsFromWrongAttempts(
       withheldForReview += 1;
       continue;
     }
-    // 結構上無法作答的題目（多個空格只有一個答案、選項失效等）不再派給學生
-    if (!checkQuestionServable(question).ok) continue;
+    // 不可派給學生的題目（多個空格只有一個答案、選項失效、正確選項明顯最長等）不再派
+    if (!checkQuestionDeliverable(question).ok) continue;
     collected.set(question.id, question);
   }
 
@@ -550,12 +550,13 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
     // 即時生成的題目同樣要通過最後的結構安全網（與題庫路徑一致）：生成流程雖然
     // 已驗證，但排版類缺陷（例如選項以 i／ii 指涉題幹卻沒有標示）仍可能漏網。
     const servableGenerated = generated.questions.filter(
-      (question) => checkQuestionServable(question).ok,
+      (question) => checkQuestionDeliverable(question).ok,
     );
     selected = shuffle(servableGenerated).slice(0, parsed.questionCount);
     if (servableGenerated.length < generated.questions.length) {
       notices.push(
-        `有 ${generated.questions.length - servableGenerated.length} 條即時生成的題目結構上無法作答，已略過。`,
+        `有 ${generated.questions.length - servableGenerated.length} 條即時生成的題目未達派題要求` +
+          "（結構上無法作答，或正確選項明顯比其他選項長），已略過。",
       );
     }
     origin = "generated";
@@ -571,7 +572,7 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
         // Sprint 7.9：閘門判定未確定、仍待教師確認的題目不會進入學生練習，
         // 即使資料庫中因舊資料或人為操作而仍是 published。
       }).filter(
-        (item) => !item.teacherConfirmationRequired && checkQuestionServable(item).ok,
+        (item) => !item.teacherConfirmationRequired && checkQuestionDeliverable(item).ok,
       ),
       // 解釋未達標是否暫緩派發由 EXPLANATION_HOLD_POLICY 決定（預設 off = 不影響）
       holdPolicy,
@@ -614,7 +615,7 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
         // 三條發布路徑的關卡（見 question-service 及 0020 migration）。
         const deliverable = generated.questions.filter(
           (question) =>
-            !question.teacherConfirmationRequired && checkQuestionServable(question).ok,
+            !question.teacherConfirmationRequired && checkQuestionDeliverable(question).ok,
         );
         const heldCount = generated.questions.length - deliverable.length;
         if (deliverable.length > 0) {
@@ -822,7 +823,7 @@ export async function submitAnswer(
   // 題目若在題庫中已被隔離（待教師確認）或結構上不可作答，就不再接受新作答——
   // 否則舊練習快照會成為繞過當前發布規則的入口。學生的既有作答記錄不受影響。
   const bank = getQuestion(question.id);
-  if (bank && (bank.teacherConfirmationRequired || !checkQuestionServable(bank).ok)) {
+  if (bank && (bank.teacherConfirmationRequired || !checkQuestionDeliverable(bank).ok)) {
     throw new PracticeServiceError(
       "這條題目正在教師覆核中，暫時不能作答。你之前的作答記錄不受影響，可以繼續其他題目。",
       409,

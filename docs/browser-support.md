@@ -1,10 +1,15 @@
-# 瀏覽器支援基線與舊裝置處理（Sprint 23；Sprint 24 補充方案比較）
+# 瀏覽器支援基線與舊裝置處理（Sprint 23；Sprint 24 方案比較；Sprint 26 降低基線）
 
-最後更新：2026-10-23
+最後更新：2026-10-27
+
+> **2026-10-27 更新（重要）**：Sprint 26 已把最低支援基線由 Safari 16.4 **降至 Safari 15.4**，
+> 目的是支援 iPad Air 2 一類「最高只能安裝 iPadOS 15.8.3」的裝置。第 9 節記錄了實測過程、
+> 改動內容與**尚未實機驗證**的部分。第 1 至 6 節保留當時（Safari 16.4 基線）的原文，
+> 方便對照決策變化；如與第 9 節衝突，以第 9 節為準。
 
 ---
 
-## 1. 結論：最低支援基線
+## 1. 結論：最低支援基線（2026-10-23 版，已被第 9 節取代）
 
 **本網站的最低支援基線是 Safari 16.4（iPadOS／iOS 16.4）**，與 Next.js 16 的官方要求一致。
 
@@ -300,5 +305,93 @@ Playwright 的 WebKit 專案（如已安裝瀏覽器）可驗證學生練習流�
 4. 以 Safari 私密瀏覽重做一次（`localStorage` 被封鎖路徑）；
 5. 將 Safari 切換到 50%／75% 頁面縮放，確認沒有水平滾動；
 6. 記錄：系統版本、Safari 版本、截圖、任何主控台錯誤。
+
+---
+
+## 9. Sprint 26：把基線降至 Safari 15.4（iPad Air 2 實用性）
+
+### 9.1 問題的硬件事實
+
+| 裝置 | 晶片 | 最高可安裝系統 | Safari 版本上限 |
+| --- | --- | --- | --- |
+| **iPad Air 2** | A8X（2014） | **iPadOS 15.8.3** | Safari 15.x |
+| iPad mini 4 | A8 | iPadOS 15.8.3 | Safari 15.x |
+| iPad（第 5／6 代以上） | A9 以上 | iPadOS 16 或以上 | 可達 16.4+ |
+
+因此附圖的情況（**Safari 15.6**、畫面停在「練習未能載入」）不是「未更新」——
+iPad Air 2 **永遠無法**安裝 iPadOS 16.4，Sprint 23 的提示叫學生「更新至 16.4」是做不到的事。
+要在這批裝置上使用，只有兩條路：降低網站的技術要求，或改用其他裝置。
+
+### 9.2 實測：降低 build target 後，致命語法已消失
+
+Sprint 24 的結論是「Next.js 的 client runtime 無法降到 Safari 16.4 以下」。Sprint 26 以實際建置
+驗證這句話：**框架輸出的語法是可以降級的**，只是要先確認降級後仍沒有其他硬錯誤。
+
+做法與結果（2026-10-27，本機 `next build`）：
+
+1. 量度**現有**產物：23 個 JS chunk；其中 `.next/static/chunks/1uufm7k_ugfnn.js`
+   含 `class y extends Component{static{this.contextType=…}}`——這是 Next.js 自己的
+   錯誤邊界元件，`static { }`（class static block）是 **Safari 16.4 才支援**的語法，
+   Safari 15 在**解析階段**就會拋 SyntaxError，整個 chunk 不會執行（這正是「永遠載入中」的成因）。
+2. 在 `package.json` 加入
+   `"browserslist": ["safari 15.6", "chrome 111", "firefox 111"]`，重新建置。
+3. 再次掃描同一個 chunk：**`static { }` 已完全消失**（0 處），class 語法保留（Safari 15 支援）。
+4. 其餘語法／API 掃描（重建後）：regex lookbehind 0、regex `v` flag 0、unicode property escape 4
+   （Safari 11.1+）、`Object.hasOwn` 3、`Array.prototype.at` 3（兩者皆 Safari 15.4+）、
+   `replaceAll` 1（13.1+）、`Object.fromEntries` 5（12.1+）。
+
+**即：Safari 15.4 以上不再有解析階段的硬錯誤。** 這與 Sprint 24 的判斷不同，原因不是框架變了，
+而是當時沒有實際建置驗證。
+
+### 9.3 仍存在的降級（不致命，但會影響外觀）
+
+Tailwind 4 的 CSS 依賴 `@property`（Safari 16.4+）與 `color-mix()`（16.2+）。在 Safari 15：
+
+| 項目 | 產物出現次數 | Safari 15 的表現 | 處理 |
+| --- | --- | --- | --- |
+| `@property` | 36 | 未知 at-rule，**被忽略**（不是解析錯誤） | `globals.css` 補上同一批 `--tw-*` 初始值 |
+| `color-mix()` | 20 | 未知函數，該宣告失效 | 未處理（只用於部分色階，會回退到預設色） |
+
+若不補 `--tw-*`，`border-style: var(--tw-border-style)`、`space-y-*`、`box-shadow`
+等整條宣告會失效（邊框消失、間距走樣）。`globals.css` 的 `:root` 已加上
+`--tw-border-style: solid` 等 12 個初始值，令降級只影響色階而不影響版面。
+
+### 9.4 已實施的改動
+
+| 檔案 | 改動 |
+| --- | --- |
+| `package.json` | 新增 `browserslist: ["safari 15.6", "chrome 111", "firefox 111"]` |
+| `src/app/globals.css` | 補 `--tw-*` 初始值（`@property` 的降級方案） |
+| `src/lib/browser-support.ts` | 基線常數改為 15.4；提示文案改為「先重新載入，較舊 iPad 首次載入需 30–60 秒」，並明確說明 **iPad Air 2／iPad mini 4 最高只可安裝 iPadOS 15.8.3**；看門狗等待由 20 秒延長至 60 秒 |
+| `tests/browser-support.test.ts` | 基線判定、文案內容的斷言同步更新 |
+
+### 9.5 尚未驗證／風險（必須如實記錄）
+
+- **未在實體 iPad Air 2 上驗證**。本節的結論只到「JavaScript 可以被 Safari 15 解析」，
+  不代表 React 19 的 hydrate、資料請求、作答流程在該裝置上一定流暢。
+- **效能風險**：iPad Air 2 為 2014 年 A8X／2GB RAM 裝置。Next.js 16 + React 19 的
+  client bundle 需完整下載及 hydrate，首次載入可能需 10–40 秒；看門狗已由 20 秒放寬到 60 秒，
+  但**沒有實測數據**。
+- **記憶體風險**：長時間練習、多次切換頁面可能被 Safari 回收分頁（未驗證）。
+- **CSS 降級**：`color-mix()` 相關色階在 Safari 15 會失效，需實機目視確認可讀性（尤其
+  正確／錯誤回饋的底色）。
+- **維護成本**：每次升級 Next.js／Tailwind 都要重新掃描產物是否引入新的新語法，
+  並重跑第 9.2 的掃描步驟。
+
+### 9.6 實機驗收清單（iPad Air 2，待執行）
+
+1. 在 iPad Air 2（iPadOS 15.8.3、Safari 15.x）以學生帳戶登入；
+2. 開啟任一課題的練習頁，記錄**由按下連結到見到第一題**的時間；
+3. 完成 3 題選擇題 + 1 題填充題：點選、提交、看回饋、下一題、重新載入；
+4. 目視檢查：邊框、按鈕、正確／錯誤回饋底色是否仍然可見；是否有水平捲動；
+5. 連續練習 20 分鐘，觀察是否出現白畫面（Safari 回收分頁）；
+6. 若畫面曾經停在「正在載入題目…」超過 60 秒，記錄主控台第一個錯誤訊息。
+
+### 9.7 若 9.6 失敗時的後備方案
+
+1. 把 `browserslist` 還原為預設（移除該欄位）→ 立即回到 Safari 16.4 基線，行為等同 Sprint 23；
+2. 或保留降級建置，但把 `MINIMUM_SUPPORTED_SAFARI` 及提示文案改回 16.4（提示先行，功能後上）；
+3. 學校層面為 iPad Air 2 班別提供較新平板，仍是成本最低的方案。
+
 
 

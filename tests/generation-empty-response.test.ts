@@ -46,6 +46,20 @@ let sectionId: string;
 let excerpt: string;
 let blockId: string;
 
+/**
+ * 把錯誤選項補長至與正確選項相若（2026-10-27）。
+ *
+ * 正確選項是教材原文（16–40 字），而原本的錯誤選項只有 9 字，會觸發新的「正確選項
+ * 唯一最長」規則（見 question-servability.ts 的 checkOptionLengthNeutral）而被攔下。
+ * 本檔測試的是「provider 空回應後重試」，與選項長度無關。
+ */
+function padOption(label: string, targetLength: number): string {
+  const filler = "，與本題資料不符";
+  let text = label;
+  while (text.length < targetLength) text += filler;
+  return text;
+}
+
 /** provider 回應：第一次 0 題，之後 1 題（答案逐字見於教材） */
 function fetchStub(callCounter: { count: number }): typeof fetch {
   return (async () => {
@@ -58,7 +72,12 @@ function fetchStub(callCounter: { count: number }): typeof fetch {
               questionType: "mc",
               difficulty: "basic",
               question: "以下哪一項描述最符合這個課題的內容？",
-              options: [excerpt, "與本題無關的敘述甲", "與本題無關的敘述乙", "與本題無關的敘述丙"],
+              options: [
+                excerpt,
+                padOption("與本題無關的敘述甲", excerpt.length),
+                padOption("與本題無關的敘述乙", excerpt.length),
+                padOption("與本題無關的敘述丙", excerpt.length),
+              ],
               correctAnswerIndex: 0,
               correctAnswer: excerpt,
               explanation: `課文原文這樣說明：${excerpt}`,

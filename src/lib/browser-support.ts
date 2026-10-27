@@ -1,32 +1,31 @@
 /**
- * 瀏覽器支援基線與舊裝置提示（Sprint 23）。
+ * 瀏覽器支援基線與舊裝置提示（Sprint 23；Sprint 26 降低基線至 Safari 15.4）。
  *
  * 已核實的基線（證據見 docs/browser-support.md）：
- *   - `next@16.4.1` 官方支援 Chrome 111+、Edge 111+、Firefox 111+、Safari 16.4+
- *     （`node_modules/next/dist/docs/.../supported-browsers.md`，預設
- *     `browserslist: ["chrome 111","edge 111","firefox 111","safari 16.4"]`）。
- *   - 本機 `.next/static/chunks` 的實際輸出含 ES2022 語法（class static block、
- *     private field、`?.`、`??`、`.at()`），因此 Safari 16.4 以下的引擎會在**解析階段**
- *     就失敗，React 不會 hydrate。
- *   - 學生練習頁由 `PracticeRunner`（client component）負責載入題目；hydrate 前的
- *     伺服器輸出只有「正在載入題目…」。舊裝置因此看到**永遠不會結束的載入畫面**，
- *     沒有任何錯誤訊息——這正是「無法載入學生練習題目」的表現。
+ *   - `next@16.4.1` 官方預設支援 Chrome 111+、Edge 111+、Firefox 111+、Safari 16.4+，
+ *     但可用 `package.json` 的 `browserslist` 把轉譯目標調低。
+ *   - 2026-10-27 實測：`browserslist: ["safari 15.6", …]` 後，`.next/static/chunks`
+ *     已**不再含** class static block（`static { }`，此乃 Safari 16.4 以前唯一的
+ *     解析階段硬錯誤），其餘輸出語法的最低要求均 ≤ Safari 15.4。
+ *   - 因此本網站改為把 **Safari 15.4（iPadOS／iOS 15.4）** 定為基線，令停留在
+ *     iPadOS 15 的裝置（例如 iPad Air 2 最高只能安裝 iPadOS 15.8.3）仍可使用。
+ *   - 仍有一項未實機驗證：Tailwind 4 產出的 `@property` 及 `color-mix()` 在 Safari < 16.4
+ *     會被忽略／丟棄，globals.css 已補上 `--tw-*` 變數的預設值作為降級方案。
  *
- * 由於 Next.js 的 client bundle 無法降到 Safari 16.4 以下（框架自身的最低要求），
- * 這裡不做降級編譯，而是：
+ * 看門狗的做法不變：
  *   1. 在根版面注入一段**僅用 ES5 語法**的看門狗腳本（不會因新語法而解析失敗），
  *      偵測「必要功能是否齊全」；
- *   2. 若功能齊全但一直沒有 hydrate（例如網絡太慢或資源被擋），在合理等待後
- *      顯示可操作的訊息，而不是無止境的 spinner；
+ *   2. 若功能齊全但一直沒有 hydrate（例如網絡太慢、裝置太舊而反應極慢），
+ *      在合理等待後顯示可操作的訊息，而不是無止境的 spinner；
  *   3. 訊息只說明「瀏覽器版本過舊／功能不足／載入超時」，不會假裝題目已載入，
  *      亦不會以靜態示範題掩蓋真正的失敗。
  */
 
-export const MINIMUM_SUPPORTED_SAFARI = { major: 16, minor: 4 } as const;
+export const MINIMUM_SUPPORTED_SAFARI = { major: 15, minor: 4 } as const;
 export const MINIMUM_SUPPORTED_CHROMIUM = 111;
 export const MINIMUM_SUPPORTED_FIREFOX = 111;
 
-export const SUPPORT_BASELINE_LABEL = "Safari 16.4（iPadOS／iOS 16.4）或以上";
+export const SUPPORT_BASELINE_LABEL = "Safari 15.4（iPadOS／iOS 15.4）或以上";
 
 /**
  * 舊裝置提示中列出的必要功能。共同點是 Safari 16.4 才全部支援，
@@ -119,12 +118,12 @@ export function evaluateUserAgent(userAgent: string): BrowserSupportVerdict {
 export const BROWSER_SUPPORT_NOTICE = {
   title: "練習未能載入",
   body:
-    "如果你的畫面一直停在「正在載入題目…」，可能是瀏覽器版本太舊、裝置功能不足，或網絡太慢。" +
+    "如果你的畫面一直停在「正在載入題目…」，可能是瀏覽器版本太舊、裝置太舊而反應極慢，或網絡太慢。" +
     `本網站需要 ${SUPPORT_BASELINE_LABEL}。`,
   actions: [
-    "把 iPad／iPhone 更新至 iPadOS／iOS 16.4 或以上（設定 → 一般 → 軟件更新），或改用較新的電腦／平板。",
-    "如果只是網絡較慢，可先按「重新載入」再試一次。",
-    "若更新後仍無法載入，請把這個畫面截圖交給老師，並註明裝置型號及系統版本。",
+    "先按「重新載入」再試一次：較舊的 iPad 首次載入需要較長時間，稍等 30 至 60 秒即可。",
+    "如果仍然不行，請在「設定 → 一般 → 關於本機」查看「軟件版本」，並在「設定 → 一般 → 軟件更新」更新至最新版本（iPad 需為 iPadOS 15.4 或以上）。",
+    "注意：iPad Air 2、iPad mini 4 等舊機型最高只能安裝 iPadOS 15.8.3，無法更新到 iPadOS 16 或以上。如果你的系統版本已是 15.8 而仍無法載入，請改用較新的平板或電腦，並把這個畫面截圖交給老師，註明裝置型號及系統版本。",
   ],
 } as const;
 
@@ -136,7 +135,9 @@ export const BROWSER_SUPPORT_NOTICE = {
  */
 export function buildLegacyBrowserWatchdogScript(): string {
   const required = JSON.stringify(REQUIRED_WEB_FEATURES);
-  const attempts = 40;
+  // 舊 iPad（例如 iPad Air 2）解析及 hydrate 都比新機慢得多：20 秒（40 × 500ms）會在
+  // 裝置仍在正常載入時就誤報失敗。改為 60 秒，同時保留「一直沒有 hydrate」的提示。
+  const attempts = 120;
   const intervalMs = 500;
   return `(function () {
   var REQUIRED = ${required};

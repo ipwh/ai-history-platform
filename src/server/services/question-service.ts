@@ -40,8 +40,11 @@ import type { QuestionGenerationInput } from "../llm/provider";
 import { checkQuestionQuality, isMachineRevisableIssue, qualityOutcome } from "../llm/question-quality";
 import {
   OPTION_QUALITY_CODES,
+  analyseOptionQuality,
+  isSevereLengthAsymmetry,
   mergeOptionQualityWarnings,
   parseOptionQualityWarning,
+  type OptionLengthMetrics,
   type OptionQualityCode,
 } from "../quality/option-quality";
 import { replaceRevalidationFindings } from "../repositories/question-quality-findings";
@@ -318,23 +321,57 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
   const allowFallback = options.allowMockFallback !== false && resolved.provider.name !== "mock";
   await attempt(allowFallback);
 
+  /**
+   * 選擇題「正確選項唯一最長」的量度（2026-10-27）。
+   *
+   * 這是學生可以用「選最長那項」代替思考的線索（本機快照命中率 72.5%，隨機基準 25%），
+   * 打亂選項次序無法解決。處理方式分三層：
+   *   1. 提示詞直接要求四個選項字數相若（見 prompt.ts 規則 18）；
+   *   2. 這裡把仍然不對稱的題目加入**同一次**有限次重寫，並附上具體修訂指示；
+   *   3. 重寫後仍然不對稱的題目一律丟棄（不寫入題庫），而派題前還有一層
+   *      `checkOptionLengthNeutral`（見 practice-service），舊題目亦不會到學生手上。
+   */
+  const optionSymmetryNote = (question: Question, metrics: OptionLengthMetrics): string =>
+    `上一輪有一條選擇題（題幹：「${question.question.slice(0, 20)}…」）的正確選項有 ${metrics.correctLength} 字，` +
+    `但最長的錯誤選項只有 ${metrics.longestDistractorLength} 字，學生只憑「哪一項最長」就可以答對。` +
+    "請把這道題的四個選項一併改寫成字數相若（差距不可超過三成）、句式相同的同類寫法；" +
+    "錯誤選項要同樣具體，不可用加長錯誤選項的方式湊字數，也不可把正確答案縮短至失去關鍵史實。";
+
+  const measureOptionSymmetry = (question: Question): OptionLengthMetrics | null =>
+    analyseOptionQuality({
+      questionType: question.questionType,
+      options: question.options,
+      correctAnswer: question.correctAnswer,
+    }).metrics;
+
+  const asymmetricNotes = new Map<string, string>();
+  for (const question of questions) {
+    const metrics = measureOptionSymmetry(question);
+    if (metrics !== null && isSevereLengthAsymmetry(metrics)) {
+      asymmetricNotes.set(question.id, optionSymmetryNote(question, metrics));
+    }
+  }
+
   // 有限次重寫（Sprint 8.5）：只在出現「機器可自行修正」的教學品質問題時再問一次。
   // 成本控制：合共最多 2 次 provider 呼叫；本地示範生成是確定性的，不重試。
   // 合併方式：保留第一輪沒有問題的題目，只以第二輪補上（同一題幹不重複）。
   const revisableIds = new Set(
     qualityOutcomes.filter((entry) => entry.machineRevisable).map((entry) => entry.questionId),
   );
+  // 選項長度不對稱與「解釋只抄教材」屬同一類可修正問題，共用同一次重寫（不額外增加成本）
+  for (const id of asymmetricNotes.keys()) revisableIds.add(id);
   if (revisableIds.size > 0 && resolved.provider.name !== "mock") {
     const cleanFromFirstRound = questions.filter((question) => !revisableIds.has(question.id));
     const notes = [
-      ...new Set(
-        qualityOutcomes
+      ...new Set([
+        ...qualityOutcomes
           .filter((entry) => entry.machineRevisable)
           .flatMap((entry) => entry.notes),
-      ),
+        ...asymmetricNotes.values(),
+      ]),
     ].slice(0, 5);
     warnings.push(
-      `有 ${revisableIds.size} 條題目的教學品質需要改善（例如解釋只是抄錄教材原文），已要求重寫一次。`,
+      `有 ${revisableIds.size} 條題目的教學品質需要改善（例如解釋只是抄錄教材原文、選擇題的正確答案寫得比其他選項明顯長），已要求重寫一次。`,
     );
     try {
       await attempt(false, notes);
@@ -361,6 +398,21 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
           "已保留第一輪的題目，並交由教師確認。",
       );
     }
+  }
+
+  // 重寫後仍然「正確選項唯一最長」的題目一律丟棄：這類題目只憑長度就能答對，
+  // 寫入題庫只會令教師及學生都以為它考核了內容。這一步對本地示範生成同樣有效
+  // （示範生成不會重寫）。
+  const beforeSymmetryFilter = questions.length;
+  questions = questions.filter((question) => {
+    const metrics = measureOptionSymmetry(question);
+    return !(metrics !== null && isSevereLengthAsymmetry(metrics));
+  });
+  if (questions.length < beforeSymmetryFilter) {
+    warnings.push(
+      `有 ${beforeSymmetryFilter - questions.length} 條選擇題的正確選項明顯比其他選項長` +
+        "（學生只選最長那項就能答對），已丟棄不予採用。",
+    );
   }
 
   // 完全沒有可用題目時再試一次（2026-10-18 由模擬學生使用發現）：真實模型偶爾
