@@ -1,0 +1,81 @@
+{
+  "generatedAt": "2026-10-27T07:25:00.000Z",
+  "notice": "部署 iPad Air 2（Safari 15）相容性修正，以及「選擇題正確答案通常是最長那項」的三層修正。映像由 commit 4ce5968 建置；部署前已推送至 main。",
+  "reportedIssue": {
+    "reportedAt": "2026-10-27T13:30:00+08:00",
+    "request": "擁有者提供截圖：iPad Air 2 顯示「練習未能載入」，偵測到 Safari 15.6。要求①分析能否解決；②徹底解決選擇題「正確答案通常是最長那項」、令學生不能只看答案長短作答。完成後 commit、push 及部署。"
+  },
+  "changes": {
+    "commit": "4ce5968",
+    "browserSupport": {
+      "rootCause": "Next.js 建置產物含 class static block（static { }），此語法 Safari 16.4 才支援；Safari 15 於解析階段即失敗，React 永遠不會 hydrate，畫面停在「正在載入題目…」。",
+      "hardwareCeiling": "iPad Air 2（A8X）最高只可安裝 iPadOS 15.8.3；iPad mini 4 相同。Sprint 23 的提示要求更新至 iPadOS 16.4，屬做不到的指示。",
+      "fix": "package.json 新增 browserslist [\"safari 15.6\",\"chrome 111\",\"firefox 111\"]，使框架 chunk 一併降級；量度結果：重建後 23 個 chunk 中含 static { } 者由 1 個降為 0。",
+      "css": "Tailwind 4 以 @property 註冊的 --tw-* 初始值在 Safari < 16.4 會被忽略；globals.css 的 :root 補上 12 個同值宣告，避免邊框、space-y 及陰影整條失效。",
+      "baseline": "MINIMUM_SUPPORTED_SAFARI 由 16.4 降為 15.4；提示文案改為先重新載入、說明舊機首次載入需 30–60 秒，並明寫 iPad Air 2／iPad mini 4 最高只可安裝 iPadOS 15.8.3。看門狗等待由 20 秒放寬至 60 秒。"
+    },
+    "optionLengthLeak": {
+      "measured": "本機快照 1,210 條 origin=material-ai 題目：正確選項唯一最長 59.8%；一律選最長命中率 72.5%（95% CI 69.7–75.2），隨機基準 25%。打亂選項次序無法解決，線索是長度本身。",
+      "layer1Prompt": "系統提示新增規則 18：四個選項字數相若（差距不超過三成）、句式一致，不可把正確答案寫得最詳細；使用者提示的 JSON 提醒亦重申。",
+      "layer2Generation": "仍屬嚴重長度不對稱的題目納入同一次有限重寫（附具體修訂指示，不增加 provider 呼叫次數）；重寫後仍不符者丟棄，不寫入題庫。",
+      "layer3Delivery": "新增 checkOptionLengthNeutral（經 checkQuestionDeliverable 套用於所有派題路徑），涵蓋已在題庫的舊題目；教師端發布判定不變（qualityOutcome 仍為 warning）。",
+      "threshold": "正確項唯一最長 且 正確項 ÷ 最長干擾項 ≥ 1.5 且 差距 ≥ 4 字。"
+    }
+  },
+  "verification": {
+    "local": {
+      "typecheck": "npm run typecheck（next typegen + tsc --noEmit）通過",
+      "tests": "npx vitest run：137 個測試檔、1,695 項全部通過（新增 tests/option-length-neutrality.test.ts 11 項）",
+      "lint": "npx eslint（已改動檔案）無錯誤",
+      "build": "npm run build 成功；重新掃描 .next/static/chunks 的 class static block 為 0；CSS 含 --tw-border-style: solid"
+    },
+    "live": {
+      "url": "https://history-self-study-4sija7xvrq-df.a.run.app/login",
+      "statusCode": 200,
+      "chunksChecked": 9,
+      "chunksWithClassStaticBlock": 0,
+      "cssFallbackPresent": true,
+      "noticeMentionsBaseline154": true,
+      "noticeMentionsIpadAir2": true
+    },
+    "notVerified": [
+      "實機 iPad Air 2（iPadOS 15.8.3）的載入時間、hydrate 流暢度及記憶體表現",
+      "Safari 15 上 color-mix() 相關色階的實際外觀",
+      "現有題庫中約 13.7% 受長度門檻攔下的題目，在真實使用中的補題表現"
+    ]
+  },
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00070-54g",
+    "previousRevision": "history-self-study-00069-4hv",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:ce66debc-c78a-4ad1-97e0-1ca0c606bb71",
+    "imageDigest": "sha256:10524e352e96b9f898862ff2674cd38f8bed1d08839bd0bf78d362fc319050f7",
+    "sourceCommit": "4ce5968",
+    "build": {
+      "buildId": "ce66debc-c78a-4ad1-97e0-1ca0c606bb71",
+      "startTime": "2026-10-27T07:17:14Z",
+      "finishTime": "2026-10-27T07:21:44Z",
+      "duration": "4M30S",
+      "status": "SUCCESS",
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/ce66debc-c78a-4ad1-97e0-1ca0c606bb71?project=784175190534"
+    },
+    "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
+    "traffic": "100% -> history-self-study-00070-54g",
+    "preservedConfig": {
+      "runtimeServiceAccount": "history-run@pccss-ai-history.iam.gserviceaccount.com",
+      "adminEmails": "ipwh@pochiu.edu.hk",
+      "teacherCount": 1,
+      "reviewerEmails": "ipwh@pochiu.edu.hk",
+      "staffAccessPolicy": "school-domain",
+      "rosterSheetId": "1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM",
+      "backupBucket": "pccss-ai-history-history-backup",
+      "backupIntervalSeconds": 300
+    }
+  },
+  "rollback": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00069-4hv=100（或把 package.json 的 browserslist 移除後重新部署，即回到 Safari 16.4 基線）。",
+  "note": "scripts/deploy-preserving-config.ps1 在本次及以往部署都會以非零退出碼結束，原因是 Windows PowerShell 把 gcloud 寫到 stderr 的進度訊息當成 NativeCommandError；Cloud Build 狀態及 Cloud Run traffic 已另行查核為 SUCCESS。"
+}
