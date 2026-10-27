@@ -1,0 +1,79 @@
+{
+  "generatedAt": "2026-10-27T02:32:00.000Z",
+  "notice": "加入「＋ 新對話」按鈕（使用者 2026-10-27 回報介面沒有方法開始新對話）。映像由 commit d545e42 建置。",
+  "reportedIssue": {
+    "reportedAt": "2026-10-27T10:19:19+08:00",
+    "symptom": "學生只能在同一個 tutor_sessions 內持續對話；上一次請求失敗留下的提問無法擺脫，亦沒有方法開始新對話。"
+  },
+  "change": {
+    "commit": "d545e42",
+    "behaviour": [
+      "標題列新增「＋ 新對話」按鈕（有對話內容時可用；有內容時先以 confirm 確認）。",
+      "只清除瀏覽器狀態：sessionId、訊息列表、輸入框及 localStorage 的 history-tutor-session。",
+      "舊對話仍完整保存在 tutor_sessions／tutor_messages，教師可在學習紀錄查閱；每日 15 次提問次數屬學生帳戶，不受影響。",
+      "下一次傳送時 sessionId 為 null，伺服器會建立新的 tutor_sessions 記錄。"
+    ]
+  },
+  "finalState": {
+    "revision": "history-self-study-00065-tmz",
+    "previousRevision": "history-self-study-00064-bfn"
+  },
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00065-tmz",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:9f465d7c-a69c-4613-b360-72841e4a916a",
+    "imageDigest": "sha256:4381624e56cd094e45c74a45ec37233aa3b0ca78c6934217657b12e1041c319c",
+    "sourceCommit": "d545e42",
+    "build": {
+      "buildId": "9f465d7c-a69c-4613-b360-72841e4a916a",
+      "startTime": "2026-10-27T02:22:33Z",
+      "duration": "3M57S",
+      "status": "SUCCESS",
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/9f465d7c-a69c-4613-b360-72841e4a916a?project=784175190534"
+    },
+    "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
+    "traffic": "100% -> history-self-study-00065-tmz"
+  },
+  "verification": [
+    {
+      "check": "靜態檢查及建置",
+      "command": "npx tsc --noEmit ／ npx eslint src tests ／ npm run build",
+      "result": "全部通過（只有既有的 backup.ts 動態檔案存取警告）"
+    },
+    {
+      "check": "學伴相關測試",
+      "command": "npx vitest run tests/tutor-chat.test.ts tests/tutor-grounding.test.ts tests/tutor-grounding-api.test.ts tests/tutor-page-guard.test.ts",
+      "result": "4 files、51 tests passed"
+    },
+    {
+      "check": "流量",
+      "command": "gcloud run services describe … --format value(status.traffic)",
+      "result": "100% -> history-self-study-00065-tmz"
+    },
+    {
+      "check": "健康檢查",
+      "command": "GET /api/health",
+      "result": "ok=true；database.status=ok；llmConfigured=true；demoMode=false；documents=46／blocks=26599／studentVisibleDocuments=22；restore=restored、lastError=null"
+    },
+    {
+      "check": "頁面守衛",
+      "command": "GET /tutor",
+      "result": "307（→ /login?next=%2Ftutor），與部署前一致"
+    },
+    {
+      "check": "ERROR 級日誌",
+      "command": "gcloud logging read 'resource.labels.revision_name=history-self-study-00065-tmz AND severity>=ERROR'",
+      "result": "沒有記錄"
+    },
+    {
+      "check": "未驗證（如實記錄）",
+      "command": "（需登入，而 UI 測試環境的學生帳戶 rosterVerified=false）",
+      "result": "按鈕的實際點擊行為未在正式環境或瀏覽器測試中驗證（登入頁不含 /tutor 的 client chunk，無法從公開 HTML 確認字串）。需登入後人工確認：標題列出現「＋ 新對話」，按下後畫面清空、可繼續提問，而舊對話仍見於教師學習紀錄"
+    }
+  ],
+  "rollback": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00064-bfn=100"
+}

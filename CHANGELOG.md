@@ -240,3 +240,16 @@
 | 未驗證（如實記錄） | 介面行為仍需登入人工驗證：建議開新對話，問「文藝復興如何導致宗教改革？」應顯示 ✅ 及課題5 節錄 |
 | 證據 | [docs/deployment-evidence-2026-10-27-orphan-fix.json](docs/deployment-evidence-2026-10-27-orphan-fix.json) |
 | 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00063-qfc=100` |
+
+### 熱修部署 3（2026-10-27，加入「＋ 新對話」）
+
+| 項目 | 結果 |
+| --- | --- |
+| Commit | `d545e42`（`main`，已推送 `0ba4e1c..d545e42`） |
+| Cloud Build | `9f465d7c-a69c-4613-b360-72841e4a916a` **SUCCESS**（3M57S） |
+| Cloud Run revision | **`history-self-study-00065-tmz`**，100% 流量（回滾目標：`00064-bfn`） |
+| 測試 | 學伴相關 4 files／51 tests passed；tsc／eslint／build 通過 |
+| 煙霧測試 | `GET /tutor` **307**；`/api/health` `ok=true`、教材 `26,599` 段／`22` 份、備份 `restored`、`lastError=null`；該 revision **沒有** ERROR 級日誌 |
+| 未驗證（如實記錄） | 按鈕的點擊行為未經瀏覽器測試或登入後人工驗證（UI 測試環境的學生帳戶 `rosterVerified=false`，`/tutor` 的 client chunk 亦不在登入頁 HTML 內）。需登入確認標題列出現「＋ 新對話」 |
+| 證據 | [docs/deployment-evidence-2026-10-27-new-conversation.json](docs/deployment-evidence-2026-10-27-new-conversation.json) |
+| 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00064-bfn=100` |
