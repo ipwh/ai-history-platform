@@ -2395,17 +2395,23 @@ gcloud run services update history-self-study --project pccss-ai-history --regio
 | --- | --- |
 | 來源 | `feat/ai-history-tutor`，**已合併至 `main`**（2026-10-26） |
 | 建置 | 兩次 Cloud Build：`23e1053b`（3M19S）及 `e8ec992a`（4M17S），皆 **SUCCESS** |
-| Revision | **`history-self-study-00059-77s`**（100% 流量）；序列 `00056-8rx` → `00057-pxr` → `00058-kwh`（只改環境變數）→ `00059-77s` |
+| Revision | **`history-self-study-00060-mln`**（100% 流量）；序列 `00056-8rx` → `00057-pxr` → `00058-kwh`（只改環境變數）→ `00059-77s` → `00060-mln`（加入導覽入口） |
 | 部署指令 | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1` |
+| 部署時間 | `00057-pxr`～`00059-77s`：2026-10-26；`00060-mln`：2026-10-27 |
 | 資料庫 | 由既有 `BACKUP_BUCKET` 快照還原；`00057-pxr` 啟動時自動套用 migration **`0031-ai-history-tutor`**（只新增 `tutor_sessions`、`tutor_messages`，不改既有表） |
 | 教材／題庫 | 未上載本機資料庫、未修改任何題目或教材；`/api/health` 顯示 46 份教材、26,599 段、學生可見 22 份（與上一 revision 相同） |
 
 驗證：`/api/health` 200（`ok`、`database: sqlite/ok`、`demoMode=false`、DeepSeek 已設定、備份 `restored`）；
 `GET /tutor` 未登入回 **307 → `/login?next=%2Ftutor`**（不再先送介面骨架，回應不含免責聲明或配額文字）；
-`GET`／`POST /api/tutor/chat` 未登入均回 **401**；`00059-77s` 在 Cloud Logging **沒有** ERROR 級記錄；
+`GET`／`POST /api/tutor/chat` 未登入均回 **401**；`00059-77s` 與 `00060-mln` 在 Cloud Logging **沒有** ERROR 級記錄；
 `HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk` 已在該 revision。未驗證：真實學校帳戶登入後的串流對話、
 每日 15 次配額的正式環境行為、模型回應質素的科組覆核。完整證據（含未驗證清單及附帶發現）見
 [docs/deployment-evidence-2026-10-26.json](docs/deployment-evidence-2026-10-26.json)。
+
+> **2026-10-27 補充（可用性缺陷，已修）**：`/tutor` 首次部署時**全站沒有任何連結指向它**（依 P0「不強制改全站選單」的取捨），
+> 師生因此找不到功能。已補：全站導覽對**已登入學生**顯示「歷史學伴」；教師／管理員及名冊未核對的學生在 `/tutor`
+> 看到原因說明而不是每次送出都收到 403 的對話框。存取判斷集中在 [src/lib/tutor-access.ts](src/lib/tutor-access.ts)
+> 並有單元測試，確保介面與 API 守衛同語意。部署為 revision `00060-mln`，已確認線上 JS chunk 含「歷史學伴」。
 
 回滾（只改流量，不影響資料）：
 
