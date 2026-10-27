@@ -336,4 +336,61 @@ describe("學伴 API：教材依據", () => {
     expect(meta.grounding).toBe("grounded");
     expect(meta.sources.every((source) => source.documentLabel.includes("課題5"))).toBe(true);
   });
+
+  it("空白回應會自動重試一次，並在請求中明確停用思考模式", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => {
+      // 第一次只有 [DONE]（空白內容），第二次回傳正常內容
+      if (fetchMock.mock.calls.length === 1) {
+        return new Response("data: [DONE]\n\n", {
+          status: 200,
+          headers: { "content-type": "text/event-stream" },
+        });
+      }
+      return mockStreamingAnswer("重試後的回覆");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(
+      requestFor("POST", { message: "凡爾賽條約如何約束德國？" }),
+    );
+    const streamText = await response.text();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(streamText).toContain("重試後的回覆");
+    expect(streamText).not.toContain("TUTOR_LLM_EMPTY_RESPONSE");
+
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
+      temperature?: number;
+      thinking?: { type: string };
+    };
+    // 與 llm/chat-client.ts 一致：DeepSeek 預設停用思考模式，避免思考 token 佔盡 max_tokens
+    expect(requestBody.thinking).toEqual({ type: "disabled" });
+    expect(requestBody.temperature).toBe(0.4);
+
+    const sessionId = response.headers.get("x-tutor-session-id") ?? "";
+    const answer = getTutorMessages(sessionId).find((message) => message.role === "assistant");
+    expect(answer?.content).toBe("重試後的回覆");
+  });
+
+  it("兩次都空白時回傳明確錯誤，且不保存沒有內容的回覆", async () => {
+    const fetchMock = vi.fn<typeof fetch>(
+      async () =>
+        new Response("data: [DONE]\n\n", {
+          status: 200,
+          headers: { "content-type": "text/event-stream" },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(requestFor("POST", { message: "凡爾賽條約如何約束德國？" }));
+    const streamText = await response.text();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(streamText).toContain("TUTOR_LLM_EMPTY_RESPONSE");
+
+    const sessionId = response.headers.get("x-tutor-session-id") ?? "";
+    expect(
+      getTutorMessages(sessionId).filter((message) => message.role === "assistant"),
+    ).toHaveLength(0);
+  });
 });

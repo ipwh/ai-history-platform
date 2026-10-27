@@ -1533,16 +1533,24 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     scope: "高中",
   },
   {
+    // 本校教材在課題5（初中）筆記列出「藝術三傑」，故範圍為課題5
     canonical: "達文西",
     aliases: ["達芬奇", "李奧納多達文西", "leonardo da vinci", "da vinci"],
     category: "person",
-    scope: "高中",
+    scope: "課題5",
   },
   {
-    canonical: "米開朗基羅",
-    aliases: ["米高安哲羅", "michelangelo"],
+    // 教材寫「米開蘭基羅」（10 處），「米開朗基羅」為其他地區譯名
+    canonical: "米開蘭基羅",
+    aliases: ["米開朗基羅", "米高安哲羅", "michelangelo"],
     category: "person",
-    scope: "高中",
+    scope: "課題5",
+  },
+  {
+    canonical: "拉斐爾",
+    aliases: ["拉斐爾桑西", "raphael"],
+    category: "person",
+    scope: "課題5",
   },
   {
     canonical: "鄭和",

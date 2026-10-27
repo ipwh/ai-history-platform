@@ -59,6 +59,13 @@ describe("學伴教材依據：查詢詞抽取", () => {
     expect(weightOf("第一次世界大戰")).toBeGreaterThanOrEqual(8);
     expect(weightOf("一戰")).toBeGreaterThan(0);
   });
+
+  it("類別詞會展開成教材用語（藝術家 → 藝術三傑）", () => {
+    const terms = groundingModule.extractQueryTerms("列出文藝復興時期著名的藝術家");
+    const weightOf = (value: string) =>
+      terms.find((term) => term.term === value)?.weight ?? 0;
+    expect(weightOf("藝術三傑")).toBeGreaterThanOrEqual(5);
+  });
 });
 
 describe("學伴教材依據：段落評分與段落組合併", () => {
@@ -141,6 +148,22 @@ describe("學伴教材依據：段落評分與段落組合併", () => {
     expect(combined).not.toContain("IMAGE_UNEXTRACTED");
     expect(combined).not.toContain("插圖");
   });
+
+  it("「列出藝術家」會取到教材的「藝術三傑」段落（類別詞展開）", () => {
+    const passages = groundingModule.selectTutorPassages(
+      [
+        block({ id: "a1", order: 0, text: "文藝復興期間藝術發展蓬勃。" }),
+        block({
+          id: "a2",
+          order: 1,
+          text: "達文西、米開蘭基羅與拉斐爾被合稱為「藝術三傑」。",
+        }),
+      ],
+      groundingModule.extractQueryTerms("列出文藝復興時期著名的藝術家"),
+    );
+
+    expect(passages.map((passage) => passage.promptText).join("\n")).toContain("藝術三傑");
+  });
 });
 
 describe("學伴教材依據：課題推斷", () => {
@@ -212,6 +235,10 @@ describe("學伴教材依據：回答自行說明未涵蓋", () => {
       groundingModule.answerDeclaresNotCovered("課本這部分沒有提及；以下屬一般背景補充。"),
     ).toBe(true);
     expect(groundingModule.answerDeclaresNotCovered("教材並未涵蓋這個課題。")).toBe(true);
+    expect(
+      groundingModule.answerDeclaresNotCovered("我在教材中找不到這部分的內容，以下屬補充。"),
+    ).toBe(true);
+    expect(groundingModule.answerDeclaresNotCovered("教材片段中未見相關內容。")).toBe(true);
   });
 
   it("一般回答不會被誤判", () => {
@@ -239,10 +266,11 @@ describe("學伴教材依據：提示詞", () => {
     passages: [],
   };
 
-  it("沒有教材片段時要求模型明說課本未涵蓋", () => {
+  it("沒有教材片段時要求模型明說找不到，並禁止斷言課本沒有提及", () => {
     const prompt = groundingModule.buildTutorSystemPrompt({ grounding: empty });
-    expect(prompt).toContain("課本這部分沒有提及");
-    expect(prompt).not.toContain("【教材片段】以下是本校教材的原文片段");
+    expect(prompt).toContain("我在教材中找不到這部分的內容");
+    expect(prompt).toContain("不可斷言課本「沒有提及」");
+    expect(prompt).not.toContain("【教材片段】以下是從本校教材檢索到的相關片段");
   });
 
   it("有教材片段時要求只可根據片段作答，並禁止自行標示出處", () => {

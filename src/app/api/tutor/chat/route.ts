@@ -203,27 +203,44 @@ export async function POST(request: Request) {
       { role: "user", content: body.message },
     ];
 
-    let upstream: Response;
-    try {
-      upstream = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${llm.apiKey}`,
-          "content-type": "application/json",
-          accept: "text/event-stream",
-        },
-        body: JSON.stringify({
-          model: llm.model,
-          messages,
-          stream: true,
-          temperature: 0.4,
-          max_tokens: Math.min(llm.maxTokens ?? 800, 1000),
-        }),
-        signal: AbortSignal.timeout(llm.requestTimeoutMs),
-      });
-    } catch {
-      throw new ApiRouteError("DeepSeek 服務暫時無法連線，請稍後再試（TUTOR_LLM_UNAVAILABLE）", 503);
+    // 與 llm/chat-client.ts 一致的參數處理：思考模式不支援 temperature；DeepSeek 預設
+    // 停用思考模式，若不傳送 thinking，API 會用預設值，思考用掉的 token 會佔盡
+    // max_tokens，令回覆內容變成空白（TUTOR_LLM_EMPTY_RESPONSE）。
+    const completionBody: Record<string, unknown> = {
+      model: llm.model,
+      messages,
+      stream: true,
+      max_tokens: Math.min(llm.maxTokens ?? 800, 1000),
+    };
+    if (llm.thinking !== "enabled") completionBody.temperature = 0.4;
+    if (llm.thinking !== null) {
+      completionBody.thinking = { type: llm.thinking };
+      if (llm.thinking === "enabled" && llm.reasoningEffort !== null) {
+        completionBody.reasoning_effort = llm.reasoningEffort;
+      }
     }
+
+    const openUpstream = async (): Promise<Response> => {
+      try {
+        return await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${llm.apiKey}`,
+            "content-type": "application/json",
+            accept: "text/event-stream",
+          },
+          body: JSON.stringify(completionBody),
+          signal: AbortSignal.timeout(llm.requestTimeoutMs),
+        });
+      } catch {
+        throw new ApiRouteError(
+          "DeepSeek 服務暫時無法連線，請稍後再試（TUTOR_LLM_UNAVAILABLE）",
+          503,
+        );
+      }
+    };
+
+    let upstream = await openUpstream();
 
     if (!upstream.ok || upstream.body === null) {
       throw new ApiRouteError(
@@ -235,11 +252,10 @@ export async function POST(request: Request) {
     const activeSessionId = sessionId;
     let streamReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
     let cancelled = false;
+    // 空白回應重試次數（沿用 LLM_EMPTY_RETRIES，與題目生成一致）
+    const maxAttempts = 1 + Math.max(0, llm.emptyContentRetries ?? 0);
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
-        const reader = upstream.body!.getReader();
-        streamReader = reader;
-        const decoder = new TextDecoder();
         // 先送出教材依據，令介面可以在文字陸續到達前顯示出處標示。
         if (!cancelled) {
           controller.enqueue(
@@ -250,82 +266,113 @@ export async function POST(request: Request) {
             }),
           );
         }
-        let pending = "";
-        let completeAnswer = "";
-        let streamFailed = false;
 
-        const handleLine = (line: string) => {
-          if (!line.startsWith("data:")) return;
-          const data = line.slice(5).trim();
-          if (data === "[DONE]") return;
+        let completeAnswer = "";
+        let sentAnyText = false;
+        let failureMessage: string | null = null;
+
+        /** 讀取一次上游串流；回傳 null 代表串流中斷或格式不正確 */
+        const relay = async (response: Response): Promise<string | null> => {
+          const reader = response.body!.getReader();
+          streamReader = reader;
+          const decoder = new TextDecoder();
+          let pending = "";
+          let streamFailed = false;
+          let answer = "";
+
+          const handleLine = (line: string) => {
+            if (!line.startsWith("data:")) return;
+            const data = line.slice(5).trim();
+            if (data === "[DONE]") return;
+            try {
+              const delta = extractDelta(data);
+              if (delta === null) return;
+              answer += delta;
+              if (delta.trim().length > 0) sentAnyText = true;
+              if (!cancelled) controller.enqueue(sseEvent("delta", { text: delta }));
+            } catch {
+              streamFailed = true;
+            }
+          };
+
           try {
-            const delta = extractDelta(data);
-            if (delta === null) return;
-            completeAnswer += delta;
-            if (!cancelled) controller.enqueue(sseEvent("delta", { text: delta }));
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              pending += decoder.decode(value, { stream: true });
+              const lines = pending.split(/\r?\n/);
+              pending = lines.pop() ?? "";
+              for (const line of lines) handleLine(line);
+              if (streamFailed) throw new Error("Invalid DeepSeek stream event");
+            }
+            pending += decoder.decode();
+            if (pending.length > 0) handleLine(pending);
+            if (streamFailed) throw new Error("Invalid DeepSeek stream event");
+            return answer;
           } catch {
-            streamFailed = true;
+            return null;
+          } finally {
+            reader.releaseLock();
+            streamReader = null;
           }
         };
 
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            pending += decoder.decode(value, { stream: true });
-            const lines = pending.split(/\r?\n/);
-            pending = lines.pop() ?? "";
-            for (const line of lines) handleLine(line);
-            if (streamFailed) throw new Error("Invalid DeepSeek stream event");
+        for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+          const answer = await relay(upstream);
+          if (answer === null) {
+            failureMessage = "DeepSeek 串流中斷或格式不正確，請稍後重試（TUTOR_LLM_STREAM_ERROR）";
+            break;
           }
-          pending += decoder.decode();
-          if (pending.length > 0) handleLine(pending);
-          if (streamFailed) throw new Error("Invalid DeepSeek stream event");
-          if (completeAnswer.trim().length === 0) {
-            if (!cancelled) {
-              controller.enqueue(
-                sseEvent("error", {
-                  error: "DeepSeek 回傳了空白回應，請稍後重試（TUTOR_LLM_EMPTY_RESPONSE）",
-                }),
-              );
-            }
-          } else {
-            const termNotes = detectTermMismatches(completeAnswer);
-            // 模型自己說「課本沒有提及」時，標示必須一致：不可同時顯示「已對照課本教材」。
-            const declaresNotCovered = answerDeclaresNotCovered(completeAnswer);
-            const finalStatus = declaresNotCovered ? "not-covered" : grounding.status;
-            const finalSources = declaresNotCovered ? [] : grounding.sources;
-            saveTutorMessage(activeSessionId, "assistant", completeAnswer, hongKongTimestamp(), 0, {
-              sources: finalSources,
-              groundingStatus: finalStatus,
-              termNotes,
-            });
-            if (!cancelled) {
-              controller.enqueue(
-                sseEvent("done", {
-                  remaining: tutorDailyUsage(learnerId).remaining,
-                  termNotes,
-                  // 最終標示以回覆內容為準，令介面不會與答案自相矛盾
-                  grounding: finalStatus,
-                  sources: finalSources,
-                  topicTitle: finalStatus === "not-covered" ? null : grounding.topicTitle,
-                }),
-              );
-            }
+          completeAnswer = answer;
+          if (answer.trim().length > 0) break;
+
+          // 空白回應：只有在完全沒有送出任何文字時才可重試（否則客戶端已看到部分內容）
+          if (sentAnyText || attempt >= maxAttempts || cancelled) {
+            failureMessage = "DeepSeek 回傳了空白回應，請稍後重試（TUTOR_LLM_EMPTY_RESPONSE）";
+            break;
           }
-        } catch {
+          try {
+            const retry = await openUpstream();
+            if (!retry.ok || retry.body === null) {
+              failureMessage =
+                "DeepSeek 暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）";
+              break;
+            }
+            upstream = retry;
+          } catch {
+            failureMessage = "DeepSeek 服務暫時無法連線，請稍後再試（TUTOR_LLM_UNAVAILABLE）";
+            break;
+          }
+        }
+
+        if (failureMessage !== null) {
+          if (!cancelled) controller.enqueue(sseEvent("error", { error: failureMessage }));
+        } else {
+          const termNotes = detectTermMismatches(completeAnswer);
+          // 模型自己說「找不到教材依據」時，標示必須一致：不可同時顯示「已對照課本教材」。
+          const declaresNotCovered = answerDeclaresNotCovered(completeAnswer);
+          const finalStatus = declaresNotCovered ? "not-covered" : grounding.status;
+          const finalSources = declaresNotCovered ? [] : grounding.sources;
+          saveTutorMessage(activeSessionId, "assistant", completeAnswer, hongKongTimestamp(), 0, {
+            sources: finalSources,
+            groundingStatus: finalStatus,
+            termNotes,
+          });
           if (!cancelled) {
             controller.enqueue(
-              sseEvent("error", {
-                error: "DeepSeek 串流中斷或格式不正確，請稍後重試（TUTOR_LLM_STREAM_ERROR）",
+              sseEvent("done", {
+                remaining: tutorDailyUsage(learnerId).remaining,
+                termNotes,
+                // 最終標示以回覆內容為準，令介面不會與答案自相矛盾
+                grounding: finalStatus,
+                sources: finalSources,
+                topicTitle: finalStatus === "not-covered" ? null : grounding.topicTitle,
               }),
             );
           }
-        } finally {
-          if (!cancelled) controller.close();
-          reader.releaseLock();
-          streamReader = null;
         }
+
+        if (!cancelled) controller.close();
       },
       async cancel() {
         cancelled = true;

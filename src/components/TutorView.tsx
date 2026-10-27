@@ -41,7 +41,7 @@ function toTutorMessage(message: TutorWireMessage): TutorMessage {
 
 const SESSION_STORAGE_KEY = "history-tutor-session";
 const DISCLAIMER =
-  "⚠️ 內容由 AI 輔助生成，僅供課後複習參考。標示「已對照課本教材」的回覆會列出教材節錄及出處可供核對；標示「課本未涵蓋」的部分屬補充。正式史實與作答標準請以課本及科任老師教授為準。";
+  "⚠️ 內容由 AI 輔助生成，僅供課後複習參考。標示「已對照課本教材」的回覆會列出教材節錄及出處可供核對；標示「未找到教材依據」的部分屬補充，不是課本說法。正式史實與作答標準請以課本及科任老師教授為準。";
 
 function readStoredSessionId(): string | null {
   if (typeof window === "undefined") return null;
@@ -119,7 +119,7 @@ function TutorEvidence({ message }: { message: TutorMessage }) {
           <span className="badge badge-success">✅ 已對照課本教材（{sources.length} 段）</span>
         ) : null}
         {notCovered ? (
-          <span className="badge badge-warning">➕ 課本未涵蓋此部分（屬補充）</span>
+          <span className="badge badge-warning">➕ 未找到教材依據（屬補充，非課本說法）</span>
         ) : null}
         {message.topicTitle ? (
           <span className="text-xs text-gray-500">{message.topicTitle}</span>
