@@ -1,0 +1,104 @@
+{
+  "generatedAt": "2026-10-27T04:40:00.000Z",
+  "notice": "部署學伴五項產品決定（每日額度只計成功回覆、離題留痕、not-covered 標示窗口、召回補強、長對話訊息窗口）及模擬學生提問時發現的前端缺陷修正。映像由 commit 4388fd3 建置，部署前已 fast-forward 合併至 main。",
+  "reportedIssue": {
+    "reportedAt": "2026-10-27T12:31:02+08:00",
+    "request": "擁有者指示：①實作上一輪列出的五項「待產品決定」；②模擬真實學生提問並修正可重現缺陷；完成後 merge 到 main 及部署。"
+  },
+  "changes": {
+    "commit": "4388fd3",
+    "decisions": [
+      {
+        "id": 1,
+        "title": "上游失敗不扣每日 15 次",
+        "detail": "新增 countAnsweredTutorQuestionsSince：只數「緊接下一則訊息是 assistant 回覆」且該回覆不是 off-topic 的提問。上游 5xx／串流中斷／空白回覆／未設定 API key／離題一律不扣日額；reserveAiOperation 仍在呼叫模型前執行，generation 時間窗限制不變。POST 的 x-tutor-remaining header 改為「本次提問前」的剩餘，權威數字在 SSE done 及 GET。"
+      },
+      {
+        "id": 2,
+        "title": "離題留痕但不計額、不入上文",
+        "detail": "離題提問及固定引導句寫入 tutor_messages，assistant 標記 groundingStatus='off-topic'（types.ts 枚舉新增）；新增 tutorTurnsForContext 在建上文時剔除整輪離題。lastTurnOnTopic=false 行為不變，短跟進仍被擋。"
+      },
+      {
+        "id": 3,
+        "title": "召回補強（不引入向量檢索）",
+        "detail": "RETRIEVAL_CONCEPT_TERMS 新增：極權主義／極權 → 極權·獨裁·專制·一黨專政；獨裁、專制互為展開；統治者 → 君主·皇帝·元首·領袖；措施 → 政策·規定·條款。"
+      },
+      {
+        "id": 4,
+        "title": "not-covered 標示窗口",
+        "detail": "answerDeclaresNotCovered 改為只看第一句（至第一個。！？!? 或換行）、最多掃描 60 字；保留「分段作答不整段降級」行為（既有回歸測試字串由單句改為兩句以配合新規則）。"
+      },
+      {
+        "id": 5,
+        "title": "長對話訊息窗口",
+        "detail": "GET /api/tutor/chat 預設回傳最近 TUTOR_MESSAGE_WINDOW=80 則，新增 messageCount／messageLimit／truncated；TutorView 被截斷時顯示「共有 N 則，現時只顯示最近 80 則」。"
+      }
+    ],
+    "bugFoundDuringSimulation": "TutorView 的 JSON 回覆分支（離題固定引導句）沒有保存伺服器回傳的 sessionId，導致以離題開始的對話在下一題時另開新 session，該輪離題紀錄重載後看不到。已修正為沿用 sessionId 並寫入 localStorage；伺服器端契約另加測試鎖定。"
+  },
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00069-4hv",
+    "previousRevision": "history-self-study-00068-7v6",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:944e3b07-ed79-42ae-a2e4-7963504b79a7",
+    "imageDigest": "sha256:273955014f03073a49b110471b21a35c2960ad005fc2a0ace1abe6e520c86928",
+    "sourceCommit": "4388fd3",
+    "build": {
+      "buildId": "944e3b07-ed79-42ae-a2e4-7963504b79a7",
+      "startTime": "2026-10-27T04:32:17Z",
+      "finishTime": "2026-10-27T04:36:30Z",
+      "duration": "4M13S",
+      "status": "SUCCESS",
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/944e3b07-ed79-42ae-a2e4-7963504b79a7?project=784175190534"
+    },
+    "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
+    "traffic": "100% -> history-self-study-00069-4hv",
+    "preservedConfig": {
+      "runtimeServiceAccount": "history-run@pccss-ai-history.iam.gserviceaccount.com",
+      "adminEmails": "ipwh@pochiu.edu.hk",
+      "teacherCount": 1,
+      "reviewerEmails": "ipwh@pochiu.edu.hk",
+      "staffAccessPolicy": "school-domain",
+      "rosterSheetId": "1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM",
+      "backupBucket": "pccss-ai-history-history-backup",
+      "backupIntervalSeconds": 300
+    }
+  },
+  "verification": [
+    {
+      "check": "測試及靜態檢查（部署前）",
+      "command": "npx vitest run ／ npx tsc --noEmit ／ npx eslint ／ npm run build",
+      "result": "136 files、1,681 passed、4 skipped、0 failed；tsc／eslint／build 全部通過（僅既有的 backup.ts:427 動態檔案存取警告）。tutor 專項：simulation 39、grounding 35、chat 18、grounding-api 10 = 102 項全過。"
+    },
+    {
+      "check": "流量及修訂版本",
+      "command": "gcloud run services describe --format='yaml(status.traffic)'",
+      "result": "100% -> history-self-study-00069-4hv（latestRevision=true）；latestReadyRevisionName 相同"
+    },
+    {
+      "check": "健康檢查",
+      "command": "GET /api/health",
+      "result": "HTTP 200；ok=true、database.status=ok、llmProvider=deepseek、llmConfigured=true、demoMode=false、materials.documents=46／blocks=26599／studentVisibleDocuments=22、persistence.restore=restored、persistence.lastError=null、maintenance 最近一次 ok"
+    },
+    {
+      "check": "守衛",
+      "command": "GET /tutor ／ GET /api/tutor/chat（未登入）",
+      "result": "307（→ /login?next=%2Ftutor）；401 且回應不含 messages／remaining（未登入不泄露配額）"
+    },
+    {
+      "check": "日誌",
+      "command": "gcloud logging read severity>=ERROR（近 20 分鐘）",
+      "result": "沒有 ERROR 級日誌"
+    },
+    {
+      "check": "未驗證（如實記錄）",
+      "command": "（需登入且不應消耗正式額度）",
+      "result": "正式環境未以真實帳號送出新提問驗證五項決策；前端截斷提示及離題標示的實際渲染只經 tsc／eslint／人工審閱，建議以教師測試帳號各提問一次確認。"
+    }
+  ],
+  "rollback": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00068-7v6=100"
+}
