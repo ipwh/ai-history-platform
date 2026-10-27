@@ -220,6 +220,32 @@ export function TutorView({
       .finally(() => setLoading(false));
   }, []);
 
+  /**
+   * 開始新對話。
+   *
+   * 只在本機忘掉工作階段：舊對話仍留在資料庫（教師可在學習紀錄查看），但不再顯示、
+   * 亦不會再被當成上下文。下一次傳送會由伺服器建立新的 `tutor_sessions` 記錄。
+   * 每日提問次數屬於學生帳戶，不受影響。
+   */
+  function startNewConversation() {
+    if (sending || loading) return;
+    if (
+      messages.length > 0 &&
+      !window.confirm("開始新對話？目前畫面上的對話會保留在學習紀錄，但不再顯示。")
+    ) {
+      return;
+    }
+    setSessionId(null);
+    setMessages([]);
+    setError(null);
+    setInput("");
+    try {
+      window.localStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch {
+      // 未能清除時，重新載入頁面才會回到舊對話；本次仍然可以開始新對話。
+    }
+  }
+
   async function sendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const message = input.trim();
@@ -382,9 +408,20 @@ export function TutorView({
     <section className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">🏛️ 歷史科自學學伴 (Beta)</h1>
-        <p className="badge badge-accent" aria-live="polite">
-          今日剩餘提問次數：{quota.remaining} / {quota.dailyLimit}
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="badge badge-accent" aria-live="polite">
+            今日剩餘提問次數：{quota.remaining} / {quota.dailyLimit}
+          </p>
+          <button
+            type="button"
+            className="btn"
+            onClick={startNewConversation}
+            disabled={loading || sending || messages.length === 0}
+            title="清空畫面並開始新的對話（舊對話仍保留在學習紀錄）"
+          >
+            ＋ 新對話
+          </button>
+        </div>
       </header>
 
       <p

@@ -136,6 +136,7 @@
 | SSE `meta` 事件 | 串流**第一件**事件，載明 `grounding`（`grounded`／`not-covered`）、`topicTitle` 及 `sources`（`documentLabel`／`location`／`excerpt`），令介面可在文字到達前顯示出處 |
 | `done` 事件加 `termNotes` | 回覆完成後以詞庫找出「模型用了課本以外寫法」的專名（例如 `{canonical:"希特拉", used:"希特勒"}`），**只作提示，不改寫答案** |
 | 三種介面標示 | ✅ 已對照課本教材（N 段，可展開節錄及出處「第N段」）、➕ 課本未涵蓋此部分（屬補充）、📖 課本用語 X（回覆用了「Y」） |
+| 「＋ 新對話」按鈕（同日加入） | 回報：介面沒有方法開始新對話，學生被困在含有失敗提問的舊對話。標題列新增按鈕（有對話內容時可用，會先確認），只清除本機工作階段及 `localStorage`；伺服器的 `tutor_sessions`／`tutor_messages` 全部保留供教師查閱，每日提問次數不受影響 |
 | 測試 | [tests/tutor-grounding.test.ts](tests/tutor-grounding.test.ts)（17 項：查詢詞、段落評分與合併、課題推斷、用語對照、提示詞、資料庫檢索及可見性）及 [tests/tutor-grounding-api.test.ts](tests/tutor-grounding-api.test.ts)（4 項：SSE 標示、提示詞內容、課本用語、重載後仍顯示） |
 
 ### 變更
