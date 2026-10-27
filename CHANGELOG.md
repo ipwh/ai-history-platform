@@ -189,3 +189,17 @@
 | `npx eslint src tests` | 0 error、0 warning |
 | 學伴相關測試 | `tests/tutor-grounding.test.ts` 17 項、`tests/tutor-grounding-api.test.ts` 4 項、`tests/tutor-chat.test.ts` 16 項、`tests/history-lexicon.test.ts` 16 項全部通過 |
 | 真實 API | **沒有**在任何測試中呼叫 DeepSeek 或第三方檢索服務；所有 LLM 回應均由 mock 提供 |
+
+### 部署（2026-10-27）
+
+| 項目 | 結果 |
+| --- | --- |
+| Commit | `a39a2ae`（`main`，已推送 `28e16b0..a39a2ae`） |
+| Cloud Build | `f84b8baa-c060-4e28-9795-58bbb2e9d0ef` **SUCCESS**（3M48S），日誌含 `Creating an optimized production build …` 及 `Compiled successfully in 24.1s` |
+| Cloud Run revision | **`history-self-study-00062-5b9`**，100% 流量（上一版 `history-self-study-00061-s9t` 保持可回滾） |
+| 沿用線上設定 | runtime SA、`AUTH_ADMIN_EMAILS`、`AUTH_TEACHER_EMAILS`、`HISTORY_REVIEWER_EMAILS=ipwh@pochiu.edu.hk`、staff policy `school-domain`、名冊試算表及備份 bucket 全部保留；**沒有**空設定警告 |
+| Migration | `0032` 於啟動時由 `getDb()` → `runMigrations` 套用；`GET /api/health` 回報 `database: sqlite / ok` |
+| 煙霧測試 | `/tutor` 未登入 **307 → /login?next=%2Ftutor**；`POST /api/tutor/chat` 未登入 **401**；`/api/health` `ok=true`、`demoMode=false`、`llmConfigured=true`、教材 **26,599** 段／可向學生發布文件 **22** 份、備份 `restored`；該 revision **沒有** ERROR 級日誌 |
+| 未驗證（如實記錄） | 教材依據標示需要登入才看得到，**未**在正式環境做人工煙霧測試；建議擁有者登入 `/tutor` 以「凡爾賽條約如何約束德國？」試一次，預期看到「✅ 已對照課本教材（N 段）」及「第N段」出處 |
+| 證據 | [docs/deployment-evidence-2026-10-27-grounding.json](docs/deployment-evidence-2026-10-27-grounding.json) |
+| 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00061-s9t=100` |

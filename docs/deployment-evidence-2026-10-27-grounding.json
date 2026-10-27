@@ -1,0 +1,101 @@
+{
+  "generatedAt": "2026-10-27T01:40:00.000Z",
+  "notice": "部署「學伴教材依據與課本用語」（commit a39a2ae）至 Cloud Run。部署前工作目錄乾淨，映像由該 commit 的原始碼建置；沒有修改任何雲端環境變數，沿用 scripts/deploy-preserving-config.ps1 讀取的線上設定。",
+  "finalState": {
+    "revision": "history-self-study-00062-5b9",
+    "revisionCount": 7,
+    "imagesBuilt": 5
+  },
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00062-5b9",
+    "previousRevision": "history-self-study-00061-s9t",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:f84b8baa-c060-4e28-9795-58bbb2e9d0ef",
+    "imageDigest": "sha256:74ae29d0478742241aea7e0e78ad2d83eae3ad4c9a12eafc0a0cdb9d9b37d837",
+    "sourceCommit": "a39a2ae",
+    "build": {
+      "buildId": "f84b8baa-c060-4e28-9795-58bbb2e9d0ef",
+      "startTime": "2026-10-27T01:32:04.795675934Z",
+      "finishTime": "2026-10-27T01:35:53.173168Z",
+      "duration": "3M48S",
+      "status": "SUCCESS",
+      "compiledSuccessfully": true,
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/f84b8baa-c060-4e28-9795-58bbb2e9d0ef?project=784175190534"
+    },
+    "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
+    "configSource": "沿用線上設定（runtime SA、AUTH_ADMIN_EMAILS、AUTH_TEACHER_EMAILS、HISTORY_REVIEWER_EMAILS、AUTH_STAFF_ACCESS_POLICY、AUTH_STAFF_DOMAINS、BACKUP_BUCKET、BACKUP_PREFIX、BACKUP_INTERVAL_SECONDS、名冊設定）",
+    "preservedSettings": {
+      "runtimeServiceAccount": "history-run@pccss-ai-history.iam.gserviceaccount.com",
+      "adminEmails": "ipwh@pochiu.edu.hk",
+      "teacherCount": 1,
+      "staffAccessPolicy": "school-domain",
+      "reviewerEmails": "ipwh@pochiu.edu.hk",
+      "rosterSheetConfigured": true,
+      "backupBucket": "pccss-ai-history-history-backup",
+      "backupIntervalSeconds": "300"
+    },
+    "traffic": "100% -> history-self-study-00062-5b9"
+  },
+  "database": {
+    "migration": "0032-tutor-grounding-metadata",
+    "appliedBy": "啟動時 getDb() -> runMigrations（Cloud Run revision 第一個資料庫存取）",
+    "evidence": "GET /api/health 回報 database.status = ok；getDb() 會先完成 migration 才回傳連線，因此 status ok 代表 0032 已成功套用"
+  },
+  "verification": [
+    {
+      "check": "Cloud Build 狀態",
+      "command": "gcloud builds describe f84b8baa-c060-4e28-9795-58bbb2e9d0ef",
+      "result": "SUCCESS（3M48S），日誌含「Creating an optimized production build …」及「Compiled successfully in 24.1s」"
+    },
+    {
+      "check": "流量分佈",
+      "command": "gcloud run services describe history-self-study --region asia-east2 --format value(status.traffic)",
+      "result": "100% -> history-self-study-00062-5b9（latestRevision: true）"
+    },
+    {
+      "check": "映像",
+      "command": "gcloud run services describe … --format value(spec.template.spec.containers[0].image)",
+      "result": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:f84b8baa-c060-4e28-9795-58bbb2e9d0ef"
+    },
+    {
+      "check": "健康檢查（含資料庫及備份還原）",
+      "command": "GET /api/health",
+      "result": "ok=true；database=sqlite/ok；llmProvider=deepseek、llmConfigured=true、demoMode=false；materials documents=46、blocks=26599、studentVisibleDocuments=22；persistence restore=restored、backupsUploaded=1、lastError=null；maintenance ai-operation-retention ok"
+    },
+    {
+      "check": "頁面守衛",
+      "command": "curl -D - /tutor",
+      "result": "307 Temporary Redirect，location: /login?next=%2Ftutor（與部署前一致）"
+    },
+    {
+      "check": "學伴 API 未登入",
+      "command": "POST /api/tutor/chat（無工作階段）",
+      "result": "401（與部署前一致，未呼叫 LLM）"
+    },
+    {
+      "check": "ERROR 級日誌",
+      "command": "gcloud logging read 'resource.labels.revision_name=history-self-study-00062-5b9 AND severity>=ERROR'",
+      "result": "沒有記錄"
+    },
+    {
+      "check": "教材依據資料前提",
+      "command": "GET /api/health 的 materials 區塊",
+      "result": "production 有 26,599 段教材、22 份可向學生發布的文件，檢索有實際資料可用"
+    },
+    {
+      "check": "未涵蓋",
+      "command": "（不適用）",
+      "result": "未能以未登入身分呼叫學伴，教材依據標示的端到端行為未在正式環境直接驗證；建議擁有者登入 /tutor 以「凡爾賽條約如何約束德國？」做一次人工煙霧測試，預期看到「✅ 已對照課本教材」及「第N段」出處"
+    }
+  ],
+  "knownLimitations": [
+    "以未登入身分無法驗證 /tutor 的介面標示；部署後的人工煙霧測試仍未執行。",
+    "未在正式資料庫直接查詢 schema_migrations 是否含 0032（只以 /api/health 的 database.status=ok 及 migration 於 getDb() 內同步執行的設計推論）。",
+    "本機 data/app.db 仍未套用 0032；本機執行 npm run dev 時會自動套用。"
+  ],
+  "rollback": "把 100% 流量指回 history-self-study-00061-s9t：gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00061-s9t=100"
+}
