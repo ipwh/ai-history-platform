@@ -194,6 +194,7 @@ export function TutorView({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [truncation, setTruncation] = useState<{ shown: number; total: number } | null>(null);
 
   useEffect(() => {
     const storedSession = initialSessionId.current;
@@ -215,9 +216,17 @@ export function TutorView({
           remaining?: number;
           dailyLimit?: number;
           windowLimitReached?: boolean;
+          truncated?: boolean;
+          messageCount?: number;
       };
       if (!response.ok) throw new Error(responseError(payload, response.status));
       setMessages((payload.messages ?? []).map(toTutorMessage));
+      // 長對話只回最近 N 則：如實提示，不要讓學生以為紀錄消失了
+      setTruncation(
+        payload.truncated === true && typeof payload.messageCount === "number"
+          ? { shown: (payload.messages ?? []).length, total: payload.messageCount }
+          : null,
+      );
       setQuota({
         remaining: payload.remaining ?? 0,
         dailyLimit: payload.dailyLimit ?? 15,
@@ -249,6 +258,7 @@ export function TutorView({
     setMessages([]);
     setError(null);
     setInput("");
+    setTruncation(null);
     try {
       window.localStorage.removeItem(SESSION_STORAGE_KEY);
     } catch {
@@ -298,6 +308,16 @@ export function TutorView({
           remaining: number;
           dailyLimit: number;
         };
+        // 離題回覆（onTopic=false）也會在伺服器建立對話紀錄；必須沿用同一個 session，
+        // 否則該輪離題對話在重新載入後會看不到（下一次提問會另開新對話）。
+        if (payload.sessionId) {
+          setSessionId(payload.sessionId);
+          try {
+            window.localStorage.setItem(SESSION_STORAGE_KEY, payload.sessionId);
+          } catch {
+            // 未能保存時仍可繼續本次對話，只是重新載入後會回到上一個工作階段。
+          }
+        }
         setMessages((current) => [...current, { role: "assistant", content: payload.reply }]);
         setQuota({ remaining: payload.remaining, dailyLimit: payload.dailyLimit });
         return;
@@ -465,6 +485,11 @@ export function TutorView({
 
       <div className="card space-y-4" aria-live="polite" aria-busy={loading || sending}>
         {loading ? <p className="text-sm text-gray-500">正在載入學伴對話…</p> : null}
+        {!loading && truncation ? (
+          <p className="rounded-lg px-3 py-2 text-xs text-gray-600" style={{ background: "var(--accent-soft)" }}>
+            此對話共有 {truncation.total} 則訊息，現時只顯示最近 {truncation.shown} 則；較早的內容仍保留在學習紀錄。
+          </p>
+        ) : null}
         {!loading && messages.length === 0 ? (
           <p className="text-sm text-gray-600">
             你可以提出歷史課題或事件；學伴會以問題和線索協助你思考，不會代答功課。

@@ -265,7 +265,11 @@ describe("AI 歷史自學學伴 API", () => {
   it("第 16 次已通過主題閘的提問回傳 429，且不呼叫 LLM", async () => {
     const sessionId = createTutorSession(STUDENT_A, hongKongTimestamp());
     for (let index = 0; index < 15; index += 1) {
+      // 每日額度只計「成功學伴回覆」的提問
       saveTutorMessage(sessionId, "user", `一戰原因 ${index}`, hongKongTimestamp());
+      saveTutorMessage(sessionId, "assistant", "引導問題", hongKongTimestamp(), 0, {
+        groundingStatus: "grounded",
+      });
     }
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -355,7 +359,8 @@ describe("AI 歷史自學學伴 API", () => {
       requestFor("POST", STUDENT_A, { message: "凡爾賽條約如何約束德國？" }),
     );
     await onTopic.text();
-    expect(onTopic.headers.get("x-tutor-remaining")).toBe("14");
+    // header 於回覆完成前送出，因此是「提問前」的剩餘；權威數字由 done 與 GET 提供
+    expect(onTopic.headers.get("x-tutor-remaining")).toBe("15");
 
     const status = await getChat(requestFor("GET", STUDENT_A));
     expect(await status.json()).toMatchObject({ remaining: 14, dailyLimit: 15 });

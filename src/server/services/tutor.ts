@@ -1,5 +1,6 @@
 import { HISTORY_TERM_GROUPS } from "@/lib/history-lexicon";
-import { countTutorQuestionsSince } from "../repositories/tutor";
+import { countAnsweredTutorQuestionsSince } from "../repositories/tutor";
+import type { TutorMessage } from "../repositories/tutor";
 
 export const TUTOR_DAILY_LIMIT = 15;
 export const TUTOR_OFF_TOPIC_REPLY =
@@ -56,8 +57,9 @@ export interface TutorChatTurn {
  *   1. 連續的學生訊息只保留**最新**一則（較舊的是沒有回覆的提問）；
  *   2. 結尾若是學生訊息（最新一則仍未回覆）便丟棄，因為本次提問會另行附加。
  *
- * 不刪除資料庫內的提問：刪除會令每日提問次數「回水」，與 README 及 `ai_operations`
- * 的用量語意不一致；提問仍保留在對話紀錄中，只是不再送去模型。
+ * 不刪除資料庫內的提問：提問仍保留在對話紀錄中，只是不再送去模型。每日額度只計
+ * 「已成功取得回覆」的提問（見 repositories/tutor 的 countAnsweredTutorQuestionsSince），
+ * 所以保留失敗的提問不會令額度回水，亦不影響用量語意。
  */
 export function answeredTurnsOnly(messages: TutorChatTurn[]): TutorChatTurn[] {
   const turns: TutorChatTurn[] = [];
@@ -74,10 +76,33 @@ export function answeredTurnsOnly(messages: TutorChatTurn[]): TutorChatTurn[] {
   return turns;
 }
 
+/**
+ * 對話上文：剔除離題輪次（學生離題句 + 固定引導句）。
+ *
+ * 離題回覆會保留在資料庫讓學生重看（決策 2），但它是平台的固定句子，不是教材內容；
+ * 若照樣送去模型，模型會把「我是你的歷史科自學學伴……」當成自己說過的話，甚至模仿
+ * 那種拒絕語氣。因此建立上下文時要連同該輪提問一併移除。
+ */
+export function tutorTurnsForContext(messages: TutorMessage[]): TutorChatTurn[] {
+  const turns: TutorChatTurn[] = [];
+  for (const message of messages) {
+    if (message.role === "assistant") {
+      if (message.groundingStatus === "off-topic") {
+        if (turns[turns.length - 1]?.role === "user") turns.pop();
+        continue;
+      }
+      turns.push({ role: "assistant", content: message.content });
+      continue;
+    }
+    turns.push({ role: "user", content: message.content });
+  }
+  return turns;
+}
+
 export function tutorDailyUsage(learnerId: string, now = new Date()): {
   used: number;
   remaining: number;
 } {
-  const used = countTutorQuestionsSince(learnerId, hongKongDayStart(now));
+  const used = countAnsweredTutorQuestionsSince(learnerId, hongKongDayStart(now));
   return { used, remaining: Math.max(0, TUTOR_DAILY_LIMIT - used) };
 }

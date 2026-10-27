@@ -127,6 +127,14 @@ const RETRIEVAL_CONCEPT_TERMS: readonly { trigger: string; expansions: string[] 
   { trigger: "文學家", expansions: ["作家", "詩人", "文學"] },
   { trigger: "作家", expansions: ["文學家", "詩人"] },
   { trigger: "航海家", expansions: ["航海", "探險"] },
+  // 決策 3（2026-10-27）：學生問「極權主義」時，教材寫的是「獨裁」「專制」；
+  // 問「統治者」時，教材寫「君主」「皇帝」；問「措施」時，教材寫「規定」「條款」。
+  { trigger: "極權主義", expansions: ["極權", "獨裁", "專制", "一黨專政"] },
+  { trigger: "極權", expansions: ["獨裁", "專制", "一黨專政"] },
+  { trigger: "獨裁", expansions: ["極權", "專制"] },
+  { trigger: "專制", expansions: ["極權", "獨裁"] },
+  { trigger: "統治者", expansions: ["君主", "皇帝", "元首", "領袖"] },
+  { trigger: "措施", expansions: ["政策", "規定", "條款"] },
 ];
 
 export interface QueryTerm {
@@ -147,7 +155,7 @@ export interface TutorPassage {
 }
 
 export interface TutorGrounding {
-  status: Exclude<TutorGroundingStatus, "none">;
+  status: Exclude<TutorGroundingStatus, "none" | "off-topic">;
   topicId: string | null;
   topicTitle: string | null;
   /** 學生可見的出處（會被保存到資料庫並回到前端） */
@@ -554,17 +562,28 @@ function notCovered(topicId: string | null, topicTitle: string | null): TutorGro
 }
 
 /**
+ * 在回覆的**第一句**內尋找「找不到教材」的宣告時，最多掃描多少字。
+ *
+ * 取 60 字：足以覆蓋「先回應你的問題：……我在教材片段中找不到」這類開場白，
+ * 又不至於把長篇回覆的後段（分段作答時另一部分可能確實有教材依據）算進來。
+ */
+const NOT_COVERED_SCAN_MAX_CHARS = 60;
+
+/**
  * 回覆是否**開宗明義**說「在教材中找不到」。
  *
  * 提示詞要求模型在檢索到的片段不足以回答時，回覆**開首**說明「我在教材中找不到
  * 這部分的內容」。若模型這樣說，介面卻同時顯示「✅ 已對照課本教材」，學生會更
  * 無所適從；因此以模型自己的判斷為準，把標示降級。
  *
- * 只看**最開首 24 字**：同一段回覆可能分幾部分作答，其中一部分沒有教材依據而另一
- * 部分有；這時不應把整個回覆降級、隱藏仍然相關的教材節錄。
+ * 只看**第一句**（至第一個。！？!? 或換行）且最多 60 字：
+ *   - 較長的開場白（例如先複述問題才說明找不到）仍然偵測得到；
+ *   - 同一段回覆分幾部分作答時，後段才說某一點找不到不會令整個回覆降級、
+ *     隱藏仍然相關的教材節錄。
  */
 export function answerDeclaresNotCovered(answer: string): boolean {
-  const opening = answer.slice(0, 24);
+  const firstSentence = answer.split(/[。！？!?\n]/, 1)[0] ?? "";
+  const opening = firstSentence.slice(0, NOT_COVERED_SCAN_MAX_CHARS);
   return (
     /(?:教材|課本|教科書|筆記)[^。\n]{0,10}(?:找不到|沒有|未|並未|不見)(?:提及|涵蓋|相關|內容|交代|說明|記載)?/.test(
       opening,

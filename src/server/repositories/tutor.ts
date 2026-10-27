@@ -10,6 +10,14 @@ import {
 
 export type TutorMessageRole = "user" | "assistant";
 
+/**
+ * 對話載入視窗：`GET /api/tutor/chat` 預設回傳最近多少則訊息。
+ *
+ * 學生重新載入頁面時只看得到這個數目；超過時介面會顯示「僅顯示最近 N 則」，
+ * 而不是無聲截斷（見 `truncated` 與 `messageCount`）。
+ */
+export const TUTOR_MESSAGE_WINDOW = 80;
+
 export interface TutorMessage {
   id: string;
   sessionId: string;
@@ -115,7 +123,7 @@ export function setTutorSessionLastTurnOnTopic(sessionId: string, onTopic: boole
     .run(onTopic ? 1 : 0, sessionId);
 }
 
-export function getTutorMessages(sessionId: string, limit = 40): TutorMessage[] {
+export function getTutorMessages(sessionId: string, limit = TUTOR_MESSAGE_WINDOW): TutorMessage[] {
   const rows = getDb()
     .prepare(
       `SELECT id, sessionId, role, content, tokensUsed, createdAt,
@@ -155,13 +163,48 @@ export function saveTutorMessage(
     );
 }
 
-export function countTutorQuestionsSince(learnerId: string, since: string): number {
+export function countTutorMessages(sessionId: string): number {
+  const row = getDb()
+    .prepare("SELECT COUNT(*) AS total FROM tutor_messages WHERE sessionId = ?")
+    .get(sessionId) as unknown as TutorCountRow | undefined;
+  return row?.total ?? 0;
+}
+
+/**
+ * 由 `since` 起計、**已成功取得學伴回覆**的提問數（每日 15 次額度用）。
+ *
+ * 只有同時符合以下條件的提問才計入：
+ *   1. 該提問之後緊接的下一則訊息是 assistant 回覆（即該次請求成功落庫）；
+ *   2. 該回覆不是離題固定引導句（`groundingStatus = 'off-topic'`）。
+ *
+ * 學生的提問在呼叫模型**之前**就會寫入資料庫，因此「有提問」不等於「用了額度」：
+ * 上游 5xx、串流中斷、空白回覆都不應扣學生的每日額度（2026-10-27 產品決定）。
+ * 失敗路徑仍然受 `ai_operations` 的 generation 時間窗限制（見 route 的 reserveAiOperation），
+ * 所以反覆失敗不會變成無限制刷模型。
+ *
+ * 「緊接的下一則」這個條件同時解決另一種情況：先失敗、再問第二題時，第一題之後的
+ * 下一則訊息是第二題（user），所以第一題不會被第二題的回覆誤算成已作答。
+ */
+export function countAnsweredTutorQuestionsSince(learnerId: string, since: string): number {
   const row = getDb()
     .prepare(
       `SELECT COUNT(*) AS total
-       FROM tutor_messages AS messages
-       INNER JOIN tutor_sessions AS sessions ON sessions.id = messages.sessionId
-       WHERE sessions.learnerId = ? AND messages.role = 'user' AND messages.createdAt >= ?`,
+       FROM tutor_messages AS question
+       INNER JOIN tutor_sessions AS sessions ON sessions.id = question.sessionId
+       WHERE sessions.learnerId = ?
+         AND question.role = 'user'
+         AND question.createdAt >= ?
+         AND EXISTS (
+           SELECT 1 FROM tutor_messages AS reply
+           WHERE reply.sessionId = question.sessionId
+             AND reply.role = 'assistant'
+             AND reply.rowid = (
+               SELECT MIN(next.rowid)
+               FROM tutor_messages AS next
+               WHERE next.sessionId = question.sessionId AND next.rowid > question.rowid
+             )
+             AND COALESCE(reply.groundingStatus, 'none') <> 'off-topic'
+         )`,
     )
     .get(learnerId, since) as unknown as TutorCountRow | undefined;
   return row?.total ?? 0;

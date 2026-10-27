@@ -5,11 +5,14 @@ import { requireStudentOrTeacher } from "@/server/auth/guards";
 import { getServerConfig } from "@/server/config";
 import {
   createTutorSession,
+  countTutorMessages,
   getTutorMessages,
   getTutorSessionLearnerId,
   saveTutorMessage,
   isTutorSessionLastTurnOnTopic,
   setTutorSessionLastTurnOnTopic,
+  TUTOR_MESSAGE_WINDOW,
+  type TutorMessage,
 } from "@/server/repositories/tutor";
 import { describeAiLimit, reserveAiOperation } from "@/server/services/ai-limits";
 import {
@@ -20,6 +23,7 @@ import {
   TUTOR_DAILY_LIMIT,
   TUTOR_OFF_TOPIC_REPLY,
   tutorDailyUsage,
+  tutorTurnsForContext,
 } from "@/server/services/tutor";
 import {
   answerDeclaresNotCovered,
@@ -104,9 +108,15 @@ export async function GET(request: Request) {
     const usage = tutorDailyUsage(learnerId);
     const windowLimitReached =
       getServerConfig().aiLimits.enabled && describeAiLimit(learnerId, "generation").exceeded;
+    // 只回最近 TUTOR_MESSAGE_WINDOW 則，並如實告知是否被截斷（決策 5）
+    const messages: TutorMessage[] = sessionId ? getTutorMessages(sessionId) : [];
+    const messageCount = sessionId ? countTutorMessages(sessionId) : 0;
     return jsonOk({
       sessionId,
-      messages: sessionId ? getTutorMessages(sessionId) : [],
+      messages,
+      messageLimit: TUTOR_MESSAGE_WINDOW,
+      messageCount,
+      truncated: messageCount > messages.length,
       dailyLimit: TUTOR_DAILY_LIMIT,
       windowLimitReached,
       ...usage,
@@ -138,7 +148,15 @@ export async function POST(request: Request) {
         isTutorSessionLastTurnOnTopic(sessionId) &&
         isShortHistoryFollowUp(body.message));
     if (!isOnTopic) {
-      if (sessionId !== null) setTutorSessionLastTurnOnTopic(sessionId, false);
+      // 離題也要留痕（決策 2）：學生重新載入後仍看到自己問過甚麼及平台的引導句。
+      // assistant 訊息標記 `off-topic`，因此不計每日額度，亦不會成為下一輪的模型上文。
+      const createdAt = hongKongTimestamp();
+      if (sessionId === null) sessionId = createTutorSession(learnerId, createdAt);
+      setTutorSessionLastTurnOnTopic(sessionId, false);
+      saveTutorMessage(sessionId, "user", body.message, createdAt);
+      saveTutorMessage(sessionId, "assistant", TUTOR_OFF_TOPIC_REPLY, createdAt, 0, {
+        groundingStatus: "off-topic",
+      });
       return jsonOk({
         onTopic: false,
         reply: TUTOR_OFF_TOPIC_REPLY,
@@ -193,7 +211,7 @@ export async function POST(request: Request) {
     // 找不到時仍會回答，但提示詞要求模型先說「我在教材片段中找不到這部分」，
     // 並禁止斷言課本「沒有提及」（模型只看得到片段，看不到整本課本）。
     // 上下文只包含「有回覆」的提問：失敗的提問不可令模型在下一輪一併回答（見 answeredTurnsOnly）。
-    const promptHistory = answeredTurnsOnly(history);
+    const promptHistory = answeredTurnsOnly(tutorTurnsForContext(history));
     const grounding = findTutorGrounding(
       body.message,
       promptHistory.filter((message) => message.role === "user").map((message) => message.content),
@@ -395,7 +413,9 @@ export async function POST(request: Request) {
         connection: "keep-alive",
         "x-accel-buffering": "no",
         "x-tutor-session-id": activeSessionId,
-        "x-tutor-remaining": String(Math.max(0, usage.remaining - 1)),
+        // 回覆完成前無法知道成敗，因此這裡只報「本次提問前」的剩餘；權威數字在 done 事件
+        // 與 GET（每日 15 次只計已成功取得回覆的提問，見 tutorDailyUsage）。
+        "x-tutor-remaining": String(Math.max(0, usage.remaining)),
       }),
     });
   });

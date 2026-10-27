@@ -305,3 +305,28 @@
 | 煙霧測試 | `GET /tutor` **307**；`/api/health` `ok=true`、教材 `26,599` 段／`22` 份、`restore=restored`、`lastError=null`；**沒有** ERROR 級日誌 |
 | 證據 | [docs/deployment-evidence-2026-10-27-topic-gate.json](docs/deployment-evidence-2026-10-27-topic-gate.json) |
 | 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00067-9t5=100` |
+
+---
+
+## [未發布] — 學伴五項產品決定與學生情境模擬（2026-10-27，未部署）
+
+**背景**：上一輪的隔離模擬測試（25 項 A–G 矩陣）列出五項「待產品決定」事項，擁有者指示全部實作；另加一輪真實學生提問模擬（9 項情境）。**本輪未部署**，正式環境仍為 `history-self-study-00068-7v6`。
+
+### 變更
+
+| 項目 | 說明 |
+| --- | --- |
+| **每日 15 次只計「已成功取得回覆」的提問** | 新增 [countAnsweredTutorQuestionsSince](src/server/repositories/tutor.ts)：只數「緊接下一則訊息是正常 assistant 回覆」的提問，並以 `groundingStatus <> 'off-topic'` 排除離題。上游 5xx／串流中斷／空白回覆／未設定 API key 一律**不扣**每日額度；`reserveAiOperation` 仍在呼叫模型前執行，因此 generation 時間窗的限制不變（反覆失敗不會變成無限量刷模型）。「緊接下一則」這個條件同時避免「先失敗、後成功」時失敗那題被下一題的回覆誤算 |
+| **離題留痕但不計額、不入上文** | 離題提問及固定引導句會寫入 `tutor_messages`，assistant 標記 `groundingStatus = 'off-topic'`（[types.ts](src/lib/types.ts) 枚舉新增）。新增 [tutorTurnsForContext](src/server/services/tutor.ts) 在建上文時剔除整輪離題，避免模型模仿「我是你的歷史科自學學伴……」的拒絕語氣。`lastTurnOnTopic = false` 行為不變，短跟進仍然被擋 |
+| **`x-tutor-remaining` header 語意** | 由「提問前剩餘 − 1」改為「提問前剩餘」（回覆完成前無法知道成敗）；權威數字在 SSE `done` 事件及 `GET`。若沿用舊值，失敗時畫面會少報一次剩餘 |
+| **`GET /api/tutor/chat` 訊息窗口** | 預設由 40 提升至 `TUTOR_MESSAGE_WINDOW = 80`，並新增 `messageCount`／`messageLimit`／`truncated`；[TutorView](src/components/TutorView.tsx) 被截斷時顯示「此對話共有 N 則訊息，現時只顯示最近 80 則」，不再無聲截斷 |
+| **not-covered 判斷窗口** | `answerDeclaresNotCovered` 由「最開首 24 字」改為「**第一句**（至第一個。！？!? 或換行），最多掃描 60 字」。長開場白（例如「先回應你的問題：……我在教材片段中找不到」）現在會正確降級；分段作答時後段才說找不到仍**不會**整段降級（既有迴歸測試保留，測試字串改為多句以配合新規則） |
+| **召回補強（決策 3）** | `RETRIEVAL_CONCEPT_TERMS` 新增：極權主義／極權 → 極權、獨裁、專制、一黨專政；獨裁、專制互為展開；統治者 → 君主、皇帝、元首、領袖；措施 → 政策、規定、條款。**不引入** embedding／向量庫 |
+
+### 測試
+
+| 檔案 | 內容 |
+| --- | --- |
+| [tests/tutor-simulation.test.ts](tests/tutor-simulation.test.ts) | 由 25 項增至 34 項：新增 H 段 9 項學生情境（離題兩連發、短跟進、課題切換、極權主義、發明家、譯名對照、索取答案的鷹架、失敗後再成功、日額邊界夾雜離題與失敗），並改寫 B／E／F／G 段以鎖定新契約（失敗不扣額、離題留痕、header 語意、80 則窗口、長開場白降級） |
+| [tests/tutor-grounding.test.ts](tests/tutor-grounding.test.ts) | 新增 3 項類別詞展開及召回測試、2 項 not-covered 第一句窗口測試 |
+| 全套 | 136 files、**1,680 passed**、4 skipped、0 failed；`tsc`／`eslint`／`npm run build` 通過 |

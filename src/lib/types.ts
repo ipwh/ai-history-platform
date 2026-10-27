@@ -1458,12 +1458,20 @@ export const questionReportInputSchema = z.object({
 export type QuestionReportInput = z.input<typeof questionReportInputSchema>;
 
 /**
- * 學伴回答的教材依據狀態（`none` 代表這則訊息沒有教材依據資訊，例如離題回覆）。
+ * 學伴回答的教材依據狀態。
  *
  * - `grounded`：回答已對照本校教材段落，學生可核對出處；
- * - `not-covered`：本校教材找不到相關段落，回答屬一般背景補充，**必須如實標示**。
+ * - `not-covered`：本校教材找不到相關段落，回答屬一般背景補充，**必須如實標示**；
+ * - `off-topic`：離題回覆（固定引導句）。會保留在對話紀錄，但**不計入每日額度**，
+ *   亦不會被當成下一輪的模型上文；
+ * - `none`：沒有教材依據資訊（例如舊資料）。
  */
-export const tutorGroundingStatusSchema = z.enum(["grounded", "not-covered", "none"]);
+export const tutorGroundingStatusSchema = z.enum([
+  "grounded",
+  "not-covered",
+  "none",
+  "off-topic",
+]);
 export type TutorGroundingStatus = z.infer<typeof tutorGroundingStatusSchema>;
 
 /** 學生可見的教材出處（節錄上限由 services/tutor-grounding.ts 控制，不存原文全文） */

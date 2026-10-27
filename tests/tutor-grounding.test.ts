@@ -68,6 +68,48 @@ describe("學伴教材依據：查詢詞抽取", () => {
       terms.find((term) => term.term === value)?.weight ?? 0;
     expect(weightOf("藝術三傑")).toBeGreaterThanOrEqual(5);
   });
+
+  it("決策 3：課程常見類別詞展開（極權主義／獨裁／統治者／措施）", () => {
+    const weightOf = (message: string, value: string) =>
+      groundingModule.extractQueryTerms(message).find((term) => term.term === value)?.weight ?? 0;
+
+    expect(weightOf("乜嘢係極權主義？", "極權")).toBeGreaterThanOrEqual(5);
+    expect(weightOf("乜嘢係極權主義？", "獨裁")).toBeGreaterThanOrEqual(5);
+    expect(weightOf("獨裁者有甚麼特徵？", "極權")).toBeGreaterThanOrEqual(5);
+    expect(weightOf("法國大革命期間的統治者是誰？", "君主")).toBeGreaterThanOrEqual(5);
+    expect(weightOf("凡爾賽條約有甚麼措施？", "規定")).toBeGreaterThanOrEqual(5);
+  });
+
+  it("決策 3：「極權主義」可以召回教材寫成「獨裁統治」的段落", () => {
+    const passages = groundingModule.selectTutorPassages(
+      [
+        block({ id: "g1", order: 0, text: "極權主義的特點" }),
+        block({
+          id: "g2",
+          order: 1,
+          text: "極權統治者以獨裁方式控制社會，禁止反對聲音，並嚴密監控人民的思想。",
+        }),
+      ],
+      groundingModule.extractQueryTerms("乜嘢係極權主義？"),
+    );
+    expect(passages.length).toBeGreaterThan(0);
+    expect(passages[0]?.promptText).toContain("獨裁");
+  });
+
+  it("決策 3：「發明家」可以召回教材寫成「學者」的段落", () => {
+    const passages = groundingModule.selectTutorPassages(
+      [
+        block({
+          id: "i1",
+          order: 0,
+          text: "科學革命強調運用科學方法，學者開始質疑傳統權威，天文學家以觀察驗證理論。",
+        }),
+      ],
+      groundingModule.extractQueryTerms("列出科學革命有關的發明家"),
+    );
+    expect(passages.length).toBeGreaterThan(0);
+    expect(passages[0]?.promptText).toContain("學者");
+  });
 });
 
 describe("學伴教材依據：段落評分與段落組合併", () => {
@@ -293,9 +335,29 @@ describe("學伴教材依據：回答自行說明未涵蓋", () => {
   });
 
   it("分兩部分作答、只有一部分未涵蓋時不會把整個回覆降級", () => {
+    // 決策 4：只看「第一句」。第一句是開場白，後面的部分才提到找不到教材，
+    // 因此不應把整個回覆降級（仍然顯示已對照的教材節錄）。
     const answer =
-      "先分開兩點回應：**凡爾賽條約** 課本這部分沒有提及，以下屬一般背景補充；文藝復興則有教材依據。";
+      "先分開兩點回應。**凡爾賽條約**：課本這部分沒有提及，以下屬一般背景補充。文藝復興則有教材依據。";
     expect(groundingModule.answerDeclaresNotCovered(answer)).toBe(false);
+  });
+
+  it("長開場白後才宣告找不到教材，仍會降級（第一句最多掃描 60 字）", () => {
+    expect(
+      groundingModule.answerDeclaresNotCovered(
+        "先回應你的問題：凡爾賽條約的具體內容，我在教材片段中找不到。以下屬一般背景補充。",
+      ),
+    ).toBe(true);
+    expect(
+      groundingModule.answerDeclaresNotCovered(
+        "你問的凡爾賽條約問題，在我們使用的課本裡我找不到相關內容。",
+      ),
+    ).toBe(true);
+  });
+
+  it("第一句已超過掃描長度時，句末的宣告不影響標示（避免長篇回覆整段降級）", () => {
+    const longOpening = `${"這是一個較長的開場說明，".repeat(6)}我在教材片段中找不到。`;
+    expect(groundingModule.answerDeclaresNotCovered(longOpening)).toBe(false);
   });
 });
 
