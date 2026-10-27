@@ -1,8 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SESSION_COOKIE, encodeSession } from "@/server/auth/session";
-import { getTutorMessages } from "@/server/repositories/tutor";
+import {
+  createTutorSession,
+  getTutorMessages,
+  saveTutorMessage,
+} from "@/server/repositories/tutor";
 import { ensureLearner } from "@/server/repositories/learners";
+import { hongKongTimestamp } from "@/server/services/tutor";
 import { freshTestDatabasePath } from "./test-database";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("tutor-grounding-api");
@@ -297,5 +302,38 @@ describe("學伴 API：教材依據", () => {
       messages: { role: string; content: string }[];
     };
     expect(secondRequestBody.messages[0]?.content).not.toContain("透視法");
+  });
+
+  it("上一次失敗留下的提問不會送去模型，也不會影響本次教材依據", async () => {
+    const sessionId = createTutorSession(STUDENT, hongKongTimestamp());
+    // 模擬上一次請求失敗：資料庫只有學生提問，沒有 assistant 回覆
+    saveTutorMessage(sessionId, "user", "凡爾賽條約如何約束德國？", hongKongTimestamp());
+
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      mockStreamingAnswer("可以從思想工具與傳播條件去想。"),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(
+      requestFor("POST", {
+        message: "我想知道文藝復興如何導致宗教革命的出現。",
+        sessionId,
+      }),
+    );
+    const streamText = await response.text();
+
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
+      messages: { role: string; content: string }[];
+    };
+    // 只有 system 及本次提問：失敗的提問不可令模型一併回答兩題
+    expect(requestBody.messages).toHaveLength(2);
+    expect(requestBody.messages[1]?.content).toBe("我想知道文藝復興如何導致宗教革命的出現。");
+
+    const meta = sseEvents(streamText).find((entry) => entry.event === "meta")?.data as {
+      grounding: string;
+      sources: { documentLabel: string }[];
+    };
+    expect(meta.grounding).toBe("grounded");
+    expect(meta.sources.every((source) => source.documentLabel.includes("課題5"))).toBe(true);
   });
 });

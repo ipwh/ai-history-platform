@@ -38,6 +38,42 @@ export function isShortHistoryFollowUp(message: string): boolean {
   return trimmed.length <= 24 && SHORT_FOLLOW_UP.test(trimmed);
 }
 
+export interface TutorChatTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+/**
+ * 只保留「有回覆」的學生提問，並以 assistant 訊息作結。
+ *
+ * 學生提問在呼叫模型**之前**就會寫入資料庫；若該次請求失敗（上游錯誤、逾時、
+ * 串流中斷、額度用盡），資料庫會留下一則沒有回覆的提問。若把這種提問照樣送去模型，
+ * 模型會見到連續兩則學生訊息，於是同時回答上一則（學生已見過錯誤訊息）的問題——
+ * 2026-10-27 使用者回報就是這樣：問「凡爾賽條約」失敗後再問「文藝復興如何導致宗教
+ * 改革」，回覆把兩題一起答，並因為其中一題沒有教材依據而令整個標示降級。
+ *
+ * 規則：
+ *   1. 連續的學生訊息只保留**最新**一則（較舊的是沒有回覆的提問）；
+ *   2. 結尾若是學生訊息（最新一則仍未回覆）便丟棄，因為本次提問會另行附加。
+ *
+ * 不刪除資料庫內的提問：刪除會令每日提問次數「回水」，與 README 及 `ai_operations`
+ * 的用量語意不一致；提問仍保留在對話紀錄中，只是不再送去模型。
+ */
+export function answeredTurnsOnly(messages: TutorChatTurn[]): TutorChatTurn[] {
+  const turns: TutorChatTurn[] = [];
+  for (const message of messages) {
+    if (message.role === "user") {
+      const last = turns[turns.length - 1];
+      if (last?.role === "user") turns[turns.length - 1] = { role: "user", content: message.content };
+      else turns.push({ role: "user", content: message.content });
+    } else {
+      turns.push({ role: "assistant", content: message.content });
+    }
+  }
+  if (turns[turns.length - 1]?.role === "user") turns.pop();
+  return turns;
+}
+
 export function tutorDailyUsage(learnerId: string, now = new Date()): {
   used: number;
   remaining: number;

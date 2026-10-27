@@ -7,7 +7,12 @@ import {
 } from "@/server/repositories/tutor";
 import { ensureLearner } from "@/server/repositories/learners";
 import { reserveAiOperation } from "@/server/services/ai-limits";
-import { hongKongDayStart, hongKongTimestamp, tutorDailyUsage } from "@/server/services/tutor";
+import {
+  answeredTurnsOnly,
+  hongKongDayStart,
+  hongKongTimestamp,
+  tutorDailyUsage,
+} from "@/server/services/tutor";
 import { freshTestDatabasePath } from "./test-database";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("tutor-chat");
@@ -128,6 +133,34 @@ describe("AI 歷史自學學伴 API", () => {
     expect(hongKongDayStart(new Date("2026-10-25T16:00:00.000Z"))).toBe(
       "2026-10-26T00:00:00.000+08:00",
     );
+  });
+
+  it("沒有回覆的提問不會送去模型（避免下一輪一併回答）", () => {
+    // 上一次請求失敗：資料庫只剩學生提問
+    expect(answeredTurnsOnly([{ role: "user", content: "凡爾賽條約如何約束德國？" }])).toEqual([]);
+    expect(
+      answeredTurnsOnly([
+        { role: "user", content: "凡爾賽條約如何約束德國？" },
+        { role: "assistant", content: "你認為哪一項約束最嚴厲？" },
+        { role: "user", content: "點解？" },
+      ]),
+    ).toEqual([
+      { role: "user", content: "凡爾賽條約如何約束德國？" },
+      { role: "assistant", content: "你認為哪一項約束最嚴厲？" },
+    ]);
+  });
+
+  it("連續兩則學生訊息只保留最新一則", () => {
+    expect(
+      answeredTurnsOnly([
+        { role: "user", content: "凡爾賽條約如何約束德國？" },
+        { role: "user", content: "我想知道文藝復興如何導致宗教革命的出現。" },
+        { role: "assistant", content: "可以先想宗教改革的傳播條件。" },
+      ]),
+    ).toEqual([
+      { role: "user", content: "我想知道文藝復興如何導致宗教革命的出現。" },
+      { role: "assistant", content: "可以先想宗教改革的傳播條件。" },
+    ]);
   });
 
   it.each(["今天天氣如何", "幫我寫 Python"])(

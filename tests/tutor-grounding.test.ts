@@ -222,6 +222,12 @@ describe("學伴教材依據：回答自行說明未涵蓋", () => {
     const answer = `${"你認為條約如何影響德國？".repeat(6)}課本沒有提及這點。`;
     expect(groundingModule.answerDeclaresNotCovered(answer)).toBe(false);
   });
+
+  it("分兩部分作答、只有一部分未涵蓋時不會把整個回覆降級", () => {
+    const answer =
+      "先分開兩點回應：**凡爾賽條約** 課本這部分沒有提及，以下屬一般背景補充；文藝復興則有教材依據。";
+    expect(groundingModule.answerDeclaresNotCovered(answer)).toBe(false);
+  });
 });
 
 describe("學伴教材依據：提示詞", () => {
