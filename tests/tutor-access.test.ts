@@ -33,18 +33,32 @@ describe("tutorAccessState", () => {
     expect(tutorAccessState(null)).toBe("anonymous");
   });
 
-  it("教師及管理員不會看到對話框（API 會回 403）", () => {
-    expect(tutorAccessState(user({ role: "teacher", learnerId: "teacher:t@example.com" }))).toBe(
-      "staff",
-    );
+  it("教師及管理員可作測試，並取得 staff-preview 標示", () => {
+    expect(
+      tutorAccessState(user({ role: "teacher", learnerId: "teacher:t@example.com" })),
+    ).toBe("staff-preview");
     expect(tutorAccessState(user({ role: "admin", learnerId: "admin:a@example.com" }))).toBe(
-      "staff",
+      "staff-preview",
     );
   });
 
+  it("教師不需要名冊核對（教職員不在學生名冊內）", () => {
+    expect(
+      tutorAccessState(
+        user({
+          role: "teacher",
+          learnerId: "teacher:t@example.com",
+          rosterVerified: false,
+          className: null,
+          studentNumber: null,
+        }),
+      ),
+    ).toBe("staff-preview");
+  });
+
   it("名冊未核對的學生會看到說明，而不是對話框", () => {
-    expect(tutorAccessState(user({ rosterVerified: false, className: null, studentNumber: null }))).toBe(
-      "unverified",
-    );
+    expect(
+      tutorAccessState(user({ rosterVerified: false, className: null, studentNumber: null })),
+    ).toBe("unverified");
   });
 });

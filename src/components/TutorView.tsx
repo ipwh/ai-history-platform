@@ -78,7 +78,15 @@ function responseError(payload: unknown, status: number): string {
   return `請求失敗（HTTP ${status}）`;
 }
 
-export function TutorView() {
+export function TutorView({
+  staffPreview = false,
+  backHref,
+}: {
+  /** 教師／管理員測試身分：顯示標示，提醒記錄屬於教職員帳戶 */
+  staffPreview?: boolean;
+  /** 教職員返回後台的連結（學生不會渲染） */
+  backHref?: string;
+}) {
   const [messages, setMessages] = useState<TutorMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(readStoredSessionId);
   const initialSessionId = useRef(sessionId);
@@ -262,6 +270,24 @@ export function TutorView() {
       >
         {DISCLAIMER}
       </p>
+
+      {staffPreview ? (
+        <div
+          className="flex flex-wrap items-center gap-2 rounded-xl border px-4 py-3 text-sm"
+          style={{ borderColor: "#c6d6ff", background: "var(--accent-soft)" }}
+        >
+          <span className="badge badge-accent">教師測試身分</span>
+          <span>
+            你現正以教職員身分測試學伴。對話記錄及每日 15 次配額屬於你自己的教職員帳戶，
+            不會影響任何學生。
+          </span>
+          {backHref ? (
+            <Link className="btn ml-auto" href={backHref}>
+              返回後台
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="card space-y-4" aria-live="polite" aria-busy={loading || sending}>
         {loading ? <p className="text-sm text-gray-500">正在載入學伴對話…</p> : null}

@@ -36,11 +36,23 @@ const chatRequestSchema = z.object({
   sessionId: z.string().trim().min(1).max(128).optional(),
 });
 
-async function requireRosterStudent(request: Request): Promise<string> {
+/**
+ * 學伴存取守衛。
+ *
+ * - 未登入 → 401。
+ * - 教師／管理員 → 放行，供科組測試（2026-10-27 擁有者指示）。其對話記錄在
+ *   `teacher:`／`admin:` learnerId 之下，與學生完全分開；每日 15 次及
+ *   `generation` 時間窗配額與學生相同，毋須另設例外。
+ * - 學生 → 必須已在名冊核對，否則 403（未核對即無法確認是本校學生）。
+ */
+async function requireTutorAccess(request: Request): Promise<string> {
   const actor = await requireStudentOrTeacher(request);
   if (!actor.user) throw new ApiRouteError("請先以學校 Google 帳戶登入", 401);
-  if (actor.user.role !== "student" || !actor.user.rosterVerified) {
-    throw new ApiRouteError("AI 歷史自學學伴只限已核對學生名冊的學生使用", 403);
+  if (actor.user.role === "student" && !actor.user.rosterVerified) {
+    throw new ApiRouteError(
+      "你的帳戶尚未完成學生名冊核對，暫不可使用學伴；請聯絡歷史科老師。",
+      403,
+    );
   }
   if (actor.learnerId === null) {
     throw new ApiRouteError("登入工作階段缺少有效的學生身分", 401);
@@ -72,7 +84,7 @@ function sseEvent(event: string, data: unknown): Uint8Array {
 
 export async function GET(request: Request) {
   return handleRoute(async () => {
-    const learnerId = await requireRosterStudent(request);
+    const learnerId = await requireTutorAccess(request);
     const sessionId = new URL(request.url).searchParams.get("sessionId");
     if (sessionId !== null && sessionId.length > 0) {
       if (getTutorSessionLearnerId(sessionId) !== learnerId) {
@@ -94,7 +106,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   return handleRoute(async () => {
-    const learnerId = await requireRosterStudent(request);
+    const learnerId = await requireTutorAccess(request);
     const body = await parseJsonBody(request, chatRequestSchema);
     let sessionId = body.sessionId ?? null;
     let history: ReturnType<typeof getTutorMessages> = [];
