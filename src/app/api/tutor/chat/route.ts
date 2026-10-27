@@ -190,7 +190,8 @@ export async function POST(request: Request) {
     saveTutorMessage(sessionId, "user", body.message, createdAt);
 
     // 教材依據：只使用已開放給學生的教材段落（見 services/tutor-grounding.ts）。
-    // 找不到時仍會回答，但提示詞要求模型明說「課本這部分沒有提及」。
+    // 找不到時仍會回答，但提示詞要求模型先說「我在教材片段中找不到這部分」，
+    // 並禁止斷言課本「沒有提及」（模型只看得到片段，看不到整本課本）。
     // 上下文只包含「有回覆」的提問：失敗的提問不可令模型在下一輪一併回答（見 answeredTurnsOnly）。
     const promptHistory = answeredTurnsOnly(history);
     const grounding = findTutorGrounding(
