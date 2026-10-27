@@ -121,9 +121,10 @@ function isStopTerm(normalizedTerm: string): boolean {
 const RETRIEVAL_CONCEPT_TERMS: readonly { trigger: string; expansions: string[] }[] = [
   { trigger: "藝術家", expansions: ["藝術三傑", "畫家", "雕塑家", "建築師", "繪畫"] },
   { trigger: "畫家", expansions: ["藝術三傑", "繪畫"] },
+  { trigger: "發明家", expansions: ["學者", "科學家", "天文學家", "物理學家", "發明"] },
+  { trigger: "科學家", expansions: ["學者", "科學革命", "天文學家", "物理學家"] },
   { trigger: "文學家", expansions: ["作家", "詩人", "文學"] },
   { trigger: "作家", expansions: ["文學家", "詩人"] },
-  { trigger: "科學家", expansions: ["科學革命", "天文學家", "物理學家"] },
   { trigger: "航海家", expansions: ["航海", "探險"] },
 ];
 
@@ -164,6 +165,7 @@ export interface TutorGroundingBlock {
   id: string;
   documentId: string;
   documentFileName: string;
+  sectionId: string | null;
   type: string;
   text: string;
   table: { text: string }[][] | null;
@@ -292,12 +294,22 @@ function isImagePlaceholder(block: TutorGroundingBlock, text: string): boolean {
  * 段落組由「命中段落」前後各取數段合併而成，因為教材被切成平均 23 字的碎片，
  * 單一段落（尤其標題）不足以回答問題。
  */
+/** 提問是否要求「列舉」（列出／有哪些／舉例…）：教材的列舉多數是表格或清單段落 */
+const ENUMERATE_PATTERN = /列出|列舉|有哪些|有甚麼|有什么|舉例|例子|名單|代表人物|哪些人/;
+
 export function selectTutorPassages(
   blocks: TutorGroundingBlock[],
   terms: QueryTerm[],
-  options: { maxSources?: number } = {},
+  options: {
+    maxSources?: number;
+    /** 提問命中的分節：優先取該分節的段落 */
+    preferredSectionIds?: string[];
+    /** 提問要求列舉時，表格／清單段落優先 */
+    enumerate?: boolean;
+  } = {},
 ): TutorPassage[] {
   const maxSources = options.maxSources ?? TUTOR_MAX_SOURCES;
+  const preferredSections = new Set(options.preferredSectionIds ?? []);
   const usable = blocks
     .map((block) => ({ block, text: usableText(block) }))
     .filter(
@@ -310,7 +322,17 @@ export function selectTutorPassages(
   if (usable.length === 0 || terms.length === 0) return [];
 
   const hits = usable
-    .map((entry, index) => ({ index, ...scoreBlockText(entry.text, terms) }))
+    .map((entry, index) => {
+      const scored = scoreBlockText(entry.text, terms);
+      // 提問點名的分節、以及「列舉」問題常見的表格／清單，都是強烈的相關訊號
+      const sectionBonus =
+        entry.block.sectionId !== null && preferredSections.has(entry.block.sectionId) ? 1.4 : 1;
+      const listBonus =
+        options.enumerate === true && (entry.block.type === "table" || entry.block.type === "list")
+          ? 1.3
+          : 1;
+      return { index, score: scored.score * sectionBonus * listBonus, strong: scored.strong };
+    })
     .filter((hit) => hit.score >= MIN_HIT_SCORE && hit.strong > 0)
     .sort((left, right) => right.score - left.score)
     .slice(0, MAX_HIT_BLOCKS);
@@ -403,6 +425,8 @@ export interface TutorTopicGuess {
   topicId: string;
   topicTitle: string;
   score: number;
+  /** 提問命中的分節（用於優先取該分節的教材段落） */
+  sectionIds: string[];
 }
 
 /**
@@ -414,7 +438,7 @@ export interface TutorTopicGuess {
 export function guessTutorTopic(
   message: string,
   topics: { id: string; title: string }[],
-  sectionsByTopic: Map<string, { title: string; matchKeywords: string[] }[]>,
+  sectionsByTopic: Map<string, { id?: string; title: string; matchKeywords: string[] }[]>,
 ): TutorTopicGuess | null {
   const normalizedText = normalizeForMatch(message);
   if (normalizedText.length === 0) return null;
@@ -422,18 +446,24 @@ export function guessTutorTopic(
   let best: TutorTopicGuess | null = null;
   for (const topic of topics) {
     let score = 0;
+    const sectionIds: string[] = [];
     for (const segment of topic.title.split(/[：:–—()（）及]/)) {
       const key = normalizeForMatch(stripPageReferences(segment));
       if (key.length >= 3 && normalizedText.includes(key)) score += 6;
     }
     for (const section of sectionsByTopic.get(topic.id) ?? []) {
+      let matched = false;
       for (const value of [section.title, ...section.matchKeywords]) {
         const key = normalizeForMatch(stripPageReferences(value));
         if (key.length < 3 || isStopTerm(key)) continue;
         // 關鍵詞由教師逐節維護，命中一個 3 字以上的分節關鍵詞已足以定位課題
         // （例如「絲綢之路」→ 課題3），故權重較課題標題片段高。
-        if (normalizedText.includes(key)) score += Math.min(key.length * 2, 10);
+        if (normalizedText.includes(key)) {
+          score += Math.min(key.length * 2, 10);
+          matched = true;
+        }
       }
+      if (matched && section.id !== undefined) sectionIds.push(section.id);
     }
     const scope = lexiconScopeForTopicId(topic.id);
     if (
@@ -445,7 +475,7 @@ export function guessTutorTopic(
       score += 10;
     }
     if (!best || score > best.score) {
-      best = { topicId: topic.id, topicTitle: topic.title, score };
+      best = { topicId: topic.id, topicTitle: topic.title, score, sectionIds };
     }
   }
   return best !== null && best.score >= MIN_HIT_SCORE ? best : null;
@@ -552,11 +582,15 @@ export function findTutorGrounding(message: string, context: string[] = []): Tut
     const topics = listTopics({ publishedOnly: true });
     if (topics.length === 0) return notCovered(null, null);
 
-    const sectionsByTopic = new Map<string, { title: string; matchKeywords: string[] }[]>();
+    const sectionsByTopic = new Map<
+      string,
+      { id: string; title: string; matchKeywords: string[] }[]
+    >();
     for (const topic of topics) {
       sectionsByTopic.set(
         topic.id,
         listSections(topic.id).map((section) => ({
+          id: section.id,
           title: section.title,
           matchKeywords: section.matchKeywords,
         })),
@@ -579,6 +613,7 @@ export function findTutorGrounding(message: string, context: string[] = []): Tut
         id: block.id,
         documentId: block.documentId,
         documentFileName: block.documentFileName,
+        sectionId: block.sectionId,
         type: block.type,
         text: block.text,
         table: block.table,
@@ -590,7 +625,10 @@ export function findTutorGrounding(message: string, context: string[] = []): Tut
     // 上一輪的提問，否則上一輪的詞會把不相關段落的排名推高。
     const messageTerms = extractQueryTerms(message);
     const terms = messageTerms.length >= 3 ? messageTerms : extractQueryTerms(message, recentContext);
-    const passages = selectTutorPassages(blocks, terms);
+    const passages = selectTutorPassages(blocks, terms, {
+      preferredSectionIds: guess.sectionIds,
+      enumerate: ENUMERATE_PATTERN.test(message),
+    });
     if (passages.length === 0) return notCovered(guess.topicId, guess.topicTitle);
 
     return {

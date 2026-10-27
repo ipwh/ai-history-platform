@@ -18,6 +18,7 @@ interface TestBlockInput {
   order: number;
   type?: string;
   documentId?: string;
+  sectionId?: string | null;
 }
 
 function block(input: TestBlockInput) {
@@ -25,6 +26,7 @@ function block(input: TestBlockInput) {
     id: input.id,
     documentId: input.documentId ?? "doc-a",
     documentFileName: "課題9 兩次世界大戰_筆記.docx",
+    sectionId: input.sectionId ?? null,
     type: input.type ?? "paragraph",
     text: input.text,
     table: null,
@@ -163,6 +165,33 @@ describe("學伴教材依據：段落評分與段落組合併", () => {
     );
 
     expect(passages.map((passage) => passage.promptText).join("\n")).toContain("藝術三傑");
+  });
+
+  it("提問點名的分節，其段落會優先於其他分節", () => {
+    const text = "科學革命期間，學者提出多項新理論。";
+    const passages = groundingModule.selectTutorPassages(
+      [
+        block({ id: "p1", order: 0, text }),
+        block({ id: "p2", order: 1, text, sectionId: "topic-5-science-enlightenment" }),
+      ],
+      groundingModule.extractQueryTerms("科學革命有甚麼重要突破？"),
+      { preferredSectionIds: ["topic-5-science-enlightenment"] },
+    );
+
+    expect(passages[0]?.anchorBlockId).toBe("p2");
+  });
+
+  it("「列出」類問題會優先取表格或清單段落", () => {
+    const passages = groundingModule.selectTutorPassages(
+      [
+        block({ id: "e1", order: 0, type: "paragraph", text: "文藝復興時期的代表人物包括多位學者。" }),
+        block({ id: "e2", order: 1, type: "table", text: "文藝復興時期的代表人物表。" }),
+      ],
+      groundingModule.extractQueryTerms("列出文藝復興時期的代表人物"),
+      { enumerate: true },
+    );
+
+    expect(passages[0]?.anchorBlockId).toBe("e2");
   });
 });
 
