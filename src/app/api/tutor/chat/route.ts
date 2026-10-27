@@ -21,6 +21,7 @@ import {
   tutorDailyUsage,
 } from "@/server/services/tutor";
 import {
+  answerDeclaresNotCovered,
   buildTutorGlossary,
   buildTutorSystemPrompt,
   detectTermMismatches,
@@ -287,9 +288,13 @@ export async function POST(request: Request) {
             }
           } else {
             const termNotes = detectTermMismatches(completeAnswer);
+            // 模型自己說「課本沒有提及」時，標示必須一致：不可同時顯示「已對照課本教材」。
+            const declaresNotCovered = answerDeclaresNotCovered(completeAnswer);
+            const finalStatus = declaresNotCovered ? "not-covered" : grounding.status;
+            const finalSources = declaresNotCovered ? [] : grounding.sources;
             saveTutorMessage(activeSessionId, "assistant", completeAnswer, hongKongTimestamp(), 0, {
-              sources: grounding.sources,
-              groundingStatus: grounding.status,
+              sources: finalSources,
+              groundingStatus: finalStatus,
               termNotes,
             });
             if (!cancelled) {
@@ -297,6 +302,10 @@ export async function POST(request: Request) {
                 sseEvent("done", {
                   remaining: tutorDailyUsage(learnerId).remaining,
                   termNotes,
+                  // 最終標示以回覆內容為準，令介面不會與答案自相矛盾
+                  grounding: finalStatus,
+                  sources: finalSources,
+                  topicTitle: finalStatus === "not-covered" ? null : grounding.topicTitle,
                 }),
               );
             }

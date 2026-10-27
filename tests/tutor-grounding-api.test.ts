@@ -86,6 +86,23 @@ beforeAll(async () => {
        (id, file_name, kind, status, created_at, student_distribution, rights_confirmed_at)
      VALUES ('doc-notes', '課題9 兩次世界大戰_筆記.docx', 'demo', 'ready', ?, 1, ?)`,
   ).run(now, now);
+  // 另一個課題的教材：用於驗證上一輪的課題不會污染當前問題
+  db.prepare(
+    `INSERT INTO topics (id, title, description, published, sort_order, created_at, updated_at)
+     VALUES ('topic-5', '課題5：近代歐洲的興起', '', 1, 5, ?, ?)`,
+  ).run(now, now);
+  db.prepare(
+    `INSERT INTO material_documents
+       (id, file_name, kind, status, created_at, student_distribution, rights_confirmed_at)
+     VALUES ('doc-renaissance', '課題5 近代歐洲的興起_筆記.docx', 'demo', 'ready', ?, 1, ?)`,
+  ).run(now, now);
+  db.prepare(
+    `INSERT INTO material_blocks
+       (id, document_id, topic_id, section_id, sort_order, type, text, source_location, created_at, extraction_method)
+     VALUES ('block-renaissance', 'doc-renaissance', 'topic-5', NULL, 0, 'paragraph',
+             '文藝復興復興古希臘、羅馬文明，重視人文主義及個人價值，藝術創作採用透視法。',
+             '課題5 近代歐洲的興起_筆記.docx · 第 1 段（段落）', ?, 'native')`,
+  ).run(now);
   const texts = [
     "凡爾賽條約的內容",
     "《凡爾賽條約》規定德國須限制軍隊數目、放棄海外殖民地及支付巨額賠款，並承認發動戰爭的責任。",
@@ -220,5 +237,65 @@ describe("學伴 API：教材依據", () => {
     const answer = payload.messages.find((message) => message.role === "assistant");
     expect(answer?.groundingStatus).toBe("grounded");
     expect(answer?.sources?.length).toBeGreaterThan(0);
+  });
+
+  it("模型自行說「課本沒有提及」時，最終標示降級為未涵蓋且不顯示出處", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      mockStreamingAnswer("課本這部分沒有提及；以下屬一般背景補充，不是教材說法。"),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(
+      requestFor("POST", { message: "凡爾賽條約如何約束德國？" }),
+    );
+    const streamText = await response.text();
+    const events = sseEvents(streamText);
+    const meta = events.find((entry) => entry.event === "meta")?.data as { grounding: string };
+    const done = events.find((entry) => entry.event === "done")?.data as {
+      grounding: string;
+      sources: unknown[];
+      topicTitle: string | null;
+    };
+
+    // 檢索當下找到段落，但模型判斷內容不適用，最終標示以模型說明為準
+    expect(meta.grounding).toBe("grounded");
+    expect(done.grounding).toBe("not-covered");
+    expect(done.sources).toHaveLength(0);
+    expect(done.topicTitle).toBeNull();
+
+    const sessionId = response.headers.get("x-tutor-session-id") ?? "";
+    const answer = getTutorMessages(sessionId).find((message) => message.role === "assistant");
+    expect(answer?.groundingStatus).toBe("not-covered");
+    expect(answer?.sources).toHaveLength(0);
+  });
+
+  it("同一對話先問文藝復興，之後問凡爾賽條約仍以課題9 教材為依據", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      mockStreamingAnswer("你認為條約如何影響德國？"),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const first = await postChat(
+      requestFor("POST", { message: "文藝復興有甚麼特色？" }),
+    );
+    const sessionId = first.headers.get("x-tutor-session-id") ?? "";
+    await first.text();
+
+    const second = await postChat(
+      requestFor("POST", { message: "凡爾賽條約如何約束德國？", sessionId }),
+    );
+    const streamText = await second.text();
+    const meta = sseEvents(streamText).find((entry) => entry.event === "meta")?.data as {
+      grounding: string;
+      sources: { documentLabel: string }[];
+    };
+
+    expect(meta.grounding).toBe("grounded");
+    expect(meta.sources.every((source) => source.documentLabel.includes("課題9"))).toBe(true);
+
+    const secondRequestBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body)) as {
+      messages: { role: string; content: string }[];
+    };
+    expect(secondRequestBody.messages[0]?.content).not.toContain("透視法");
   });
 });

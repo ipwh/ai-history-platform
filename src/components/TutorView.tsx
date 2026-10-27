@@ -336,7 +336,14 @@ export function TutorView({
           if (typeof data.remaining === "number") {
             setQuota((current) => ({ ...current, remaining: data.remaining as number }));
           }
-          if (Array.isArray(data.termNotes)) updateAssistant({ termNotes: data.termNotes });
+          updateAssistant({
+            ...(Array.isArray(data.termNotes) ? { termNotes: data.termNotes } : {}),
+            ...(data.grounding === "grounded" || data.grounding === "not-covered"
+              ? { grounding: data.grounding }
+              : {}),
+            ...(Array.isArray(data.sources) ? { sources: data.sources } : {}),
+            ...(data.topicTitle !== undefined ? { topicTitle: data.topicTitle } : {}),
+          });
         } else if (event === "error") {
           throw new Error(data.error ?? "DeepSeek 串流發生錯誤，請稍後再試。");
         }

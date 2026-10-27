@@ -206,6 +206,24 @@ describe("學伴教材依據：課本用語對照", () => {
   });
 });
 
+describe("學伴教材依據：回答自行說明未涵蓋", () => {
+  it("回覆開首明說課本沒有提及", () => {
+    expect(
+      groundingModule.answerDeclaresNotCovered("課本這部分沒有提及；以下屬一般背景補充。"),
+    ).toBe(true);
+    expect(groundingModule.answerDeclaresNotCovered("教材並未涵蓋這個課題。")).toBe(true);
+  });
+
+  it("一般回答不會被誤判", () => {
+    expect(groundingModule.answerDeclaresNotCovered("課本提到條約限制德國軍備。")).toBe(false);
+  });
+
+  it("句中途才提及不算「未涵蓋」", () => {
+    const answer = `${"你認為條約如何影響德國？".repeat(6)}課本沒有提及這點。`;
+    expect(groundingModule.answerDeclaresNotCovered(answer)).toBe(false);
+  });
+});
+
 describe("學伴教材依據：提示詞", () => {
   const empty = {
     status: "not-covered" as const,
@@ -257,8 +275,10 @@ describe("學伴教材依據：資料庫檢索（只使用已開放給學生的�
     studentDistribution: number;
     rightsConfirmedAt: string | null;
     texts: string[];
+    topicId?: string;
   }): void {
     const db = getDb();
+    const topicId = input.topicId ?? "topic-9";
     db.prepare(
       `INSERT INTO material_documents
          (id, file_name, kind, status, created_at, student_distribution, rights_confirmed_at)
@@ -275,10 +295,11 @@ describe("學伴教材依據：資料庫檢索（只使用已開放給學生的�
       db.prepare(
         `INSERT INTO material_blocks
            (id, document_id, topic_id, section_id, sort_order, type, text, source_location, created_at, extraction_method)
-         VALUES (?, ?, 'topic-9', NULL, ?, 'paragraph', ?, ?, ?, 'native')`,
+         VALUES (?, ?, ?, NULL, ?, 'paragraph', ?, ?, ?, 'native')`,
       ).run(
         `${input.documentId}-b${index}`,
         input.documentId,
+        topicId,
         index,
         text,
         `${input.fileName} · 第 ${index + 1} 段（段落）`,
@@ -289,10 +310,29 @@ describe("學伴教材依據：資料庫檢索（只使用已開放給學生的�
 
   beforeAll(() => {
     const db = getDb();
+    const now = "2026-10-27T00:00:00.000+08:00";
     db.prepare(
       `INSERT INTO topics (id, title, description, published, sort_order, created_at, updated_at)
        VALUES ('topic-9', '課題9：20世紀的國際紛爭及危機(I)–兩次世界大戰', '', 1, 9, ?, ?)`,
-    ).run("2026-10-27T00:00:00.000+08:00", "2026-10-27T00:00:00.000+08:00");
+    ).run(now, now);
+    db.prepare(
+      `INSERT INTO topics (id, title, description, published, sort_order, created_at, updated_at)
+       VALUES ('topic-5', '課題5：近代歐洲的興起', '', 1, 5, ?, ?)`,
+    ).run(now, now);
+
+    // 另一個課題的教材：用來驗證「上一輪的課題不會污染當前問題」
+    seedMaterial({
+      documentId: "doc-renaissance",
+      fileName: "課題5 近代歐洲的興起_筆記.docx",
+      kind: "demo",
+      studentDistribution: 1,
+      rightsConfirmedAt: now,
+      topicId: "topic-5",
+      texts: [
+        "文藝復興的主要特點",
+        "文藝復興復興古希臘、羅馬文明，重視人文主義及個人價值，藝術創作採用透視法。",
+      ],
+    });
 
     seedMaterial({
       documentId: "doc-notes",
@@ -352,5 +392,25 @@ describe("學伴教材依據：資料庫檢索（只使用已開放給學生的�
     const grounding = groundingModule.findTutorGrounding("伊斯蘭曆法的計算方法是甚麼？");
     expect(grounding.status).toBe("not-covered");
     expect(grounding.sources).toHaveLength(0);
+  });
+
+  it("上一輪問文藝復興，不會令本輪的凡爾賽條約引用課題5 教材", () => {
+    const grounding = groundingModule.findTutorGrounding("凡爾賽條約如何約束德國？", [
+      "文藝復興及工業革命有沒有關係？",
+      "列出文藝復興時期著名的藝術家",
+    ]);
+
+    expect(grounding.topicId).toBe("topic-9");
+    const combined = grounding.passages.map((passage) => passage.promptText).join("\n");
+    expect(combined).not.toContain("透視法");
+    expect(
+      grounding.sources.every((source) => source.documentLabel.includes("課題9")),
+    ).toBe(true);
+  });
+
+  it("短跟進（沒有課題線索）仍可借助上一輪提問定位課題", () => {
+    const grounding = groundingModule.findTutorGrounding("點解？", ["凡爾賽條約如何約束德國？"]);
+    expect(grounding.status).toBe("grounded");
+    expect(grounding.topicId).toBe("topic-9");
   });
 });

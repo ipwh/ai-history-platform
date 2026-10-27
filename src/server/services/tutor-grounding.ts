@@ -492,6 +492,18 @@ function notCovered(topicId: string | null, topicTitle: string | null): TutorGro
 }
 
 /**
+ * 回答是否明說「課本沒有提及」。
+ *
+ * 提示詞要求模型在找不到教材依據時，回覆**開首**說明「課本這部分沒有提及」。若模型
+ * 這樣說，介面卻同時顯示「✅ 已對照課本教材」，學生會更無所適從；因此以模型自己的
+ * 判斷為準，把標示降級為「課本未涵蓋」。只看開首 60 字，避免句中途提及時誤判。
+ */
+export function answerDeclaresNotCovered(answer: string): boolean {
+  const opening = answer.slice(0, 60);
+  return /(?:課本|教材|教科書)[^。\n]{0,8}(?:沒有|未|並未)(?:提及|涵蓋|交代|說明|記載)/.test(opening);
+}
+
+/**
  * 為一條提問找出教材依據。
  *
  * `context` 是同一對話中較早的**學生提問**，用於理解「咁之後呢？」這類跟進問題。
@@ -514,7 +526,12 @@ export function findTutorGrounding(message: string, context: string[] = []): Tut
     }
 
     const recentContext = context.slice(-2);
-    const guess = guessTutorTopic([message, ...recentContext].join("\n"), topics, sectionsByTopic);
+    // **當前提問優先**：對話歷史只用於「點解？」這類沒有課題線索的跟進問題。
+    // 若把歷史與當前提問混在一起評分，上一輪的課題（例如「文藝復興」）會蓋過學生
+    // 現在問的課題（例如「凡爾賽條約」），令回覆引用另一個課題的教材。
+    const currentGuess = guessTutorTopic(message, topics, sectionsByTopic);
+    const guess =
+      currentGuess ?? guessTutorTopic([...recentContext, message].join("\n"), topics, sectionsByTopic);
     if (guess === null) return notCovered(null, null);
 
     const distributable = listStudentDistributableDocumentIds();
@@ -531,7 +548,10 @@ export function findTutorGrounding(message: string, context: string[] = []): Tut
         extractionMethod: block.extractionMethod,
       }));
 
-    const terms = extractQueryTerms(message, recentContext);
+    // 檢索詞同樣以當前提問為主：只有提問本身幾乎沒有內容詞（例如「點解？」）時才借助
+    // 上一輪的提問，否則上一輪的詞會把不相關段落的排名推高。
+    const messageTerms = extractQueryTerms(message);
+    const terms = messageTerms.length >= 3 ? messageTerms : extractQueryTerms(message, recentContext);
     const passages = selectTutorPassages(blocks, terms);
     if (passages.length === 0) return notCovered(guess.topicId, guess.topicTitle);
 
