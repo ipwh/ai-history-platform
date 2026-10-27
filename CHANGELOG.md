@@ -205,3 +205,19 @@
 | 未驗證（如實記錄） | 教材依據標示需要登入才看得到，**未**在正式環境做人工煙霧測試；建議擁有者登入 `/tutor` 以「凡爾賽條約如何約束德國？」試一次，預期看到「✅ 已對照課本教材（N 段）」及「第N段」出處 |
 | 證據 | [docs/deployment-evidence-2026-10-27-grounding.json](docs/deployment-evidence-2026-10-27-grounding.json) |
 | 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00061-s9t=100` |
+
+### 熱修部署（2026-10-27，修正使用者回報）
+
+| 項目 | 結果 |
+| --- | --- |
+| 回報 | 同一對話先問「文藝復興」再問「凡爾賽條約」，回覆附上**課題5** 教材節錄；且模型說「課本這部分沒有提及」時介面仍顯示「✅ 已對照課本教材」。根因及修法見上「修正」表 |
+| Commit | `7cd59b7`（`main`，已推送 `2f278c2..7cd59b7`） |
+| Cloud Build | `da0fc432-e7f3-4179-ad50-821f515f0f6b` **SUCCESS**（4M34S） |
+| Cloud Run revision | **`history-self-study-00063-qfc`**，100% 流量（回滾目標：`00062-5b9`） |
+| 本機迴歸重現 | 以 `data/app.db` 副本執行同一三輪對話：第三輪現為 `topic=課題9`（第24／85／99段），修復前為課題5 |
+| 測試 | 135 files、**1,625 passed**、4 skipped、0 failed（新增 6 項迴歸測試） |
+| 煙霧測試 | `GET /tutor` **307**；`POST /api/tutor/chat` **401**；`/api/health` `ok=true`、`database: sqlite/ok`、教材 `26,599` 段／`22` 份、備份 `restored`、`lastError=null`；該 revision **沒有** ERROR 級日誌 |
+| 建置備註 | `npm run build` 首次因 `.next` 內檔案被鎖定（Windows／OneDrive）而 `EPERM`；刪除 `.next` 後重建成功，與程式碼無關 |
+| 未驗證（如實記錄） | 介面行為仍需登入人工驗證：依序問「文藝復興…」→「文藝復興藝術家」→「凡爾賽條約如何約束德國？」，第三個回覆應以課題9 為依據 |
+| 證據 | [docs/deployment-evidence-2026-10-27-hotfix.json](docs/deployment-evidence-2026-10-27-hotfix.json) |
+| 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00062-5b9=100` |

@@ -1,0 +1,89 @@
+{
+  "generatedAt": "2026-10-27T01:56:00.000Z",
+  "notice": "修正使用者 2026-10-27 回報的兩個缺陷後重新部署：①同一對話上一輪的課題（文藝復興）污染當前提問（凡爾賽條約）的教材依據；②模型明說「課本這部分沒有提及」時介面仍顯示「已對照課本教材」。工作目錄在部署前乾淨，映像由 commit 7cd59b7 建置。",
+  "reportedIssue": {
+    "reportedAt": "2026-10-27T09:42:38+08:00",
+    "symptom": "先問「文藝復興及工業革命有沒有關係?」及「列出文藝復興時期著名的藝術家」，再問「凡爾賽條約如何約束德國？」，回覆顯示「課本這部分沒有提及」，但介面同時標示「✅ 已對照課本教材（3 段）課題5：近代歐洲的興起」並列出課題5 的文藝復興／科學革命節錄。",
+    "rootCause": [
+      "services/tutor-grounding.ts 的 findTutorGrounding 把最近兩則學生提問與當前提問一併用於課題評分，上一輪的「文藝復興」（詞庫課題5 加 10 分，另有多個分節關鍵詞）蓋過當前的「凡爾賽條約」（課題9）。",
+      "檢索詞同樣混入上文，令課題5 段落的分數被推高。",
+      "回覆內容與標示各自獨立產生：模型按片段自行判斷「課本沒有提及」，但 grounding.status 仍是 grounded。"
+    ]
+  },
+  "fix": {
+    "commit": "7cd59b7",
+    "changes": [
+      "課題偵測：當前提問優先；只有當前提問沒有課題線索（例如「點解？」）時才借助最近兩則提問。",
+      "檢索詞：提問本身少於 3 個內容詞時才借助上文，否則只用當前提問的詞。",
+      "新增 answerDeclaresNotCovered（只檢查回覆開首 60 字）：模型明說未涵蓋時，done 事件把標示降為 not-covered、清空出處及課題標題，資料庫保存的紀錄同步一致。",
+      "迴歸測試：同一對話先問文藝復興、再問凡爾賽條約，必須以課題9 教材為依據，且提示詞不含課題5 內容；短跟進仍可借助上文。"
+    ]
+  },
+  "finalState": {
+    "revision": "history-self-study-00063-qfc",
+    "previousRevision": "history-self-study-00062-5b9"
+  },
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00063-qfc",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:da0fc432-e7f3-4179-ad50-821f515f0f6b",
+    "imageDigest": "sha256:63238e95106daea5473dfc2cead341e7749ccd9d082bca4c8db7a1ca22825b88",
+    "sourceCommit": "7cd59b7",
+    "build": {
+      "buildId": "da0fc432-e7f3-4179-ad50-821f515f0f6b",
+      "startTime": "2026-10-27T01:48:35Z",
+      "duration": "4M34S",
+      "status": "SUCCESS",
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/da0fc432-e7f3-4179-ad50-821f515f0f6b?project=784175190534"
+    },
+    "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
+    "traffic": "100% -> history-self-study-00063-qfc"
+  },
+  "verification": [
+    {
+      "check": "本機迴歸重現（真實教材副本）",
+      "command": "tsx 以 data/app.db 副本執行三輪對話",
+      "result": "第三輪「凡爾賽條約如何約束德國？」→ status=grounded、topic=課題9，段落為第24／85／99段；修復前為課題5"
+    },
+    {
+      "check": "測試",
+      "command": "npx vitest run",
+      "result": "135 files、1,625 passed、4 skipped、0 failed（新增 6 項迴歸測試）"
+    },
+    {
+      "check": "靜態檢查及建置",
+      "command": "npx tsc --noEmit ／ npx eslint src tests ／ npm run build",
+      "result": "全部通過（建置首次因 .next 檔案被鎖定而失敗，清除 .next 後成功；與程式碼無關）"
+    },
+    {
+      "check": "流量",
+      "command": "gcloud run services describe … --format value(status.traffic)",
+      "result": "100% -> history-self-study-00063-qfc（latestRevision: true）"
+    },
+    {
+      "check": "健康檢查",
+      "command": "GET /api/health",
+      "result": "ok=true；database=sqlite/ok；llmConfigured=true；demoMode=false；教材 documents=46／blocks=26599／studentVisibleDocuments=22；persistence restore=restored、lastError=null"
+    },
+    {
+      "check": "頁面及 API 守衛",
+      "command": "GET /tutor ／ POST /api/tutor/chat",
+      "result": "307（→ /login?next=%2Ftutor）／401，與部署前一致"
+    },
+    {
+      "check": "ERROR 級日誌",
+      "command": "gcloud logging read 'resource.labels.revision_name=history-self-study-00063-qfc AND severity>=ERROR'",
+      "result": "沒有記錄"
+    },
+    {
+      "check": "未驗證（如實記錄）",
+      "command": "（需登入）",
+      "result": "介面行為未在正式環境人工驗證。建議擁有者登入 /tutor 依序問「文藝復興及工業革命有沒有關係?」→「列出文藝復興時期著名的藝術家」→「凡爾賽條約如何約束德國？」，第三個回覆的教材依據應為課題9；若模型說「課本沒有提及」，標示應為「➕ 課本未涵蓋」而不是「✅ 已對照課本教材」"
+    }
+  ],
+  "rollback": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00062-5b9=100"
+}
