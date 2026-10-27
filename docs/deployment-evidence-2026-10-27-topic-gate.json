@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-10-27T03:45:00.000Z",
+  "notice": "修正使用者 2026-10-27 第五次回報：①「我想知道極權主義的特點」被主題硬閘誤判離題；②兩則回覆的教材出處在畫面上顯示空白（未能重現，已加固顯示並記錄瀏覽器實測結果）。映像由 commit c1f1a98 建置。",
+  "reportedIssue": {
+    "reportedAt": "2026-10-27T11:20:54+08:00",
+    "symptoms": [
+      "「我想知道極權主義的特點」→ 回覆「只能討論歷史科相關話題」（合法歷史課題被擋）。",
+      "「列出文藝復興時期著名的藝術家」及「德國如何在一戰後遭受懲罰?」兩則回覆的教材出處顯示為三個沒有文字的項目。"
+    ]
+  },
+  "investigation": {
+    "emptySources": {
+      "productionBackup": "gs://pccss-ai-history-history-backup/history/data/app.db（2026-10-27T03:20:36Z）中，11:19:22 及 11:20:01 兩則 assistant 訊息的 sourcesJson 均為 3 個完整物件（blockId／documentLabel／location／excerpt 全部非空）。",
+      "browserReproduction": "以本機 next dev（真實教材資料庫副本、假 DeepSeek 串流）實測兩條路徑：①頁面重載後由 GET 載入並展開 <details>；②在頁面送出提問走 meta → delta → done 串流。兩者都把「課題9 …_筆記 · 第117段」及節錄完整渲染。",
+      "conclusion": "未能在資料或渲染層重現空白項目；伺服器寫入與前端渲染均正常。已加固介面（見 fix），並保留此記錄以免日後重複調查。"
+    },
+    "topicGate": "主題硬閘只比對 src/lib/history-lexicon.ts 的專名，該詞庫沒有「極權主義」；課題9 的分節關鍵詞只有「極權」。"
+  },
+  "fix": {
+    "commit": "c1f1a98",
+    "changes": [
+      "新增 loadTutorCurriculumIndex／matchesCurriculumTerms：硬閘同時接受已發布課題標題片段、分節標題及教師維護的分節關鍵詞（2 字以上、排除提問用語）；課程索引與教材檢索共用，每個請求只讀一次。",
+      "詞庫新增「極權主義（極權／極權統治／極權政體）」詞條（課題9）。",
+      "教材出處只顯示有節錄或位置的項目；若「已對照課本教材」但完全沒有可用出處，顯示「未能顯示教材出處，請重新載入頁面再試」。",
+      "類別詞新增「懲罰 → 處分／制裁／賠償」。",
+      "測試：matchesCurriculumTerms（含離題對照）、API 層「極權主義」不被誤擋；全套 1,637 passed。"
+    ]
+  },
+  "finalState": {
+    "revision": "history-self-study-00068-7v6",
+    "previousRevision": "history-self-study-00067-9t5"
+  },
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00068-7v6",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:d7376b0b-a83b-4f1c-b944-7bb9631b08ea",
+    "imageDigest": "sha256:145c90fe38bfcc7b31d3184bc4c84ff94be988ddf943d36109f6ba3ab3191c96",
+    "sourceCommit": "c1f1a98",
+    "build": {
+      "buildId": "d7376b0b-a83b-4f1c-b944-7bb9631b08ea",
+      "duration": "4M9S",
+      "status": "SUCCESS",
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/d7376b0b-a83b-4f1c-b944-7bb9631b08ea?project=784175190534"
+    },
+    "deployedWith": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-preserving-config.ps1",
+    "traffic": "100% -> history-self-study-00068-7v6"
+  },
+  "verification": [
+    {
+      "check": "本機瀏覽器（極權主義）",
+      "command": "next dev + 假 DeepSeek，送出「我想知道極權主義的特點」",
+      "result": "不再被擋；標示「✅ 已對照課本教材（3 段）／課題9」，出處為第325／133／138段，第138段為「極權主義：指一個由國家全面管控人民生活的政治體制」"
+    },
+    {
+      "check": "本機瀏覽器（出處顯示）",
+      "command": "重載（GET）及串流兩條路徑",
+      "result": "出處完整顯示文件名、第N段及節錄；並確認 <details> 收起時 innerText 只有「查看教材節錄及出處」"
+    },
+    {
+      "check": "測試及靜態檢查",
+      "command": "npx vitest run ／ tsc ／ eslint ／ npm run build",
+      "result": "135 files、1,637 passed、4 skipped、0 failed；其餘全部通過"
+    },
+    {
+      "check": "流量及健康",
+      "command": "gcloud run services describe ／ GET /api/health",
+      "result": "100% -> history-self-study-00068-7v6；ok=true、database.status=ok、llmConfigured=true、demoMode=false、documents=46／blocks=26599／studentVisibleDocuments=22、restore=restored、lastError=null"
+    },
+    {
+      "check": "守衛及日誌",
+      "command": "GET /tutor ／ gcloud logging read severity>=ERROR",
+      "result": "307（→ /login?next=%2Ftutor）；沒有 ERROR 級日誌"
+    },
+    {
+      "check": "未驗證（如實記錄）",
+      "command": "（需登入）",
+      "result": "正式環境的「極權主義」提問未人工驗證；空白出處的成因未重現，若再出現請提供截圖及裝置／瀏覽器"
+    }
+  ],
+  "rollback": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00067-9t5=100"
+}

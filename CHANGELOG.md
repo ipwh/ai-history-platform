@@ -290,3 +290,18 @@
 | 未驗證（如實記錄） | 兩項均需登入人工確認 |
 | 證據 | [docs/deployment-evidence-2026-10-27-section-priority.json](docs/deployment-evidence-2026-10-27-section-priority.json) |
 | 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00066-j7j=100` |
+
+### 熱修部署 6（2026-10-27，第五次回報：主題硬閘與出處顯示）
+
+| 項目 | 結果 |
+| --- | --- |
+| 回報 | 「極權主義」被誤判離題；兩則回覆的教材出處顯示空白 |
+| Commit | `c1f1a98`（`main`，已推送 `5993b77..c1f1a98`） |
+| Cloud Build | `d7376b0b-a83b-4f1c-b944-7bb9631b08ea` **SUCCESS**（4M9S） |
+| Cloud Run revision | **`history-self-study-00068-7v6`**，100% 流量（回滾目標：`00067-9t5`） |
+| 空白出處查證 | 正式備份（03:20:36Z）中 11:19／11:20 兩則的 `sourcesJson` 為**完整**物件；另以本機瀏覽器實測重載（GET）及串流兩條路徑，出處均完整渲染 → **未能重現**，已加固顯示並記錄 |
+| 本機瀏覽器實測 | 「我想知道極權主義的特點」不再被擋，取到第325／133／138段（第138段為極權主義定義） |
+| 測試 | 135 files、**1,637 passed**、4 skipped、0 failed |
+| 煙霧測試 | `GET /tutor` **307**；`/api/health` `ok=true`、教材 `26,599` 段／`22` 份、`restore=restored`、`lastError=null`；**沒有** ERROR 級日誌 |
+| 證據 | [docs/deployment-evidence-2026-10-27-topic-gate.json](docs/deployment-evidence-2026-10-27-topic-gate.json) |
+| 回滾 | `gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00067-9t5=100` |
