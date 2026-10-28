@@ -16,6 +16,40 @@
 
 ---
 
+## [未發布] — 2026-10-28：推送即部署（GitHub → Cloud Build → Cloud Run）
+
+**狀態**：設定檔及指令碼已完成；**教材已上載**（`gs://pccss-ai-history-history-backup/materials/`，46 個檔）、
+建置身分 `history-build@pccss-ai-history.iam.gserviceaccount.com` 已建立並授權。
+**觸發程序尚未建立**：需先在 Cloud Build 連結此 GitHub 儲存庫（瀏覽器），再重跑
+`./scripts/setup-push-to-deploy.ps1 -Project pccss-ai-history -Apply -SkipMaterials`。
+
+### 新增
+
+| 項目 | 說明 |
+| --- | --- |
+| [scripts/setup-push-to-deploy.ps1](scripts/setup-push-to-deploy.ps1) | 一次性設定「push 到 `main` 即建置並部署」：把 `materials/` 上載到私有 bucket（版權內容不進 GitHub）、建立並授權建置身分，並**讀取線上 Cloud Run 現有環境變數**組成觸發程序的 substitutions（避免與正式環境漂移）。預設只顯示指令，加 `-Apply` 才執行。 |
+| [cloudbuild.yaml](cloudbuild.yaml) 的 `sync-materials` 步驟 | 由 `_MATERIALS_SOURCE`（GCS 前置路徑，例如 `gs://<專案>-history-backup/materials/`）同步教材回建置工作目錄；同步後教材檔案少於 `_MIN_MATERIAL_FILES`（預設 1）即**中止建置**，不再產生沒有教材的映像檔。`_MATERIALS_SOURCE` 留空時沿用工作目錄現有的 `materials/`（本機 `gcloud builds submit`）。 |
+
+### 變更
+
+- **建置前加入品質閘門**：`cloudbuild.yaml` 新增 `quality-gate` 步驟，先跑 `npm ci`、`npm run lint`、
+  `npm test`，失敗即中止（映像檔不會上載、服務不會更新）。此閘門預設開啟，因此
+  **本機 `gcloud builds submit` 亦會先跑一次 lint 及測試**（約多 2–4 分鐘）；
+  要略過可帶 `_QUALITY_GATE=0`。
+- 映像檔標籤沿用 `$BUILD_ID`，觸發建置與本機建置的差異只在教材來源及 substitutions 的值。
+
+### 修正（設定障礙，已寫入指令碼）
+
+- **觸發程序必須明確指定 `serviceAccount`**：本專案省略時，`gcloud builds triggers create` 一律回
+  `INVALID_ARGUMENT: Request contains an invalid argument`。以 REST 逐項比對後確認空白 body、
+  inline `build`、`pubsubConfig`、`webhookConfig` 及 GitHub 觸發程序全部同樣失敗，加上
+  `serviceAccount` 後即 HTTP 200；錯誤訊息完全沒有指出欄位，易誤判為 GitHub 未連結或權限問題。
+  `cloudbuild.yaml` 本身已在使用者既有流程中建置成功，故與建置設定無關。
+- **GitHub 儲存庫未連結**時回 `FAILED_PRECONDITION: Repository mapping does not exist`；指令碼現在
+  會把這兩個錯誤轉成可執行的指示（含 Console 網址）而非原始例外。
+
+---
+
 ## [未發布] — 2026-10-27：iPad Air 2 相容性 + 選擇題「最長就是答案」
 
 **狀態**：程式碼已完成並通過 `npm run typecheck` 及 `npm test`（137 個測試檔、1,695 項）；

@@ -29,6 +29,15 @@
 #   _BACKUP_PREFIX bucket 內的物件前置路徑（預設 history）
 #   _BACKUP_INTERVAL_SECONDS 最長備份間隔秒數（預設 300）
 #   _BACKUP_MIN_SPACING_SECONDS 資料有變更時的備份最短間隔秒數（預設 60）
+#   _MATERIALS_SOURCE 教材所在的 GCS 前置路徑（例如 gs://專案-history-backup/materials/）；
+#                   留空 = 使用工作目錄現有的 materials/（本機 gcloud builds submit 適用）。
+#                   GitHub 觸發程序必須填入，否則工作目錄只有 materials/README.md。
+#   _MIN_MATERIAL_FILES 同步教材後的最少檔案數（預設 1；0 = 容許無教材部署）
+#   _QUALITY_GATE  1（預設）= 建置前先跑 npm run lint 及 npm test，失敗即中止
+#
+# 「推送即部署」（GitHub → Cloud Build → Cloud Run）以 scripts/setup-push-to-deploy.ps1
+# 設定：它會把 materials/ 上載到私有 bucket、授權 Cloud Build 服務帳戶，並以線上服務
+# 現有設定組成觸發程序，避免 substitutions 與正式環境漂移。
 #
 # 資料持久化（免費方案）：Cloud Run 的容器檔案系統不會保留資料，因此以 SQLite 快照
 # （VACUUM INTO）+ Cloud Storage 備份，啟動時自動還原。bucket 由
@@ -81,8 +90,69 @@ substitutions:
   _ROSTER_SECRET: history-roster-service-account
   _GOOGLE_CLIENT_ID_SECRET: history-google-client-id
   _GOOGLE_CLIENT_SECRET_SECRET: history-google-client-secret
+  # 教材來源（私有 bucket 內的前置路徑）。留空 = 使用工作目錄現有的 materials/
+  # （本機 gcloud builds submit）；GitHub 觸發程序必須填入，否則映像檔不會有教材。
+  _MATERIALS_SOURCE: ""
+  # 同步教材後至少要有多少個教材檔（README.md 除外），否則中止建置（fail-closed）
+  # 設為 0 等同容許無教材部署（管理員端會顯示教材缺失的警告）
+  _MIN_MATERIAL_FILES: "1"
+  # 1 = 建置映像檔前先跑 npm run lint 及 npm test，失敗即中止（不會部署）
+  # 只在觸發程序（GitHub push）預設開啟；本機想快速部署可帶 _QUALITY_GATE=0
+  _QUALITY_GATE: "1"
 
 steps:
+  # GitHub 觸發的建置若帶有問題的程式碼，品質閘門會在上載映像檔前就中止。
+  # 註：測試使用合成教材，不依賴 materials/，因此這一步先於教材同步。
+  - id: quality-gate
+    name: node:24-bookworm-slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        if [ "${_QUALITY_GATE}" != "1" ]; then
+          echo "已略過品質閘門（_QUALITY_GATE=${_QUALITY_GATE}）"
+          exit 0
+        fi
+        export NEXT_TELEMETRY_DISABLED=1
+        npm ci --no-audit --no-fund
+        npm run --silent lint
+        npm test
+    timeout: 1800s
+
+  # materials/ 不納入版本控制（版權，見 .gitignore），由 GitHub 觸發時工作目錄只有
+  # materials/README.md。這裡先由私有 bucket 同步回工作目錄，令 Dockerfile 的
+  # `COPY ... /app/materials` 拿到完整教材；本機 gcloud builds submit 時
+  # _MATERIALS_SOURCE 留空，直接使用本機的 materials/。
+  - id: sync-materials
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        # `$$` 會變成字面 `$`，交由 bash 展開
+        SOURCE="${_MATERIALS_SOURCE}"
+        MIN_FILES="${_MIN_MATERIAL_FILES}"
+        # 以 bash 預設值補底：substitution 被覆寫成空字串時仍以 1 為下限
+        MIN_FILES=$${MIN_FILES:-1}
+        if [ -n "$$SOURCE" ]; then
+          echo "由 $${SOURCE} 同步教材"
+          rm -rf ./materials
+          mkdir -p ./materials
+          gcloud storage rsync --recursive "$${SOURCE%/}/" ./materials/
+        else
+          echo "未設定 _MATERIALS_SOURCE：沿用工作目錄現有的 materials/"
+          mkdir -p ./materials
+        fi
+        COUNT=$$(find ./materials -type f ! -name README.md | wc -l)
+        echo "教材檔案：$$COUNT 個（不含 README.md）"
+        if [ "$$COUNT" -lt "$$MIN_FILES" ]; then
+          echo "教材檔案不足（下限 $$MIN_FILES 個）：拒絕建置沒有教材的映像檔" >&2
+          echo "請先執行 scripts/setup-push-to-deploy.ps1 上載教材，或帶 _MIN_MATERIAL_FILES=0 明確容許。" >&2
+          exit 1
+        fi
+
   - id: build-image
     name: gcr.io/cloud-builders/docker
     args:

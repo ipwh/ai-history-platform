@@ -104,6 +104,7 @@ npm run dev          # 啟動開發伺服器
 | `npm run build:webpack` | 以 webpack 建置（不追蹤整個專案；OneDrive 目錄有讀不到的雲端預留檔時可用，見第十節「在 OneDrive 工作目錄開發」） |
 | `npx tsx scripts/check-onedrive-health.ps1`（PowerShell） | 列出專案內的 OneDrive 雲端預留檔；加 `-Pin` 會標記為「永遠保留在此裝置」（見第十節） |
 | `./scripts/deploy-cloud-run.ps1 -Project <專案ID>` | 部署到 Google Cloud Run（預設只顯示指令，加 `-Apply` 才執行） |
+| `./scripts/setup-push-to-deploy.ps1 -Project <專案ID>` | 設定「推送即部署」：教材上載到私有 bucket → 授權 Cloud Build → 建立 GitHub 觸發程序（預設只顯示指令，加 `-Apply` 才執行；見第十節） |
 
 端對端測試可自行啟動伺服器：
 
@@ -799,6 +800,7 @@ scripts/export-production-snapshot.ts 匯出正式環境資料庫快照（見第
 scripts/pilot-deepseek.ts         受控試點：真實 DeepSeek 的 27 格題目品質評估（需 PILOT_CONFIRM=yes；結果寫入系統暫存目錄）
 scripts/e2e-flow.mjs              端對端流程測試
 scripts/deploy-cloud-run.ps1      Cloud Build + Cloud Run 部署（見第十節）
+scripts/setup-push-to-deploy.ps1  設定「推送即部署」的 GitHub → Cloud Build 觸發程序（見第十節）
 ```
 
 ### 主要 API
@@ -2125,34 +2127,49 @@ gcloud builds submit --project pccss-ai-history --config cloudbuild.yaml \
 > 也可使用 [scripts/deploy-preserving-config.ps1](scripts/deploy-preserving-config.ps1)，
 > 它會沿用線上現有設定並預設以 `pccss-ai-history` 為目標。
 
-> **`git push` 不會自動部署**：推送只更新 GitHub 上的原始碼，部署一律是手動執行上面的指令碼
-> （或 `gcloud builds submit`）。除非另外建立了 Cloud Build 觸發程序（見下）。
+> **預設不會自動部署**：`git push` 只更新 GitHub 上的原始碼，部署預設仍是手動執行上面的指令碼
+> （或 `gcloud builds submit`）。要「推送即部署」需先一次性執行
+> [scripts/setup-push-to-deploy.ps1](scripts/setup-push-to-deploy.ps1)（見下）。
 
-#### 要不要設定「推送即部署」的 Cloud Build 觸發程序？
+#### 設定「推送即部署」（push → Cloud Build → Cloud Run）
 
-本專案**刻意不預設**自動部署，原因：
+本專案**預設不建立**觸發程序，因為直接建立會踩到以下三個問題；指令碼已逐一處理：
 
-1. **`materials/` 不在儲存庫內**（第三方版權，見第五節）。由 GitHub 觸發的建置只會拿到
-   `materials/README.md`，映像檔將**不含任何課程教材**；由本機執行部署才會有完整的 `materials/`。
-2. **substitution 預設值是空字串**：`_ROSTER_SHEET_ID`、`_BACKUP_BUCKET`、`_ADMIN_EMAILS`、`_RUNTIME_SA`
-   留空時，部署出來的服務會沒有學生名冊、沒有資料備份（重新部署後題庫及練習記錄會全部消失）、
-   亦沒有人能進入管理員端。觸發程序必須填回與指令碼相同的值。
-3. 觸發程序以 **Cloud Build 服務帳戶**執行，需另行授予 `roles/run.admin`、
-   `roles/iam.serviceAccountUser`、`roles/artifactregistry.writer` 等權限。
-
-如仍要啟用（先確認沒有現存觸發程序）：
+| 問題 | 直接建立觸發程序會怎樣 | 指令碼的做法 |
+| --- | --- | --- |
+| `materials/` 不在儲存庫內（第三方版權，見第五節） | GitHub 觸發的建置只拿到 `materials/README.md`，映像檔**不含任何課程教材** | 先以 `gcloud storage rsync` 把本機 `materials/` 上載到**私有** bucket，再由 `cloudbuild.yaml` 的 `sync-materials` 步驟同步回建置工作目錄；版權內容不會進 GitHub |
+| substitution 預設值是空字串 | `_ROSTER_SHEET_ID`、`_BACKUP_BUCKET`、`_ADMIN_EMAILS`、`_RUNTIME_SA` 留空 → 沒有名冊、沒有資料備份（重新部署後題庫及練習記錄全失）、沒有人能進 `/admin` | 讀取**線上 Cloud Run 服務的現有環境變數**組成 substitutions，與正式環境一致（電郵名單只顯示數量） |
+| 觸發程序以 Cloud Build 服務帳戶執行 | 沒有 `roles/run.admin`、`roles/iam.serviceAccountUser`、`roles/artifactregistry.writer` 等權限，部署失敗 | 建立專屬建置身分 `history-build@<專案>`，只授予上述角色、教材 bucket 唯讀及所需 Secret 讀取 |
+| 觸發程序**省略 `serviceAccount`** | `gcloud builds triggers create` 一律回 `INVALID_ARGUMENT: Request contains an invalid argument`（2026-10-28 實測：空白 body、inline build、webhook、GitHub 全部同樣失敗，加上 `--service-account` 後即成功） | 建立觸發程序時明確帶 `--service-account projects/<專案>/serviceAccounts/history-build@<專案>.iam.gserviceaccount.com` |
 
 ```powershell
-# 1. 確認目前有無觸發程序（需先 gcloud auth login）
-gcloud builds triggers list --project 你的專案ID
+# 先看會執行哪些指令（不會改動任何資源）
+./scripts/setup-push-to-deploy.ps1 -Project pccss-ai-history
 
-# 2. 建立 GitHub 觸發程序（需先連結 Cloud Build GitHub App；清單值用分號分隔）
-gcloud builds triggers create github `
-  --name history-main --project 你的專案ID `
-  --repo-name ai-history-platform --repo-owner ipwh `
-  --branch-pattern "^main$" --build-config cloudbuild.yaml `
-  --substitutions _REGION=asia-east2,_SERVICE=history-self-study,_REPOSITORY=history,_AUTH_FLAG=--allow-unauthenticated,_RUNTIME_SA=history-run@你的專案ID.iam.gserviceaccount.com,_ROSTER_SHEET_ID=你的SheetID,_ROSTER_SHEET_NAME=工作表1,_BACKUP_BUCKET=你的專案ID-history-backup,_ADMIN_EMAILS=你的電郵
+# 實際設定：上載教材 → 授權 Cloud Build 服務帳戶 → 建立 GitHub 觸發程序
+./scripts/setup-push-to-deploy.ps1 -Project pccss-ai-history -Apply
+
+# 教材有更新、觸發程序已存在時（只重新上載教材）
+./scripts/setup-push-to-deploy.ps1 -Project pccss-ai-history -Apply -SkipTrigger
 ```
+
+建立觸發程序前，需先在 Cloud Build → 觸發程序 → 連結儲存庫安裝 **Cloud Build GitHub App** 並授權此儲存庫。
+這一步只能在瀏覽器完成（GitHub App 的安裝授權沒有 gcloud API）；未連結時
+`gcloud builds triggers create` 會回 `FAILED_PRECONDITION: Repository mapping does not exist`，
+指令碼會印出連結步驟後中止（前面的教材上載及建置身分授權已完成，重跑時可加 `-SkipMaterials`）。
+
+設定完成後，`git push origin main` 會依序執行：
+
+```
+品質閘門（npm ci + npm run lint + npm test）→ 同步教材 → 建置映像檔 → 推送映像檔 → 部署 Cloud Run
+```
+
+* 任何一步失敗都**不會**部署，正式服務維持上一個成功版本；`sync-materials` 後教材少於
+  `_MIN_MATERIAL_FILES`（預設 1）個檔案亦會中止，避免部署出沒有教材的映像檔。
+* 本機想臨時略過品質閘門（例如只想快速部署設定變更）：
+  `_QUALITY_GATE=0`。**不建議在 push 觸發的建置中關閉。**
+* 資料仍由備份 bucket 還原，`gcloud builds submit` 與觸發建置的差異只在教材來源；
+  要把本機整理的教材及題目帶到正式環境，仍須依「資料處理」一節操作。
 
 **部署後必做**
 
@@ -2910,7 +2927,7 @@ STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=./secrets/roster-service-account.json
 健康檢查會回報狀態（例如 `sqlite`／`ok`）而不回報完整路徑，避免在公開部署時洩漏部署資訊或憑證。管理員端的系統狀態頁會顯示較詳細的設定提示（仍不含憑證）。
 
 **Q：`git push` 之後會自動部署到 Cloud Run 嗎？**
-不會。推送只更新 GitHub 上的原始碼，部署一律是手動執行 `./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply`（或 `gcloud builds submit --project pccss-ai-history --config cloudbuild.yaml`）。專案內沒有任何 GitHub Actions 或觸發程序設定；除非你另外在 GCP 建立 Cloud Build 觸發程序（見第十節「要不要設定『推送即部署』的 Cloud Build 觸發程序？」）。**本專案建議維持手動部署**，因為 `materials/` 課程教材不在儲存庫內（有版權），由 GitHub 觸發的建置會產生不含教材的映像檔。
+預設不會。推送只更新 GitHub 上的原始碼，部署仍是手動執行 `./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply`（或 `gcloud builds submit --project pccss-ai-history --config cloudbuild.yaml`）。專案內沒有任何 GitHub Actions 設定，GCP 端亦預設沒有觸發程序。要改成「推送即部署」，執行 `./scripts/setup-push-to-deploy.ps1 -Project pccss-ai-history -Apply`：它會把 `materials/` 上載到**私有** bucket（版權內容不進 GitHub）、授權 Cloud Build 服務帳戶，並以線上服務現有設定建立 GitHub 觸發程序；`cloudbuild.yaml` 會先跑 `npm run lint` 及 `npm test`，再同步教材、建置及部署（見第十節）。
 
 **Q：部署 Cloud Run 前要改甚麼？**
 專案已包含 [Dockerfile](Dockerfile)、[cloudbuild.yaml](cloudbuild.yaml) 及 [scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1)（見第十節）。部署時必做：`AUTH_SECRET`／LLM API key／名冊服務帳戶由 Secret Manager 注入（指令碼會建立）、把服務網址加進 OAuth 重新導向 URI、把 Google Sheet 分享給名冊服務帳戶。**資料持久化**已內建（SQLite 快照 + Cloud Storage，見第十節「資料持久化」）：設定 `BACKUP_BUCKET`（指令碼會自動建立 bucket 並授權）即會在重新部署後自動還原資料。教材檔案仍建議打包在映像檔的 `materials/`，試行階段請保持 `--max-instances=1`。
