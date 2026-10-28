@@ -1,0 +1,101 @@
+{
+  "generatedAt": "2026-10-28T09:35:00.000Z",
+  "notice": "修正教師端練習記錄只顯示題幹、看不到選擇題選項及解釋的缺陷，令教師可與學生逐題回顧錯題。第二次由 GitHub push 自動觸發建置及部署（推送即部署流程於同日 08:23 UTC 首次驗證，見 deployment-evidence-2026-10-28-push-to-deploy.json）。",
+  "reportedIssue": {
+    "reportedAt": "2026-10-28T17:05:25+08:00",
+    "request": "擁有者回報：在教師端閱讀學生的練習歷史時，平台未有完整顯示題目，未能與學生回顧錯題。"
+  },
+  "diagnosis": {
+    "steps": [
+      {
+        "step": "確認資料本身是否缺漏",
+        "command": "以 scripts 內的臨時診斷腳本讀取本機 data/app.db 及正式環境備份（gs://pccss-ai-history-history-backup/history/data/app.db，2026-10-28T08:46:45Z）",
+        "result": "本機 461 場／2,856 題、正式環境 903 場／5,816 題，全部可通過 questionSchema（0 個解析失敗）；4,082 條選擇題全部有 4 個選項，題幹不含「資料一」等外部參照。結論：資料完整，問題在於前端未取得及未顯示。"
+      },
+      {
+        "step": "定位欄位缺口",
+        "command": "src/server/services/practice-records.ts buildSessionRecord／src/lib/types.ts PracticeRecordQuestion",
+        "result": "PracticeRecordQuestion 只有 question（題幹）、studentAnswer、correctAnswer，沒有 options／explanation／knowledgePoint／sourceLocation／sourceExcerpt；TeacherRecords.tsx 因此只渲染題幹及兩個答案字串。"
+      }
+    ]
+  },
+  "changes": {
+    "commit": "9011e18",
+    "files": [
+      {
+        "file": "src/lib/types.ts",
+        "detail": "PracticeRecordQuestion 新增 options、explanation、knowledgePoint、sourceLocation、sourceExcerpt。"
+      },
+      {
+        "file": "src/server/services/practice-records.ts",
+        "detail": "buildSessionRecord 由練習快照帶回上述欄位（教師端 API 才有；學生端作答回應不變）。"
+      },
+      {
+        "file": "src/components/TeacherRecords.tsx",
+        "detail": "逐題卡片改為完整題目：題幹 → 選擇題全部選項（A／B／C／D，正確選項綠框及「正確答案」標記，學生所選另有「學生選擇」標記）→ 學生答案／正確答案 → 解釋 → 知識點 → 可展開的「教材依據」；標題列新增「只看答錯／未作答」勾選，無錯題時明說。"
+      },
+      {
+        "file": "tests/teacher-student-flow.test.ts、tests/records-export.test.ts、tests/authz-negative.test.ts",
+        "detail": "新增 2 項回歸測試（教師端記錄含完整題目；學生端作答前仍不含答案及解釋），並更新既有樣本資料以符合新欄位。"
+      }
+    ],
+    "notChanged": "四種匯出格式（CSV／XLSX／DOCX／PDF）欄位維持原樣，未加入選項及解釋（已在 CHANGELOG 如實記錄）。"
+  },
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00072-cnc",
+    "previousRevision": "history-self-study-00071-6dw",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:c782f6d8-fe0d-40fd-90ad-03ab7f65f9f0",
+    "imageDigest": "sha256:874837a1766115ead4be43c4103b0318b3ca15233895eb6166da342efecea11e",
+    "sourceCommit": "9011e18",
+    "build": {
+      "buildId": "c782f6d8-fe0d-40fd-90ad-03ab7f65f9f0",
+      "triggeredBy": "history-main-push（git push origin main，27451f0..9011e18）",
+      "startTime": "2026-10-28T09:16:11Z",
+      "finishTime": "2026-10-28T09:23:30Z",
+      "duration": "7M19S",
+      "status": "SUCCESS",
+      "steps": [
+        { "id": "quality-gate", "status": "SUCCESS", "evidence": "Test Files 137 passed (137)" },
+        { "id": "sync-materials", "status": "SUCCESS" },
+        { "id": "build-image", "status": "SUCCESS" },
+        { "id": "push-image", "status": "SUCCESS" },
+        { "id": "deploy-cloud-run", "status": "SUCCESS" }
+      ],
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/c782f6d8-fe0d-40fd-90ad-03ab7f65f9f0?project=784175190534"
+    },
+    "traffic": "100% -> history-self-study-00072-cnc"
+  },
+  "verification": [
+    {
+      "check": "本機（部署前）",
+      "command": "npx tsc --noEmit ／ npm run lint ／ npm test ／ npm run build",
+      "result": "tsc 0 error；eslint 0 error（1 個既有 warning：scripts\\verify-questionbank-sync.ts:29 未使用的 fs）；vitest 137 檔、1,697 項通過、4 項 skipped（新增 2 項回歸測試）；next build 成功。"
+    },
+    {
+      "check": "建置（自動觸發）",
+      "command": "git push origin main → build c782f6d8",
+      "result": "推送後 7 分 19 秒完成，5 個步驟全綠；品質閘門在建置前跑完 lint 及 137 個測試檔。"
+    },
+    {
+      "check": "流量及修訂版本",
+      "command": "gcloud run services describe --format=value(status.traffic)",
+      "result": "100% -> history-self-study-00072-cnc；latestReadyRevisionName 相同"
+    },
+    {
+      "check": "健康檢查",
+      "command": "GET /api/health",
+      "result": "HTTP 200；ok=true、database.status=ok、materials.documents=46、persistence.restore=restored"
+    },
+    {
+      "check": "未驗證（如實記錄）",
+      "command": "—",
+      "result": "未以真實教師帳號登入正式環境逐題目視核對新卡片（需 Google 登入，且不應以測試帳戶污染正式記錄）。前端改動只經 tsc／eslint／單元測試及人工審閱；建議教師首次使用時確認選項標記與「只看答錯／未作答」表現符合預期。"
+    }
+  ],
+  "rollback": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00071-6dw=100"
+}

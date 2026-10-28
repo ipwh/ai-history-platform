@@ -52,8 +52,10 @@ commit `27451f0` → build `0acb2b2e`（7 分 24 秒，5 個步驟全綠）→ r
 
 ## [未發布] — 2026-10-28：教師端練習記錄顯示完整題目（可與學生回顧錯題）
 
-**狀態**：程式碼已完成並通過 `npx tsc --noEmit`、`npx eslint` 及相關測試；
-**未部署**（下一次 `git push` 會自動建置及部署）。
+**狀態**：已部署。commit `9011e18` → build `c782f6d8`（7 分 19 秒，5 個步驟全綠）→ revision
+`history-self-study-00072-cnc` 取得 100% 流量，`/api/health` 200（`materials.documents = 46`、
+`persistence.restore = restored`）。證據：
+[docs/deployment-evidence-2026-10-28-teacher-records.json](docs/deployment-evidence-2026-10-28-teacher-records.json)。
 
 ### 修正
 
