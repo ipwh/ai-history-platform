@@ -18,10 +18,10 @@
 
 ## [未發布] — 2026-10-28：推送即部署（GitHub → Cloud Build → Cloud Run）
 
-**狀態**：設定檔及指令碼已完成；**教材已上載**（`gs://pccss-ai-history-history-backup/materials/`，46 個檔）、
-建置身分 `history-build@pccss-ai-history.iam.gserviceaccount.com` 已建立並授權。
-**觸發程序尚未建立**：需先在 Cloud Build 連結此 GitHub 儲存庫（瀏覽器），再重跑
-`./scripts/setup-push-to-deploy.ps1 -Project pccss-ai-history -Apply -SkipMaterials`。
+**狀態**：已完成並部署。觸發程序 `history-main-push`（`^main$`）已建立並以真實 `git push` 驗證：
+commit `27451f0` → build `0acb2b2e`（7 分 24 秒，5 個步驟全綠）→ revision `history-self-study-00071-6dw` 取得
+100% 流量，`/api/health` 200（`materials.documents = 46`、`persistence.restore = restored`）。
+證據：[docs/deployment-evidence-2026-10-28-push-to-deploy.json](docs/deployment-evidence-2026-10-28-push-to-deploy.json)。
 
 ### 新增
 
@@ -47,6 +47,40 @@
   `cloudbuild.yaml` 本身已在使用者既有流程中建置成功，故與建置設定無關。
 - **GitHub 儲存庫未連結**時回 `FAILED_PRECONDITION: Repository mapping does not exist`；指令碼現在
   會把這兩個錯誤轉成可執行的指示（含 Console 網址）而非原始例外。
+
+---
+
+## [未發布] — 2026-10-28：教師端練習記錄顯示完整題目（可與學生回顧錯題）
+
+**狀態**：程式碼已完成並通過 `npx tsc --noEmit`、`npx eslint` 及相關測試；
+**未部署**（下一次 `git push` 會自動建置及部署）。
+
+### 修正
+
+| 項目 | 說明 |
+| --- | --- |
+| **教師看不到完整題目** | 根因：`PracticeRecordQuestion` 只有題幹（`question`）、學生答案及正確答案，選擇題的 `options`、`explanation`、`knowledgePoint`、`sourceLocation`、`sourceExcerpt` 全部沒有送到前端。教師檢查 46 份教材、903 場練習記錄時，只看到「文藝復興一詞…意指復興哪一個文明？」與兩個答案字串，看不到其餘三個選項，無法說明「為甚麼其他選項不對」。現已在 `listPracticeRecords` 帶回上述欄位，並在 `/teacher/records` 逐題卡片顯示完整題目。 |
+| **未能快速聚焦錯題** | 逐題記錄標題列新增「只看答錯／未作答」勾選；勾選後只列出需要與學生回顧的題目，沒有錯題時會明說「這次練習沒有答錯或未作答的題目」。 |
+
+### 變更
+
+- 教師端逐題卡片改為：題幹 → 選擇題全部選項（A／B／C／D，正確選項綠框＋「正確答案」標記，
+  學生所選另有「學生選擇」標記）→ 學生答案／正確答案 → 解釋 → 知識點 → 可展開的「教材依據」
+  （來源位置及原文節錄）。
+- `GET /api/teacher/records` 每題新增 `options`、`explanation`、`knowledgePoint`、`sourceLocation`、
+  `sourceExcerpt`。**學生端作答時的回應仍然不含答案及解釋**（既有測試鎖定）。
+
+### 未變更（如實記錄）
+
+- 四種匯出格式（CSV／XLSX／DOCX／PDF）的欄位維持原樣，未加入選項及解釋；
+  教師在畫面上可看到完整題目，匯出檔仍只有題幹、學生答案及正確答案。
+
+### 資料核對（部署前）
+
+- 以正式環境備份（`gs://pccss-ai-history-history-backup/history/data/app.db`，2026-10-28 08:46 UTC）
+  驗證 903 場練習、5,816 條快照題目：**全部可通過 `questionSchema`（0 個失敗）**，
+  4,082 條選擇題全部為 4 個選項，題幹本身不含「資料一」等外部參照，
+  故問題純屬前端未顯示，而非資料缺漏或快照損毀。
 
 ---
 

@@ -141,4 +141,50 @@ describe("教師測試學生端", () => {
       true,
     );
   });
+
+  /**
+   * 回歸測試（2026-10-28）：教師端逐題記錄原本只回傳題幹、學生答案及正確答案，
+   * 選擇題的四個選項、解釋、知識點及教材依據都沒有送出，教師無法與學生回顧錯題。
+   */
+  it("教師端練習記錄包含完整題目：選項、解釋、知識點及教材依據", () => {
+    const records = recordsService.listPracticeRecords({ learnerId: TEACHER });
+    expect(records.length).toBeGreaterThan(0);
+
+    const mc = records
+      .flatMap((record) => record.questions)
+      .find((question) => question.questionType === "mc" && question.options.length > 0);
+
+    expect(mc).toBeDefined();
+    expect(mc!.options.length).toBeGreaterThanOrEqual(2);
+    // 正確答案必須是其中一個選項，教師才能指出「學生選了哪一項、正確是哪一項」
+    expect(mc!.options).toContain(mc!.correctAnswer);
+    expect(mc!.explanation.length).toBeGreaterThan(0);
+    expect(mc!.knowledgePoint.length).toBeGreaterThan(0);
+    expect(mc!.sourceLocation.length).toBeGreaterThan(0);
+    expect(mc!.sourceExcerpt.length).toBeGreaterThan(0);
+  });
+
+  it("教師端記錄只把完整答案送給教師，學生端作答前仍看不到答案", async () => {
+    const created = await practice.createPractice({
+      learnerId: TEACHER,
+      topicId: "topic-5",
+      sectionIds: [SECTION],
+      questionTypes: ["mc"],
+      difficulty: "basic",
+      questionCount: 1,
+      mode: "standard",
+      sourceSessionId: null,
+    });
+    const studentQuestion = created.questions[0];
+    expect(studentQuestion).not.toHaveProperty("correctAnswer");
+    expect(studentQuestion).not.toHaveProperty("explanation");
+    expect(studentQuestion).not.toHaveProperty("sourceExcerpt");
+
+    const record = recordsService
+      .listPracticeRecords({ learnerId: TEACHER })
+      .find((session) => session.sessionId === created.session.id);
+    expect(record).toBeDefined();
+    expect(record!.questions[0]!.correctAnswer.length).toBeGreaterThan(0);
+    expect(record!.questions[0]!.options).toContain(record!.questions[0]!.correctAnswer);
+  });
 });

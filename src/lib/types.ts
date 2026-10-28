@@ -967,9 +967,21 @@ export interface PracticeRecordQuestion {
   questionType: QuestionType;
   questionTypeLabel: string;
   question: string;
+  /**
+   * 選擇題的全部選項（其他題型為空陣列）。
+   * 教師與學生回顧錯題時必須看到完整選項，否則只有題幹無法說明「為何其他選項不對」。
+   */
+  options: string[];
   sectionTitle: string;
   studentAnswer: string;
   correctAnswer: string;
+  /** 題目解釋（回顧錯題時向學生說明） */
+  explanation: string;
+  knowledgePoint: string;
+  /** 教材依據位置，例如「課題5 近代歐洲的興起_筆記.docx · 第 35 段（清單）（第 4 項）」 */
+  sourceLocation: string;
+  /** 教材原文節錄（教師核對依據） */
+  sourceExcerpt: string;
   /** 已作答且可自動評分時為 true／false；未作答時為 null（舊資料可能有短答自我檢查的 null） */
   isCorrect: boolean | null;
   selfAssessment: "understood" | "needs-review" | null;

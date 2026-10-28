@@ -1,0 +1,126 @@
+{
+  "generatedAt": "2026-10-28T09:10:00.000Z",
+  "notice": "建立「推送即部署」（GitHub push → Cloud Build → Cloud Run）並以真實推送驗證。cloudbuild.yaml 新增建置前品質閘門（npm ci + lint + vitest）及教材同步步驟（由私有 GCS bucket 還原 materials/，不足下限即中止）；教材不進 GitHub（第三方版權），因此由 scripts/setup-push-to-deploy.ps1 一次過上載到私有 bucket 並建立觸發程序。映像由 commit 27451f0 建置。",
+  "reportedIssue": {
+    "reportedAt": "2026-10-28T15:19:54+08:00",
+    "request": "擁有者詢問：commit and push 到 GitHub 時，可否自動觸發 Cloud Build？"
+  },
+  "changes": {
+    "commit": "27451f0",
+    "summary": [
+      {
+        "file": "cloudbuild.yaml",
+        "detail": "新增 quality-gate 步驟（node:24-bookworm-slim，npm ci --no-audit --no-fund → npm run lint → npm test，_QUALITY_GATE=0 可略過）及 sync-materials 步驟（_MATERIALS_SOURCE 有值時以 gcloud storage rsync 由私有 bucket 還原 materials/，否則沿用工作目錄；同步後教材少於 _MIN_MATERIAL_FILES（預設 1）即 exit 1 中止建置）。新增 substitution：_MATERIALS_SOURCE、_MIN_MATERIAL_FILES、_QUALITY_GATE。"
+      },
+      {
+        "file": "scripts/setup-push-to-deploy.ps1",
+        "detail": "一次性設定指令碼（預設模擬，-Apply 才執行）：①上載 materials/ 到私有 bucket（可 -SkipMaterials／-Prune）；②建立並授權建置身分 history-build@（run.admin、iam.serviceAccountUser、artifactregistry.writer、logging.logWriter、bucket objectViewer、5 個 Secret 的 secretAccessor）；③讀取線上 Cloud Run 現有環境變數組成替换值，避免觸發程序與正式環境漂移（電郵名單在輸出中遮蔽為 ***）；④建立 GitHub 觸發程序（history-main-push，^main$，serviceAccount 必填）。"
+      },
+      {
+        "file": "README.md／CHANGELOG.md",
+        "detail": "第十節改寫為「設定推送即部署」，記錄三個設定障礙及解法；FAQ「git push 之後會自動部署嗎」更新；CHANGELOG 新增 2026-10-28 條目（新增／變更／修正）。"
+      }
+    ],
+    "blockersFound": [
+      {
+        "blocker": "觸發程序必須明確指定 serviceAccount",
+        "symptom": "gcloud builds triggers create github 回 INVALID_ARGUMENT: Request contains an invalid argument（訊息完全沒有指出欄位）",
+        "diagnosis": "以 REST 逐項比對：空白 body、只帶 name、inline build.steps、pubsubConfig、webhookConfig、GitHub 1st-gen、GitHub 2nd-gen sourceToBuild 全部同樣 400；加入 serviceAccount 後即 HTTP 200。另核實：呼叫者為專案 Owner、計費已開、無 org policy、Cloud Build API 已啟用、既有 builds 全部 SUCCESS，故與權限及建置設定無關。",
+        "fix": "指令碼預設建立專屬最少權限帳戶 history-build@<專案>，建立觸發程序時帶 --service-account；-BuildServiceAccount 可覆寫。"
+      },
+      {
+        "blocker": "GitHub 儲存庫未連結 Cloud Build",
+        "symptom": "FAILED_PRECONDITION: Repository mapping does not exist",
+        "diagnosis": "GitHub App 安裝授權沒有 gcloud API，只能在瀏覽器完成。",
+        "fix": "指令碼把此錯誤轉成可執行的 Console 步驟（含網址）而非原始堆疊；擁有者於 Console 連結儲存庫後重跑 -Apply -SkipMaterials 即成功。"
+      },
+      {
+        "blocker": "materials/ 不在儲存庫內（第三方版權）",
+        "symptom": "由 GitHub 觸發的建置只會拿到 materials/README.md，Dockerfile 的 COPY materials 會產生沒有教材的映像檔",
+        "fix": "教材上載到私有 bucket gs://pccss-ai-history-history-backup/materials/（46 個檔），由 sync-materials 在建置時還原；_MIN_MATERIAL_FILES 下限作 fail-closed。"
+      }
+    ]
+  },
+  "trigger": {
+    "name": "history-main-push",
+    "id": "90a400e5-7204-422e-ada6-ab8c1dadf6c6",
+    "resourceName": "projects/pccss-ai-history/locations/global/triggers/90a400e5-7204-422e-ada6-ab8c1dadf6c6",
+    "repo": "ipwh/ai-history-platform",
+    "branchPattern": "^main$",
+    "buildConfig": "cloudbuild.yaml",
+    "serviceAccount": "projects/pccss-ai-history/serviceAccounts/history-build@pccss-ai-history.iam.gserviceaccount.com",
+    "substitutions": {
+      "_MATERIALS_SOURCE": "gs://pccss-ai-history-history-backup/materials",
+      "_MIN_MATERIAL_FILES": "1",
+      "_QUALITY_GATE": "1",
+      "_RUNTIME_SA": "history-run@pccss-ai-history.iam.gserviceaccount.com",
+      "_BACKUP_BUCKET": "pccss-ai-history-history-backup",
+      "_ROSTER_SHEET_ID": "1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM",
+      "_STAFF_ACCESS_POLICY": "school-domain",
+      "_ADMIN_EMAILS": "（1 個電郵，已在證據檔中省略）",
+      "_REVIEWER_EMAILS": "（1 個電郵，已在證據檔中省略）"
+    }
+  },
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00071-6dw",
+    "previousRevision": "history-self-study-00070-54g",
+    "imageTag": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:0acb2b2e-ae3b-4bba-8517-cfb17a9027c5",
+    "imageDigest": "sha256:11ad2a2422e07564282df529d77fa1d33a371d34f33bc88d3ac93038792d5aa5",
+    "sourceCommit": "27451f0",
+    "build": {
+      "buildId": "0acb2b2e-ae3b-4bba-8517-cfb17a9027c5",
+      "triggeredBy": "history-main-push（git push origin main，非 gcloud builds submit）",
+      "startTime": "2026-10-28T08:23:28Z",
+      "finishTime": "2026-10-28T08:30:52Z",
+      "duration": "7M24S",
+      "status": "SUCCESS",
+      "steps": [
+        { "id": "quality-gate", "status": "SUCCESS", "evidence": "Test Files 137 passed (137)／Tests 1695 passed、4 skipped" },
+        { "id": "sync-materials", "status": "SUCCESS", "evidence": "日誌逐檔 'Copying gs://pccss-ai-history-history-backup/materials/… to file://materials/…'" },
+        { "id": "build-image", "status": "SUCCESS" },
+        { "id": "push-image", "status": "SUCCESS" },
+        { "id": "deploy-cloud-run", "status": "SUCCESS" }
+      ],
+      "logUrl": "https://console.cloud.google.com/cloud-build/builds/0acb2b2e-ae3b-4bba-8517-cfb17a9027c5?project=784175190534"
+    },
+    "traffic": "100% -> history-self-study-00071-6dw（latestRevision=true）"
+  },
+  "verification": [
+    {
+      "check": "推送是否真的觸發建置（自動，不經手動 gcloud builds submit）",
+      "command": "git push origin main（ef3d3f3..27451f0）→ gcloud builds list --limit=3",
+      "result": "推送後 60 秒內出現 build 0acb2b2e，WORKING；substitutions._MATERIALS_SOURCE=gs://pccss-ai-history-history-backup/materials、COMMIT_SHA=27451f0、TRIGGER_NAME=history-main-push"
+    },
+    {
+      "check": "建置前品質閘門（新步驟）",
+      "command": "Cloud Build step #0 quality-gate",
+      "result": "npm ci + npm run lint + npm test 全過（137 個測試檔、1,695 項通過、4 項 skipped）；日誌含 'Test Files 137 passed (137)'"
+    },
+    {
+      "check": "教材同步（GitHub 儲存庫不含教材）",
+      "command": "Cloud Build step #1 sync-materials",
+      "result": "由 GCS bucket 逐檔複製到 materials/；映像檔建置成功（Dockerfile COPY materials 有實際內容）"
+    },
+    {
+      "check": "正式環境健康檢查",
+      "command": "GET https://history-self-study-4sija7xvrq-df.a.run.app/api/health",
+      "result": "HTTP 200；ok=true、database.status=ok、materials.documents=46／blocks=26599／studentVisibleDocuments=22、persistence.restore=restored、persistence.backupEnabled=true、backup.lastSuccessAt=2026-10-28T08:30:45.743Z、maintenance 最近一次 ok"
+    },
+    {
+      "check": "本機等價驗證（推送前）",
+      "command": "乾淨 clone（無 data/、只有 materials/README.md）→ npm ci、npm run lint、npm test；另以 WSL bash 實跑 sync-materials 腳本",
+      "result": "lint 0 error（1 個既有 warning）、vitest 137 檔 1,695 項通過；sync-materials 在有教材時 exit 0、只有 README 時 exit 1（教材檔案不足），符合 fail-closed 設計"
+    },
+    {
+      "check": "未驗證（如實記錄）",
+      "command": "—",
+      "result": "未測試「建置失敗時正式服務維持上一個 revision」的實際行為（未刻意推送壞碼）；此依賴 Cloud Build 步驟順序（deploy 是最後一步）與 Cloud Run 只在新 revision 就緒後切換流量，屬設計保證而非本次實測。"
+    }
+  ],
+  "rollback": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions history-self-study-00070-54g=100（如需停用自動部署：gcloud builds triggers delete history-main-push --project pccss-ai-history --quiet）"
+}

@@ -89,6 +89,16 @@ function outcomeBadge(record: PracticeRecordSession["questions"][number]) {
   };
 }
 
+/** 選擇題選項的 A／B／C／D 標記（與學生作答時看到的次序一致） */
+function optionLetter(index: number): string {
+  return String.fromCharCode(65 + index);
+}
+
+/** 需要與學生逐題回顧的題目：答錯或未作答 */
+function needsReview(question: PracticeRecordSession["questions"][number]): boolean {
+  return !question.answered || question.isCorrect === false;
+}
+
 /** 教師端：學生練習記錄查閱及下載（作答日期、課題、題型、答對及答錯的題目） */
 export function TeacherRecords() {
   const [data, setData] = useState<RecordsResponse | null>(null);
@@ -97,6 +107,8 @@ export function TeacherRecords() {
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string[]>([]);
+  // 與學生回顧時通常只需要逐題看錯題及未作答的題目
+  const [wrongOnly, setWrongOnly] = useState(false);
   const [classFilter, setClassFilter] = useState("");
   const [learnerSearch, setLearnerSearch] = useState("");
   const [activityFilter, setActivityFilter] = useState("");
@@ -625,10 +637,20 @@ export function TeacherRecords() {
         >
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="font-semibold">練習記錄（逐題作答）</h2>
-            <span className="text-sm text-gray-600">
-              {applied.learnerId ? `目前顯示：${activeLearnerName}` : "目前顯示：全部學習者"}
-              ・共 {records.length} 次練習
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={wrongOnly}
+                  onChange={(event) => setWrongOnly(event.target.checked)}
+                />
+                只看答錯／未作答
+              </label>
+              <span className="text-sm text-gray-600">
+                {applied.learnerId ? `目前顯示：${activeLearnerName}` : "目前顯示：全部學習者"}
+                ・共 {records.length} 次練習
+              </span>
+            </div>
           </div>
         {loading ? <Loading label="正在載入練習記錄…" /> : null}
         {!loading && records.length === 0 && applied.learnerId ? (
@@ -683,32 +705,91 @@ export function TeacherRecords() {
             </div>
 
             {expanded.includes(record.sessionId) ? (
-              <ul className="flex flex-col gap-2 mt-1">
-                {record.questions.map((question, index) => {
-                  const badge = outcomeBadge(question);
+              (() => {
+                const visible = record.questions
+                  .map((question, index) => ({ question, index }))
+                  .filter((item) => !wrongOnly || needsReview(item.question));
+                if (visible.length === 0) {
                   return (
-                    <li
-                      key={question.questionId}
-                      className="rounded-lg border p-2 text-sm flex flex-col gap-1"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-gray-500">{index + 1}.</span>
-                        <span className="badge">{question.questionTypeLabel}</span>
-                        <span className={badge.className}>{badge.label}</span>
-                        {question.sectionTitle ? (
-                          <span className="text-xs text-gray-500">{question.sectionTitle}</span>
-                        ) : null}
-                      </div>
-                      <p className="whitespace-pre-wrap font-medium">{question.question}</p>
-                      <p className="text-gray-700">
-                        學生答案：{question.studentAnswer.trim().length > 0 ? question.studentAnswer : "（未作答）"}
-                      </p>
-                      <p className="text-gray-700">正確答案：{question.correctAnswer}</p>
-                    </li>
+                    <p className="text-sm text-gray-600 mt-1">
+                      這次練習沒有答錯或未作答的題目。
+                    </p>
                   );
-                })}
-              </ul>
+                }
+                return (
+                  <ul className="flex flex-col gap-2 mt-1">
+                    {visible.map(({ question, index }) => {
+                      const badge = outcomeBadge(question);
+                      const chosen = question.studentAnswer.trim();
+                      return (
+                        <li
+                          key={question.questionId}
+                          className="rounded-lg border p-2 text-sm flex flex-col gap-2"
+                          style={{ borderColor: "var(--border)" }}
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-gray-500">{index + 1}.</span>
+                            <span className="badge">{question.questionTypeLabel}</span>
+                            <span className={badge.className}>{badge.label}</span>
+                            {question.sectionTitle ? (
+                              <span className="text-xs text-gray-500">{question.sectionTitle}</span>
+                            ) : null}
+                          </div>
+                          <p className="whitespace-pre-wrap font-medium">{question.question}</p>
+                          {question.options.length > 0 ? (
+                            <ol className="flex flex-col gap-1">
+                              {question.options.map((option, optionIndex) => {
+                                const isCorrect = option === question.correctAnswer;
+                                const isChosen = chosen.length > 0 && option === chosen;
+                                return (
+                                  <li
+                                    key={`${question.questionId}-${optionIndex}`}
+                                    className="flex flex-wrap items-start gap-2 rounded-lg px-2 py-1"
+                                    style={{
+                                      border: `1px solid ${isCorrect ? "var(--success)" : "var(--border)"}`,
+                                      background: isCorrect ? "var(--success-soft)" : "transparent",
+                                    }}
+                                  >
+                                    <span className="font-semibold">{optionLetter(optionIndex)}</span>
+                                    <span className="flex-1">{option}</span>
+                                    {isChosen ? (
+                                      <span
+                                        className={isCorrect ? "badge badge-success" : "badge badge-danger"}
+                                      >
+                                        學生選擇
+                                      </span>
+                                    ) : null}
+                                    {isCorrect ? <span className="badge badge-success">正確答案</span> : null}
+                                  </li>
+                                );
+                              })}
+                            </ol>
+                          ) : null}
+                          <p className="text-gray-700">
+                            學生答案：
+                            {chosen.length > 0 ? question.studentAnswer : "（未作答）"}
+                          </p>
+                          <p className="text-gray-700">正確答案：{question.correctAnswer}</p>
+                          {question.explanation ? (
+                            <p className="text-gray-700">解釋：{question.explanation}</p>
+                          ) : null}
+                          {question.knowledgePoint ? (
+                            <p className="text-gray-700">知識點：{question.knowledgePoint}</p>
+                          ) : null}
+                          {question.sourceExcerpt ? (
+                            <details className="text-xs text-gray-600">
+                              <summary className="cursor-pointer">
+                                教材依據{question.sourceLocation ? `：${question.sourceLocation}` : ""}
+                              </summary>
+                              <p className="whitespace-pre-wrap mt-1">{question.sourceExcerpt}</p>
+                            </details>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                );
+              })()
             ) : null}
           </article>
         ))}
