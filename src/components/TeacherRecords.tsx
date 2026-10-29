@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api-client";
+import { compareLearnersByClass, formLevelLabel, formLevelOf } from "@/lib/learner-ordering";
 import { learnerAccuracyLabel, practiceTopicLabel } from "@/lib/practice-summary";
 import type {
   PracticeRecordLearner,
@@ -110,6 +111,7 @@ export function TeacherRecords() {
   // 與學生回顧時通常只需要逐題看錯題及未作答的題目
   const [wrongOnly, setWrongOnly] = useState(false);
   const [classFilter, setClassFilter] = useState("");
+  const [formFilter, setFormFilter] = useState("");
   const [learnerSearch, setLearnerSearch] = useState("");
   const [activityFilter, setActivityFilter] = useState("");
   // 名冊可能有數百名學生；先顯示 50 人，避免手機一次渲染整份名單。
@@ -215,9 +217,18 @@ export function TeacherRecords() {
   const classes = [...new Set(learners.map((learner) => learner.className).filter(
     (className): className is string => Boolean(className),
   ))].sort((left, right) => left.localeCompare(right, "zh-HK"));
+  /** 名冊內出現過的班級（中一、中二…），依級別數字排序 */
+  const forms = [...new Set(learners.map((learner) => formLevelOf(learner.className)).filter(
+    (level): level is string => Boolean(level),
+  ))].sort((left, right) => Number(left) - Number(right));
+  /** 選了班級時，「班別」只列出該級的班，避免出現「中一＋2A」這種必然沒有結果的組合 */
+  const classesForForm = classes.filter(
+    (className) => !formFilter || formLevelOf(className) === formFilter,
+  );
   const visibleLearners = learners.filter((learner) => {
     const matchesClass = !classFilter
       || (classFilter === "__unlisted" ? !learner.className : learner.className === classFilter);
+    const matchesForm = !formFilter || formLevelOf(learner.className) === formFilter;
     const search = learnerSearch.trim().toLocaleLowerCase();
     const matchesSearch =
       !search ||
@@ -235,7 +246,7 @@ export function TeacherRecords() {
             : activityFilter === "never-started"
               ? learner.sessions === 0
               : false);
-    return matchesClass && matchesSearch && matchesActivity;
+    return matchesClass && matchesForm && matchesSearch && matchesActivity;
   });
   const correctTotal = records.reduce((sum, record) => sum + record.correctCount, 0);
   const wrongTotal = records.reduce((sum, record) => sum + record.wrongCount, 0);
@@ -249,10 +260,13 @@ export function TeacherRecords() {
    * 否則下拉會變成空白，看起來像沒有選人。
    */
   const selectedLearner = draft.learnerId ? learnerById.get(draft.learnerId) : undefined;
-  const learnerOptions =
-    selectedLearner && !visibleLearners.some((learner) => learner.learnerId === selectedLearner.learnerId)
+  const learnerOptions = [
+    ...(selectedLearner &&
+    !visibleLearners.some((learner) => learner.learnerId === selectedLearner.learnerId)
       ? [...visibleLearners, selectedLearner]
-      : visibleLearners;
+      : visibleLearners),
+    // 選單按班級、班別、班號排列，方便老師逐班核對（見 lib/learner-ordering）
+  ].sort(compareLearnersByClass);
   const topicLabelById = new Map(topics.map((topic) => [topic.id, practiceTopicLabel(topic)]));
   /**
    * 匯出使用**目前選擇的篩選**（`draft`），不是上次查詢的條件。
@@ -306,7 +320,7 @@ export function TeacherRecords() {
       <section className="card flex flex-col gap-4">
         <div className="flex flex-col gap-3">
           <h2 className="font-semibold">篩選</h2>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="text-sm">
               班別
               <select
@@ -317,10 +331,31 @@ export function TeacherRecords() {
                 }}
               >
                 <option value="">全部班別</option>
-                {classes.map((className) => (
+                {classesForForm.map((className) => (
                   <option key={className} value={className}>{className}</option>
                 ))}
                 <option value="__unlisted">未列入名冊</option>
+              </select>
+            </label>
+            <label className="text-sm">
+              班級
+              <select
+                value={formFilter}
+                onChange={(event) => {
+                  const nextForm = event.target.value;
+                  setFormFilter(nextForm);
+                  // 由「中一」改為「中二」時，原本選着的 1A 已不屬於新班級，要一併清除，
+                  // 否則畫面同時套用兩個互斥條件，只會顯示「沒有符合條件的學習者」。
+                  if (classFilter && nextForm && formLevelOf(classFilter) !== nextForm) {
+                    setClassFilter("");
+                  }
+                  setListLimit(50);
+                }}
+              >
+                <option value="">全部班級</option>
+                {forms.map((level) => (
+                  <option key={level} value={level}>{formLevelLabel(level)}</option>
+                ))}
               </select>
             </label>
             <label className="text-sm">
@@ -336,25 +371,32 @@ export function TeacherRecords() {
               />
             </label>
             <label className="text-sm">
-              活動狀態
+              學習者
               <select
-                value={activityFilter}
+                value={draft.learnerId}
                 onChange={(event) => {
-                  setActivityFilter(event.target.value);
-                  setListLimit(50);
+                  const filters = { ...draft, learnerId: event.target.value };
+                  setDraft(filters);
+                  // 選好學習者後立即查詢並捲到逐題記錄，不必再按「查詢記錄」
+                  void handleQuery(filters, {
+                    focusLearnerId: filters.learnerId === "" ? undefined : filters.learnerId,
+                  });
                 }}
               >
-                <option value="">全部狀態</option>
-                <option value="active">近 7 日活躍</option>
-                <option value="low">7–13 日未活動</option>
-                <option value="inactive">14 日以上未活動</option>
-                <option value="never-started">尚未開始</option>
+                <option value="">全部學習者（{learnerOptions.length} 位）</option>
+                {learnerOptions.map((learner) => (
+                  <option key={learner.learnerId} value={learner.learnerId}>
+                    {[learner.name || learner.email || learner.learnerId, learner.className, learner.studentNumber]
+                      .filter(Boolean)
+                      .join(" ・ ")}（{learner.sessions} 次）
+                  </option>
+                ))}
               </select>
             </label>
           </div>
           <p className="text-xs text-gray-500">
-            以上三項只收窄下面的「學習者」選單及「學習者使用概況」清單，<strong>不會改變已查詢的記錄</strong>；
-            要改變記錄範圍請用課題及日期。
+            「班別」「班級」及搜尋只收窄「學習者」選單及「學習者使用概況」清單，<strong>不會改變已查詢的記錄</strong>；
+            選定「學習者」則會即時查詢他的記錄。要改變記錄範圍請用課題及日期。
           </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm">
@@ -372,26 +414,19 @@ export function TeacherRecords() {
             </select>
           </label>
           <label className="text-sm">
-            學習者
+            活動狀態
             <select
-              value={draft.learnerId}
+              value={activityFilter}
               onChange={(event) => {
-                const filters = { ...draft, learnerId: event.target.value };
-                setDraft(filters);
-                // 選好學習者後立即查詢並捲到逐題記錄，不必再按「查詢記錄」
-                void handleQuery(filters, {
-                  focusLearnerId: filters.learnerId === "" ? undefined : filters.learnerId,
-                });
+                setActivityFilter(event.target.value);
+                setListLimit(50);
               }}
             >
-              <option value="">全部學習者（{learnerOptions.length} 位）</option>
-              {learnerOptions.map((learner) => (
-                <option key={learner.learnerId} value={learner.learnerId}>
-                  {[learner.name || learner.email || learner.learnerId, learner.className, learner.studentNumber]
-                    .filter(Boolean)
-                    .join(" ・ ")}（{learner.sessions} 次）
-                </option>
-              ))}
+              <option value="">全部狀態</option>
+              <option value="active">近 7 日活躍</option>
+              <option value="low">7–13 日未活動</option>
+              <option value="inactive">14 日以上未活動</option>
+              <option value="never-started">尚未開始</option>
             </select>
           </label>
           <label className="text-sm">
@@ -411,6 +446,9 @@ export function TeacherRecords() {
             />
           </label>
         </div>
+        <p className="text-xs text-gray-500">
+          「活動狀態」只收窄下面的「學習者使用概況」清單，<strong>不會改變已查詢的記錄</strong>。
+        </p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -426,6 +464,7 @@ export function TeacherRecords() {
             onClick={() => {
               setDraft(EMPTY_FILTERS);
               setClassFilter("");
+              setFormFilter("");
               setLearnerSearch("");
               setActivityFilter("");
               setListLimit(50);
