@@ -65,6 +65,15 @@ describe("錯誤分類（學生可見的說明）", () => {
     expect(failure.hint).toContain("Wi-Fi");
   });
 
+  it("Safari 的 `Load failed`（即使不是 TypeError 實例）同樣判為網絡問題", () => {
+    // WebKit 對被中途切斷的連線只給英文訊息；若只以 `instanceof TypeError` 判斷，
+    // 就會掉進「未知」分支，把英文原文直接顯示給學生（2026-10-28 正式環境實際情況）。
+    const failure = describeApiFailure(new Error("Load failed"));
+    expect(failure.kind).toBe("network");
+    expect(failure.title).not.toContain("發生問題");
+    expect(failure.message).not.toContain("Load failed");
+  });
+
   it("中止／逾時例外判為逾時", () => {
     const aborted = Object.assign(new Error("The operation was aborted."), {
       name: "AbortError",

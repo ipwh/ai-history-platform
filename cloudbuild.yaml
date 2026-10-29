@@ -53,6 +53,16 @@ substitutions:
   _REPOSITORY: history
   _IMAGE_NAME: hk-history-self-study
   _MAX_INSTANCES: "1"
+  # 維持縮容至 0（不產生閒置執行個體的最低月費）。代價是冷啟動：SQLite 資料庫放在
+  # /tmp，每個新執行個體都要由 Cloud Storage 還原約 34 MB 快照（2026-10-28 日誌：每日
+  # 冷啟動 12–26 次），而冷啟動期間到達的請求會被 Cloud Run 中止
+  # （`429 no available instance`），手機顯示 `Load failed`。
+  # 保持 0 之下仍可運作的緩解措施：
+  #   1. `--cpu-boost`（下方部署指令）：冷啟動期間給足 CPU，縮短「還原 34 MB」的等待；
+  #   2. 備份已改為有限等待（最多 5 秒）並先 gzip，新執行個體的第一個請求不會再被
+  #      備份拖住 5 分鐘（2026-10-29）；
+  #   3. 若班際課堂時段仍見 `429`，可改為 1，或在該時段以 Cloud Scheduler 定期呼叫
+  #      `/api/health` 保暖，毋須改動此處預設值。
   _MIN_INSTANCES: "0"
   _MEMORY: 1Gi
   _CPU: "1"
@@ -195,6 +205,7 @@ steps:
           --cpu="${_CPU}" \
           --min-instances="${_MIN_INSTANCES}" \
           --max-instances="${_MAX_INSTANCES}" \
+          --cpu-boost \
           $$AUTH_FLAG \
           $${RUNTIME_SA:+--service-account=$$RUNTIME_SA} \
           --set-env-vars="NODE_ENV=production,LLM_PROVIDER=deepseek,LLM_MODEL=deepseek-flash,LLM_THINKING=disabled,LLM_MAX_TOKENS=8192,APP_DATABASE_PATH=/tmp/data/app.db,APP_UPLOADS_DIR=/tmp/data/uploads,OCR_CACHE_PATH=/tmp/data/ocr-cache,OCR_LANG_PATH=/app/ocr-lang,APP_MATERIALS_DIR=/app/materials,AUTH_REQUIRE_SIGN_IN=true,AUTH_SCHOOL_DOMAINS=pochiu.edu.hk,AUTH_ADMIN_EMAILS=${_ADMIN_EMAILS},AUTH_TEACHER_EMAILS=${_TEACHER_EMAILS},AUTH_STAFF_ACCESS_POLICY=${_STAFF_ACCESS_POLICY},AUTH_STAFF_DOMAINS=${_STAFF_DOMAINS},HISTORY_REVIEWER_EMAILS=${_REVIEWER_EMAILS},MATERIAL_AUTO_OPEN_POLICY=lesson-content,STUDENT_ROSTER_ENABLED=true,STUDENT_ROSTER_ENFORCE=true,STUDENT_ROSTER_SOURCE=sheets-api,STUDENT_ROSTER_SHEET_ID=${_ROSTER_SHEET_ID},STUDENT_ROSTER_SHEET_NAME=${_ROSTER_SHEET_NAME},STUDENT_ROSTER_COLUMN_NAME=${_ROSTER_COLUMN_NAME},STUDENT_ROSTER_CLASS_PREFIXES=${_ROSTER_CLASS_PREFIXES},DEMO_AUTO_PUBLISH_QUESTIONS=false,BACKUP_BUCKET=$${BACKUP_BUCKET},BACKUP_PREFIX=$${BACKUP_PREFIX},BACKUP_INTERVAL_SECONDS=$${BACKUP_INTERVAL_SECONDS},BACKUP_MIN_SPACING_SECONDS=$${BACKUP_MIN_SPACING_SECONDS},BACKUP_RESTORE_ON_START=true,BACKUP_PREFER_CLOUD=true" \

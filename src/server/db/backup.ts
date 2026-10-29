@@ -17,6 +17,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { gunzipSync, gzipSync } from "node:zlib";
 
 import { getServerConfig, type BackupConfig } from "../config";
 import { getDb } from "./connection";
@@ -31,6 +32,22 @@ const SNAPSHOT_SUFFIX = ".backup";
 const SNAPSHOT_DIR_NAME = "history-platform-backup";
 /** 殘留快照的最長保留時間：逾時即清除，避免程序被強制終止後暫存檔不斷累積 */
 const SNAPSHOT_MAX_AGE_MS = 60 * 60 * 1000;
+/**
+ * 上載逾時。
+ *
+ * 2026-10-28 正式環境日誌：一個 33 MB 快照上載會「停住約 108 秒」後才被對方關閉
+ * （`fetch failed: other side closed (UND_ERR_SOCKET)`／`write EPIPE`），4 次重試
+ * 合共 5 分 28 秒，全部發生在某一位學生的 API 請求之內，最後被 Cloud Run 的
+ * 300 秒逾時切斷（手機顯示 `Load failed`）。因此這裡縮短至 30 秒並減少次數：
+ * 寧可這次放棄，下一個到期請求再試，也不要拖死使用者請求。
+ */
+const UPLOAD_TIMEOUT_MS = 30_000;
+/** 上載嘗試次數（含首次）；失敗就交由下一個到期請求重試 */
+const UPLOAD_ATTEMPTS = 2;
+/** 進行中的備份超過這個時間仍未結束，視為已失效（連線停住或執行個體被抽走 CPU） */
+const BACKUP_STALE_MS = 120_000;
+/** gzip 檔頭（`1f 8b`）；SQLite 檔頭是 `SQLite format 3`，兩者不會混淆 */
+const GZIP_MAGIC = [0x1f, 0x8b] as const;
 
 export interface BackupStatus {
   enabled: boolean;
@@ -65,6 +82,8 @@ interface BackupGlobal {
   __historyPlatformBackupLastAttemptAt?: number;
   /** 是否有備份正在執行（避免重疊） */
   __historyPlatformBackupInFlight?: boolean;
+  /** 進行中的備份開始時間（毫秒），用於判定是否已失效 */
+  __historyPlatformBackupInFlightAt?: number;
 }
 
 /**
@@ -215,10 +234,17 @@ export async function downloadBackup(
     throw new Error(`下載資料庫備份失敗（HTTP ${response.status}）`);
   }
 
-  const buffer = Buffer.from(await response.arrayBuffer());
+  const downloaded = Buffer.from(await response.arrayBuffer());
+  // 新版本上載的是 gzip 過的快照（34 MB → 約 7 MB，實測壓縮比 0.2）；舊版備份仍是未壓縮的 SQLite。
+  // 以檔頭判斷，兩種格式都讀得回來，還原不需要改動呼叫端。
+  const buffer = isGzip(downloaded) ? gunzipSync(downloaded) : downloaded;
   fs.mkdirSync(path.dirname(destination), { recursive: true });
   fs.writeFileSync(destination, buffer);
   return { downloaded: true, bytes: buffer.byteLength };
+}
+
+function isGzip(buffer: Buffer): boolean {
+  return buffer.length > 2 && buffer[0] === GZIP_MAGIC[0] && buffer[1] === GZIP_MAGIC[1];
 }
 
 /** 上傳資料庫快照（網絡抖動由呼叫端的 withRetry 重試） */
@@ -231,7 +257,10 @@ export async function uploadBackup(
   const token = await getToken(io);
   const objectName = backupObjectName(config);
   const url = `${UPLOAD_BASE}/b/${config.bucket}/o?uploadType=media&name=${encodeURIComponent(objectName)}`;
-  const body = fs.readFileSync(filePath);
+  const snapshot = fs.readFileSync(filePath);
+  // 上載 gzip 後的快照：34 MB 的 SQLite 大多是可壓縮的文字，實測壓縮比 0.2（約 7 MB），
+  // 大幅降低連線中途停住的機會（見 UPLOAD_TIMEOUT_MS 的說明）。
+  const body = gzipSync(snapshot);
 
   let response: Response;
   try {
@@ -242,8 +271,7 @@ export async function uploadBackup(
         "content-type": "application/octet-stream",
       },
       body,
-      // 上載 28 MB 以上的快照需要較長時間
-      signal: AbortSignal.timeout(300_000),
+      signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
     });
   } catch (error) {
     throw new Error(describeFetchError(error));
@@ -329,8 +357,9 @@ export async function backupNow(io: BackupIO = {}, options: { force?: boolean } 
   const snapshotPath = nextSnapshotPath();
   try {
     const bytes = await snapshotDatabase(snapshotPath);
-    // 網絡抖動不應令一次備份失敗（失敗會累積成資料遺失風險）
-    await withRetry(() => uploadBackup(config, snapshotPath, io));
+    // 網絡抖動不應令一次備份失敗，但重試次數必須有上限：每次嘗試都可能停住數十秒，
+    // 而這段時間正卡在某一位使用者的請求之內（見 UPLOAD_TIMEOUT_MS）。
+    await withRetry(() => uploadBackup(config, snapshotPath, io), UPLOAD_ATTEMPTS);
     status.lastSuccessAt = new Date().toISOString();
     status.lastError = null;
     status.uploads += 1;
@@ -450,14 +479,22 @@ export function backupDue(now: number = Date.now()): boolean {
  */
 export async function backupIfDue(io: BackupIO = {}): Promise<void> {
   if (!backupDue()) return;
-  if (globalRef.__historyPlatformBackupInFlight) return;
+  if (globalRef.__historyPlatformBackupInFlight) {
+    // 備份已不再阻塞使用者請求，因此可能有一個備份在執行個體失去 CPU 之後永遠不會完成。
+    // 過了時限就視為失效並重新開始，否則「進行中」旗標會令此後所有備份都靜默跳過。
+    const startedAt = globalRef.__historyPlatformBackupInFlightAt ?? 0;
+    if (Date.now() - startedAt < BACKUP_STALE_MS) return;
+    console.warn("[backup] 上一次備份超過時限仍未完成，視為失效並重新開始");
+  }
 
   globalRef.__historyPlatformBackupLastAttemptAt = Date.now();
   globalRef.__historyPlatformBackupInFlight = true;
+  globalRef.__historyPlatformBackupInFlightAt = Date.now();
   try {
     await backupNow(io);
   } finally {
     globalRef.__historyPlatformBackupInFlight = false;
+    globalRef.__historyPlatformBackupInFlightAt = undefined;
   }
 }
 
@@ -501,4 +538,5 @@ export function resetBackupStateForTest(): void {
   stopBackupScheduler();
   globalRef.__historyPlatformBackupShutdownRegistered = false;
   globalRef.__historyPlatformBackupInFlight = false;
+  globalRef.__historyPlatformBackupInFlightAt = undefined;
 }

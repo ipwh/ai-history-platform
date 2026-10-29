@@ -26,7 +26,7 @@ export type ApiFailureKind =
   | "unknown";
 
 /** 錯誤的來源類型；`http` 以外的值由呼叫端明確標示 */
-export type ApiErrorKind = "http" | "format" | "timeout" | "empty";
+export type ApiErrorKind = "http" | "format" | "timeout" | "empty" | "unavailable";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -71,9 +71,18 @@ function isAbortError(error: unknown): boolean {
 }
 
 function isNetworkTypeError(error: unknown): boolean {
-  // 瀏覽器在 `fetch()` 完全失敗（DNS、離線、TLS、CORS 被擋）時拋出 TypeError，
-  // 沒有 status 可用，因此只能以型別判別。
-  return error instanceof TypeError;
+  // 瀏覽器在 `fetch()` 完全失敗（DNS、離線、TLS、CORS 被擋、連線被中途切斷）時拋出
+  // TypeError，沒有 status 可用，因此只能以型別判別。
+  if (error instanceof TypeError) return true;
+  // iOS／Safari（WebKit）的訊息是 `Load failed`，Chromium 是 `Failed to fetch`；
+  // 有些情況（例如回應主體被切斷、跨框架傳遞）拿到的不是 TypeError 實例，
+  // 若只看型別就會掉進「未知」分支，把英文原文直接顯示給學生。
+  return (
+    error instanceof Error &&
+    /load failed|failed to fetch|network ?error|networkrequestfailed|internet connection appears to be offline|network connection was lost/i.test(
+      error.message,
+    )
+  );
 }
 
 /**
@@ -103,6 +112,17 @@ export function describeApiFailure(error: unknown): ApiFailure {
         kind: "timeout",
         title: "載入逾時",
         hint: "伺服器在限定時間內沒有回應。請重試；如你正在使用學校網絡，繁忙時段可能較慢。",
+        retryable: true,
+      };
+    }
+    if (error.kind === "unavailable") {
+      return {
+        ...base,
+        kind: "server",
+        title: "伺服器正在啟動",
+        hint:
+          "網站閒置一段時間後會重新啟動，需要十數秒載入題庫。請等 10–20 秒後再按一次；" +
+          "你的練習記錄不會因而遺失。",
         retryable: true,
       };
     }

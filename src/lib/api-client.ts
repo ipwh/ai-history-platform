@@ -51,13 +51,34 @@ export function forgetLearner(): void {
   }
 }
 
-async function request<T>(
+/**
+ * Cloud Run 邊緣層中止請求時的簽名。
+ *
+ * `min-instances=0` 時，請求若在執行個體仍冷啟動（由 Cloud Storage 還原約 34 MB 資料庫）
+ * 期間到達，Cloud Run 會直接回 `429 The request was aborted because there was no available
+ * instance`（或 `503`）並以純文字回應；這些回應**未到達應用程式**，所以重試不會重複寫入。
+ * 我們的 API 一律回傳 JSON，因此「非 JSON 的 429／503」可以安全地視為邊緣層中止。
+ */
+function isEdgeAbort(status: number, text: string): boolean {
+  if (status !== 429 && status !== 503) return false;
+  const trimmed = text.trim();
+  return trimmed.length === 0 || !(trimmed.startsWith("{") || trimmed.startsWith("["));
+}
+
+/** 冷啟動中止後的重試間隔；兩次合共最多 9 秒，足夠等一個剛啟動的執行個體接手 */
+const EDGE_ABORT_RETRY_DELAYS_MS = [3_000, 6_000];
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** 一次請求；`edgeAbort` 表示邊緣層中止（見 {@link isEdgeAbort}），交由呼叫端決定是否重試 */
+async function requestOnce<T>(
   path: string,
-  init?: RequestInit,
-  options: { timeoutMs?: number } = {},
-): Promise<T> {
-  // 只有明確指定 `timeoutMs` 的呼叫才會設時限（練習載入）。提交答案可能包含伺服器端
-  // AI 批改，耗時較長，因此不設預設逾時，免得把正常的慢回應變成失敗。
+  init: RequestInit | undefined,
+  options: { timeoutMs?: number },
+): Promise<{ value: T } | { edgeAbort: ApiError }> {
+  // 只有明確指定 `timeoutMs` 的呼叫才會設時限（練習載入、提交答案）。
   const controller =
     options.timeoutMs !== undefined && typeof AbortController !== "undefined"
       ? new AbortController()
@@ -79,6 +100,19 @@ async function request<T>(
     });
 
     const text = await response.text();
+
+    if (!response.ok && isEdgeAbort(response.status, text)) {
+      // 邊緣層中止：回應不是應用程式產生，因此不上拋「格式不正確」這種誤導訊息。
+      return {
+        edgeAbort: new ApiError(
+          "伺服器正在啟動，暫時未能接納請求。",
+          response.status,
+          [],
+          "unavailable",
+        ),
+      };
+    }
+
     const payload = parseResponsePayload(text, response.status);
 
     if (!response.ok) {
@@ -90,7 +124,7 @@ async function request<T>(
       );
     }
 
-    return payload as T;
+    return { value: payload as T };
   } catch (error) {
     if (controller !== null && controller.signal.aborted) {
       throw new ApiError(
@@ -106,10 +140,26 @@ async function request<T>(
   }
 }
 
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  options: { timeoutMs?: number } = {},
+): Promise<T> {
+  let last: ApiError | null = null;
+  for (let attempt = 0; attempt <= EDGE_ABORT_RETRY_DELAYS_MS.length; attempt += 1) {
+    if (attempt > 0) await sleep(EDGE_ABORT_RETRY_DELAYS_MS[attempt - 1]);
+    const outcome = await requestOnce<T>(path, init, options);
+    if ("value" in outcome) return outcome.value;
+    last = outcome.edgeAbort;
+  }
+  // 重試後仍是邊緣層中止：顯示可行動的中文說明，而不是英文原文或「格式不正確」。
+  throw last ?? new ApiError("伺服器暫時無法使用，請稍後再試。", 503, [], "unavailable");
+}
+
 export const api = {
   get: <T,>(path: string, options?: { timeoutMs?: number }) => request<T>(path, undefined, options),
-  post: <T,>(path: string, body: unknown) =>
-    request<T>(path, { method: "POST", body: JSON.stringify(body) }),
+  post: <T,>(path: string, body: unknown, options?: { timeoutMs?: number }) =>
+    request<T>(path, { method: "POST", body: JSON.stringify(body) }, options),
   patch: <T,>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T,>(path: string) => request<T>(path, { method: "DELETE" }),

@@ -28,6 +28,23 @@ interface PracticeViewData {
   feedback: QuestionFeedback[];
 }
 
+/**
+ * 提交答案的等待上限。
+ *
+ * 伺服器端可能包含 AI 批改（LLM 逾時 45 秒），亦有機會撞上資料庫備份，
+ * 但 Cloud Run 的請求逾時是 300 秒且會直接切斷連線（手機顯示英文 `Load failed`）。
+ * 90 秒仍在可接受範圍內，而且可以換成「請重試」這類可行動的中文提示。
+ */
+const ANSWER_SUBMIT_TIMEOUT_MS = 90_000;
+
+function feedbackMap(view: PracticeViewData): Record<string, QuestionFeedback> {
+  return Object.fromEntries(view.feedback.map((item) => [item.questionId, item]));
+}
+
+function draftMap(view: PracticeViewData): Record<string, string> {
+  return Object.fromEntries(view.feedback.map((item) => [item.questionId, item.answer]));
+}
+
 export function PracticeRunner({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const [data, setData] = useState<PracticeViewData | null>(null);
@@ -69,8 +86,8 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
       .then((view) => {
         if (cancelled) return;
         setData(view);
-        setFeedback(Object.fromEntries(view.feedback.map((item) => [item.questionId, item])));
-        setDrafts(Object.fromEntries(view.feedback.map((item) => [item.questionId, item.answer])));
+        setFeedback(feedbackMap(view));
+        setDrafts(draftMap(view));
         setError(null);
       })
       .catch((caught: unknown) => {
@@ -92,6 +109,29 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
     [answeredCount, questions.length],
   );
 
+  /**
+   * 提交失敗後重新讀取這次練習。
+   *
+   * 連線被中途切斷時（手機顯示 `Load failed`），伺服器端的寫入通常已經完成，
+   * 只是回應沒有送達。若該題其實已記錄，就直接顯示回饋並清掉錯誤，
+   * 避免學生以為答案消失了而重複提交。
+   */
+  async function refreshRecordedAnswer(questionId: string): Promise<void> {
+    try {
+      const view = await api.get<PracticeViewData>(
+        `/api/practice/${sessionId}?learnerId=${getLearnerId()}`,
+        { timeoutMs: 20_000 },
+      );
+      if (!view.feedback.some((item) => item.questionId === questionId)) return;
+      setData(view);
+      setFeedback(feedbackMap(view));
+      setDrafts(draftMap(view));
+      setSubmitError(null);
+    } catch {
+      // 仍然讀不到：保留原本的錯誤提示，由學生自行重試。
+    }
+  }
+
   async function handleSubmit() {
     if (!current) return;
     // 兩次點擊可能在 React 重新渲染之前都觸發（按鈕的 disabled 尚未生效），
@@ -109,10 +149,12 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
       const result = await api.post<{ feedback: QuestionFeedback }>(
         `/api/practice/${sessionId}/answers`,
         { learnerId: getLearnerId(), questionId: current.id, answer },
+        { timeoutMs: ANSWER_SUBMIT_TIMEOUT_MS },
       );
       setFeedback((prev) => ({ ...prev, [current.id]: result.feedback }));
     } catch (caught) {
       setSubmitError(caught);
+      void refreshRecordedAnswer(current.id);
     } finally {
       setSubmitting(false);
     }
@@ -121,7 +163,11 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
   async function handleComplete() {
     setCompleting(true);
     try {
-      await api.post(`/api/practice/${sessionId}/complete`, { learnerId: getLearnerId() });
+      await api.post(
+        `/api/practice/${sessionId}/complete`,
+        { learnerId: getLearnerId() },
+        { timeoutMs: ANSWER_SUBMIT_TIMEOUT_MS },
+      );
       router.push(`/practice/${sessionId}/result`);
     } catch (caught) {
       setSubmitError(caught);

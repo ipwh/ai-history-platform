@@ -4,13 +4,14 @@
  * 驗證：
  *   1. 快照以 `VACUUM INTO` 寫入**暫存目錄**，不會在主資料庫旁邊留下檔案，
  *      亦不會直接複製正在寫入的主資料庫（WAL 下會得到過期或損毀的內容）。
- *   2. 5xx／網絡錯誤以指數退避重試，最終成功。
+ *   2. 5xx／網絡錯誤以指數退避重試（次數有上限），最終成功。
  *   3. 4xx（權限、bucket 不存在）屬設定問題，立即回報而不重試。
  *   4. 程序被強制終止後殘留的舊快照會被清理。
  */
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { gunzipSync } from "node:zlib";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -89,17 +90,18 @@ describe("備份快照的鎖定防護", () => {
     expect(stub.bodies).toHaveLength(1);
   });
 
-  it("上載的內容是完整可用的 SQLite 資料庫", async () => {
+  it("上載的內容解壓後是完整可用的 SQLite 資料庫", async () => {
     seedProbeRow();
     const stub = createStorageStub();
 
     await backup.backupNow({ fetchImpl: stub.fetchImpl, tokenProvider });
 
     const uploaded = stub.bodies[0]!;
-    expect(uploaded.subarray(0, 15).toString("latin1")).toBe("SQLite format 3");
+    // 上載前會 gzip（34 MB → 約 7 MB，實測壓縮比 0.2），上載停住的風險因此大幅降低
+    expect(uploaded.subarray(0, 2).toString("latin1")).toBe("\x1f\x8b");
     const restoredPath = path.join(os.tmpdir(), `hist-test-backup-retry-restored-${process.pid}.db`);
     fs.rmSync(restoredPath, { force: true });
-    fs.writeFileSync(restoredPath, uploaded);
+    fs.writeFileSync(restoredPath, gunzipSync(uploaded));
     const restored = connection.createDatabase(restoredPath);
     try {
       const row = restored.prepare("SELECT note FROM backup_probe WHERE id = ?").get("p1") as
@@ -130,19 +132,31 @@ describe("備份快照的鎖定防護", () => {
 describe("上載失敗的重試", () => {
   it("5xx 以指數退避重試，最終成功", async () => {
     seedProbeRow();
-    const stub = createStorageStub({ failures: 2, status: 503 });
+    const stub = createStorageStub({ failures: 1, status: 503 });
 
     const startedAt = Date.now();
     await backup.backupNow({ fetchImpl: stub.fetchImpl, tokenProvider });
     const elapsed = Date.now() - startedAt;
 
-    expect(stub.attempts).toHaveLength(3);
-    // 首次失敗後等待 300ms、第二次失敗後等待 600ms（隨機抖動只會增加）
-    expect(elapsed).toBeGreaterThanOrEqual(850);
+    // 上載只重試一次（UPLOAD_ATTEMPTS=2）：每次嘗試都可能停住數十秒，
+    // 而這段時間正卡在某一位使用者的請求之內。
+    expect(stub.attempts).toHaveLength(2);
+    // 首次失敗後等待 300ms（隨機抖動只會增加）
+    expect(elapsed).toBeGreaterThanOrEqual(250);
     const status = backup.getBackupStatus();
     expect(status.lastSuccessAt).not.toBeNull();
     expect(status.lastError).toBeNull();
     expect(status.uploads).toBe(1);
+  });
+
+  it("連續失敗時重試次數有上限，不會無限拖延請求", async () => {
+    seedProbeRow();
+    const stub = createStorageStub({ failures: 10, status: 503 });
+
+    await backup.backupNow({ fetchImpl: stub.fetchImpl, tokenProvider });
+
+    expect(stub.attempts).toHaveLength(2);
+    expect(backup.getBackupStatus().lastError).toContain("503");
   });
 
   it("4xx 屬設定問題，立即回報而不重試", async () => {

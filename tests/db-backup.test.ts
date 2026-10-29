@@ -3,7 +3,7 @@
  *
  * 驗證：
  *   1. 未設定 BACKUP_BUCKET 時完全不會啟用（本機開發不受影響）。
- *   2. `VACUUM INTO` 快照包含所有資料，且上傳內容與快照一致。
+ *   2. `VACUUM INTO` 快照包含所有資料，上傳的是 gzip 過的快照且可解壓回完整資料庫。
  *   3. 啟動還原：本機沒有資料庫時由雲端還原；已有資料庫時預設不覆蓋。
  *   4. BACKUP_PREFER_CLOUD=true 時以雲端版本為準，並清除舊的 -wal／-shm。
  *   5. 雲端沒有備份時視為全新資料庫；上傳失敗只記錄錯誤，不會拋出例外。
@@ -14,6 +14,7 @@
 import os from "node:os";
 import fs from "node:fs";
 import path from "node:path";
+import { gunzipSync, gzipSync } from "node:zlib";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -146,10 +147,12 @@ describe("快照與上傳", () => {
     expect(stub.uploads[0].name).toBe("history/data/app.db");
     expect(stub.uploads[0].authorization).toBe("Bearer stub-token");
 
-    // 上傳的內容是一個可用的 SQLite 資料庫，且包含剛才寫入的資料
+    // 上傳的是 gzip 過的快照（33 MB → 約 4 MB），解壓後是一個可用的 SQLite 資料庫
+    const uploaded = stub.uploads[0].body;
+    expect(uploaded.subarray(0, 2).toString("latin1")).toBe("\x1f\x8b");
     const restoredPath = path.join(os.tmpdir(), `hist-test-backup-restored-${process.pid}.db`);
     fs.rmSync(restoredPath, { force: true });
-    fs.writeFileSync(restoredPath, stub.uploads[0].body);
+    fs.writeFileSync(restoredPath, gunzipSync(uploaded));
     const restored = connection.createDatabase(restoredPath);
     const row = restored.prepare("SELECT note FROM backup_probe WHERE id = ?").get("p1") as
       | { note: string }
@@ -215,6 +218,35 @@ describe("還原", () => {
       | { note: string }
       | undefined;
     expect(row?.note).toBe("雲端資料");
+
+    for (const file of [sourcePath, snapshotPath]) fs.rmSync(file, { force: true });
+  });
+
+  it("雲端備份是 gzip 時仍可還原（新版本上載格式）", async () => {
+    process.env.BACKUP_BUCKET = "history-backup-bucket";
+    const sourcePath = path.join(os.tmpdir(), `hist-test-backup-gz-source-${process.pid}.db`);
+    fs.rmSync(sourcePath, { force: true });
+    const source = connection.createDatabase(sourcePath);
+    source.exec("CREATE TABLE gz_probe(id TEXT PRIMARY KEY, note TEXT)");
+    source.prepare("INSERT INTO gz_probe(id, note) VALUES (?, ?)").run("g1", "壓縮備份");
+    const snapshotPath = `${sourcePath}.snap`;
+    source.prepare("VACUUM INTO ?").run(snapshotPath);
+    source.close();
+
+    const compressed = gzipSync(fs.readFileSync(snapshotPath));
+    const stub = createStorageStub(compressed);
+    connection.closeDefaultDatabase();
+    fs.rmSync(databasePath, { force: true });
+
+    const outcome = await backup.restoreOnStartup({ fetchImpl: stub.fetchImpl, tokenProvider });
+    expect(outcome).toBe("restored");
+
+    connection.closeDefaultDatabase();
+    const row = connection
+      .getDb()
+      .prepare("SELECT note FROM gz_probe WHERE id = ?")
+      .get("g1") as { note: string } | undefined;
+    expect(row?.note).toBe("壓縮備份");
 
     for (const file of [sourcePath, snapshotPath]) fs.rmSync(file, { force: true });
   });

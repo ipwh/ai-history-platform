@@ -93,9 +93,9 @@ export function toErrorResponse(error: unknown): NextResponse {
 /**
  * 觸發「到期的備份」。
  *
- * 必須在請求週期內完成（`await`），因為 Cloud Run 只會在處理請求時分配 CPU：
- * 容器閒置時的背景計時器會被節流，實測會以 `fetch failed` 失敗。
- * 未到期時成本只是兩次 `stat`，因此對一般請求沒有影響。
+ * 必須在請求週期內**開始**（不再是完成），因為 Cloud Run 只會在處理請求時分配 CPU：
+ * 容器閒置時的背景計時器會被節流，實測會以 `fetch failed` 失敗。未到期時成本只是
+ * 兩次 `stat`，因此對一般請求沒有影響；到期時最多等 {@link BACKUP_WAIT_MS}。
  */
 async function triggerDueBackup(): Promise<void> {
   try {
@@ -107,6 +107,25 @@ async function triggerDueBackup(): Promise<void> {
   }
 }
 
+/**
+ * 備份最多可以佔用一個請求多久。
+ *
+ * 2026-10-28 正式環境日誌：一次備份上載的 4 次嘗試合共 5 分 28 秒
+ * （`fetch failed: other side closed (UND_ERR_SOCKET)`），而且全部發生在
+ * 某一位學生的請求之內，最後被 Cloud Run 的 300 秒逾時切斷，手機顯示
+ * `Load failed`。因此改為「有限等待」：常見情況（gzip 後數 MB、區內上載）
+ * 仍會在請求週期內完成並拿到 CPU；一旦停住，就讓回應先返回，備份留在背景繼續。
+ */
+const BACKUP_WAIT_MS = 5_000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    // 不要讓這個計時器阻止程序結束
+    (timer as { unref?: () => void }).unref?.();
+  });
+}
+
 export async function handleRoute(handler: () => Promise<NextResponse>): Promise<NextResponse> {
   let response: NextResponse;
   try {
@@ -114,7 +133,7 @@ export async function handleRoute(handler: () => Promise<NextResponse>): Promise
   } catch (error) {
     response = toErrorResponse(error);
   }
-  await triggerDueBackup();
+  await Promise.race([triggerDueBackup(), delay(BACKUP_WAIT_MS)]);
   return response;
 }
 
