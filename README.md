@@ -685,7 +685,7 @@ materials/
 | 教師端首頁 | `/teacher` | 題庫概況（題目總數／已發布／草稿／已停用／校內試題待核對／未通過教材核對／待覆核回報）、學生練習記錄數量及常用操作入口 |
 | 題目管理 | `/teacher/questions` | 生成題目預覽（附教材依據）、手動新增／編輯／發布／停用／刪除題目、依分節及狀態篩選、**題目回報覆核**（可按狀態及課題篩選，標記已處理／已略過／重設待覆核；即時生成題目會標示「AI 即時生成題目」及「只存於該次練習，未存入題庫」） |
 | 題目生成與審核 | `/teacher/questions/generate` | 同上，預設捲動至生成區塊，方便直接出題及審核 |
-| 學生練習記錄 | `/teacher/records` | **單一頁面、由上而下一個流程**：篩選 → 本次查詢統計 → 學習者使用概況（可展開）→ 練習記錄（逐題作答）。所有篩選集中在「篩選」卡：上半是**收窄學習者清單**（班別、姓名／學號／電郵搜尋、活動狀態；只影響「學習者」選單及概況清單，不改變已查詢的記錄），下半是**記錄範圍**（課題、學習者、起訖日期）＋查詢／重設＋四種格式匯出。「學習者使用概況」預設**收起**（標題列已顯示「名冊 N 位・本次查詢 X 位有記錄・Y 位尚未開始」），選定學習者後自動收起，逐題記錄緊接統計出現；按「展開名冊」可檢視練習次數、累計答題、答對比率及最近活動（表內數字為**終身累計**，統計方塊才是本次查詢），按「查看記錄」會即時篩選該學習者、展開逐題作答並捲動到「練習記錄」區塊，該學習者沒有記錄時會顯示說明而不是毫無反應；按「查詢記錄」一律捲動到結果（不再停留在名冊列表）。**逐題記錄顯示完整題目**：題幹、選擇題全部選項（A／B／C／D，正確選項以綠框標示，學生所選另有「學生選擇」標記）、學生答案、正確答案、解釋、知識點，以及可展開的「教材依據」（來源位置及原文節錄）；標題列可勾選「只看答錯／未作答」，與學生回顧錯題時不必再逐題掃視答對的題目 |
+| 學生練習記錄 | `/teacher/records` | **單一頁面、由上而下一個流程**：篩選 → 本次查詢統計 → 學習者使用概況（可展開）→ 練習記錄（逐題作答）。所有篩選集中在「篩選」卡：第一行是**收窄學習者清單**（班別、班級、姓名／學號／電郵搜尋）＋**學習者**選單（班別及班級只影響選單與概況清單；選定學習者才會即時查詢），第二行是**記錄範圍**（課題、活動狀態、起訖日期）＋查詢／重設＋四種格式匯出。「班級」＝中一至中六（由名冊班別 `1A` 的級別推導，選了班級後「班別」只列出該級的班）；「學習者」選單按**班級 → 班別 → 班號**排列（班號以數值比較，10 不會排在 9 之前），未列入名冊者排在最後。「學習者使用概況」預設**收起**（標題列已顯示「名冊 N 位・本次查詢 X 位有記錄・Y 位尚未開始」），選定學習者後自動收起，逐題記錄緊接統計出現；按「展開名冊」可檢視練習次數、累計答題、答對比率及最近活動（表內數字為**終身累計**，統計方塊才是本次查詢），按「查看記錄」會即時篩選該學習者、展開逐題作答並捲動到「練習記錄」區塊，該學習者沒有記錄時會顯示說明而不是毫無反應；按「查詢記錄」一律捲動到結果（不再停留在名冊列表）。**逐題記錄顯示完整題目**：題幹、選擇題全部選項（A／B／C／D，正確選項以綠框標示，學生所選另有「學生選擇」標記）、學生答案、正確答案、解釋、知識點，以及可展開的「教材依據」（來源位置及原文節錄）；標題列可勾選「只看答錯／未作答」，與學生回顧錯題時不必再逐題掃視答對的題目 |
 
 #### 練習記錄匯出（CSV／Excel／Word／PDF，2026-10-22）
 
@@ -1847,8 +1847,9 @@ Cloud Run 的容器檔案系統在執行個體停止或重新部署後會清空�
 
 ```text
 容器啟動  →  若雲端有備份且（本機沒有資料庫 或 BACKUP_PREFER_CLOUD=true）→ 下載並還原
-API 請求  →  到期時在請求週期內完成備份（未到期只有兩次 stat，成本極低）：
-             VACUUM INTO 產生一致快照 → 上傳 Cloud Storage
+API 請求  →  到期時在請求週期內觸發備份（未到期只有兩次 stat，成本極低）；
+             最多等 5 秒，停住就讓回應先返回、備份留在背景繼續：
+             VACUUM INTO 產生一致快照 → gzip → 上傳 Cloud Storage
 背景計時器／收到終止訊號  →  額外嘗試備份（Cloud Run 會節流閒置 CPU，故只屬保險）
 ```
 
@@ -1863,7 +1864,8 @@ API 請求  →  到期時在請求週期內完成備份（未到期只有兩次
 | `BACKUP_ENABLED` | `true` | 是否啟用備份（保留 bucket 設定但暫時停用） |
 
 - **不需要任何金鑰**：備份程式在 Cloud Run／GCE 內會向 metadata server 取得存取權杖；只需要把 bucket 的 `roles/storage.objectAdmin` 授予 Cloud Run 的執行身分。
-- **備份在請求週期內執行（重要）**：Cloud Run 只在處理請求時分配 CPU，容器閒置時的背景計時器會被節流（實測會以 `fetch failed` 失敗）；Next.js 亦有自己的 SIGTERM 處理，令關機備份未必來得及完成。因此可靠的機制是 **API 請求期間的到期檢查**（`handleRoute` 內 `await backupIfDue()`）：未到期時成本只是兩次 `stat`，到期才做快照及上載（實測 27 MB 資料庫在區內上載只需數秒）。背景計時器與關機備份仍會嘗試，屬額外保險。
+- **備份在請求週期內「開始」，但不會拖住回應（2026-10-29 修正）**：Cloud Run 只在處理請求時分配 CPU，容器閒置時的背景計時器會被節流（實測會以 `fetch failed` 失敗）；Next.js 亦有自己的 SIGTERM 處理，令關機備份未必來得及完成。因此備份仍由 API 請求的到期檢查觸發，但 `handleRoute` 只**最多等 5 秒**：未到期時成本只是兩次 `stat`，到期且順利完成（gzip 後數 MB、區內上載只需數秒）就在請求內完成，一旦停住就讓回應先返回、備份留在背景繼續。
+  修正前的行為是無上限等待：正式環境日誌顯示一次上載的 4 次嘗試合共 **5 分 28 秒**（`fetch failed: other side closed (UND_ERR_SOCKET)`／`write EPIPE`），全部卡在某一位學生的請求之內，最後被 Cloud Run 的 300 秒逾時切斷，手機顯示 `Load failed`。現時上載先 gzip（34 MB → 約 7 MB，實測壓縮比 0.2）、超時 30 秒、最多 2 次嘗試；還原時以檔頭判斷 gzip 或未壓縮，兩種格式都讀得回來。
 - **還原失敗時暫停上載（2026-10-22 加入的保護）**：啟動還原若失敗（例如冷啟動下載 16 MB 快照逾時），執行個體的資料庫只是一份**全新的空白資料庫**；若照常備份，就會以它覆蓋雲端唯一有效的備份。現在 `backupNow()` 會在 `restore === "failed"` 時停止上載，並在 `/api/health` 的 `persistence.lastError` 及日誌顯示「已暫停上載備份以免覆蓋雲端資料」。下載本身亦已放寬至 300 秒並重試 3 次。
 - **部署後必須覆核還原結果**：`GET /api/health` 的 `persistence.restore` 應為 `restored`，而 `materials.blocks`／`materials.studentVisibleDocuments` 不應為 0。若顯示 `failed`，即代表線上執行個體正使用空白資料庫（此時備份已被保護，不會覆蓋 bucket）：立即以 `gcloud storage cp` 把正確快照重新上載，再觸發一次新 revision。
 - **資料有變更才會上載**：以資料庫檔案（含 `-wal`）的修改時間判斷，沒有變更時完全跳過快照及上載，因此頻繁瀏覽不會產生多餘備份。
@@ -2269,6 +2271,7 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 | Cloud Run 上 `llmProvider` 仍是 `mock` | 容器不會讀取本機 `.env.local` | 部署時一併以 `--set-env-vars` 設定 `LLM_PROVIDER`／`LLM_MODEL` 等（已寫入 cloudbuild.yaml） |
 | 重新部署後題庫、教材、練習記錄消失 | 資料庫位於容器內 `/tmp/data`（映像檔不會保存） | 已內建 Cloud Storage 備份（設定 `BACKUP_BUCKET`，並把 `BACKUP_PREFER_CLOUD=true`）：重新部署後會自動還原上次快照。若未設定，則每次重新部署後需重新匯入教材 |
 | 部署後題庫、教材或練習記錄變成 0（`persistence.restore` 為 `failed`） | 冷啟動下載 16 MB 以上的快照可能逾時（2026-10-22 實測 180 秒逾時），執行個體因此以全新空白資料庫啟動 | 下載已放寬至 300 秒並重試 3 次；還原失敗時**不會**上載備份（避免以空白資料庫覆蓋雲端唯一有效備份）。處理：以 `gcloud storage cp data/exports/<正確快照>.db gs://<專案ID>-history-backup/history/data/app.db` 重新上載，再以 `gcloud run services update … --update-env-vars "BACKUP_ENABLED=true"` 觸發新 revision 還原，並再次確認 `persistence.restore` 為 `restored` |
+| 手機（尤其 iOS Safari）做到一半卡住，然後顯示「發生問題：Load failed」 | WebKit 對「連線被中途切斷」只給這句英文。2026-10-28 的正式環境日誌顯示成因是**資料庫備份上載停在請求之內**：一次上載的 4 次嘗試合共 5 分 28 秒（`UND_ERR_SOCKET`／`EPIPE`），最後被 Cloud Run 的 300 秒逾時切斷。答案其實已寫入 | 已修正：備份改為 gzip、上載超時 30 秒、最多重試 2 次，且 `handleRoute` 最多只等 5 秒就讓回應先返回；前端提交設 90 秒上限，失敗後會自動重讀練習確認是否已記錄。覆核方式：`gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="history-self-study" AND textPayload:"UND_ERR_SOCKET"'` 應不再與使用者請求的延遲同時出現 || 全班同時進入時個別請求回 `429`（`The request was aborted because there was no available instance`） | `min-instances=0` 時，請求到達時執行個體仍在冷啟動（每次要由 Cloud Storage 還原約 34 MB 快照），Cloud Run 等不到可用執行個體就中止請求 | **維持 `min-instances=0`**（決策：不承擔閒置執行個體月費）。已加 `--cpu-boost` 縮短冷啟動，前端亦會自動重試兩次（3 秒、6 秒）並在仍失敗時顯示「伺服器正在啟動」；備份不再拖住新執行個體的第一個請求。若某班際時段反覆出現，臨時做法是 `gcloud run services update history-self-study --region=asia-east2 --min-instances=1`（課後改回 0），或於該時段以 Cloud Scheduler 每 5–10 分鐘呼叫 `/api/health` 保暖 |
 | 匯出練習記錄時 PDF 回 500「伺服器未有可用的中文字型」 | 容器映像沒有包含 `assets/fonts/NotoSansTC-Regular.ttf`（Dockerfile 的 `COPY /app/assets` 被移除，或 `RECORDS_EXPORT_FONT_PATH` 指向不存在的路徑） | 確認映像內有 `/app/assets/fonts/NotoSansTC-Regular.ttf`；Excel／Word／CSV 不受影響，可先改用它們。若要把字型放在其他位置，設定 `RECORDS_EXPORT_FONT_PATH` |
 | 匯出練習記錄的 PDF 中文顯示為空白方格 | 更換了 PDF 字型，而該字型在子集化後缺字形（文字抽取仍正常，故不易察覺） | 以真實渲染器（MuPDF／Acrobat／Chrome）開啟檢查，不要只看文字抽取；依 [assets/fonts/README.md](assets/fonts/README.md) 重新產生字型，並保留 `subset` 行為（不可整份嵌入，否則每份 PDF 多約 7 MB） |
 | 學生登入顯示「名冊暫時無法讀取」 | Sheet 未分享給名冊服務帳戶 | 把 Sheet 分享給 `history-roster-reader@<專案>.iam.gserviceaccount.com`（檢視者） |

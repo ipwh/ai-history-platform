@@ -16,6 +16,69 @@
 
 ---
 
+## [未發布] — 2026-10-29：教師端練習記錄支援「班級」篩選、調整篩選次序及學習者排序
+
+**狀態**：已完成，`npm run lint`／`npm run typecheck`／`npm test` 全綠；**尚未部署**。
+
+### 變更
+
+- **新增「班級」篩選**（緊接「班別」右側）：班級即中一至中六，由名冊班別（`1A`）的級別推導。選定班級後，
+  「班別」只列出該級的班，避免出現「中一＋2A」這種必然沒有結果的組合；由中一改為中二時，
+  若原本選着的班別不屬於新班級會一併清除。與「班別」一樣，它只收窄「學習者」選單及
+  「學習者使用概況」清單，不會改變已查詢的記錄。
+- **「活動狀態」與「學習者」位置互換**：「學習者」上移至第一行（班別／班級／搜尋之後），
+  「活動狀態」移至第二行（課題之後）。兩行下方的說明文字同步改寫，清楚區分哪個控制只收窄清單、
+  哪個會即時查詢。
+- **「學習者」選單改按班號順序排列**：班級 → 班別 → 班號（以數值比較，`10` 不會排在 `9` 之前），
+  未列入名冊者排在最後。原本按最近活動時間排序，老師難以逐班找回學生。
+
+### 新增檔案
+
+- [src/lib/learner-ordering.ts](src/lib/learner-ordering.ts)：班級推導（`1A` → 中一）、班級中文名稱及排序規則的單一事實來源。
+- [tests/learner-ordering.test.ts](tests/learner-ordering.test.ts)：班號數值排序、未列入名冊者排最後、排序不受輸入次序影響。
+
+**驗證**：以本機 dev 伺服器載入 7 位模擬學習者（1A×3、1B、2A、6D、未列入名冊），確認選單次序為
+`1A 01 → 1A 09 → 1A 10 → 1B 02 → 2A 03 → 6D 11 → 未列入名冊`；選「中二」後「班別」只剩 2A；
+由「中二」改回「中一」時已選班別會清除，學習者只剩中一的 4 位。
+
+---
+
+## [未發布] — 2026-10-29：修正「練習到一半卡住，然後顯示 `Load failed`」
+
+**狀態**：程式碼已修正，`npm run lint`／`npm run typecheck`／`npm test`（137 檔、1,700 項）全綠；**尚未部署**。
+
+**根因（由正式環境日誌確認，非猜測）**：資料庫備份在**使用者請求之內**執行，而 33 MB 快照上載
+會「停住約 108 秒」才被對方關閉（`fetch failed: other side closed (UND_ERR_SOCKET)`／`write EPIPE`）。
+`2026-10-27T06:09:27Z → 06:14:55Z` 的 4 次嘗試合共 5 分 28 秒，最後被 Cloud Run 的 300 秒請求逾時
+切斷連線；iOS Safari 對被切斷的連線只給一句 `Load failed`，前端照貼原文，於是出現
+「發生問題：Load failed」。答案其實已經寫入，所以學生重按提交只會看到「已作答」。
+
+旁證：`/api/practice/*/answers` 曾出現 129.3／63.3／50.7 秒；`/api/health` 曾出現 65.9 秒；
+備份上載失敗每日 34–125 次；每日冷啟動 12–26 次（每次要還原約 34 MB），期間曾出現
+`429 The request was aborted because there was no available instance`。
+
+**範圍決定**：`min-instances` **維持 0**（不承擔閒置執行個體月費），因此冷啟動不會消失；
+本次改動的目標是「冷啟動只會慢，不會再變成 5 分鐘的卡死」。冷啟動本身另以 `--cpu-boost` 緩解。
+
+### 修正
+
+| 項目 | 修正 |
+| --- | --- |
+| [src/server/db/backup.ts](src/server/db/backup.ts) | 上載前先 gzip（34 MB → 約 7 MB，實測壓縮比 0.2）；上載逾時由 300 秒縮至 30 秒、重試由 4 次減至 2 次；還原以檔頭判斷 gzip 或未壓縮，兩種格式都讀得回來；「進行中」旗標加入 120 秒失效判定，避免備份在執行個體失去 CPU 後永遠被跳過 |
+| [src/server/http.ts](src/server/http.ts) | `handleRoute` 對備份改為**有限等待**（最多 5 秒）：順利時仍在請求內完成並取得 CPU，停住就讓回應先返回 |
+| [src/lib/api-client.ts](src/lib/api-client.ts)、[src/components/PracticeRunner.tsx](src/components/PracticeRunner.tsx) | `api.post` 支援 `timeoutMs`；提交答案及完成練習設 90 秒上限；失敗後自動重讀練習，若該題其實已記錄就直接顯示回饋，避免重複提交。另：偵測到「非 JSON 的 429／503」（Cloud Run 邊緣層中止冷啟動中的請求，未到達應用程式）時自動重試兩次（3 秒、6 秒），仍失敗才顯示「伺服器正在啟動」 |
+| [src/lib/api-errors.ts](src/lib/api-errors.ts) | 網絡失敗不再只靠 `instanceof TypeError`：`Load failed`／`Failed to fetch` 等訊息亦判為網絡問題，改為顯示中文標題與可行動提示；新增 `unavailable` 類別處理冷啟動中止 |
+| [cloudbuild.yaml](cloudbuild.yaml) | `_MIN_INSTANCES` **維持 `0`**（決策：不承擔閒置執行個體月費），改為在部署指令加 `--cpu-boost`，令冷啟動期間獲配足 CPU、縮短「還原 34 MB」的等待；同時把冷啟動的取捨與替代方案（該時段用 Cloud Scheduler 保暖，或臨時改為 1）寫入註解 |
+
+### 迴歸測試
+
+- [tests/db-backup.test.ts](tests/db-backup.test.ts)：上載內容是 gzip 且解壓後可開啟；雲端備份是 gzip 時仍可還原（相容舊版未壓縮備份）。
+- [tests/db-backup-retry.test.ts](tests/db-backup-retry.test.ts)：重試次數上限為 2；上載內容解壓後是完整 SQLite 資料庫。
+- [tests/api-errors.test.ts](tests/api-errors.test.ts)：`Load failed`（即使不是 `TypeError` 實例）判為網絡問題，訊息不再顯示英文原文。
+- [tests/api-client.test.ts](tests/api-client.test.ts)：冷啟動中止（非 JSON 的 429）會自動重試並在執行個體接手後成功；重試耗盡時回傳 `unavailable` 而不是「回應格式不正確」。
+
+---
+
 ## [未發布] — 2026-10-28：推送即部署（GitHub → Cloud Build → Cloud Run）
 
 **狀態**：已完成並部署。觸發程序 `history-main-push`（`^main$`）已建立並以真實 `git push` 驗證：
