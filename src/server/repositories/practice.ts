@@ -391,6 +391,7 @@ export function listWrongAttempts(options: {
 /** 教師端學習記錄的篩選條件；日期以本地日期字串（YYYY-MM-DD）表示 */
 export interface SessionRecordFilter {
   learnerId?: string | null;
+  learnerIds?: string[];
   topicId?: string | null;
   /** 起始日期（含當日） */
   from?: string | null;
@@ -401,9 +402,15 @@ export interface SessionRecordFilter {
 
 /** 教師端查閱用的練習記錄清單（最新在前，可依學習者、課題及日期篩選） */
 export function listSessionsForRecords(filter: SessionRecordFilter = {}): PracticeSession[] {
+  if (filter.learnerIds?.length === 0) return [];
+
   const conditions: string[] = [];
   const params: string[] = [];
 
+  if (filter.learnerIds) {
+    conditions.push(`learner_id IN (${filter.learnerIds.map(() => "?").join(", ")})`);
+    params.push(...filter.learnerIds);
+  }
   if (filter.learnerId) {
     conditions.push("learner_id = ?");
     params.push(filter.learnerId);

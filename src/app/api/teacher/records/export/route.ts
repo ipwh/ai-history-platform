@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { handleRoute, privateResponseHeaders } from "@/server/http";
 import { requireTeacher } from "@/server/auth/guards";
+import { formLevelLabel } from "@/lib/learner-ordering";
 import { listRecordLearners } from "@/server/repositories/practice";
 import { listStoredRosterStudents } from "@/server/repositories/roster-identities";
 import { getRosterSnapshot } from "@/server/roster";
@@ -9,6 +10,7 @@ import {
   enrichPracticeRecordLabels,
   enrichRecordLearners,
   listPracticeRecords,
+  recordLearnerIdsForFilters,
   recordFilterFromParams,
 } from "@/server/services/practice-records";
 import {
@@ -24,6 +26,10 @@ function describeFilter(params: URLSearchParams, learnerLabel: string | null): s
   const parts: string[] = [];
   const topicId = params.get("topicId")?.trim();
   if (topicId) parts.push(`課題 ${topicId}`);
+  const formLevel = params.get("formLevel")?.trim();
+  if (formLevel) parts.push(`班級 ${formLevelLabel(formLevel)}`);
+  const className = params.get("className")?.trim();
+  if (className) parts.push(`班別 ${className === "__unlisted" ? "未列入名冊" : className}`);
   if (learnerLabel) parts.push(`學習者 ${learnerLabel}`);
   const from = params.get("from")?.trim();
   const to = params.get("to")?.trim();
@@ -46,7 +52,13 @@ export async function GET(request: Request) {
     const rosterStudents = roster.students.length > 0 ? roster.students : listStoredRosterStudents();
     const learners = enrichRecordLearners(listRecordLearners(), rosterStudents);
     const filtered = recordFilterFromParams(params, 2000);
-    const records = enrichPracticeRecordLabels(listPracticeRecords(filtered), learners);
+    const records = enrichPracticeRecordLabels(
+      listPracticeRecords({
+        ...filtered,
+        learnerIds: recordLearnerIdsForFilters(learners, filtered),
+      }),
+      learners,
+    );
     const learner = filtered.learnerId
       ? learners.find((item) => item.learnerId === filtered.learnerId)
       : undefined;

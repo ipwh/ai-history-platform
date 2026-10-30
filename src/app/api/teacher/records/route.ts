@@ -8,6 +8,7 @@ import {
   enrichPracticeRecordLabels,
   enrichRecordLearners,
   listPracticeRecords,
+  recordLearnerIdsForFilters,
   recordFilterFromParams,
 } from "@/server/services/practice-records";
 
@@ -27,8 +28,12 @@ export async function GET(request: Request) {
     // 令歷史練習記錄仍然顯示姓名、班別及學號。
     const rosterStudents = roster.students.length > 0 ? roster.students : listStoredRosterStudents();
     const learners = enrichRecordLearners(listRecordLearners(), rosterStudents);
+    const filter = recordFilterFromParams(params);
     const records = enrichPracticeRecordLabels(
-      listPracticeRecords(recordFilterFromParams(params)),
+      listPracticeRecords({
+        ...filter,
+        learnerIds: recordLearnerIdsForFilters(learners, filter),
+      }),
       learners,
     );
     const topics = listTopics()

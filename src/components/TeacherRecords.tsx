@@ -21,13 +21,22 @@ interface RecordsResponse {
 }
 
 interface Filters {
+  className: string;
+  formLevel: string;
   topicId: string;
   learnerId: string;
   from: string;
   to: string;
 }
 
-const EMPTY_FILTERS: Filters = { topicId: "", learnerId: "", from: "", to: "" };
+const EMPTY_FILTERS: Filters = {
+  className: "",
+  formLevel: "",
+  topicId: "",
+  learnerId: "",
+  from: "",
+  to: "",
+};
 
 function learnerName(learner: PracticeRecordLearner): string {
   return learner.name || learner.email || `匿名 ${learner.learnerId.slice(0, 8)}`;
@@ -73,6 +82,8 @@ function learnerActivity(learner: PracticeRecordLearner): {
 
 function queryString(filters: Filters): string {
   const params = new URLSearchParams();
+  if (filters.className) params.set("className", filters.className);
+  if (filters.formLevel) params.set("formLevel", filters.formLevel);
   if (filters.topicId) params.set("topicId", filters.topicId);
   if (filters.learnerId) params.set("learnerId", filters.learnerId);
   if (filters.from) params.set("from", filters.from);
@@ -285,6 +296,10 @@ export function TeacherRecords() {
   const scopeText = (filters: Filters): string =>
     [
       filters.topicId ? topicLabelById.get(filters.topicId) ?? filters.topicId : "全部課題",
+      filters.formLevel ? `班級${formLevelLabel(filters.formLevel)}` : "",
+      filters.className
+        ? `班別${filters.className === "__unlisted" ? "未列入名冊" : filters.className}`
+        : "",
       filters.learnerId
         ? (() => {
             const learner = learnerById.get(filters.learnerId);
@@ -322,40 +337,46 @@ export function TeacherRecords() {
           <h2 className="font-semibold">篩選</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="text-sm">
-              班別
-              <select
-                value={classFilter}
-                onChange={(event) => {
-                  setClassFilter(event.target.value);
-                  setListLimit(50);
-                }}
-              >
-                <option value="">全部班別</option>
-                {classesForForm.map((className) => (
-                  <option key={className} value={className}>{className}</option>
-                ))}
-                <option value="__unlisted">未列入名冊</option>
-              </select>
-            </label>
-            <label className="text-sm">
               班級
               <select
                 value={formFilter}
                 onChange={(event) => {
                   const nextForm = event.target.value;
+                  const nextClass = classFilter && nextForm && formLevelOf(classFilter) !== nextForm
+                    ? ""
+                    : classFilter;
                   setFormFilter(nextForm);
-                  // 由「中一」改為「中二」時，原本選着的 1A 已不屬於新班級，要一併清除，
-                  // 否則畫面同時套用兩個互斥條件，只會顯示「沒有符合條件的學習者」。
-                  if (classFilter && nextForm && formLevelOf(classFilter) !== nextForm) {
-                    setClassFilter("");
-                  }
+                  setClassFilter(nextClass);
+                  const filters = { ...draft, formLevel: nextForm, className: nextClass };
+                  setDraft(filters);
                   setListLimit(50);
+                  void handleQuery(filters);
                 }}
               >
                 <option value="">全部班級</option>
                 {forms.map((level) => (
                   <option key={level} value={level}>{formLevelLabel(level)}</option>
                 ))}
+              </select>
+            </label>
+            <label className="text-sm">
+              班別
+              <select
+                value={classFilter}
+                onChange={(event) => {
+                  const nextClass = event.target.value;
+                  setClassFilter(nextClass);
+                  const filters = { ...draft, className: nextClass };
+                  setDraft(filters);
+                  setListLimit(50);
+                  void handleQuery(filters);
+                }}
+              >
+                <option value="">全部班別</option>
+                {classesForForm.map((className) => (
+                  <option key={className} value={className}>{className}</option>
+                ))}
+                {!formFilter ? <option value="__unlisted">未列入名冊</option> : null}
               </select>
             </label>
             <label className="text-sm">
@@ -395,8 +416,8 @@ export function TeacherRecords() {
             </label>
           </div>
           <p className="text-xs text-gray-500">
-            「班別」「班級」及搜尋只收窄「學習者」選單及「學習者使用概況」清單，<strong>不會改變已查詢的記錄</strong>；
-            選定「學習者」則會即時查詢他的記錄。要改變記錄範圍請用課題及日期。
+            選擇「班級」或「班別」會即時篩選下方練習記錄及匯出範圍，並收窄「學習者」選單及「學習者使用概況」清單；搜尋只收窄學習者清單。
+            選定「學習者」則會即時查詢他的記錄。
           </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm">

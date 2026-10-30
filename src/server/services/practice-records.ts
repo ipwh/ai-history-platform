@@ -12,6 +12,7 @@ import {
   type PracticeRecordSession,
 } from "../../lib/types";
 import { practiceTopicLabel } from "../../lib/practice-summary";
+import { formLevelOf } from "../../lib/learner-ordering";
 import type { RosterStudent } from "../roster/columns";
 import { getTopic, sectionTitleMap } from "../repositories/topics";
 import {
@@ -23,6 +24,11 @@ import {
 } from "../repositories/practice";
 
 export type { PracticeRecordQuestion, PracticeRecordSession };
+
+export interface PracticeRecordFilter extends SessionRecordFilter {
+  className?: string | null;
+  formLevel?: string | null;
+}
 
 /**
  * 教師端監察只列出真實學生：教師／管理員的測試記錄另有標示，
@@ -185,7 +191,7 @@ function buildSessionRecord(
 }
 
 /** 列出練習記錄（最新在前），供教師端查閱及匯出 */
-export function listPracticeRecords(filter: SessionRecordFilter = {}): PracticeRecordSession[] {
+export function listPracticeRecords(filter: PracticeRecordFilter = {}): PracticeRecordSession[] {
   const sessions = listSessionsForRecords(filter);
   const topicTitles = new Map<string, string>();
   const sectionTitleCache = new Map<string, Map<string, string>>();
@@ -209,15 +215,36 @@ export function listPracticeRecords(filter: SessionRecordFilter = {}): PracticeR
   });
 }
 
+/** 由已配對名冊身分推導班級／班別篩選所涵蓋的學習者 ID。 */
+export function recordLearnerIdsForFilters(
+  learners: PracticeRecordLearner[],
+  filter: Pick<PracticeRecordFilter, "className" | "formLevel">,
+): string[] | undefined {
+  if (!filter.className && !filter.formLevel) return undefined;
+
+  return learners
+    .filter((learner) => {
+      const matchesClass = !filter.className
+        || (filter.className === "__unlisted"
+          ? !learner.className
+          : learner.className === filter.className);
+      const matchesForm = !filter.formLevel || formLevelOf(learner.className) === filter.formLevel;
+      return matchesClass && matchesForm;
+    })
+    .map((learner) => learner.learnerId);
+}
+
 /** 由查詢參數建立篩選條件（教師端 API 共用） */
 export function recordFilterFromParams(
   params: URLSearchParams,
   defaultLimit = 200,
-): SessionRecordFilter {
+): PracticeRecordFilter {
   const limit = Number.parseInt(params.get("limit") ?? String(defaultLimit), 10);
   return {
     topicId: params.get("topicId")?.trim() || null,
     learnerId: params.get("learnerId")?.trim() || null,
+    className: params.get("className")?.trim() || null,
+    formLevel: params.get("formLevel")?.trim() || null,
     from: params.get("from")?.trim() || null,
     to: params.get("to")?.trim() || null,
     limit: Number.isFinite(limit) ? limit : defaultLimit,

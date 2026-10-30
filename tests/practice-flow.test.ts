@@ -455,6 +455,73 @@ describe("學生練習流程（整合測試）", () => {
     expect(learner?.correctCount).toBe(progress.correctAnswers);
   });
 
+  it("班級／班別篩選及記錄查詢只會包括符合的學習者", () => {
+    const rosterStudents = [
+      {
+        email: "one@example.edu.hk",
+        name: "中一學生",
+        className: "1A",
+        studentNumber: "01",
+        inScope: true,
+      },
+      {
+        email: "two@example.edu.hk",
+        name: "中二學生",
+        className: "2B",
+        studentNumber: "02",
+        inScope: true,
+      },
+    ];
+    const scopedLearners = recordsService.enrichRecordLearners([], rosterStudents);
+    const parsedFilter = recordsService.recordFilterFromParams(
+      new URLSearchParams("className=1A&formLevel=1"),
+    );
+    expect(parsedFilter).toMatchObject({ className: "1A", formLevel: "1" });
+
+    expect(
+      recordsService.recordLearnerIdsForFilters(scopedLearners, { formLevel: "1" }),
+    ).toEqual(["school:one@example.edu.hk"]);
+    expect(
+      recordsService.recordLearnerIdsForFilters(scopedLearners, { className: "2B" }),
+    ).toEqual(["school:two@example.edu.hk"]);
+    expect(
+      recordsService.recordLearnerIdsForFilters(scopedLearners, {
+        className: "1A",
+        formLevel: "2",
+      }),
+    ).toEqual([]);
+
+    for (const learnerId of ["school:one@example.edu.hk", "school:two@example.edu.hk"]) {
+      practiceRepo.createSession({
+        learnerId,
+        topicId: "topic-5",
+        sectionIds: [],
+        questionTypes: ["mc"],
+        difficulty: "basic",
+        mode: "standard",
+        sourceSessionId: null,
+        origin: "bank",
+        questions: [],
+        notice: null,
+      });
+    }
+
+    const formLearnerIds = recordsService.recordLearnerIdsForFilters(scopedLearners, {
+      formLevel: "1",
+    });
+    expect(
+      recordsService
+        .listPracticeRecords({ learnerIds: formLearnerIds })
+        .map((record) => record.learnerId),
+    ).toEqual(["school:one@example.edu.hk"]);
+
+    const records = recordsService.listPracticeRecords({ learnerIds: [LEARNER] });
+
+    expect(records.length).toBeGreaterThan(0);
+    expect(records.every((record) => record.learnerId === LEARNER)).toBe(true);
+    expect(recordsService.listPracticeRecords({ learnerIds: [] })).toEqual([]);
+  });
+
   it("教師端學習者清單可按校內電郵配對名冊資料", () => {
     const [enriched] = recordsService.enrichRecordLearners(
       [],

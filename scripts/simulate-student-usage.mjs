@@ -747,7 +747,7 @@ async function checkAnswerFormats(topic) {
   await call("POST", `/api/practice/${practice.session.id}/complete`, { learnerId: LEARNER });
 }
 
-/** 只作答部分題目便完成練習：成績須只計已作答的題目 */
+/** 只作答部分題目便完成練習：成績只計已作答題目，未作答題目不回傳答案 */
 async function checkPartialCompletion(topic) {
   console.log("\n[H] 部分作答後完成");
   const created = await call("POST", "/api/practice", {
@@ -787,10 +787,15 @@ async function checkPartialCompletion(topic) {
     return;
   }
   const result = completed.payload;
+  check(result.totalQuestions === 5, "partial-completion", `總題數 ${result.totalQuestions} 題（應為 5）`);
   check(result.answeredCount === 2, "partial-completion", `已作答 ${result.answeredCount} 題（應為 2）`);
+  check(result.gradedCount === 2, "partial-completion", `已評分 ${result.gradedCount} 題（應為 2）`);
   check(result.correctCount === 2, "partial-completion", `答對 ${result.correctCount} 題（應為 2）`);
-  const unanswered = (result.feedback ?? []).filter((item) => item.isCorrect === null);
-  check(unanswered.length === 3, "partial-completion", `未作答題目 ${unanswered.length} 題（應為 3）`);
+  check(
+    Array.isArray(result.feedback) && result.feedback.length === 2,
+    "partial-completion",
+    `回饋題數 ${result.feedback?.length ?? 0} 題（應只包含 2 題已作答題目）`,
+  );
 }
 
 /**
