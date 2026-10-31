@@ -28,7 +28,7 @@ export const MINIMUM_SUPPORTED_FIREFOX = 111;
 export const SUPPORT_BASELINE_LABEL = "Safari 15.4（iPadOS／iOS 15.4）或以上";
 
 /**
- * 舊裝置提示中列出的必要功能。共同點是 Safari 16.4 才全部支援，
+ * 舊裝置提示中列出的必要功能。共同點是 Safari 15.4 才全部支援，
  * 因此可作為「這個引擎是否能執行本網站」的低成本判別。
  */
 export const REQUIRED_WEB_FEATURES: readonly string[] = [

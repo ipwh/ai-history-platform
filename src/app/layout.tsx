@@ -37,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         {/*
           舊裝置的看門狗（Sprint 23）。伺服器輸出只含「正在載入題目…」；若瀏覽器
-          無法解析 Next.js 的 client bundle（Safari 16.4 以下的引擎），React 永遠不會
+          無法解析 Next.js 的 client bundle（Safari 15.4 以下的引擎），React 永遠不會
           hydrate，畫面便停在載入中而且沒有錯誤訊息。這段腳本刻意只用 ES5 語法，
           因此即使框架 bundle 解析失敗它仍會執行，並在合理等待後顯示可操作的說明。
 

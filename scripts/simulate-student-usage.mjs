@@ -1193,7 +1193,9 @@ async function main() {
   const health = await call("GET", "/api/health");
   if (health.status !== 200) {
     console.error(`無法連線到 ${BASE_URL}（HTTP ${health.status}），請先啟動伺服器。`);
-    process.exit(1);
+    db.close();
+    process.exitCode = 1;
+    return;
   }
   note(`伺服器 LLM provider：${health.payload?.llmProvider}`);
 
@@ -1202,7 +1204,12 @@ async function main() {
   );
   if (topics.length === 0) {
     console.error("沒有可練習的課題。");
-    process.exit(1);
+    for (const item of anomalies.filter((entry) => entry.category === "topics")) {
+      console.error(`  · ${item.message}${item.detail ? `：${JSON.stringify(item.detail)}` : ""}`);
+    }
+    db.close();
+    process.exitCode = 1;
+    return;
   }
 
   console.log(`\n[A] 逐課題測試（${topics.length} 個課題）`);
@@ -1366,7 +1373,7 @@ async function main() {
     check(invalid.status === 400, "report", `無效回報原因回應 ${invalid.status}（應為 400）`);
   }
 
-  console.log("\n[E] 進度、重溫及閱讀教材");
+  console.log("\n[E] 進度、重溫及教材可用性");
   const progress = await call("GET", `/api/progress?learnerId=${LEARNER}`);
   check(progress.status === 200, "progress", `GET /api/progress 回應 ${progress.status}`);
   if (progress.status === 200) {
@@ -1568,7 +1575,7 @@ async function main() {
   console.log(`\n報告：${reportPath}`);
   console.log(`報告（Markdown）：${markdownPath}`);
   db.close();
-  process.exit(anomalies.length === 0 ? 0 : 1);
+  process.exitCode = anomalies.length === 0 ? 0 : 1;
 }
 
 await main();

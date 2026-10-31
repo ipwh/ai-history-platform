@@ -9,7 +9,7 @@ import { UI_TEST_BASE_URL, UI_TEST_IDENTITIES, readTestCookies } from "./test-en
  *
  *   1. **載入失敗必須說得出是甚麼失敗**：以前無論網絡、伺服器、格式或空題目清單，
  *      畫面都只會停在「正在載入題目…」，學生與教師都無法判斷原因。
- *   2. **框架未能啟動時必須有可操作的提示**：Safari 16.4 以下的引擎無法解析
+ *   2. **框架未能啟動時必須有可操作的提示**：Safari 15.4 以下的引擎無法解析
  *      Next.js 的 bundle，若沒有任何提示，學生只會看到永遠不會結束的載入畫面。
  *
  * 這裡用真實的 Next 伺服器、真實 route handler 及真實授權檢查；只有外部失敗
@@ -172,16 +172,16 @@ test("框架未能啟動時（模擬舊引擎無法解析 bundle）顯示可操�
 }) => {
   test.slow();
   // 只封鎖 JavaScript：CSS 仍可載入，重現「頁面有樣式但 React 從未 hydrate」的情況，
-  // 這正是 Safari 16.4 以下引擎無法解析 bundle 時的樣子。
+  // 這正是 Safari 15.4 以下引擎無法解析 bundle 時的樣子。
   await page.route(/\/_next\/static\/.*\.js(\?|$)/, (route) => route.abort("failed"));
   await signIn(page, "student");
 
   await page.goto("/");
   const panel = page.locator("#browser-support-fallback");
-  // 看門狗每 500 毫秒檢查一次、最多 40 次（約 20 秒）
-  await expect(panel).toBeVisible({ timeout: 45_000 });
+  // 看門狗每 500 毫秒檢查一次、最多 120 次（約 60 秒）
+  await expect(panel).toBeVisible({ timeout: 75_000 });
   await expect(panel.getByRole("heading", { name: "練習未能載入" })).toBeVisible();
-  await expect(panel.getByText(/16\.4/).first()).toBeVisible();
+  await expect(panel.getByText(/15\.4/).first()).toBeVisible();
   await expect(panel.getByRole("link", { name: "重新載入" })).toBeVisible();
   // 應用程式內容被隱藏，不會同時顯示沒有內容的載入狀態
   await expect(page.locator("#app-root")).toBeHidden();
