@@ -26,6 +26,33 @@ export const TUTOR_COLLOQUIAL_UTTERANCES: readonly TutorColloquialUtterance[] = 
     category: "history",
   },
   { id: "history-ww2-abbreviation", raw: "WW2 爆發前有咩背景", category: "history" },
+  { id: "history-world-war-1-english", raw: "World War 1 點解會爆？", category: "history" },
+  { id: "history-ww1-spaced-lowercase", raw: "ww 1 嘅成因係咩？", category: "history" },
+  { id: "history-world-war-2-english", raw: "World War II 點解會爆發？", category: "history" },
+  { id: "history-hitler-variant", raw: "希特勒點解可以上台？", category: "history" },
+  { id: "history-sarajevo-local-name", raw: "塞拉耶佛事件係咪一戰導火線？", category: "history" },
+  {
+    id: "history-versailles-simplified-colloquial",
+    raw: "凡尔赛条约点解令德国咁不满？",
+    category: "history",
+  },
+  { id: "history-cold-war-have-no", raw: "冷戰之後有冇發生戰爭？", category: "history" },
+  { id: "history-meiji-coming", raw: "明治維新幾時嚟㗎？", category: "history" },
+  {
+    id: "history-hong-kong-occupation-aspect",
+    raw: "香港喺二戰俾日本佔咗之後，發生咩事？",
+    category: "history",
+  },
+  {
+    id: "history-versailles-written-speech",
+    raw: "凡爾賽條約嘅內容係咪有講賠款？",
+    category: "history",
+  },
+  {
+    id: "history-meiji-negative-cantonese",
+    raw: "明治維新冇令日本變強，點解？",
+    category: "history",
+  },
 
   {
     id: "clarify-treaty",
@@ -50,6 +77,12 @@ export const TUTOR_COLLOQUIAL_UTTERANCES: readonly TutorColloquialUtterance[] = 
   },
   { id: "clarify-pronoun-followup", raw: "佢哋後來點", category: "clarify" },
   { id: "clarify-emperor", raw: "嗰個皇帝呢", category: "clarify" },
+  {
+    id: "clarify-unanchored-pronoun",
+    raw: "佢呢",
+    category: "clarify",
+    notes: "沒有有效歷史上文時不可推測代詞指涉的人物。",
+  },
 
   { id: "reject-python", raw: "幫我寫 python", category: "reject" },
   { id: "reject-weather", raw: "今日天氣點", category: "reject" },

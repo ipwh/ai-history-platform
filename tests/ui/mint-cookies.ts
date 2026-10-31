@@ -27,6 +27,19 @@ async function main() {
       },
       now,
     ),
+    // 只供學伴 UI 測試：以簽署的已核對名冊狀態測試頁面守衛，不改動正式 auth／guards。
+    tutorStudent: encodeSession(
+      {
+        email: UI_TEST_IDENTITIES.tutorStudent,
+        name: "已核對名冊的 UI 測試學生",
+        role: "student",
+        learnerId: `school:${UI_TEST_IDENTITIES.tutorStudent}`,
+        studentNumber: "s2024001",
+        className: "1A",
+        rosterVerified: true,
+      },
+      now,
+    ),
     teacher: encodeSession(
       {
         email: UI_TEST_IDENTITIES.teacher,

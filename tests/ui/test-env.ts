@@ -15,6 +15,7 @@ export const UI_TEST_SECRET = "ui-test-only-secret-value-0123456789abcdef";
 
 export const UI_TEST_IDENTITIES = {
   student: "ui-student-0000001@example.test",
+  tutorStudent: "s2024001@example.test",
   teacher: "ui-teacher@example.test",
   admin: "ui-admin@example.test",
   reviewer: "ui-reviewer@example.test",

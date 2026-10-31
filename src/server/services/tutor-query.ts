@@ -10,8 +10,13 @@ const NORMALIZATION_RULES: readonly [RegExp, string][] = [
   [/點解/g, "為什麼"],
   [/係咩|系咩/g, "是什麼"],
   [/係咪|系咪/g, "是否"],
+  // 先收斂「有冇」，再處理句中獨立的「冇」。
+  [/有冇/g, "是否有"],
+  [/冇/g, "沒有"],
   [/點樣/g, "如何"],
   [/點罰/g, "如何懲罰"],
+  // 對齊本校教材的香港常用譯名。
+  [/希特勒/g, "希特拉"],
   [/爆出嚟|爆出黎/g, "爆發"],
   [/爆出来/g, "爆發"],
   [/(第一次世界大戰|第二次世界大戰|一戰|二戰)會爆/g, "$1爆發"],
@@ -19,12 +24,17 @@ const NORMALIZATION_RULES: readonly [RegExp, string][] = [
   [/改了什么/g, "有什麼改變"],
   [/有咩分別/g, "有什麼分別"],
   [/咩分別/g, "什麼分別"],
+  // 把帶出施事者的口語「俾…佔咗」轉成教材常見的被動表達。
+  [/俾(日本|日軍|英國|英軍|德國|德軍)佔咗?/g, "被$1佔領"],
   [/邊個最勁/g, "哪一位最具影響"],
   [/俾人佔咗|俾人佔/g, "被佔領"],
   [/做咗乜/g, "做了什麼"],
   [/做了什么/g, "做了什麼"],
   [/啲學生/g, "學生"],
   [/講吓/g, "說明"],
+  // 常見廣東話完成體及趨向補語，只做字面收斂。
+  [/嚟/g, "來"],
+  [/咗/g, "了"],
   [/嗰三個/g, "那三位"],
   [/嗰個/g, "那個"],
   [/嗰陣/g, "當時"],
@@ -120,9 +130,12 @@ const EXPLICITLY_NON_HISTORY_PATTERNS = [
 ];
 
 function normalizedEnglishTerms(raw: string): string {
+  // 接受常見全名、縮寫、大小寫及空格／連字號變體。
   return raw
-    .replace(/\b(?:ww1|wwi)\b/gi, "第一次世界大戰")
-    .replace(/\b(?:ww2|wwii)\b/gi, "第二次世界大戰")
+    .replace(/\bworld\s+war\s+(?:1|i)\b/gi, "第一次世界大戰")
+    .replace(/\bworld\s+war\s+(?:2|ii)\b/gi, "第二次世界大戰")
+    .replace(/\bww[\s-]*1\b|\bwwi\b/gi, "第一次世界大戰")
+    .replace(/\bww[\s-]*2\b|\bwwii\b/gi, "第二次世界大戰")
     .replace(/\bcold[\s-]+war\b/gi, "冷戰");
 }
 
@@ -144,6 +157,8 @@ export function isClearlyNonHistoryTutorQuery(raw: string): boolean {
 export function hasWeakHistorySignal(raw: string): boolean {
   const normalized = normalizeTutorQuery(raw);
   return (
+    // 只把完整的短代詞回合視為待澄清訊號，不推測其指涉人物。
+    /^(?:佢|佢哋|嗰個|嗰位)(?:呢|呀|咧|嗎|嘛)?[？?！!。…]*$/.test(normalized.trim()) ||
     /(?:公元前|公元|西元)?\d{1,4}(?:年|世紀|年代)|\b(?:1[0-9]{3}|20[0-2][0-9])\b/.test(
       normalized,
     ) ||
