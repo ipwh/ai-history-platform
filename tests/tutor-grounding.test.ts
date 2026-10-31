@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { normalizeTutorQuery } from "@/server/services/tutor-query";
 import { freshTestDatabasePath } from "./test-database";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("tutor-grounding");
@@ -543,6 +544,15 @@ describe("學伴教材依據：資料庫檢索（只使用已開放給學生的�
     expect(grounding.sources[0]?.documentLabel).toContain("課題9");
     expect(grounding.sources[0]?.location).toMatch(/^第\d+段$/);
     expect(grounding.sources[0]?.excerpt.length).toBeLessThanOrEqual(60);
+  });
+
+  it("口語提問正規化後仍可找到凡爾賽條約教材依據", () => {
+    const grounding = groundingModule.findTutorGrounding(
+      normalizeTutorQuery("凡爾賽條約點罰德國㗎"),
+    );
+    expect(grounding.status).toBe("grounded");
+    expect(grounding.topicId).toBe("topic-9");
+    expect(grounding.passages.map((passage) => passage.promptText).join("\n")).toContain("賠款");
   });
 
   it("截圖中的簡體時序問題可找到文藝復興教材依據", () => {

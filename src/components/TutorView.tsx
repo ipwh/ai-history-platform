@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import type { TutorGroundingStatus, TutorSource, TutorTermNote } from "@/lib/types";
-import { parseTutorQuestionSuggestions } from "@/lib/tutor-question-suggestions";
+import {
+  parseTutorQuestionSuggestions,
+  type TutorQuestionCandidate,
+} from "@/lib/tutor-question-suggestions";
 
 interface TutorMessage {
   role: "user" | "assistant";
@@ -14,6 +17,7 @@ interface TutorMessage {
   grounding?: TutorGroundingStatus;
   topicTitle?: string | null;
   termNotes?: TutorTermNote[];
+  candidates?: TutorQuestionCandidate[];
 }
 
 interface TutorState {
@@ -268,9 +272,7 @@ export function TutorView({
     }
   }
 
-  async function sendMessage(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const message = input.trim();
+  async function submitMessage(message: string) {
     if (message.length === 0 || sending || quota.remaining <= 0) return;
 
     setInput("");
@@ -309,6 +311,8 @@ export function TutorView({
           sessionId: string | null;
           remaining: number;
           dailyLimit: number;
+          clarify?: boolean;
+          candidates?: TutorQuestionCandidate[];
         };
         // 離題回覆（onTopic=false）也會在伺服器建立對話紀錄；必須沿用同一個 session，
         // 否則該輪離題對話在重新載入後會看不到（下一次提問會另開新對話）。
@@ -320,7 +324,16 @@ export function TutorView({
             // 未能保存時仍可繼續本次對話，只是重新載入後會回到上一個工作階段。
           }
         }
-        setMessages((current) => [...current, { role: "assistant", content: payload.reply }]);
+        setMessages((current) => [
+          ...current,
+          {
+            role: "assistant",
+            content: payload.reply,
+            ...(payload.clarify === true && Array.isArray(payload.candidates)
+              ? { candidates: payload.candidates }
+              : {}),
+          },
+        ]);
         setQuota({ remaining: payload.remaining, dailyLimit: payload.dailyLimit });
         return;
       }
@@ -433,6 +446,11 @@ export function TutorView({
     }
   }
 
+  async function sendMessage(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitMessage(input.trim());
+  }
+
   function chooseQuestionSuggestion(question: string) {
     setInput(question);
     inputRef.current?.focus();
@@ -537,6 +555,30 @@ export function TutorView({
                         onClick={() => chooseQuestionSuggestion(suggestion)}
                       >
                         {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {message.candidates && message.candidates.length > 0 ? (
+                <div className="mt-3 space-y-2" aria-label="可選的歷史提問">
+                  <p className="text-sm text-gray-600">
+                    點選一個方向會以該問題繼續查詢；你也可以自行改寫問題：
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {message.candidates.map((candidate) => (
+                      <button
+                        key={candidate.id}
+                        type="button"
+                        className="btn text-left text-sm"
+                        disabled={sending || inputBlocked || loading}
+                        aria-label={`以「${candidate.suggestedQuestion}」繼續提問`}
+                        onClick={() => void submitMessage(candidate.suggestedQuestion)}
+                      >
+                        <span className="block font-semibold">{candidate.label}</span>
+                        <span className="block text-xs font-normal text-gray-600">
+                          {candidate.suggestedQuestion}
+                        </span>
                       </button>
                     ))}
                   </div>

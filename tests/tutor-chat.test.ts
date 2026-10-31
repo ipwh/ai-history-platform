@@ -5,6 +5,7 @@ import {
   getTutorMessages,
   saveTutorMessage,
 } from "@/server/repositories/tutor";
+import { upsertSection, upsertTopic } from "@/server/repositories/topics";
 import { ensureLearner } from "@/server/repositories/learners";
 import { reserveAiOperation } from "@/server/services/ai-limits";
 import {
@@ -15,6 +16,7 @@ import {
   tutorDailyUsage,
 } from "@/server/services/tutor";
 import { freshTestDatabasePath } from "./test-database";
+import { TUTOR_COLLOQUIAL_UTTERANCES } from "./fixtures/tutor-colloquial-utterances";
 
 process.env.APP_DATABASE_PATH = freshTestDatabasePath("tutor-chat");
 process.env.AUTH_SECRET = "tutor-test-secret-012345678901234567890";
@@ -114,9 +116,60 @@ function mockStreamingAnswer(answer = "你認為條約如何影響德國？"): R
   return new Response(events, { status: 200, headers: { "content-type": "text/event-stream" } });
 }
 
+function countRows(table: "ai_operations" | "tutor_messages"): number {
+  const row = getDb().prepare(`SELECT COUNT(*) AS count FROM ${table}`).get() as
+    | { count: number }
+    | undefined;
+  return Number(row?.count ?? 0);
+}
+
 beforeAll(async () => {
   ({ POST: postChat, GET: getChat } = await import("@/app/api/tutor/chat/route"));
   getDb = (await import("@/server/db/connection")).getDb;
+
+  upsertTopic({
+    id: "topic-9",
+    title: "課題9：20世紀的國際紛爭及危機－兩次世界大戰",
+    published: true,
+    order: 9,
+  });
+  upsertTopic({ id: "topic-5", title: "課題5：近代歐洲的興起", published: true, order: 5 });
+  upsertTopic({ id: "topic-10", title: "課題10：冷戰及後冷戰時代", published: true, order: 10 });
+  upsertSection({
+    id: "topic-9-versailles",
+    topicId: "topic-9",
+    title: "凡爾賽條約的內容",
+    matchKeywords: ["德國", "戰後安排"],
+    order: 1,
+  });
+  upsertSection({
+    id: "topic-9-ww1",
+    topicId: "topic-9",
+    title: "第一次世界大戰的起因",
+    matchKeywords: ["戰爭爆發", "WW1"],
+    order: 2,
+  });
+  upsertSection({
+    id: "topic-5-renaissance",
+    topicId: "topic-5",
+    title: "文藝復興藝術",
+    matchKeywords: ["藝術三傑", "人文主義"],
+    order: 1,
+  });
+  upsertSection({
+    id: "topic-5-meiji",
+    topicId: "topic-5",
+    title: "明治維新",
+    matchKeywords: ["改革"],
+    order: 2,
+  });
+  upsertSection({
+    id: "topic-10-cold-war",
+    topicId: "topic-10",
+    title: "冷戰的發展",
+    matchKeywords: ["國際關係", "兩德統一"],
+    order: 1,
+  });
 });
 
 beforeEach(() => {
@@ -130,6 +183,110 @@ beforeEach(() => {
 });
 
 describe("AI 歷史自學學伴 API", () => {
+  it.each(
+    TUTOR_COLLOQUIAL_UTTERANCES.filter(
+      (utterance) => utterance.category === "history" || utterance.category === "homework",
+    ),
+  )("$id：歷史口語／作業提問通過硬閘、保留原文並進入 LLM 正常流程", async ({ raw, category }) => {
+    const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(requestFor("POST", STUDENT_A, { message: raw }));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    expect(requestBody.messages.at(-1)).toEqual({ role: "user", content: raw });
+    if (category === "homework") {
+      expect(requestBody.messages[0]?.content).toContain("不直接代做功課");
+      expect(requestBody.messages[0]?.content).toContain("提出引導問題");
+      expect(requestBody.messages[0]?.content).toContain("不可提供可直接提交的完整作業答案");
+    }
+
+    await response.text();
+    const sessionId = response.headers.get("x-tutor-session-id");
+    expect(getTutorMessages(sessionId ?? "").find((message) => message.role === "user")?.content).toBe(
+      raw,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(tutorDailyUsage(STUDENT_A).used).toBe(1);
+  });
+
+  it.each(
+    TUTOR_COLLOQUIAL_UTTERANCES.filter((utterance) => utterance.category === "clarify"),
+  )("$id：含混歷史語料回傳澄清選項，選擇後走正常提問流程", async ({ raw }) => {
+    const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const clarification = await postChat(requestFor("POST", STUDENT_A, { message: raw }));
+    expect(clarification.status).toBe(200);
+    expect(clarification.headers.get("content-type")).toContain("application/json");
+    const payload = (await clarification.json()) as {
+      clarify: boolean;
+      reply: string;
+      candidates: Array<{ id: string; label: string; suggestedQuestion: string }>;
+      sessionId: string | null;
+      remaining: number;
+      dailyLimit: number;
+    };
+    expect(payload.clarify).toBe(true);
+    expect(payload.candidates.length).toBeGreaterThanOrEqual(2);
+    expect(payload.candidates.length).toBeLessThanOrEqual(4);
+    expect(payload.candidates.every((candidate) => candidate.suggestedQuestion.endsWith("？"))).toBe(
+      true,
+    );
+    expect(payload.reply).toContain("自行改寫");
+    expect(payload.remaining).toBe(15);
+    expect(payload.dailyLimit).toBe(15);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(tutorDailyUsage(STUDENT_A).used).toBe(0);
+    expect(countRows("ai_operations")).toBe(0);
+    expect(countRows("tutor_messages")).toBe(0);
+    expect(payload.sessionId).toBeNull();
+
+    const selected = payload.candidates[0];
+    expect(selected).toBeDefined();
+    const followUp = await postChat(
+      requestFor("POST", STUDENT_A, {
+        message: selected!.suggestedQuestion,
+        ...(payload.sessionId ? { sessionId: payload.sessionId } : {}),
+      }),
+    );
+    expect(followUp.status).toBe(200);
+    expect(followUp.headers.get("content-type")).toContain("text/event-stream");
+    await followUp.text();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(tutorDailyUsage(STUDENT_A).used).toBe(1);
+    expect(countRows("ai_operations")).toBe(1);
+  });
+
+  it.each(TUTOR_COLLOQUIAL_UTTERANCES.filter((utterance) => utterance.category === "reject"))(
+    "$id：明確離題固定拒答，不澄清、不呼叫 LLM、不扣日額",
+    async ({ raw }) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await postChat(requestFor("POST", STUDENT_A, { message: raw }));
+      const payload = (await response.json()) as {
+        clarify?: boolean;
+        reply: string;
+        remaining: number;
+      };
+
+      expect(response.status).toBe(200);
+      expect(payload.clarify).not.toBe(true);
+      expect(payload.reply).toBe(
+        "我是你的歷史科自學學伴，只能討論歷史科相關話題喔！你可以告訴我你想探討哪一個歷史事件或課題嗎？",
+      );
+      expect(payload.remaining).toBe(15);
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(tutorDailyUsage(STUDENT_A).used).toBe(0);
+      expect(countRows("ai_operations")).toBe(0);
+    },
+  );
+
   it("以香港時區計算每日限額重置時間", () => {
     expect(hongKongDayStart(new Date("2026-10-25T16:00:00.000Z"))).toBe(
       "2026-10-26T00:00:00.000+08:00",
@@ -233,10 +390,8 @@ describe("AI 歷史自學學伴 API", () => {
     },
   );
 
-  it("含糊歷史問題會提供可選方向，並清除不適用的教材標示", async () => {
-    const answer =
-      "我未能確定你想問的方向。\n【可選提問方向】\n1. 極權主義有哪些主要特徵？\n2. 法西斯主義和納粹主義有甚麼分別？";
-    const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer(answer));
+  it("含糊歷史問題直接回傳課程澄清方向，不呼叫主回答 LLM", async () => {
+    const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
     const response = await postChat(
@@ -244,17 +399,16 @@ describe("AI 歷史自學學伴 API", () => {
     );
 
     expect(response.status).toBe(200);
-    const requestBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
-      messages: Array<{ role: string; content: string }>;
+    const payload = (await response.json()) as {
+      clarify: boolean;
+      candidates: Array<{ id: string; label: string; suggestedQuestion: string }>;
+      remaining: number;
     };
-    expect(requestBody.messages[0]?.content).toContain("【可選提問方向】");
-    await response.text();
-
-    const sessionId = response.headers.get("x-tutor-session-id");
-    const assistant = getTutorMessages(sessionId ?? "").find((message) => message.role === "assistant");
-    expect(assistant?.groundingStatus).toBe("not-covered");
-    expect(assistant?.sources).toEqual([]);
-    expect(assistant?.content).toContain("【可選提問方向】");
+    expect(payload.clarify).toBe(true);
+    expect(payload.candidates.length).toBeGreaterThanOrEqual(2);
+    expect(payload.candidates.length).toBeLessThanOrEqual(4);
+    expect(payload.remaining).toBe(15);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("未登入學生回傳 401", async () => {

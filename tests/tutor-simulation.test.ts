@@ -432,12 +432,29 @@ describe("B. 硬閘、輸入驗證與短跟進", () => {
     expect(tutorDailyUsage(STUDENT).used).toBe(0);
   });
 
-  it("只有年份也是歷史提問（放行），全新對話的短跟進仍被擋", async () => {
+  it("含混年份提供歷史澄清，具體年份問題放行，全新對話的短跟進仍被擋", async () => {
     const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer("你先想想當時的國際局勢。"));
     vi.stubGlobal("fetch", fetchMock);
 
+    const vagueYear = await postChat(
+      request("POST", { learnerId: STUDENT, body: { message: "1914年" } }),
+    );
+    const clarification = (await vagueYear.json()) as {
+      clarify?: boolean;
+      candidates?: Array<{ suggestedQuestion: string }>;
+      remaining: number;
+    };
+    expect(vagueYear.status).toBe(200);
+    expect(clarification.clarify).toBe(true);
+    expect(clarification.candidates?.length).toBeGreaterThanOrEqual(2);
+    expect(clarification.remaining).toBe(15);
+    expect(fetchMock).not.toHaveBeenCalled();
+
     const dated = await postChat(
-      request("POST", { learnerId: STUDENT, body: { message: "1914年發生甚麼事？" } }),
+      request("POST", {
+        learnerId: STUDENT,
+        body: { message: "第一次世界大戰於1914年發生甚麼事？" },
+      }),
     );
     expect(dated.status).toBe(200);
     await dated.text();

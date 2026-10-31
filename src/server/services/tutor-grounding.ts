@@ -753,6 +753,9 @@ export function buildTutorSystemPrompt(input: {
   glossary?: TutorGlossaryTerm[];
 }): string {
   const sections: string[] = [TUTOR_BASE_SYSTEM_PROMPT];
+  sections.push(
+    "【作業支援】即使學生要求列點、長篇或可直接抄寫內容，也不可提供可直接提交的完整作業答案；改提供答題框架或少量提示，再以引導問題讓學生自行組織及撰寫。",
+  );
   const glossary = input.glossary ?? [];
   if (glossary.length > 0) {
     const terms = glossary

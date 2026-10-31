@@ -3,7 +3,10 @@ import { z } from "zod";
 
 import { requireStudentOrTeacher } from "@/server/auth/guards";
 import { getServerConfig } from "@/server/config";
-import { parseTutorQuestionSuggestions } from "@/lib/tutor-question-suggestions";
+import {
+  parseTutorQuestionSuggestions,
+  type TutorQuestionCandidate,
+} from "@/lib/tutor-question-suggestions";
 import {
   createTutorSession,
   countTutorMessages,
@@ -26,6 +29,14 @@ import {
   tutorDailyUsage,
   tutorTurnsForContext,
 } from "@/server/services/tutor";
+import {
+  buildClarifyCandidates,
+  hasWeakHistorySignal,
+  isClearlyNonHistoryTutorQuery,
+  isUnclearTutorQuery,
+  normalizeTutorQuery,
+  TUTOR_QUERY_CLARIFY_REPLY,
+} from "@/server/services/tutor-query";
 import {
   answerDeclaresNotCovered,
   buildTutorGlossary,
@@ -141,13 +152,48 @@ export async function POST(request: Request) {
 
     // 課程索引（已發布課題及分節）：主題硬閘及教材依據共用，只需讀取一次。
     const curriculum = loadTutorCurriculumIndex();
+    const normalizedMessage = normalizeTutorQuery(body.message);
+    const hasValidHistoryContext =
+      history.length > 0 &&
+      sessionId !== null &&
+      isTutorSessionLastTurnOnTopic(sessionId);
+    const explicitlyNonHistory = isClearlyNonHistoryTutorQuery(body.message);
+    const hasHistorySignal = hasWeakHistorySignal(normalizedMessage);
     const isOnTopic =
-      isHistoryTopicPrompt(body.message) ||
-      matchesCurriculumTerms(curriculum, body.message) ||
-      (history.length > 0 &&
-        sessionId !== null &&
-        isTutorSessionLastTurnOnTopic(sessionId) &&
-        isShortHistoryFollowUp(body.message));
+      !explicitlyNonHistory &&
+      (isHistoryTopicPrompt(normalizedMessage) ||
+        matchesCurriculumTerms(curriculum, normalizedMessage) ||
+        (history.length > 0 &&
+          sessionId !== null &&
+          hasValidHistoryContext &&
+          isShortHistoryFollowUp(normalizedMessage)));
+
+    const unclear = isUnclearTutorQuery(
+      normalizedMessage,
+      curriculum,
+      hasValidHistoryContext,
+    );
+    const promptHistory = answeredTurnsOnly(tutorTurnsForContext(history));
+    const groundingContext = promptHistory
+      .filter((message) => message.role === "user")
+      .map((message) => normalizeTutorQuery(message.content));
+    if (!explicitlyNonHistory && !isOnTopic && hasHistorySignal) {
+      const candidates: TutorQuestionCandidate[] = buildClarifyCandidates(
+        body.message,
+        groundingContext,
+        curriculum,
+      );
+      return jsonOk({
+        clarify: true,
+        reply: TUTOR_QUERY_CLARIFY_REPLY,
+        candidates,
+        sessionId,
+        ...tutorDailyUsage(learnerId),
+        dailyLimit: TUTOR_DAILY_LIMIT,
+      });
+    }
+
+    // 在檢查 LLM 設定、每日額度及預留 AI 用量前先完成本地教材檢索，讓含混提問只會觸發澄清。
     if (!isOnTopic) {
       // 離題也要留痕（決策 2）：學生重新載入後仍看到自己問過甚麼及平台的引導句。
       // assistant 訊息標記 `off-topic`，因此不計每日額度，亦不會成為下一輪的模型上文。
@@ -161,6 +207,23 @@ export async function POST(request: Request) {
       return jsonOk({
         onTopic: false,
         reply: TUTOR_OFF_TOPIC_REPLY,
+        sessionId,
+        ...tutorDailyUsage(learnerId),
+        dailyLimit: TUTOR_DAILY_LIMIT,
+      });
+    }
+
+    const grounding = findTutorGrounding(normalizedMessage, groundingContext, curriculum);
+    if (unclear) {
+      return jsonOk({
+        clarify: true,
+        reply: TUTOR_QUERY_CLARIFY_REPLY,
+        candidates: buildClarifyCandidates(
+          body.message,
+          groundingContext,
+          curriculum,
+          grounding.topicId,
+        ),
         sessionId,
         ...tutorDailyUsage(learnerId),
         dailyLimit: TUTOR_DAILY_LIMIT,
@@ -212,12 +275,6 @@ export async function POST(request: Request) {
     // 找不到時仍會回答，但提示詞要求模型先說「我在教材片段中找不到這部分」，
     // 並禁止斷言課本「沒有提及」（模型只看得到片段，看不到整本課本）。
     // 上下文只包含「有回覆」的提問：失敗的提問不可令模型在下一輪一併回答（見 answeredTurnsOnly）。
-    const promptHistory = answeredTurnsOnly(tutorTurnsForContext(history));
-    const grounding = findTutorGrounding(
-      body.message,
-      promptHistory.filter((message) => message.role === "user").map((message) => message.content),
-      curriculum,
-    );
     const glossary = buildTutorGlossary(
       grounding.topicId,
       [body.message, ...grounding.passages.map((passage) => passage.promptText)].join("\n"),

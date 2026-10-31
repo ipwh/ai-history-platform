@@ -1,6 +1,12 @@
 const SUGGESTION_HEADING = "【可選提問方向】";
 const SUGGESTION_LINE = /^\s*(?:\d{1,2}[.．、)]|[一二三][、.．])\s*(.+?)\s*$/;
 
+export interface TutorQuestionCandidate {
+  id: string;
+  label: string;
+  suggestedQuestion: string;
+}
+
 export interface ParsedTutorQuestionSuggestions {
   content: string;
   suggestions: string[];
