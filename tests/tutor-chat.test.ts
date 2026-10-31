@@ -11,6 +11,7 @@ import {
   answeredTurnsOnly,
   hongKongDayStart,
   hongKongTimestamp,
+  isShortHistoryFollowUp,
   tutorDailyUsage,
 } from "@/server/services/tutor";
 import { freshTestDatabasePath } from "./test-database";
@@ -178,6 +179,83 @@ describe("AI 歷史自學學伴 API", () => {
       expect(fetchMock).toHaveBeenCalledTimes(0);
     },
   );
+
+  it("簡體字的歷史問題不會被主題閘誤判為離題", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(
+      requestFor("POST", STUDENT_A, {
+        message: "文艺复兴中所有历史事件的顺序是什么",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await response.text();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    "文艺复兴系咩来？",
+    "文藝復興中所有歷史事件的順序是什麼",
+    "二战点解会打起来？",
+    "希特拉個人做咗乜？",
+    "咁希特拉佢有咩做過？",
+    "法西斯同納粹係咪一樣嘢？",
+    "南京條約嗰個係割咗邊度",
+    "五四嗰時啲學生做乜",
+  ])("模擬學生以口語、錯字或簡體提問「%s」仍可進入學伴", async (message) => {
+    const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(requestFor("POST", STUDENT_A, { message }));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    await response.text();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    "咁跟住呢？",
+    "跟住点？",
+    "然后呢",
+    "之後點呀？",
+    "咁之後發生咩事？",
+    "咁佢最後點？",
+    "咁呢個有咩影響？",
+    "後來呢？",
+    "有咩結果？",
+  ])(
+    "常見口語跟進「%s」可沿用已建立的歷史對話",
+    (message) => {
+      expect(isShortHistoryFollowUp(message)).toBe(true);
+    },
+  );
+
+  it("含糊歷史問題會提供可選方向，並清除不適用的教材標示", async () => {
+    const answer =
+      "我未能確定你想問的方向。\n【可選提問方向】\n1. 極權主義有哪些主要特徵？\n2. 法西斯主義和納粹主義有甚麼分別？";
+    const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer(answer));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(
+      requestFor("POST", STUDENT_A, { message: "極權主義嗰啲嘢係點？" }),
+    );
+
+    expect(response.status).toBe(200);
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    expect(requestBody.messages[0]?.content).toContain("【可選提問方向】");
+    await response.text();
+
+    const sessionId = response.headers.get("x-tutor-session-id");
+    const assistant = getTutorMessages(sessionId ?? "").find((message) => message.role === "assistant");
+    expect(assistant?.groundingStatus).toBe("not-covered");
+    expect(assistant?.sources).toEqual([]);
+    expect(assistant?.content).toContain("【可選提問方向】");
+  });
 
   it("未登入學生回傳 401", async () => {
     const response = await postChat(requestFor("POST", null, { message: "一戰的起因是甚麼？" }));

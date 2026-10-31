@@ -256,6 +256,9 @@ describe("學伴教材依據：課題推斷", () => {
       ]),
     };
     expect(groundingModule.matchesCurriculumTerms(index, "我想知道極權主義的特點")).toBe(true);
+    expect(
+      groundingModule.matchesCurriculumTerms(index, "文艺复兴中所有历史事件的顺序是什么"),
+    ).toBe(true);
     expect(groundingModule.matchesCurriculumTerms(index, "今天天氣如何")).toBe(false);
     expect(groundingModule.matchesCurriculumTerms(index, "幫我寫 Python")).toBe(false);
   });
@@ -264,6 +267,32 @@ describe("學伴教材依據：課題推斷", () => {
     expect(
       groundingModule.guessTutorTopic("凡爾賽條約如何約束德國？", topics, sections)?.topicId,
     ).toBe("topic-9");
+  });
+
+  it("簡體字提問可依繁體課程用語推斷課題及抽取教材查詢詞", () => {
+    const message = "文艺复兴中所有历史事件的顺序是什么";
+    expect(
+      groundingModule.guessTutorTopic(message, topics, sections)?.topicId,
+    ).toBe("topic-5");
+    expect(
+      groundingModule.extractQueryTerms(message).some((term) => term.term === "文藝復興"),
+    ).toBe(true);
+  });
+
+  it("常見簡體歷史概念可抽取為課本慣用查詢詞", () => {
+    const terms = groundingModule.extractQueryTerms("法西斯主义与纳粹主义有什么分别");
+    const extracted = new Set(terms.map((term) => term.term));
+    expect(extracted.has("法西斯主義")).toBe(true);
+    expect(extracted.has("納粹主義")).toBe(true);
+  });
+
+  it("口語的成因、比較及排序用詞會展開成教材查詢詞", () => {
+    const terms = (message: string) =>
+      new Set(groundingModule.extractQueryTerms(message).map((term) => term.term));
+    expect(terms("二戰點解會打起？").has("起因")).toBe(true);
+    expect(terms("法西斯同納粹咩分別？").has("異同")).toBe(true);
+    expect(terms("文藝復興所有事件順序係點？").has("時序")).toBe(true);
+    expect(terms("點解？").has("起因")).toBe(false);
   });
 
   it("分節關鍵詞亦可推斷課題", () => {
@@ -514,6 +543,16 @@ describe("學伴教材依據：資料庫檢索（只使用已開放給學生的�
     expect(grounding.sources[0]?.documentLabel).toContain("課題9");
     expect(grounding.sources[0]?.location).toMatch(/^第\d+段$/);
     expect(grounding.sources[0]?.excerpt.length).toBeLessThanOrEqual(60);
+  });
+
+  it("截圖中的簡體時序問題可找到文藝復興教材依據", () => {
+    const grounding = groundingModule.findTutorGrounding(
+      "文艺复兴中所有历史事件的顺序是什么",
+    );
+    expect(grounding.status).toBe("grounded");
+    expect(grounding.topicId).toBe("topic-5");
+    expect(grounding.sources.length).toBeGreaterThan(0);
+    expect(grounding.passages.map((passage) => passage.promptText).join("\n")).toContain("人文主義");
   });
 
   it("校內試題檔及未確認版權的文件不會被引用", () => {

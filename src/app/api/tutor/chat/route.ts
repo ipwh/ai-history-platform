@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { requireStudentOrTeacher } from "@/server/auth/guards";
 import { getServerConfig } from "@/server/config";
+import { parseTutorQuestionSuggestions } from "@/lib/tutor-question-suggestions";
 import {
   createTutorSession,
   countTutorMessages,
@@ -374,10 +375,14 @@ export async function POST(request: Request) {
           if (!cancelled) controller.enqueue(sseEvent("error", { error: failureMessage }));
         } else {
           const termNotes = detectTermMismatches(completeAnswer);
+          const hasQuestionSuggestions =
+            parseTutorQuestionSuggestions(completeAnswer).suggestions.length >= 2;
           // 模型自己說「找不到教材依據」時，標示必須一致：不可同時顯示「已對照課本教材」。
           const declaresNotCovered = answerDeclaresNotCovered(completeAnswer);
-          const finalStatus = declaresNotCovered ? "not-covered" : grounding.status;
-          const finalSources = declaresNotCovered ? [] : grounding.sources;
+          const finalStatus =
+            hasQuestionSuggestions || declaresNotCovered ? "not-covered" : grounding.status;
+          const finalSources =
+            hasQuestionSuggestions || declaresNotCovered ? [] : grounding.sources;
           saveTutorMessage(activeSessionId, "assistant", completeAnswer, hongKongTimestamp(), 0, {
             sources: finalSources,
             groundingStatus: finalStatus,

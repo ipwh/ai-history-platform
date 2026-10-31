@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import type { TutorGroundingStatus, TutorSource, TutorTermNote } from "@/lib/types";
+import { parseTutorQuestionSuggestions } from "@/lib/tutor-question-suggestions";
 
 interface TutorMessage {
   role: "user" | "assistant";
@@ -191,6 +192,7 @@ export function TutorView({
   const [quota, setQuota] = useState<TutorState>({ remaining: 15, dailyLimit: 15 });
   const [windowLimitReached, setWindowLimitReached] = useState(false);
   const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -431,6 +433,12 @@ export function TutorView({
     }
   }
 
+  function chooseQuestionSuggestion(question: string) {
+    setInput(question);
+    inputRef.current?.focus();
+    inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   const quotaExhausted = quota.remaining <= 0;
   const inputBlocked = quotaExhausted || windowLimitReached;
 
@@ -495,23 +503,49 @@ export function TutorView({
             你可以提出歷史課題或事件；學伴會以問題和線索協助你思考，不會代答功課。
           </p>
         ) : null}
-        {messages.map((message, index) => (
-          <article
-            key={`${index}-${message.role}`}
-            className={`max-w-3xl rounded-xl px-4 py-3 ${
-              message.role === "user" ? "ml-auto" : "mr-auto"
-            }`}
-            style={{
-              background: message.role === "user" ? "var(--accent-soft)" : "#f4f5f8",
-            }}
-          >
-            <p className="mb-1 text-xs font-semibold text-gray-500">
-              {message.role === "user" ? "你" : "歷史自學學伴"}
-            </p>
-            {message.content.length > 0 ? <TutorMarkdown content={message.content} /> : null}
-            {message.role === "assistant" ? <TutorEvidence message={message} /> : null}
-          </article>
-        ))}
+        {messages.map((message, index) => {
+          const parsed =
+            message.role === "assistant"
+              ? parseTutorQuestionSuggestions(message.content)
+              : { content: message.content, suggestions: [] };
+          return (
+            <article
+              key={`${index}-${message.role}`}
+              className={`max-w-3xl rounded-xl px-4 py-3 ${
+                message.role === "user" ? "ml-auto" : "mr-auto"
+              }`}
+              style={{
+                background: message.role === "user" ? "var(--accent-soft)" : "#f4f5f8",
+              }}
+            >
+              <p className="mb-1 text-xs font-semibold text-gray-500">
+                {message.role === "user" ? "你" : "歷史自學學伴"}
+              </p>
+              {parsed.content.length > 0 ? <TutorMarkdown content={parsed.content} /> : null}
+              {parsed.suggestions.length > 0 ? (
+                <div className="mt-3 space-y-2" aria-label="可能的提問方向">
+                  <p className="text-sm text-gray-600">
+                    可選一個方向填入問題框再傳送，亦可自行改寫：
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {parsed.suggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        className="btn text-left text-sm"
+                        disabled={sending || inputBlocked || loading}
+                        onClick={() => chooseQuestionSuggestion(suggestion)}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {message.role === "assistant" ? <TutorEvidence message={message} /> : null}
+            </article>
+          );
+        })}
         {error ? (
           <div role="alert" className="rounded-lg px-3 py-2 text-sm" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>
             {error} {error.includes("登入") ? <Link className="underline" href="/login">前往登入</Link> : null}
@@ -532,11 +566,12 @@ export function TutorView({
         </label>
         <textarea
           id="tutor-message"
+          ref={inputRef}
           value={input}
           onChange={(event) => setInput(event.target.value)}
           rows={3}
           maxLength={2000}
-          placeholder="例如：一戰後簽訂《凡爾賽條約》的背景是甚麼？"
+          placeholder="可用口語、錯字或簡體字提問，例如：二戰點解會打？"
           disabled={loading || sending || inputBlocked}
           readOnly={inputBlocked}
           className="w-full rounded-lg border bg-white px-3 py-2"
@@ -544,7 +579,7 @@ export function TutorView({
         />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-gray-500">
-            學伴只會引用已開放給學生的教材節錄（每段最多 60 字），不會取得題庫、標準答案或評分參考。
+            問題可以不太完整；若學伴未能確定你的意思，會列出可能方向供你選擇，或自行改寫。學伴只會引用已開放教材節錄，不會取得題庫、標準答案或評分參考。
           </p>
           <button
             type="submit"

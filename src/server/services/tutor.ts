@@ -1,4 +1,4 @@
-import { HISTORY_TERM_GROUPS } from "@/lib/history-lexicon";
+import { HISTORY_TERM_GROUPS, normalizeHistoryAnswer } from "@/lib/history-lexicon";
 import { countAnsweredTutorQuestionsSince } from "../repositories/tutor";
 import type { TutorMessage } from "../repositories/tutor";
 
@@ -15,7 +15,7 @@ const HISTORY_TERMS = HISTORY_TERM_GROUPS.flatMap((group) => [
   .map((term) => term.toLowerCase());
 
 const SHORT_FOLLOW_UP =
-  /^(?:點解|為甚麼|為什麼|原因呢|邊一年|哪一年|何時|幾時|然後呢|結果呢|有什麼影響|有何影響|呢個呢|那麼呢|之後呢|可否再說|可以再講|再解釋|詳細一點|再舉例)[?？!！。 ]*$/;
+  /^(?:點解|為甚麼|為什麼|原因呢|邊一年|哪一年|何時|幾時|然後呢|結果呢|有什麼影響|有何影響|呢個呢|那麼呢|之後呢|咁跟住呢|咁跟住點|(?:跟住|之後|最後)點(?:呀|啊|呢)?|咁之後發生咩事|咁佢最後點|後來呢|有咩結果|咁結果係點|咁呢個有咩影響|仲有呢|再講多少少|可否再說|可以再講|再解釋|詳細一點|再舉例)$/;
 
 export function hongKongTimestamp(now = new Date()): string {
   return `${new Date(now.getTime() + HONG_KONG_OFFSET_MS).toISOString().slice(0, -1)}+08:00`;
@@ -27,7 +27,7 @@ export function hongKongDayStart(now = new Date()): string {
 }
 
 export function isHistoryTopicPrompt(message: string): boolean {
-  const normalized = message.toLowerCase();
+  const normalized = normalizeHistoryAnswer(message);
   if (HISTORY_TERMS.some((term) => normalized.includes(term))) return true;
   return /(?:公元前|公元|西元)?\s*\d{1,4}\s*(?:年|世紀|年代)|\b(?:1[0-9]{3}|20[0-2][0-9])\b/.test(
     normalized,
@@ -35,8 +35,8 @@ export function isHistoryTopicPrompt(message: string): boolean {
 }
 
 export function isShortHistoryFollowUp(message: string): boolean {
-  const trimmed = message.trim();
-  return trimmed.length <= 24 && SHORT_FOLLOW_UP.test(trimmed);
+  const normalized = normalizeHistoryAnswer(message);
+  return normalized.length <= 24 && SHORT_FOLLOW_UP.test(normalized);
 }
 
 export interface TutorChatTurn {

@@ -49,7 +49,7 @@ export interface HistoryTermGroup {
  */
 const SIMPLIFIED_TRADITIONAL_PAIRS = [
   "战戰 条條 约約 马馬 尔爾 华華 国國 罗羅 维維 兴興 亚亞 历歷 军軍 苏蘇 联聯",
-  "义義 运運 动動 开開 关關 协協 议議 权權 变變 长長 门門 问問 时時 间間 际際",
+  "义義 艺藝 运運 动動 开開 关關 协協 议議 权權 变變 长長 门門 问問 时時 间間 际際",
   "贸貿 经經 济濟 农農 业業 产產 资資 银銀 铁鐵 钢鋼 车車 东東 广廣 岛島 湾灣",
   "龙龍 张張 刘劉 陈陳 郑鄭 孙孫 汉漢 满滿 萨薩 逊遜 鲁魯 泽澤 谢謝 邓鄧 领領",
   "导導 书書 学學 术術 复復 旧舊 陆陸 队隊 卫衛 击擊 敌敵 胜勝 败敗 机機 构構",
@@ -438,19 +438,19 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   /* 課題5 近代歐洲的興起 */
   {
     canonical: "文藝復興",
-    aliases: ["文藝復興運動", "renaissance"],
+    aliases: ["文藝復興運動", "文艺复兴", "文艺复兴运动", "renaissance"],
     category: "event",
     scope: "課題5",
   },
   {
     canonical: "人文主義",
-    aliases: ["人文主義思想", "humanism"],
+    aliases: ["人文主義思想", "人文主义", "humanism"],
     category: "reform",
     scope: "課題5",
   },
   {
     canonical: "宗教改革",
-    aliases: ["宗教改革運動", "reformation"],
+    aliases: ["宗教改革運動", "宗教改革运动", "reformation"],
     category: "reform",
     scope: "課題5",
   },
@@ -558,7 +558,7 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "啟蒙運動",
-    aliases: ["啟蒙時代", "enlightenment"],
+    aliases: ["啟蒙時代", "启蒙运动", "启蒙时代", "enlightenment"],
     category: "event",
     scope: "課題5",
   },
@@ -608,13 +608,13 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   /* 課題6 歐洲國家的殖民擴張（亦涵蓋高中中國近代史條約） */
   {
     canonical: "殖民主義",
-    aliases: ["殖民主義政策", "colonialism"],
+    aliases: ["殖民主義政策", "殖民主义", "colonialism"],
     category: "reform",
     scope: "課題6",
   },
   {
     canonical: "帝國主義",
-    aliases: ["帝國主義政策", "imperialism"],
+    aliases: ["帝國主義政策", "帝国主义", "imperialism"],
     category: "reform",
     scope: "課題6",
   },
@@ -626,7 +626,7 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "鴉片戰爭",
-    aliases: ["第一次鴉片戰爭", "opium war", "first opium war"],
+    aliases: ["第一次鴉片戰爭", "鸦片战争", "第一次鸦片战争", "opium war", "first opium war"],
     category: "event",
     scope: "課題6",
   },
@@ -638,7 +638,7 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "南京條約",
-    aliases: ["江寧條約", "treaty of nanking", "treaty of nanjing"],
+    aliases: ["江寧條約", "南京条约", "江宁条约", "treaty of nanking", "treaty of nanjing"],
     category: "treaty",
     scope: "課題6",
   },
@@ -891,13 +891,13 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   /* 課題9 兩次世界大戰 */
   {
     canonical: "第一次世界大戰",
-    aliases: ["一戰", "第一次大戰", "world war i", "wwi", "first world war", "great war"],
+    aliases: ["一戰", "第一次大戰", "第一次世界大战", "第一次大战", "world war i", "wwi", "first world war", "great war"],
     category: "event",
     scope: "課題9",
   },
   {
     canonical: "第二次世界大戰",
-    aliases: ["二戰", "第二次大戰", "world war ii", "wwii", "second world war"],
+    aliases: ["二戰", "第二次大戰", "第二次世界大战", "第二次大战", "world war ii", "wwii", "second world war"],
     category: "event",
     scope: "課題9",
   },
@@ -1015,8 +1015,20 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   {
     // 學生常問「極權主義的特點」，但詞庫原本沒有此詞，令主題硬閘誤判離題
     canonical: "極權主義",
-    aliases: ["極權", "極權統治", "極權政體", "totalitarianism"],
+    aliases: ["極權", "極權統治", "極權政體", "极权主义", "极权统治", "极权政体", "totalitarianism"],
     category: "institution",
+    scope: "課題9",
+  },
+  {
+    canonical: "法西斯主義",
+    aliases: ["法西斯主义", "法西斯", "fascism"],
+    category: "reform",
+    scope: "課題9",
+  },
+  {
+    canonical: "納粹主義",
+    aliases: ["纳粹主义", "納粹思想", "national socialism", "nazism"],
+    category: "reform",
     scope: "課題9",
   },
   {
@@ -1047,7 +1059,7 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   /* 課題10 冷戰及後冷戰時代 */
   {
     canonical: "冷戰",
-    aliases: ["冷戰時期", "cold war"],
+    aliases: ["冷戰時期", "冷战", "冷战时期", "cold war"],
     category: "event",
     scope: "課題10",
   },
@@ -1149,7 +1161,7 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "改革開放",
-    aliases: ["改革開放政策", "對外開放", "reform and opening up"],
+    aliases: ["改革開放政策", "對外開放", "改革开放", "改革开放政策", "reform and opening up"],
     category: "reform",
     scope: "課題10",
   },
@@ -1346,6 +1358,48 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
 
   /* 高中：中國近代史 */
   {
+    canonical: "八國聯軍",
+    aliases: ["八国联军", "八國聯軍之役", "eight-nation alliance"],
+    category: "event",
+    scope: "高中",
+  },
+  {
+    canonical: "義和團運動",
+    aliases: ["义和团运动", "義和團事件", "boxer rebellion", "boxer uprising"],
+    category: "event",
+    scope: "高中",
+  },
+  {
+    canonical: "資本主義",
+    aliases: ["资本主义", "資本主義制度", "capitalism"],
+    category: "reform",
+    scope: "高中",
+  },
+  {
+    canonical: "社會主義",
+    aliases: ["社会主义", "社會主義制度", "socialism"],
+    category: "reform",
+    scope: "高中",
+  },
+  {
+    canonical: "共產主義",
+    aliases: ["共产主义", "共產主義思想", "communism"],
+    category: "reform",
+    scope: "高中",
+  },
+  {
+    canonical: "新民主主義",
+    aliases: ["新民主主义", "new democracy"],
+    category: "reform",
+    scope: "高中",
+  },
+  {
+    canonical: "大躍進",
+    aliases: ["大跃进", "大躍進運動", "great leap forward"],
+    category: "event",
+    scope: "高中",
+  },
+  {
     canonical: "洋務運動",
     aliases: ["自強運動", "同光新政", "洋務新政", "self-strengthening movement"],
     category: "reform",
@@ -1365,25 +1419,25 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "五四運動",
-    aliases: ["五四", "may fourth movement"],
+    aliases: ["五四", "五四运动", "may fourth movement"],
     category: "event",
     scope: "高中",
   },
   {
     canonical: "新文化運動",
-    aliases: ["新文化運動時期", "new culture movement"],
+    aliases: ["新文化運動時期", "新文化运动", "new culture movement"],
     category: "event",
     scope: "高中",
   },
   {
     canonical: "抗日戰爭",
-    aliases: ["抗戰", "八年抗戰", "第二次中日戰爭", "war of resistance", "second sino-japanese war"],
+    aliases: ["抗戰", "八年抗戰", "第二次中日戰爭", "抗日战争", "八年抗战", "war of resistance", "second sino-japanese war"],
     category: "event",
     scope: "高中",
   },
   {
     canonical: "國共內戰",
-    aliases: ["國共戰爭", "中國內戰", "chinese civil war"],
+    aliases: ["國共戰爭", "中國內戰", "国共内战", "中国内战", "chinese civil war"],
     category: "event",
     scope: "高中",
   },
@@ -1413,7 +1467,7 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "君主立憲制",
-    aliases: ["君主立憲", "立憲君主制", "constitutional monarchy"],
+    aliases: ["君主立憲", "立憲君主制", "君主立宪制", "立宪君主制", "constitutional monarchy"],
     category: "reform",
     scope: "高中",
   },
