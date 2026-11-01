@@ -1267,8 +1267,10 @@ export const healthSchema = z.object({
       enabled: z.boolean().default(false),
       mode: z.string().default("off"),
       searchConfigured: z.boolean().default(false),
+      /** 已設定的搜尋方式：`endpoint`（自訂代理）／`google`／`brave`／null */
+      searchProvider: z.string().nullable().default(null),
     })
-    .default({ enabled: false, mode: "off", searchConfigured: false }),
+    .default({ enabled: false, mode: "off", searchConfigured: false, searchProvider: null }),
   /** 學生名冊狀態（不含任何學生個人資料） */
   roster: rosterStatusSchema,
   /**

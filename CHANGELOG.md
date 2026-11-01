@@ -16,6 +16,34 @@
 
 ---
 
+## [未發布] — 2026-11-01：第三方搜尋 API 薄包裝（`TUTOR_WEB_SEARCH_PROVIDER`）
+
+**狀態**：已實作、已測試、已部署；**尚未啟用**（生產未設定 provider，故仍為 `not-used`）。
+
+### 新增
+
+- [tutor-web-search-provider.ts](src/server/services/tutor-web-search-provider.ts)：在**同一進程**內呼叫第三方搜尋 API（`google`＝Programmable Search，需 `key`+`cx`；`brave`＝Brave Search API），不另開 Cloud Run 服務、不需自我 HTTP 呼叫。與 `TUTOR_WEB_SEARCH_ENDPOINT`（自訂代理）**二選一**，端點優先。
+- 兩條搜尋路徑共用同一支白名單過濾器 `toAllowlistedCandidates`（非 https、非白名單 host 一律丟棄且不被抓取），安全規則仍然只有一份。
+- 新環境變數：`TUTOR_WEB_SEARCH_PROVIDER`、`TUTOR_WEB_SEARCH_ENGINE_ID`、`TUTOR_WEB_SEARCH_API_KEY`（只可由 Secret Manager 注入）、`TUTOR_WEB_SEARCH_SITE_HINTS`。
+- [cloudbuild.yaml](cloudbuild.yaml)：新增四個 substitution（預設全空）。`_TUTOR_WEB_SEARCH_SECRET` 留空時**不會**在 `--set-secrets` 引用任何 secret，令未建立 secret 的專案仍可正常部署（條件式拼接，沿用檔內既有的 `$$AUTH_FLAG` 模式）。
+- `/api/health` 的 `tutorWeb` 增加 `searchProvider`（`endpoint`／`google`／`brave`／null）；`searchConfigured` 改為「端點已設 **或** provider 齊全」。**永不**回傳 API key 或端點網址。
+
+### 安全與私隱
+
+- **私隱（擁有者已決定採用此方案）**：選用 provider 即代表學生提問會送到該第三方。已做的緩解：只送問題本身（不含 learnerId／電郵／班別／學號／session／上文）；截斷至 200 字；強制嚴格安全搜尋（`safe=active`／`safesearch=strict`）；只在教材 `not-covered` 時送出；可用 `TUTOR_WEB_BLOCKED_TOPICS` 令敏感課題完全不外送。這些是**減少暴露**，不是匿名化。
+- API key 只以 `--set-secrets` 注入，不寫入 `--set-env-vars`、映像檔或 health 回應（有測試斷言 health 不含 key）。
+- provider 回傳結果仍須通過白名單過濾；即使 provider 被污染或回應被篡改，也不會請求非白名單網址。
+
+### 文件
+
+- README「如何設定 `TUTOR_WEB_SEARCH_ENDPOINT`」一節改為同時涵蓋兩種搜尋方式：設定步驟、Secret 建立指令、health 核實（含 `searchProvider`）、provider 實作說明、私隱影響、常見錯誤（含「key 不可放進環境變數」及「設了 provider 但缺 `cx`」）。
+
+**已知限制**：① 未設 `TUTOR_WEB_SEARCH_SITE_HINTS` 時，中文提問多數結果會落在白名單以外而被過濾成 `not-used`；② provider 配額及計費由擁有者管理，平台只在教材 `not-covered` 時呼叫（每次 1 次搜尋請求）；③ 未以真實 API key 做過端到端驗證（本輪沒有 key），provider 行為以 mocked fetch 的 14 項單測鎖定。
+
+**驗證**：`npm run typecheck`、`npm test`（**145 檔、1,942 通過 / 4 略過**）、修改檔 ESLint、`npm run build`、cloudbuild.yaml YAML 解析（4 個新 substitution、env 無格式錯誤項、`--set-secrets` 條件式尾綴正確）。
+
+---
+
 ## [未發布] — 2026-11-01：生產開啟學伴外網補充開關（尚未接搜尋端點，暫無作用）
 
 **狀態**：程式及部署設定已完成；**已部署**（GitOps：push main → Cloud Build → Cloud Run）。

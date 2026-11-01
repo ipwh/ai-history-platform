@@ -32,6 +32,13 @@ import { lookup } from "node:dns/promises";
 
 import type { TutorWebSource, TutorWebSupplementStatus } from "@/lib/types";
 import { matchTutorWebAllowlist, isBlockedWebAddress, isIpLiteralHost } from "./tutor-web-allowlist";
+import {
+  isTutorWebSearchProviderReady,
+  searchWithProvider,
+  toAllowlistedCandidates,
+  type TutorWebSearchHit,
+  type TutorWebSearchProviderConfig,
+} from "./tutor-web-search-provider";
 
 /** 顯示給學生的外部摘錄長度上限（規格：≤120 字） */
 export const TUTOR_WEB_EXCERPT_MAX_CHARS = 120;
@@ -81,8 +88,10 @@ export interface TutorWebSupplementConfig {
   budgetMs: number;
   /** 這些課題一律不做外網補充（敏感課題由科組自行設定） */
   blockedTopicIds: string[];
-  /** 相容 `POST {query, domains, limit}` 的搜尋端點；null = 不做搜尋 */
+  /** 相容 `POST {query, domains, limit}` 的搜尋端點；null = 自行呼叫第三方 provider */
   searchEndpoint: string | null;
+  /** 第三方搜尋 API 薄包裝設定（`searchEndpoint` 為 null 時才使用） */
+  provider: TutorWebSearchProviderConfig;
 }
 
 export interface TutorWebCandidate {
@@ -151,7 +160,12 @@ export async function collectTutorWebSupplement(input: {
   if (config.mode === "not-covered-only" && input.grounding === "grounded") {
     return skip("not-used");
   }
-  if (config.searchEndpoint === null || config.allowlist.length === 0) {
+  // 兩條搜尋路徑：自訂代理端點（HTTP 契約）或進程內呼叫第三方 provider（薄包裝）。
+  // 兩者都沒有時完全不做搜尋（狀態 not-used），平台不會退化成爬取搜尋結果頁。
+  // 白名單為空時亦直接跳過：否則會付費呼叫第三方，再把所有結果丟棄。
+  const providerReady = isTutorWebSearchProviderReady(config.provider);
+  if (config.allowlist.length === 0) return skip("not-used");
+  if (config.searchEndpoint === null && !providerReady) {
     return skip("not-used");
   }
 
@@ -223,15 +237,34 @@ export async function collectTutorWebSupplement(input: {
 }
 
 /**
- * 以白名單過濾後的搜尋結果。
+ * 取得候選來源（**已按白名單過濾**）。
  *
- * 端點契約：`POST` JSON `{ query, domains, limit }`，回應 `{ results: [{ url, title }] }`
- * （或直接是陣列）。**任何**非白名單、非 https 的結果都會被丟棄，不會進入抓取階段。
+ * 兩條路徑共用同一個過濾器 `toAllowlistedCandidates`：
+ *   1. `TUTOR_WEB_SEARCH_ENDPOINT`：自訂代理，`POST` JSON `{query, domains, limit}`，
+ *      回應 `{results:[{url,title}]}`（或陣列）；
+ *   2. 未設端點但已設定 `TUTOR_WEB_SEARCH_PROVIDER`：進程內呼叫第三方搜尋 API（薄包裝）。
+ * **任何**非白名單、非 https 的結果都會被丟棄，不會進入抓取階段。
  */
 export async function searchAllowlistedSources(
   query: string,
   config: TutorWebSupplementConfig,
 ): Promise<TutorWebCandidate[]> {
+  const hits =
+    config.searchEndpoint !== null
+      ? await searchViaEndpoint(query, config)
+      : await searchWithProvider({
+          query,
+          config: config.provider,
+          timeoutMs: config.fetchTimeoutMs,
+        });
+  return toAllowlistedCandidates(hits, config.allowlist);
+}
+
+/** 走自訂代理端點（HTTP 契約） */
+async function searchViaEndpoint(
+  query: string,
+  config: TutorWebSupplementConfig,
+): Promise<TutorWebSearchHit[]> {
   const endpoint = config.searchEndpoint;
   if (endpoint === null) return [];
 
@@ -267,33 +300,14 @@ export async function searchAllowlistedSources(
       : null;
   if (!Array.isArray(items)) return [];
 
-  const candidates: TutorWebCandidate[] = [];
-  const seen = new Set<string>();
-  for (const item of items) {
-    if (typeof item !== "object" || item === null) continue;
+  // 代理路徑只負責轉成共通形狀；白名單過濾統一由 toAllowlistedCandidates 執行。
+  return items.flatMap((item) => {
+    if (typeof item !== "object" || item === null) return [];
     const rawUrl = (item as { url?: unknown }).url;
-    if (typeof rawUrl !== "string") continue;
-    let parsed: URL;
-    try {
-      parsed = new URL(rawUrl);
-    } catch {
-      continue;
-    }
-    if (parsed.protocol !== "https:") continue;
-    const siteLabel = matchTutorWebAllowlist(parsed.hostname, config.allowlist);
-    if (siteLabel === null) continue;
-    parsed.hash = "";
-    const url = parsed.toString();
-    if (seen.has(url)) continue;
-    seen.add(url);
+    if (typeof rawUrl !== "string") return [];
     const rawTitle = (item as { title?: unknown }).title;
-    candidates.push({
-      url,
-      title: typeof rawTitle === "string" ? rawTitle.trim().slice(0, 200) : "",
-      siteLabel,
-    });
-  }
-  return candidates;
+    return [{ url: rawUrl, title: typeof rawTitle === "string" ? rawTitle : "" }];
+  });
 }
 
 export interface TutorWebFetchResult {

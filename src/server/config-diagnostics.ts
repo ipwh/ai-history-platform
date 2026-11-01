@@ -12,6 +12,10 @@ import { isStudentPatternEmail } from "./auth/role";
 import { EXPLANATION_HOLD_POLICIES } from "./quality/explanation-quality";
 import { normalizeTutorWebAllowlistEntry } from "./services/tutor-web-allowlist";
 import { TUTOR_WEB_MODES } from "./services/tutor-web-supplement";
+import {
+  isTutorWebSearchProviderReady,
+  TUTOR_WEB_SEARCH_PROVIDERS,
+} from "./services/tutor-web-search-provider";
 
 export { MIN_AUTH_SECRET_LENGTH };
 
@@ -441,15 +445,44 @@ export function describeConfigIssues(): ConfigIssue[] {
         message: `TUTOR_WEB_MODE="${rawMode}" 不是有效值（${TUTOR_WEB_MODES.join("／")}）；已按預設 not-covered-only 處理。`,
       });
     }
-    if (config.webSupplement.searchEndpoint === null) {
+    const rawProvider = (process.env.TUTOR_WEB_SEARCH_PROVIDER ?? "").trim().toLowerCase();
+    if (rawProvider.length > 0 && config.webSupplement.provider.provider === null) {
+      issues.push({
+        level: "warning",
+        code: "tutor-web-search-provider-invalid",
+        message: `TUTOR_WEB_SEARCH_PROVIDER="${rawProvider}" 不是有效值（${TUTOR_WEB_SEARCH_PROVIDERS.join("／")}）；已當作未設定。`,
+      });
+    }
+    const providerReady = isTutorWebSearchProviderReady(config.webSupplement.provider);
+    if (config.webSupplement.provider.provider === "google" && !providerReady) {
+      issues.push({
+        level: "warning",
+        code: "tutor-web-search-provider-incomplete",
+        message:
+          "TUTOR_WEB_SEARCH_PROVIDER=google 但缺少 TUTOR_WEB_SEARCH_ENGINE_ID（cx）或 API key（Secret Manager）：" +
+          "學伴不會有任何外部參考。",
+      });
+    }
+    if (config.webSupplement.searchEndpoint === null && !providerReady) {
       issues.push({
         level: "warning",
         code: "tutor-web-supplement-no-search",
         message:
-          "TUTOR_WEB_SUPPLEMENT_ENABLED=true 但未設定 TUTOR_WEB_SEARCH_ENDPOINT：學伴不會有任何外部參考" +
-          "（狀態固定為 not-used）。平台不會退化成爬取搜尋引擎結果頁。",
+          "TUTOR_WEB_SUPPLEMENT_ENABLED=true 但未設定 TUTOR_WEB_SEARCH_ENDPOINT，亦未設定可用的 " +
+          "TUTOR_WEB_SEARCH_PROVIDER：學伴不會有任何外部參考（狀態固定為 not-used）。" +
+          "平台不會退化成爬取搜尋引擎結果頁。",
       });
-    } else if (!config.webSupplement.searchEndpoint.toLowerCase().startsWith("https://")) {
+    } else if (providerReady && config.webSupplement.searchEndpoint === null) {
+      issues.push({
+        level: "info",
+        code: "tutor-web-search-provider-active",
+        message:
+          `已使用第三方搜尋 API（${config.webSupplement.provider.provider}）作外部參考來源：` +
+          "學生的提問內容（截斷至 200 字、不含任何身分資料）會送到該第三方，且只在教材找不到時才送出。" +
+          "請確認符合學校私隱政策；如需完全留在校方，改用 TUTOR_WEB_SEARCH_ENDPOINT 自架代理。",
+      });
+    }
+    if (config.webSupplement.searchEndpoint !== null && !config.webSupplement.searchEndpoint.toLowerCase().startsWith("https://")) {
       issues.push({
         level: "error",
         code: "tutor-web-supplement-search-not-https",

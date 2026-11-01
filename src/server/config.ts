@@ -19,6 +19,7 @@ import {
   type TutorWebMode,
   type TutorWebSupplementConfig,
 } from "./services/tutor-web-supplement";
+import { parseTutorWebSearchProvider } from "./services/tutor-web-search-provider";
 
 /**
  * 教材匯入後的自動開放政策（見 `ServerConfig.materialAutoOpenPolicy`）。
@@ -606,6 +607,9 @@ function readTutorWebMode(enabled: boolean): TutorWebMode {
  * - `TUTOR_WEB_TOPIC_ALLOWLIST`：非空時只對列出的課題做外網（正面清單，較窄）。
  * - `TUTOR_WEB_BUDGET_MS`：搜尋＋抓取的整體預算（預設 1.5 秒、硬上限 2 秒）；
  *   超時即放棄外網，令主回答首字不會被外網拖慢。
+ * - `TUTOR_WEB_SEARCH_ENDPOINT`（自訂代理）與 `TUTOR_WEB_SEARCH_PROVIDER`
+ *   （第三方搜尋 API 薄包裝）**二選一**，端點優先；兩者皆空＝不做搜尋。
+ *   ⚠️ 使用第三方 provider 即代表**學生提問會送到該第三方**，屬擁有者決定。
  */
 function readWebSupplementConfig(): TutorWebSupplementConfig {
   const enabled = readBoolean("TUTOR_WEB_SUPPLEMENT_ENABLED", false);
@@ -628,6 +632,14 @@ function readWebSupplementConfig(): TutorWebSupplementConfig {
     ),
     blockedTopicIds: readList("TUTOR_WEB_BLOCKED_TOPICS"),
     searchEndpoint: readEnv("TUTOR_WEB_SEARCH_ENDPOINT"),
+    // 第三方搜尋 API 薄包裝：與 searchEndpoint 二選一（端點優先）。API key 只由
+    // Secret Manager 注入，永不寫入 --set-env-vars 或映像檔。
+    provider: {
+      provider: parseTutorWebSearchProvider(readEnv("TUTOR_WEB_SEARCH_PROVIDER")),
+      apiKey: readEnv("TUTOR_WEB_SEARCH_API_KEY"),
+      engineId: readEnv("TUTOR_WEB_SEARCH_ENGINE_ID"),
+      siteHints: readList("TUTOR_WEB_SEARCH_SITE_HINTS"),
+    },
   };
 }
 

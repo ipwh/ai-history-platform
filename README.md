@@ -393,27 +393,71 @@ materials/
 
 **設定步驟**
 
-1. **準備端點**（三選一，需擁有者決定）：
-   - 學校自架搜尋代理（學生提問不離開校方控制，最符合私隱要求）；
-   - 第三方搜尋 API 的薄包裝（例：Programmable Search／Brave Search API）——**會把學生提問送到第三方**，須先通過私隱及服務條款審視；
-   - 主題種子 URL 清單（不需搜尋服務，但內容易過時）。
-2. **在 [cloudbuild.yaml](cloudbuild.yaml) 的 `substitutions` 填入**（**不要**用一次性 `gcloud run services update`，因為下一次 `git push main` 的 `--set-env-vars` 會覆蓋整個清單）：
+1. **選擇搜尋方式**（二選一，端點優先）：
+
+   | 方式 | 設定 | 學生提問去向 |
+   | --- | --- | --- |
+   | **自訂代理端點** | `_TUTOR_WEB_SEARCH_ENDPOINT` | 你自己控制的服務 |
+   | **第三方搜尋 API 薄包裝** | `_TUTOR_WEB_SEARCH_PROVIDER` + Secret Manager 內的 API key | **會送到該第三方**（見下方私隱說明） |
+
+2. **在 [cloudbuild.yaml](cloudbuild.yaml) 的 `substitutions` 填入**（**不要**用一次性 `gcloud run services update`，因為下一次 `git push main` 的 `--set-env-vars`／`--set-secrets` 會覆蓋整個清單）：
 
    ```yaml
    substitutions:
+     # 方式一：自訂代理
      _TUTOR_WEB_SEARCH_ENDPOINT: "https://search.example.edu.hk/tutor"
+     # 方式二：第三方 provider（此例為 Google Programmable Search）
+     _TUTOR_WEB_SEARCH_PROVIDER: "google"
+     _TUTOR_WEB_SEARCH_ENGINE_ID: "0123456789abcdefg"      # Google 的 cx；brave 留空
+     _TUTOR_WEB_SEARCH_SECRET: "history-tutor-search-key"  # Secret Manager 內的 secret 名稱
+     _TUTOR_WEB_SEARCH_SITE_HINTS: "britannica.com;bbc.co.uk;history.com"
    ```
 
-   留空（`""`）＝ 未設定，等於關閉搜尋（行為與現在相同）。
-3. **`git push origin main`** 觸發 Cloud Build 部署（或在本機執行 `gcloud builds submit --config cloudbuild.yaml --substitutions=_TUTOR_WEB_SEARCH_ENDPOINT=...`）。
-4. **核實**：
+   留空 ＝ 未設定（行為與現在相同）。
+
+3. **建立 Secret（只用方式二時）**：
+
+   ```bash
+   printf '%s' "<你的 API key>" | gcloud secrets create history-tutor-search-key \
+     --data-file=- --replication-policy=automatic --project pccss-ai-history
+   # 已存在則新增版本：
+   # printf '%s' "<新 key>" | gcloud secrets versions add history-tutor-search-key --data-file=-
+   ```
+
+   服務的執行身分必須有 `roles/secretmanager.secretAccessor`。`_TUTOR_WEB_SEARCH_SECRET` 留空時**不會**引用任何 secret，因此未建立 secret 的專案仍可正常部署。
+
+4. **`git push origin main`** 觸發 Cloud Build 部署（或本機 `gcloud builds submit --config cloudbuild.yaml --substitutions=...`）。
+
+5. **核實**：
 
    ```bash
    curl -s https://<服務網址>/api/health | jq .tutorWeb
-   # 期望：{ "enabled": true, "mode": "not-covered-only", "searchConfigured": true }
+   # 自訂代理：{ "enabled": true, "mode": "not-covered-only", "searchConfigured": true, "searchProvider": "endpoint" }
+   # Google：  { "enabled": true, "mode": "not-covered-only", "searchConfigured": true, "searchProvider": "google" }
+   # Brave：   ... "searchProvider": "brave"
    ```
 
-   之後在學伴問一個**教材未涵蓋**的課題（`not-covered-only` 模式只在教材找不到時才抓外網），回覆的 `done` 事件應為 `webSupplementStatus: "ok"` 並帶 `webSources`；若為 `failed` 表示端點超時、非 2xx、回 3xx 或解析到私網位址。
+   之後在學伴問一個**教材未涵蓋**的課題（`not-covered-only` 模式只在教材找不到時才抓外網），回覆的 `done` 事件應為 `webSupplementStatus: "ok"` 並帶 `webSources`；若為 `failed` 表示 provider 回非 2xx／超時／結果被白名單全部過濾。
+
+**第三方搜尋 API 薄包裝（實作說明）**
+
+- 實作位置：[tutor-web-search-provider.ts](src/server/services/tutor-web-search-provider.ts)。在**同一進程**內呼叫 provider，不另開 Cloud Run 服務、不需自我 HTTP 呼叫。
+- 支援 `google`（Programmable Search JSON API：`key` + `cx`）及 `brave`（Brave Search API：`X-Subscription-Token`）。
+- 查詢字串會**截斷至 200 字**並一律開啟嚴格安全搜尋（`safe=active`／`safesearch=strict`）；`TUTOR_WEB_SEARCH_SITE_HINTS` 會以 `(site:a OR site:b …)` 附加（最多 6 個），大幅提高「回傳結果真的落在白名單」的機會——中文提問若不加提示，provider 往往只回共筆百科，全部會被過濾成 `not-used`。
+- provider 回傳的結果仍要通過**同一套白名單過濾**（`toAllowlistedCandidates`）：非 https、非白名單 host 一律丟棄且**不會被抓取**。
+- API key 只以 `--set-secrets` 注入，**永不**寫入 `--set-env-vars`、映像檔或 `/api/health`。
+
+**私隱（選用第三方 provider 前必須確認）**
+
+選用第三方 provider 即代表**學生的提問內容會離開校方**送到該第三方。已做的緩解：
+
+1. 只送問題本身（不含 learnerId、電郵、班別、學號、session 或對話上文）；
+2. 長度截斷至 200 字，避免整段貼上的文章外送；
+3. 一律嚴格安全搜尋；
+4. 只在教材 `not-covered` 時才送出（`TUTOR_WEB_MODE=not-covered-only`），大多數提問根本不會離開伺服器；
+5. 可用 `TUTOR_WEB_BLOCKED_TOPICS` 令敏感課題完全不外送。
+
+這些是**減少暴露**，不是匿名化——provider 仍可見到提問文字。是否可接受須由擁有者按學校私隱政策決定；若不可接受，應改用自訂代理（自架）或主題種子 URL。
 
 **狀態值對照**
 
@@ -431,7 +475,9 @@ materials/
 - 端點落在內網位址（例如 `10.x`、`*.internal`、GCE 中繼資料）：防 SSRF 檢查會拒絕；必須是公網可解析的 host。
 - 端點會 301 到結尾有斜線或 HTTPS 版本：改用最終網址，否則一律 `failed`。
 - 期望「教材已命中時也抓外網」：`not-covered-only` 不會；需改 `TUTOR_WEB_MODE=always`。
-- 只改 `gcloud run services update`：下次 push 部署即失效。
+- 只改 `gcloud run services update`：下次 push 部署即失效（`--set-env-vars`／`--set-secrets` 會整份覆蓋）。
+- 設了 provider 但沒有 `cx`（Google）：`searchConfigured` 會維持 `false`，即 `isTutorWebSearchProviderReady` 要求 `engineId` 齊全。
+- 把 API key 放進 `TUTOR_WEB_SEARCH_API_KEY` 環境變數（而非 Secret）：會出現在 Cloud Run 環境變數清單及建置記錄；請用 `_TUTOR_WEB_SEARCH_SECRET`。
 
 
 
@@ -2520,6 +2566,8 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 | `EXPLANATION_HOLD_POLICY` | `off` | 解釋未達標是否暫緩派發：`off`／`placeholder`／`placeholder-or-answer-only`。**屬產品決定**：以 2026-10-20 題庫計，`placeholder` 會令可派發題目由 1,875 題減至 546 題，`placeholder-or-answer-only` 則為 0 題。無效值回退 `off` 並顯示 error 級設定警示；啟用時顯示 warning 及影響範圍 |
 | `TUTOR_WEB_SUPPLEMENT_ENABLED` | `false`（**生產於 2026-11-01 設為 `true`**） | 學伴白名單網頁補充（外部參考）開關。程式預設關閉＝零外網請求；生產現已開啟，但在補上 `TUTOR_WEB_SEARCH_ENDPOINT` 前為 `not-used`、不會有外部參考 |
 | `TUTOR_WEB_SEARCH_ENDPOINT` | 空 | 相容 `POST {query, domains, limit}` → `{results: [{url, title}]}` 的搜尋端點（必須 `https://` 及公網位址）。未設定＝不做搜尋，外部參考狀態為 `not-used`；平台不會自行爬取搜尋結果頁 |
+| `TUTOR_WEB_SEARCH_PROVIDER`／`TUTOR_WEB_SEARCH_ENGINE_ID`／`TUTOR_WEB_SEARCH_API_KEY` | 空 | 第三方搜尋 API 薄包裝：`google`（另需 `cx`＝`ENGINE_ID`）或 `brave`。與 `TUTOR_WEB_SEARCH_ENDPOINT` 二選一（端點優先）。**API key 只可由 Secret Manager 注入**；⚠️ 選用後學生提問會送到該第三方 |
+| `TUTOR_WEB_SEARCH_SITE_HINTS` | 空 | 附加 `(site:a OR site:b …)` 到 provider 查詢（最多 6 個）。中文提問若不設，結果多數被白名單過濾成 `not-used` |
 | `TUTOR_WEB_ALLOWLIST` | 內建白名單 | 逗號分隔 host（不含協議），**整份覆蓋**預設白名單。IP、單一主機名、共筆百科及社交平台一律忽略（見第三節「學伴外部參考」） |
 | `TUTOR_WEB_MAX_SOURCES`／`TUTOR_WEB_MAX_CHARS_PER_SOURCE` | `2`／`600` | 每次回答最多引用幾段外部參考、每段送入提示詞的字數（硬上限 5／2,000） |
 | `TUTOR_WEB_FETCH_TIMEOUT_MS` | `4000` | 單次外網請求逾時 |
