@@ -147,6 +147,24 @@ export function normalizeTutorQuery(raw: string): string {
   );
 }
 
+/**
+ * 正規化是否**真的**改寫了句子內容（而非只統一標點、大小寫或空白）。
+ *
+ * 事件記錄用：`normalizeTutorQuery` 會順帶移除句末問號、統一大小寫及簡繁，
+ * 若直接比較字串，幾乎每一句都會被記成「有改寫」，令事件表充滿沒有價值的樣本，
+ * 真正需要補規則的句子反而被淹沒。這裡先移除標點、符號、空白並轉小寫再比較，
+ * 只有實際換詞（例如「喺」→「在」、「俾日本佔咗」→「被日本佔領」）才算改寫。
+ */
+export function tutorQueryWasRewritten(raw: string, normalized: string): boolean {
+  const contentKey = (value: string): string =>
+    value
+      .toLowerCase()
+      .replace(/[\s\p{P}\p{S}]+/gu, "");
+  const rawKey = contentKey(raw);
+  if (rawKey.length === 0) return false;
+  return rawKey !== contentKey(normalized);
+}
+
 export function isClearlyNonHistoryTutorQuery(raw: string): boolean {
   const normalized = normalizeTutorQuery(raw);
   return EXPLICITLY_NON_HISTORY_PATTERNS.some(

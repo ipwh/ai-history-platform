@@ -11,6 +11,7 @@ const QUICK_ACTIONS = [
   { href: "/teacher/questions", label: "題目管理、處理回報" },
   { href: "/teacher/questions/generate", label: "生成題目並審核" },
   { href: "/teacher/records", label: "查看／下載學生練習記錄" },
+  { href: "/teacher/tutor", label: "學伴使用概況（只有統計）" },
   { href: "/", label: "學生端測試（以教師身分練習）" },
 ];
 

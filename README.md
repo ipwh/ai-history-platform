@@ -57,6 +57,7 @@ npm run dev          # 啟動開發伺服器
 | `npm run typecheck` | TypeScript 型別檢查（先 `next typegen`） |
 | `npm test` | 單元及整合測試（Vitest） |
 | `npm run e2e` | 端對端流程測試（需先啟動伺服器） |
+| `npm run tutor:export-utterances` | **唯讀**匯出學伴澄清／離題／正規化事件（匿名，不含學生身分），供每月補強提問理解規則；可加 `-- --days 30 --limit 200 --type reject,clarify --format csv` |
 | `npm run setup` | 重建／更新示範資料（可加 `-- --ocr` 同時執行 OCR、`-- --pilot` 只匯入課題5；**`--` 不可省略**，否則 npm 會把參數吞掉） |
 | `npm run import:materials` | 由命令列匯入 `materials/` 內的教材及校內試題（可加 `--books`、`--questions`、`--topic`、`--senior`、`--ocr`） |
 | `npm run generate:questions` | 為各課題生成題目（`--topic`、`--count`、`--types mc`、`--draft-only`） |
@@ -299,7 +300,7 @@ materials/
 | 練習作答 | `/practice/[sessionId]` | 一次一題、進度顯示、提交後顯示答案／解釋／知識點／教材來源；填充題另有 **AI 語意批改**；每題可**回報問題**；答案與標準答案極為接近時會標示「需要教師覆核」 |
 | 練習結果 | `/practice/[sessionId]/result` | 完成題數、答對題數、正確率、需重溫知識點、逐題回顧（含 AI 批改結果）、針對錯題再練習；教師／管理員測試時另有返回後台首頁的入口 |
 | 我的帳戶 | `/account` | 登入狀態及身分（學生／教師／管理員）、**班別及學號（來自學生名冊）**、登出；教師及管理員另有後台入口 |
-| **AI 歷史自學學伴 (Beta)** | `/tutor` | 只限名冊已核對學生；支援口語、香港粵語、常見簡體歷史詞、片語、一般錯字及 WW1／WWI／World War 1、WW2／WWII／World War 2、Cold War 等名稱，並容忍常見大小寫、空格及縮寫連字號差異；含混提問會提供 2–4 個歷史澄清方向，明確離題仍固定拒答；每日最多 15 個已成功取得回覆的提問，並共用 `ai_operations` 的 generation 全域時間窗上限；**以已開放給學生的教材段落為依據**，回覆會標示「已對照課本教材」（附節錄及出處）或「未找到教材依據」，另會提示課本用語；不連接題庫，AI 回答僅供參考 |
+| **AI 歷史自學學伴 (Beta)** | `/tutor` | 只限名冊已核對學生；支援口語、香港粵語、常見簡體歷史詞、片語、一般錯字及 WW1／WWI／World War 1、WW2／WWII／World War 2、Cold War 等名稱，並容忍常見大小寫、空格及縮寫連字號差異；含混提問會提供 2–4 個歷史澄清方向，明確離題仍固定拒答；每日最多 15 個已成功取得回覆的提問，並共用 `ai_operations` 的 generation 全域時間窗上限；**以已開放給學生的教材段落為依據**，回覆會標示「已對照課本教材」（附節錄及出處）或「未找到教材依據」，另會提示課本用語；回答採固定短結構（一句定位 → 2–3 點線索／引導問題 → 依據說明 → 下一步可以問）；可選「溫習課題」作檢索 soft prior；由練習頁進入時會顯示開場引導及建議問題；學校可選擇開啟「🌐 外部參考」（白名單網站短摘錄，預設關閉，與教材分開標示、非考試標準）；不連接題庫，AI 回答僅供參考 |
 
 #### AI 歷史自學學伴：教材依據與課本用語（2026-10-27）
 
@@ -333,6 +334,108 @@ materials/
   - 2026-10-27 第二批類別詞（決策 3）：極權主義／極權 → 極權、獨裁、專制、一黨專政；獨裁、專制互為展開；統治者 → 君主、皇帝、元首、領袖；措施 → 政策、規定、條款。仍**不引入**外部 embedding／向量庫（成本與架構另案），因此「換一句完全不同的說法」仍可能找不到，此時一律標示「未找到教材依據」。
 - **詞庫譯名修正**：核對教材原文後修正了四個以台灣／內地譯名作「課本寫法」的詞條——希特拉（原「希特勒」）、史太林（原「史達林」）、塞拉耶佛事件（原「薩拉熱窩事件」）、美國革命（原「美國獨立戰爭」）。教材原文出現 41 次「希特拉」、0 次「希特勒」，其餘同理；填充題批改的同義詞比對不受影響（同一組內互為別名）。2026-10-27 另補：米開蘭基羅（教材寫法，原以「米開朗基羅」為準）、新增拉斐爾，並把達文西的範圍由「高中」改為「課題5」（教材在初中課題5 筆記列出三人）。
 - 測試：[tests/tutor-grounding.test.ts](tests/tutor-grounding.test.ts)（檢索、段落合併、過濾、用語對照，另驗證未確認版權及校內試題檔不會被引用）及 [tests/tutor-grounding-api.test.ts](tests/tutor-grounding-api.test.ts)（SSE 標示、提示詞內容、保存後重新載入）。
+
+#### 學伴外部參考：白名單網頁補充（2026-11-01，MVP，**預設關閉**）
+
+> **預設 `TUTOR_WEB_SUPPLEMENT_ENABLED=false`。** 未開啟時學伴不會發出任何外網請求（連 DNS 也不查），行為與加入此功能前**完全一致**；API 回覆仍會帶 `webSources: []` 及 `webSupplementStatus: "disabled"`，方便介面及測試分辨狀態。
+
+**校本教材仍然是唯一的「課本依據」。** 外部參考只是課後擴充，永遠與教材分開標示：
+
+| 標示 | 來源 | 學生應該怎樣用 |
+| --- | --- | --- |
+| ✅ 已對照課本教材 / ➕ 未找到教材依據 / 📖 課本用語 | 校本教材（`sources`／`groundingStatus`／`termNotes`） | 照舊：有依據的才照溫 |
+| 🌐 外部參考（非課本・非考試標準） | 白名單網站短摘錄（`webSources`） | 只看作課外延伸；不可當作考試或評分標準 |
+
+- **不會被寫成課本說法**：提示詞以獨立區塊（「【外部參考摘錄——非校本教材、非評卷標準】」）附上站名、標題、網址及摘錄，並明確要求與教材分開表述、教材優先、不可編造網址或站名。沒有實際抓取成功時**不會有任何** `webSources`，介面亦不會顯示 🌐 區塊——不存在「根據 BBC 指出」但其實沒有抓過的情況。
+- **觸發條件（必須同時成立）**：① `TUTOR_WEB_SUPPLEMENT_ENABLED=true`；② 請求已通過歷史主題硬閘、且不是澄清或固定離題拒答；③ 命中課題不在 `TUTOR_WEB_BLOCKED_TOPICS`；④ **已通過每日 15 次及 `generation` 時間窗預留**。澄清／離題分支會直接回 `webSupplementStatus: "not-used"`，**不會**為澄清句單獨抓網。
+- **與每日額度無關**：外網補充是為「即將呼叫的主回答」服務，不是獨立的 AI 操作，因此不另計次數、不改動每日 15 次或 `generation` 配額。抓取失敗只會靜默降級為「只有教材」，**不會**令學伴回 500。
+- **防 SSRF（P0）**：只准 `https`；host 必須在白名單（後綴匹配，`bbc.co.uk.evil.example` 不匹配）；連線前先解析 DNS，拒絕私網、迴路、link-local（含雲端中繼資料服務 `169.254.169.254`）、CGNAT、組播及保留位址；重定向逐跳檢查（最多 3 次），任何一跳離開白名單即中止；請求有逾時（預設 4 秒）、回應只讀首 1 MB、摘錄再截斷。搜尋端點本身亦要通過同樣的 https／公網位址檢查。
+- **如何搜尋**：平台沒有付費搜尋 API，`TUTOR_WEB_SEARCH_ENDPOINT` 指向一個相容 `POST {query, domains, limit}` → `{results: [{url, title}]}` 的服務（自建代理或任何搜尋 API 的薄包裝）。**未設定時不做搜尋**，狀態為 `not-used`；平台不會退化成爬取搜尋結果頁（既違反搜尋引擎條款，亦不穩定）。搜尋結果會先按白名單過濾，**非白名單網址不會被請求**。
+- **狀態值**：`disabled`（開關關閉）／`blocked-topic`（課題被封鎖）／`not-used`（未設定搜尋端點或沒有可用結果）／`failed`（搜尋或抓取出錯，已靜默降級）／`ok`（至少一段成功）。
+- **長度上限分兩層**：顯示給學生的 `excerpt` 最多 120 字（避免介面被長文淹沒）；送去提示詞的段落最多 `TUTOR_WEB_MAX_CHARS_PER_SOURCE`（預設 600 字）。較長的段落只進入提示詞，**不會**經 API 或資料庫外泄。
+
+**預設白名單**（逗號分隔 host，不含協議；可用 `TUTOR_WEB_ALLOWLIST` 整份覆蓋。2026-11-01 以 `Resolve-DnsName` 逐項核對可解析）：
+
+| 類別 | host |
+| --- | --- |
+| 通史／百科 | `britannica.com`、`bbc.co.uk`、`bbc.com`、`history.com`、`worldhistory.org`、`khanacademy.org`、`education.nationalgeographic.org`、`nobelprize.org` |
+| 史料／文件 | `avalon.law.yale.edu`、`sourcebooks.fordham.edu`、`nationalarchives.gov.uk`、`archives.gov`、`loc.gov`、`un.org` |
+| 學術／博物館 | `ashmolean.org`、`britishmuseum.org`、`si.edu`、`iwm.org.uk`、`ushmm.org`、`jstor.org` |
+| 香港／本地 | `edb.gov.hk`、`hk.history.museum`（香港歷史博物館）、`grs.gov.hk`（政府檔案處）、`lcsd.gov.hk` |
+| **硬性封鎖**（即使加入白名單亦不會抓取） | `wikipedia.org`／`wikimedia.org`（共筆百科）、`reddit.com`、`zhihu.com`、`quora.com`、`facebook.com`、`x.com`／`twitter.com`、`weibo.com` 等社交／論壇 |
+
+> 規格中的 `ashmolian.com` 與 `pro.gov.hk` **無法解析**，分別以實際官方域名 `ashmolean.org` 及 `grs.gov.hk` 取代；`iwmi.yale.edu` 無 DNS 記錄，按指示省略。**MVP 不放整個 `.edu.hk`**，只放已確認的單一 host。
+>
+> 硬性封鎖與「預設拒絕」不同：白名單本身已擋下所有未列出網域；硬性封鎖連「科組刻意加入」都不生效，避免共筆百科或社交平台被當成權威參考。`blogspot.com`／`medium.com` 等平台式網域**不**列入硬性封鎖，因為「單一網誌正式加入白名單」屬合理例外。
+
+- **風險（已記錄）**：① 外部網站的史觀、用詞及年份可能與本校教材不同，甚至互相矛盾——提示詞要求以教材為準，但模型仍可能取捨不當，教師應定期抽查；② 白名單網站不是評卷標準，`jstor.org` 等大部分正文在付費牆後，抓不到時如實留空（**不會**假引用）；③ 搜尋質素取決於 `TUTOR_WEB_SEARCH_ENDPOINT` 所接的服務；④ DNS 檢查與實際連線之間存在 TOCTOU 窗口，Node 的 `fetch` 無法指定已解析 IP，故以「連線前逐跳檢查＋只准白名單＋只准 https」作為防線；⑤ 外網抓取會令回覆首字延遲最多約 `TUTOR_WEB_BUDGET_MS`（預設 1.5 秒，硬上限 2 秒）。
+- **策略模式（`TUTOR_WEB_MODE`，2026-11-01）**：`off`（等同關閉）、`always`（通過閘門就嘗試，舊行為）、`not-covered-only`（**開啟時的預設**：只有教材 grounding 為 `not-covered` 才抓網）。教材已命中時再抓外網只會增加延遲及「兩個來源說法不同」的風險。另可設 `TUTOR_WEB_TOPIC_ALLOWLIST`（正面清單）與 `TUTOR_WEB_BLOCKED_TOPICS`（封鎖清單）。
+- 測試：[tests/tutor-web-supplement.test.ts](tests/tutor-web-supplement.test.ts)（開關關閉零請求、成功抓取、非白名單丟棄、SSRF、教材與外網並存、外網失敗降級、澄清／離題不觸發、重定向離開白名單、封鎖課題、三種模式、時間預算；全部外網以 mock 取代，並以 `vi.mock("node:dns/promises")` 驗證 DNS／私網檢查）及 `tutor-web-allowlist.ts` 的純函式單元測試。
+
+#### 練習 ↔ 學伴學習閉環（2026-11-01）
+
+**目標**：學生在練習卡住時，可以在同一條題目上得到「概念與思路」的引導，而**不會**得到答案；教師 meanwhile 拿到足夠的匿名訊號去改善提問理解，而不是去讀學生對話。
+
+**1. 練習 → 學伴（P0 資料流）**
+
+| 會傳給學伴／前端 | 永不離開伺服器 |
+| --- | --- |
+| `questionId`（只作關聯）、`topicId`、`topicTitle`、`questionType`（題型標籤）、`skill`（技能標籤，本屬學生白名單欄位）、`stemSummary`（題幹摘要 ≤300 字）、`suggestedQuestions`（引導性問題） | `correctAnswer`、`acceptedAnswers`、選項對錯、`explanation`、`rubric`、`knowledgePoint`（往往就是答案）、`sourceExcerpt`／`sourceLocation`／`sourceBlockIds`、`qualityWarnings`、教師備註、未發布題目 |
+
+- 練習頁每題新增「🏛️ 問學伴這題的概念」，只帶 `questionId` 及 `sessionId`（練習工作階段）到 `/tutor?from=practice&…`；**答案不會經網址傳遞**。
+- 學伴側以 [`GET /api/tutor/practice-context`](src/app/api/tutor/practice-context/route.ts) 向伺服器換取上下文：[tutor-practice-context.ts](src/server/services/tutor-practice-context.ts) 是**唯一**把題目轉成學伴上下文的出口。兩條查詢路徑：
+  - **A. 有 `sessionId`（學生自己的練習）**：經 `getPracticeView` 取快照，先用既有的擁有權檢查（他人練習 → 403），取到的物件本身是 `StudentQuestion` 白名單結構，結構上不可能含答案。**即時生成的題目（不在題庫）亦可使用。**
+  - **B. 只有 `questionId`**：查題庫，必須同時符合「已發布」、「課題已發布」及「達到派題要求」（`checkQuestionDeliverable`，與練習派題同一支）。
+  - 失敗一律回 **404 及同一句訊息**（「找不到這條練習題目」），令未發布題目無法被藉此探測。
+- `POST /api/tutor/chat` 亦接受 `practiceQuestionId`／`practiceSessionId`：伺服器**自行重組**上下文並注入 system 的「【練習上下文】」區塊；前端即使夾帶 `correctAnswer`、`explanation` 等欄位亦完全不被讀取（Zod schema 不接收）。
+- **開場不空白**：由練習進入時，`TutorView` 會先顯示一則平台說明氣泡（**不呼叫模型、不寫入對話紀錄**），列出課題、題幹摘要、技能提示及 1–3 個引導問題；學生可直接提問或點建議問題再送出。
+- 技能提示（M3）：練習題有 `skill` 時，`meta`／`done` 會帶 `skillHint`（例如「這題較常練習：準確排列歷史事件的次序」），介面以 🎯 顯示；**不評分、不公開試卷**。
+
+**2. 回覆短結構（固定）**
+
+system prompt 新增「【回覆結構】」，要求歷史問題的回答大致為：① 一句定位（時段／課題／事件）→ ② 二至三點線索或引導問題（鷹架，不可寫成可抄的完整答案）→ ③ 依據說明（教材有／沒有；引用外部參考時必須說明那是外部網站）→ ④「下一步你可以問……」一個具體跟進方向。簡短確認或寒暄可不必硬套四段；既有的「禁代抄」、「禁背全文」要求全部保留。
+
+**3. 匿名事件記錄（數據閉環）**
+
+- 新表 `tutor_query_events`（append-only）：`id`、`createdAt`（香港時間）、`eventType`（`reject`／`clarify`／`normalize`）、`rawPreview`（≤120 字）、`normalizedPreview`、`hadSession`。
+- **刻意不存** `learnerId`、電郵、班別或對話全文；連「同一人問了幾次」都查不到。正常歷史回答**不記錄**，只記離題、澄清及「正規化真的有改寫」（只統一標點／大小寫不算，否則事件表會被無價值樣本淹沒）。
+- 記錄**與額度完全無關**：不扣每日 15 次、不 `reserveAiOperation`；寫入失敗一律吞掉，不會令回覆失敗。
+
+**4. 每月補正規化流程（教師）**
+
+```bash
+# 1. 匯出最近 30 日的怪句（唯讀；不含學生身分、題目或答案）
+npm run tutor:export-utterances -- --days 30 --limit 200
+# 需要貼進表格時：
+npm run tutor:export-utterances -- --days 30 --format csv > %TEMP%\tutor-utterances.csv
+
+# 2. 人工抽 20 句，找出仍然誤判（應放行卻拒答）或誤譯（口語未收斂）的寫法
+# 3. 改 src/server/services/tutor-query.ts 的 NORMALIZATION_RULES／訊號詞
+# 4. 為每個改動加 fixture 測試（tests/fixtures/tutor-colloquial-utterances.ts 或
+#    tests/tutor-prompt-structure.test.ts 的 tutorQueryWasRewritten 案例）
+npm test
+```
+
+**5. 教師端「學伴使用概況」（只有統計）**
+
+- 新頁 `/teacher/tutor`（教師教學端快速入口已加入）：近 7／30 日的成功回答、離題、澄清、正規化改寫、外部參考狀態分佈及按日彙總。
+- API：`GET /api/teacher/tutor-stats?days=7|30`，`requireTeacher`；學生 403。回應固定帶 `contentIncluded: false`，**不含**任何訊息正文陣列。
+- **抽樣檢視對話全文屬 P1，本輪未實作**：如要做，需另設權限、二次確認、自動去識別化及保留期限（建議 30 日），README 需同步更新。目前教師若需個別跟進，應直接與學生溝通或依學校程序處理。
+
+**6. 學習目標課題（M4，soft prior）**
+
+學生可在學伴頁選擇「溫習課題」（只列已發布課題），對話會保存該設定。檢索時次序為：① 當前提問明確指出的課題 → ② 學習目標課題 → ③ 對話歷史。因此「咁之後呢？」會留在正在溫習的課題，而明確問另一個課題的專名時仍以當前的問題為準（保留 2026-10-27「上一題蓋過當前題」的回歸保護）。無效或未發布的 `goalTopicId` 一律忽略。
+
+**7. 課題卡（M2，最小版）**
+
+- 內建 [tutor-topic-cards.ts](src/server/seed/tutor-topic-cards.ts) 提供兩個課題示例（課題9 兩次世界大戰、課題5 近代歐洲的興起）；科組可放 `data/tutor-topic-cards/*.json`（單一卡片或陣列）**覆蓋**同 ID 課題，該目錄不在版本控制內。
+- 卡片只可含**引導性問題**及**混淆點**，不可寫答案、選項對錯、評分參考；讀取時不查題庫，`tests/tutor-prompt-structure.test.ts` 另會檢查內建卡片不含「答案／正確選項／評分」字樣。
+- 用途：澄清候選（排在自動產生的候選之前）及練習開場的建議問題。完整 CRUD 介面屬 P1。
+
+**8. 額度用盡的體驗**
+
+429／額度用完時，除說明文字外提供兩個既有路由的按鈕：`/review`（重溫錯題）及 `/`（課題首頁／練習進度），並說明「離題及澄清不計入每日次數」，避免學生以為被懲罰。
+
 
 
 #### 教材內容政策：只使用課文內容（不顯示練習題目及評分參考）
@@ -688,6 +791,7 @@ materials/
 | 頁面 | 路徑 | 功能 |
 | --- | --- | --- |
 | 教師端首頁 | `/teacher` | 題庫概況（題目總數／已發布／草稿／已停用／校內試題待核對／未通過教材核對／待覆核回報）、學生練習記錄數量及常用操作入口 |
+| 學伴使用概況 | `/teacher/tutor` | 近 7／30 日的**聚合統計**：成功回答、離題（固定拒答）、澄清、正規化改寫、外部參考狀態分佈及按日彙總。**不含任何對話正文**（API 固定回 `contentIncluded: false`）；抽樣檢視屬 P1，未實作 |
 | 題目管理 | `/teacher/questions` | 生成題目預覽（附教材依據）、手動新增／編輯／發布／停用／刪除題目、依分節及狀態篩選、**題目回報覆核**（可按狀態及課題篩選，標記已處理／已略過／重設待覆核；即時生成題目會標示「AI 即時生成題目」及「只存於該次練習，未存入題庫」） |
 | 題目生成與審核 | `/teacher/questions/generate` | 同上，預設捲動至生成區塊，方便直接出題及審核 |
 | 學生練習記錄 | `/teacher/records` | **單一頁面、由上而下一個流程**：篩選 → 本次查詢統計 → 學習者使用概況（可展開）→ 練習記錄（逐題作答）。所有篩選集中在「篩選」卡：第一行先選**班級**、再選**班別**（選擇後即時篩選下方記錄、學習者清單及匯出範圍；班別選項亦會按班級收窄），再提供搜尋及**學習者**選單；第二行是**記錄範圍**（課題、活動狀態、起訖日期）＋查詢／重設＋四種格式匯出。班級／班別條件由名冊配對的學生身分套用至練習記錄，避免混入其他班別學生；「班級」＝中一至中六（由名冊班別 `1A` 的級別推導）。「學習者」選單按**班級 → 班別 → 班號**排列（班號以數值比較，10 不會排在 9 之前），未列入名冊者排在最後。「學習者使用概況」預設**收起**（標題列已顯示「名冊 N 位・本次查詢 X 位有記錄・Y 位尚未開始」），選定學習者後自動收起，逐題記錄緊接統計出現；按「展開名冊」可檢視練習次數、累計答題、答對比率及最近活動（表內數字為**終身累計**，統計方塊才是本次查詢），按「查看記錄」會即時篩選該學習者、展開逐題作答並捲動到「練習記錄」區塊，該學習者沒有記錄時會顯示說明而不是毫無反應；按「查詢記錄」一律捲動到結果（不再停留在名冊列表）。**逐題記錄顯示完整題目**：題幹、選擇題全部選項（A／B／C／D，正確選項以綠框標示，學生所選另有「學生選擇」標記）、學生答案、正確答案、解釋、知識點，以及可展開的「教材依據」（來源位置及原文節錄）；標題列可勾選「只看答錯／未作答」，與學生回顧錯題時不必再逐題掃視答對的題目 |
@@ -784,7 +888,7 @@ src/server/materials/             DOCX、PDF 解析、圖片與段落對應、�
 src/server/ocr/                   OCR provider 介面、tesseract.js、Google Vision、PNG 編碼
 src/server/auth/                  Google OAuth、工作階段 cookie、角色判定、guards.ts 集中授權
 src/server/llm/                   provider 介面、mock、DeepSeek、Gemini、OpenAI 相容、輸出驗證、填充題歷史元素判定（historical-answer.ts）、題目品質閘門（question-quality.ts）、填充題題幹規則（fill-question.ts）、題目重複判定（question-dedupe.ts）
-src/server/services/              練習流程、題目生成、題庫批次生成、OCR、教材管理、評分、回報、AI 用量統計、練習記錄匯出（records-export.ts）
+src/server/services/              練習流程、題目生成、題庫批次生成、OCR、教材管理、評分、回報、AI 用量統計、練習記錄匯出（records-export.ts）、學伴教材依據（tutor-grounding.ts）及學伴外部參考（tutor-web-supplement.ts／tutor-web-allowlist.ts，預設關閉）
 src/server/export/                教師端匯出檔案產生器（office.ts：XLSX／DOCX；pdf.ts：PDF＋中文字型）
 src/server/seed/                  教育局課程架構、學習重點（精簡摘要）、示範題庫、教材依據核對
 src/app/api/                      REST API（學生端、教師端 /api/teacher/**、管理員端 /api/admin/**）
@@ -828,14 +932,16 @@ scripts/setup-push-to-deploy.ps1  設定「推送即部署」的 GitHub → Clou
 | `POST /api/practice/[sessionId]/complete` | 完成練習並取得成績 |
 | `GET /api/practice/[sessionId]/result?learnerId=` | 重看成績 |
 | `POST /api/reports` | 學生回報題目（`{ learnerId, questionId, sessionId, reason, detail }`；已登入時忽略前端 learnerId；題庫題目及 AI 即時生成的題目都可回報） |
-| `GET /api/tutor/chat?sessionId=` | 學伴對話（最近 40 則，每則附教材依據 `sources`／`groundingStatus`／`termNotes`）、每日剩餘次數及全域時間窗狀態；只限名冊已核對學生（教師／管理員可作科組測試） |
-| `POST /api/tutor/chat` | 學伴提問：先檢索已開放給學生的教材段落，再以 SSE 串流回覆。事件依次為 `meta`（`grounding`／`sources`／`topicTitle`）、`delta`（文字）、`done`（剩餘次數 `remaining` 及課本用語對照 `termNotes`） |
+| `GET /api/tutor/chat?sessionId=` | 學伴對話（最近 80 則，每則附教材依據 `sources`／`groundingStatus`／`termNotes`，以及外部參考 `webSources`）、每日剩餘次數及全域時間窗狀態；只限名冊已核對學生（教師／管理員可作科組測試） |
+| `POST /api/tutor/chat` | 學伴提問：先檢索已開放給學生的教材段落（及可選的白名單外部參考），再以 SSE 串流回覆。事件依次為 `meta`（`grounding`／`sources`／`topicTitle`／`webSources`／`webSupplementStatus`／`skillHint`）、`delta`（文字）、`done`（剩餘次數 `remaining`、課本用語對照 `termNotes`、`webSources`、`webSupplementStatus`、`skillHint`、`practiceQuestionId`）。可選 body 欄位：`practiceQuestionId`／`practiceSessionId`（伺服器自行重組**學生安全**練習上下文）、`goalTopicId`（學習目標課題，soft prior）。外部參考預設關閉（`TUTOR_WEB_SUPPLEMENT_ENABLED=false`），關閉時 `webSources` 為空、狀態為 `disabled` |
+| `GET /api/tutor/practice-context?questionId=&sessionId=` | 練習 → 學伴的**學生安全**上下文（課題、題型、技能標籤、題幹摘要 ≤300 字、引導問題）。**不含**標準答案、解釋、知識點或選項對錯；未發布／未達派題要求 → 404（同一句訊息），他人練習 → 403 |
 | `GET/POST /api/admin/materials` | 教材清單／上載（亦可用 `source=pilot` 匯入專案內試點教材）—**管理員** |
 | `GET/POST /api/admin/materials/[documentId]/ocr` | 查詢 OCR 狀態／開始辨識（背景執行，`?wait=1` 為同步） |
 | `GET/POST /api/admin/materials/import` | 列出 `materials/` 內可匯入檔案／批次匯入（`{ "all": true, "runOcr": true }`） |
 | `GET/PATCH/DELETE /api/admin/materials/[documentId]` | 段落預覽（含發行權稽核記錄）／指定課題、設定學生可用權限（會寫入稽核記錄）／刪除 |
 | `PATCH /api/admin/materials/blocks/[blockId]` | 修改段落內容或分節 |
 | `GET /api/teacher/overview` | 教師端首頁統計（題庫狀態、待覆核回報、練習記錄數量）—**教師及管理員** |
+| `GET /api/teacher/tutor-stats?days=7\|30` | 學伴使用概況（**只有聚合數字**：成功回答、離題、澄清、正規化改寫、外部參考狀態及按日彙總）。固定回 `contentIncluded: false`，**不含對話正文**；學生 403 |
 | `GET/POST /api/teacher/questions` | 題目清單／手動新增 |
 | `POST /api/teacher/questions/generate` | 生成題目（含驗證及教材依據核對） |
 | `PATCH/DELETE /api/teacher/questions/[questionId]` | 發布／停用／編輯／刪除題目（**發布需要對應目前版本的人工覆核紀錄或自動品質驗證紀錄，否則 409**；編輯已發布題目會自動下架；**建立或編輯時不可直接指定 published，否則 409**） |
@@ -2349,6 +2455,15 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 | `DEMO_AUTO_PUBLISH_QUESTIONS` | 本機 `true`／正式 `false` | 示範模式是否自動發布**本地示範生成**的題目（未經任何驗證）；只限非正式環境生效 |
 | `AUTO_PUBLISH_VALIDATED_QUESTIONS` | `true` | 是否讓**通過自動品質驗證**的題目立即供學生自學（Sprint 7.8；任何環境適用）。設為 `false` 即回復「只發布經人工覆核題目」的舊行為，已驗證題目會留在草稿 |
 | `EXPLANATION_HOLD_POLICY` | `off` | 解釋未達標是否暫緩派發：`off`／`placeholder`／`placeholder-or-answer-only`。**屬產品決定**：以 2026-10-20 題庫計，`placeholder` 會令可派發題目由 1,875 題減至 546 題，`placeholder-or-answer-only` 則為 0 題。無效值回退 `off` 並顯示 error 級設定警示；啟用時顯示 warning 及影響範圍 |
+| `TUTOR_WEB_SUPPLEMENT_ENABLED` | `false` | 學伴白名單網頁補充（外部參考）開關。**預設關閉＝零外網請求**，行為與加入此功能前一致 |
+| `TUTOR_WEB_SEARCH_ENDPOINT` | 空 | 相容 `POST {query, domains, limit}` → `{results: [{url, title}]}` 的搜尋端點（必須 `https://` 及公網位址）。未設定＝不做搜尋，外部參考狀態為 `not-used`；平台不會自行爬取搜尋結果頁 |
+| `TUTOR_WEB_ALLOWLIST` | 內建白名單 | 逗號分隔 host（不含協議），**整份覆蓋**預設白名單。IP、單一主機名、共筆百科及社交平台一律忽略（見第三節「學伴外部參考」） |
+| `TUTOR_WEB_MAX_SOURCES`／`TUTOR_WEB_MAX_CHARS_PER_SOURCE` | `2`／`600` | 每次回答最多引用幾段外部參考、每段送入提示詞的字數（硬上限 5／2,000） |
+| `TUTOR_WEB_FETCH_TIMEOUT_MS` | `4000` | 單次外網請求逾時 |
+| `TUTOR_WEB_BUDGET_MS` | `1500` | 搜尋＋抓取的**整體**預算（硬上限 2000）；超時即放棄外網，主回答照常送出 |
+| `TUTOR_WEB_MODE` | 關閉時 `off`／開啟時 `not-covered-only` | 外網補充策略：`off`／`always`／`not-covered-only`（只有教材 `not-covered` 才抓網） |
+| `TUTOR_WEB_TOPIC_ALLOWLIST` | 空 | 非空時只對列出的 topicId 做外網（正面清單） |
+| `TUTOR_WEB_BLOCKED_TOPICS` | 空 | 逗號分隔 topicId；命中則該課題完全不做外網補充（供敏感課題由科組自行設定） |
 
 ---
 

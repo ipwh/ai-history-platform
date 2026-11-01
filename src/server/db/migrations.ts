@@ -1537,6 +1537,48 @@ export const MIGRATIONS: Migration[] = [
       `ALTER TABLE tutor_messages ADD COLUMN termNotesJson TEXT NOT NULL DEFAULT '[]'`,
     ],
   },
+  {
+    id: "0033-tutor-web-supplement",
+    statements: [
+      // 學伴引用的白名單網站外部參考（站名、標題、網址、短摘錄）。
+      // 與 sourcesJson（校本教材）分開保存：兩者語意不同，混在同一個欄位會令
+      // 「這是課本依據還是外部補充」無法分辨，重新載入對話時就可能把外網內容
+      // 顯示成教材出處。新增獨立欄位屬非破壞性改動，舊資料一律為 '[]'。
+      //
+      // 功能本身預設關閉（TUTOR_WEB_SUPPLEMENT_ENABLED 未設定 = false），
+      // 因此 migration 只加欄位，不會令任何既有回覆多出外部參考。
+      `ALTER TABLE tutor_messages ADD COLUMN webSourcesJson TEXT NOT NULL DEFAULT '[]'`,
+    ],
+  },
+  {
+    id: "0034-tutor-learning-loop",
+    statements: [
+      // 練習 → 學伴的上下文。只保存**學生本來就看得到**的欄位（課題、題型、技能標籤、
+      // 題幹摘要、建議問題），永不保存標準答案、選項對錯、解釋、評分參考或教師備註。
+      // 存起來是為了重新載入對話時仍顯示同一則開場引導；null = 不是由練習進入。
+      `ALTER TABLE tutor_sessions ADD COLUMN practiceContextJson TEXT NOT NULL DEFAULT 'null'`,
+      // 每次回覆的外部參考狀態（disabled／not-used／ok／failed／blocked-topic）。
+      // 只用於教師端聚合統計，不影響任何回答內容。
+      `ALTER TABLE tutor_messages ADD COLUMN webSupplementStatus TEXT NOT NULL DEFAULT 'none'`,
+      // 澄清／離題／正規化改寫的**匿名**事件記錄（append-only）。
+      //
+      // 刻意不存 learnerId、電郵、班別或對話全文：用途只是讓科組每月抽樣 20 句，
+      // 補強 tutor-query 的正規化規則；存身分或全文會令它變成學生監控工具，
+      // 超出原本目的。rawPreview 截斷至 120 字。
+      `CREATE TABLE IF NOT EXISTS tutor_query_events (
+        id TEXT PRIMARY KEY,
+        createdAt TEXT NOT NULL,
+        eventType TEXT NOT NULL CHECK (eventType IN ('reject', 'clarify', 'normalize')),
+        rawPreview TEXT NOT NULL,
+        normalizedPreview TEXT,
+        hadSession INTEGER NOT NULL DEFAULT 0 CHECK (hadSession IN (0, 1))
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_tutor_query_events_type_created
+         ON tutor_query_events(eventType, createdAt DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_tutor_query_events_created
+         ON tutor_query_events(createdAt DESC)`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

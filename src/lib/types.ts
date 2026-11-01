@@ -1507,6 +1507,113 @@ export const tutorTermNoteSchema = z.object({
 });
 export type TutorTermNote = z.infer<typeof tutorTermNoteSchema>;
 
+/**
+ * 學伴引用的**外部參考**（白名單網站的短摘錄）。
+ *
+ * 與 `TutorSource`（校本教材）**分軌處理**：這裡的內容不是課本、亦不是評卷標準，
+ * 介面必須分開標示。平台只會在真的抓取成功後才會有這個物件，因此前端可以放心
+ * 顯示成可點擊連結——不會出現「根據 BBC 指出」但其實沒有抓過的情況。
+ */
+export const tutorWebSourceSchema = z.object({
+  /** 實際抓取的網址（已通過白名單及 SSRF 檢查） */
+  url: z.string().min(1),
+  /** 頁面標題（取自頁面 `<title>`／`<h1>`，不是模型生成） */
+  title: z.string().default(""),
+  /** 來源站名：必定是白名單條目（見 services/tutor-web-allowlist.ts） */
+  siteLabel: z.string().default(""),
+  /** 顯示給學生的短摘錄（長度上限見 services/tutor-web-supplement.ts） */
+  excerpt: z.string().default(""),
+});
+export type TutorWebSource = z.infer<typeof tutorWebSourceSchema>;
+
+/**
+ * 外部參考的狀態，供介面及測試分辨「為甚麼沒有／為甚麼有」外部參考。
+ *
+ * - `disabled`：`TUTOR_WEB_SUPPLEMENT_ENABLED=false`（預設），零外網請求；
+ * - `blocked-topic`：課題列於 `TUTOR_WEB_BLOCKED_TOPICS`，不對該課題抓網；
+ * - `not-used`：已啟用但沒有可用的抓取結果（未設定搜尋端點、搜尋結果全被白名單
+ *   過濾等），屬正常情況，不是錯誤；
+ * - `failed`：搜尋或抓取過程出錯（逾時、非 200、非 HTML、DNS／私網檢查失敗等）；
+ * - `ok`：至少有一段外部參考成功抓取並附上摘錄。
+ */
+export const tutorWebSupplementStatusSchema = z.enum([
+  "disabled",
+  "not-used",
+  "ok",
+  "failed",
+  "blocked-topic",
+]);
+export type TutorWebSupplementStatus = z.infer<typeof tutorWebSupplementStatusSchema>;
+
+/**
+ * 由「練習」進入學伴時帶入的**學生安全**上下文。
+ *
+ * 這份資料的每一個欄位都是學生在練習畫面本來就看得到的內容：
+ * `questionId`（關聯用）、`topicId`／`topicTitle`、`questionType`、`skill`（技能標籤，
+ * 屬 `studentQuestionFields`）、`stemSummary`（題幹摘要，≤300 字）及建議問題。
+ *
+ * **絕對不含**：`correctAnswer`、選項的「何者正確」標記、`explanation`（含評卷）、
+ * `acceptedAnswers`、`sourceExcerpt`、`knowledgePoint`（可能是答案本身）、
+ * rubric、教師備註或未發布題目。前端即使傳送這些欄位，伺服器亦一律忽略並自行重組。
+ */
+export const tutorPracticeContextSchema = z.object({
+  questionId: z.string().min(1),
+  topicId: z.string().min(1),
+  topicTitle: z.string().default(""),
+  /** 題型標籤（例如「選擇題」）；只用於措辭，不用於評分 */
+  questionType: z.string().default(""),
+  /** 歷史技能標籤（來自題目的 `skill`）；null = 題目沒有標示 */
+  skill: z.string().nullable().default(null),
+  /** 題幹摘要（已截斷，僅供理解題意） */
+  stemSummary: z.string().default(""),
+  /** 開場建議問題（不含答案，只指向概念） */
+  suggestedQuestions: z.array(z.string()).default([]),
+});
+export type TutorPracticeContext = z.infer<typeof tutorPracticeContextSchema>;
+
+/**
+ * 學伴提問事件類型（匿名聚合用）。
+ *
+ * - `reject`：明確離題，平台固定拒答；
+ * - `clarify`：意思含混，平台回澄清方向；
+ * - `normalize`：正規化改寫了學生的原句（用於日後補強規則）。
+ */
+export const tutorQueryEventTypeSchema = z.enum(["reject", "clarify", "normalize"]);
+export type TutorQueryEventType = z.infer<typeof tutorQueryEventTypeSchema>;
+
+/**
+ * 教師端「學伴使用概況」。
+ *
+ * **只有聚合數字，沒有對話正文**：`contentIncluded` 永遠是 `false`，用來讓前端及
+ * 測試明確確認回應不含任何學生訊息內容。
+ */
+export const teacherTutorStatsSchema = z.object({
+  days: z.number().int().positive(),
+  from: z.string(),
+  to: z.string(),
+  contentIncluded: z.literal(false),
+  totals: z.object({
+    answered: z.number().int().nonnegative(),
+    offTopic: z.number().int().nonnegative(),
+    clarify: z.number().int().nonnegative(),
+    reject: z.number().int().nonnegative(),
+    normalize: z.number().int().nonnegative(),
+  }),
+  webSupplement: z.record(z.string(), z.number().int().nonnegative()),
+  daily: z.array(
+    z.object({
+      date: z.string(),
+      answered: z.number().int().nonnegative(),
+      offTopic: z.number().int().nonnegative(),
+      clarify: z.number().int().nonnegative(),
+      reject: z.number().int().nonnegative(),
+      normalize: z.number().int().nonnegative(),
+    }),
+  ),
+});
+export type TeacherTutorStats = z.infer<typeof teacherTutorStatsSchema>;
+
+
 export const questionReportSchema = z.object({
   id: z.string().min(1),
   questionId: z.string().min(1),

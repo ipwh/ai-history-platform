@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { requireStudentOrTeacher } from "@/server/auth/guards";
 import { getServerConfig } from "@/server/config";
 import {
   parseTutorQuestionSuggestions,
@@ -11,8 +10,11 @@ import {
   createTutorSession,
   countTutorMessages,
   getTutorMessages,
+  getTutorSessionContext,
   getTutorSessionLearnerId,
   saveTutorMessage,
+  setTutorSessionPracticeContext,
+  setTutorSessionTopicId,
   isTutorSessionLastTurnOnTopic,
   setTutorSessionLastTurnOnTopic,
   TUTOR_MESSAGE_WINDOW,
@@ -35,6 +37,7 @@ import {
   isClearlyNonHistoryTutorQuery,
   isUnclearTutorQuery,
   normalizeTutorQuery,
+  tutorQueryWasRewritten,
   TUTOR_QUERY_CLARIFY_REPLY,
 } from "@/server/services/tutor-query";
 import {
@@ -46,6 +49,19 @@ import {
   loadTutorCurriculumIndex,
   matchesCurriculumTerms,
 } from "@/server/services/tutor-grounding";
+import {
+  collectTutorWebSupplement,
+  type TutorWebSupplementResult,
+} from "@/server/services/tutor-web-supplement";
+import {
+  describeTutorPracticeContextForPrompt,
+  resolveTutorPracticeContext,
+} from "@/server/services/tutor-practice-context";
+import { recordTutorQueryEvent } from "@/server/repositories/tutor-events";
+import { getTopic } from "@/server/repositories/topics";
+import { getTutorTopicCard } from "@/server/services/tutor-topic-cards";
+import { requireTutorLearnerId } from "@/server/services/tutor-request-access";
+import type { TutorPracticeContext, TutorWebSupplementStatus } from "@/lib/types";
 import { ApiRouteError, handleRoute, jsonOk, parseJsonBody, privateResponseHeaders } from "@/server/http";
 
 export const runtime = "nodejs";
@@ -57,13 +73,24 @@ export const runtime = "nodejs";
  */
 const TUTOR_OPERATION_KIND = "generation" as const;
 
+/**
+ * 提問請求。
+ *
+ * `practiceQuestionId`／`practiceSessionId` 只作**關聯**用途：伺服器會用它們
+ * （配合工作階段推導的 learnerId）**重新**組裝學生安全上下文，
+ * 並完全忽略前端可能夾帶的任何答案欄位（例如 correctAnswer、explanation）。
+ * `goalTopicId` 是學生自選的溫習課題（soft prior），同樣會先驗證為已發布課題。
+ */
 const chatRequestSchema = z.object({
   message: z.string().trim().min(1, "請輸入問題").max(2000, "問題不可多於 2,000 字"),
   sessionId: z.string().trim().min(1).max(128).optional(),
+  practiceQuestionId: z.string().trim().min(1).max(128).optional(),
+  practiceSessionId: z.string().trim().min(1).max(128).optional(),
+  goalTopicId: z.string().trim().min(1).max(128).nullable().optional(),
 });
 
 /**
- * 學伴存取守衛。
+ * 學伴存取守衛（已移至 `services/tutor-request-access.ts`，供所有學伴路由共用）。
  *
  * - 未登入 → 401。
  * - 教師／管理員 → 放行，供科組測試（2026-10-27 擁有者指示）。其對話記錄在
@@ -71,20 +98,7 @@ const chatRequestSchema = z.object({
  *   `generation` 時間窗配額與學生相同，毋須另設例外。
  * - 學生 → 必須已在名冊核對，否則 403（未核對即無法確認是本校學生）。
  */
-async function requireTutorAccess(request: Request): Promise<string> {
-  const actor = await requireStudentOrTeacher(request);
-  if (!actor.user) throw new ApiRouteError("請先以學校 Google 帳戶登入", 401);
-  if (actor.user.role === "student" && !actor.user.rosterVerified) {
-    throw new ApiRouteError(
-      "你的帳戶尚未完成學生名冊核對，暫不可使用學伴；請聯絡歷史科老師。",
-      403,
-    );
-  }
-  if (actor.learnerId === null) {
-    throw new ApiRouteError("登入工作階段缺少有效的學生身分", 401);
-  }
-  return actor.learnerId;
-}
+const requireTutorAccess = requireTutorLearnerId;
 
 function buildDeepSeekEndpoint(baseUrl: string): string {
   return new URL("chat/completions", `${baseUrl.replace(/\/+$/, "")}/`).toString();
@@ -108,6 +122,88 @@ function sseEvent(event: string, data: unknown): Uint8Array {
   return new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 
+/**
+ * 澄清／離題等「不會呼叫主回答模型」的分支不做任何外網抓取（產品規則 P0），
+ * 但仍要在回應中如實交代補充狀態，令介面及測試可以分辨「為甚麼沒有外部參考」。
+ */
+function webSupplementStatusWithoutFetch(): TutorWebSupplementStatus {
+  const { webSupplement } = getServerConfig();
+  return webSupplement.enabled && webSupplement.mode !== "off" ? "not-used" : "disabled";
+}
+
+/**
+ * 記錄匿名事件（澄清／離題／正規化）。
+ *
+ * 永不影響請求：任何寫入錯誤都吞掉。記錄與每日額度及 AI 用量完全無關
+ * （見 `repositories/tutor-events.ts` 的私隱設計說明）。
+ */
+function safeRecordTutorQueryEvent(input: {
+  eventType: "reject" | "clarify" | "normalize";
+  raw: string;
+  normalized?: string | null;
+  hadSession: boolean;
+}): void {
+  try {
+    recordTutorQueryEvent(input);
+  } catch {
+    // 事件記錄是輔助資料，不可令學伴回覆失敗
+  }
+}
+
+/**
+ * 解析練習上下文；不可用時回傳 null 而不是拋錯。
+ *
+ * 學生可能是從練習頁按「問學伴」進來，該題亦可能已被下架；此時學伴應繼續正常
+ * 回答（只是沒有練習上下文），而不是 404 令學生無法提問。
+ */
+function resolvePracticeContextSafely(input: {
+  questionId: string;
+  practiceSessionId?: string | null;
+  learnerId: string;
+}): TutorPracticeContext | null {
+  try {
+    return resolveTutorPracticeContext({
+      questionId: input.questionId,
+      sessionId: input.practiceSessionId ?? null,
+      learnerId: input.learnerId,
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** 練習上下文帶出的技能提示（M3）；沒有技能標籤就不顯示 */
+function practiceSkillHint(context: TutorPracticeContext | null): string | null {
+  if (context === null || context.skill === null || context.skill.trim().length === 0) return null;
+  return `這題較常練習：${context.skill.trim()}`;
+}
+
+/**
+ * 把課題卡的建議問題優先加入澄清候選（M2）。
+ *
+ * 卡片由科組預先撰寫，貼近學生實際困惑，因此排在自動產生的候選之前；
+ * 只保留 4 個，避免把對話框變成選單。
+ */
+function withTopicCardQuestions(
+  candidates: TutorQuestionCandidate[],
+  topicId: string | null,
+): TutorQuestionCandidate[] {
+  const card = getTutorTopicCard(topicId);
+  if (card === null || card.suggestedQuestions.length === 0) return candidates;
+  const existing = new Set(candidates.map((candidate) => candidate.suggestedQuestion));
+  const cardCandidates: TutorQuestionCandidate[] = [];
+  card.suggestedQuestions.forEach((question, index) => {
+    if (existing.has(question)) return;
+    cardCandidates.push({
+      id: `card-${card.topicId}-${index + 1}`,
+      label: question.replace(/？$/, "").slice(0, 40),
+      suggestedQuestion: question,
+    });
+  });
+  if (cardCandidates.length === 0) return candidates;
+  return [...cardCandidates, ...candidates].slice(0, 4);
+}
+
 export async function GET(request: Request) {
   return handleRoute(async () => {
     const learnerId = await requireTutorAccess(request);
@@ -123,6 +219,8 @@ export async function GET(request: Request) {
     // 只回最近 TUTOR_MESSAGE_WINDOW 則，並如實告知是否被截斷（決策 5）
     const messages: TutorMessage[] = sessionId ? getTutorMessages(sessionId) : [];
     const messageCount = sessionId ? countTutorMessages(sessionId) : 0;
+    // 學習目標課題及練習上下文：用於重新載入後重建開場引導（只含學生安全欄位）
+    const sessionContext = sessionId ? getTutorSessionContext(sessionId) : { topicId: null, practiceContext: null };
     return jsonOk({
       sessionId,
       messages,
@@ -131,6 +229,8 @@ export async function GET(request: Request) {
       truncated: messageCount > messages.length,
       dailyLimit: TUTOR_DAILY_LIMIT,
       windowLimitReached,
+      topicId: sessionContext.topicId,
+      practiceContext: sessionContext.practiceContext,
       ...usage,
     });
   });
@@ -177,17 +277,62 @@ export async function POST(request: Request) {
     const groundingContext = promptHistory
       .filter((message) => message.role === "user")
       .map((message) => normalizeTutorQuery(message.content));
+
+    // ── 學習目標、練習上下文（M4／P0）──────────────────────────────────
+    // 學習目標課題只接受**已發布**課題；不存在或未發布一律當作沒有設定。
+    const goalTopic = body.goalTopicId ? getTopic(body.goalTopicId) : null;
+    const goalTopicId = goalTopic !== null && goalTopic.published ? goalTopic.id : null;
+    // 練習上下文一律由伺服器重新組裝：請求只提供 questionId／sessionId，
+    // 前端夾帶的 correctAnswer、explanation 等欄位完全不會被讀取。
+    const practiceContext =
+      body.practiceQuestionId === undefined
+        ? null
+        : resolvePracticeContextSafely({
+            questionId: body.practiceQuestionId,
+            practiceSessionId: body.practiceSessionId ?? null,
+            learnerId,
+          });
+    const storedSessionContext =
+      sessionId !== null ? getTutorSessionContext(sessionId) : { topicId: null, practiceContext: null };
+    // soft prior 次序：學生本次設定的學習目標 → 練習題所屬課題 → 對話已保存的課題
+    const preferredTopicId =
+      goalTopicId ?? practiceContext?.topicId ?? storedSessionContext.topicId ?? null;
+    const effectivePracticeContext = practiceContext ?? storedSessionContext.practiceContext;
+
+    const attachSessionContext = (id: string): void => {
+      if (practiceContext !== null) setTutorSessionPracticeContext(id, practiceContext);
+      if (goalTopicId !== null) setTutorSessionTopicId(id, goalTopicId);
+    };
+
+    // 正規化有實際改寫 → 記錄匿名事件（供每月補強規則；不含身分、不扣額度）。
+    // 只統一標點／大小寫的差異不算改寫，否則事件表會被無價值的樣本淹沒。
+    if (tutorQueryWasRewritten(body.message, normalizedMessage)) {
+      safeRecordTutorQueryEvent({
+        eventType: "normalize",
+        raw: body.message,
+        normalized: normalizedMessage,
+        hadSession: sessionId !== null,
+      });
+    }
+
     if (!explicitlyNonHistory && !isOnTopic && hasHistorySignal) {
-      const candidates: TutorQuestionCandidate[] = buildClarifyCandidates(
-        body.message,
-        groundingContext,
-        curriculum,
+      const candidates: TutorQuestionCandidate[] = withTopicCardQuestions(
+        buildClarifyCandidates(body.message, groundingContext, curriculum, preferredTopicId),
+        preferredTopicId,
       );
+      safeRecordTutorQueryEvent({
+        eventType: "clarify",
+        raw: body.message,
+        hadSession: sessionId !== null,
+      });
       return jsonOk({
         clarify: true,
         reply: TUTOR_QUERY_CLARIFY_REPLY,
         candidates,
         sessionId,
+        topicId: preferredTopicId,
+        webSources: [],
+        webSupplementStatus: webSupplementStatusWithoutFetch(),
         ...tutorDailyUsage(learnerId),
         dailyLimit: TUTOR_DAILY_LIMIT,
       });
@@ -198,33 +343,61 @@ export async function POST(request: Request) {
       // 離題也要留痕（決策 2）：學生重新載入後仍看到自己問過甚麼及平台的引導句。
       // assistant 訊息標記 `off-topic`，因此不計每日額度，亦不會成為下一輪的模型上文。
       const createdAt = hongKongTimestamp();
-      if (sessionId === null) sessionId = createTutorSession(learnerId, createdAt);
+      if (sessionId === null) {
+        sessionId = createTutorSession(learnerId, createdAt, {
+          topicId: preferredTopicId,
+          practiceContext,
+        });
+      } else {
+        attachSessionContext(sessionId);
+      }
       setTutorSessionLastTurnOnTopic(sessionId, false);
       saveTutorMessage(sessionId, "user", body.message, createdAt);
       saveTutorMessage(sessionId, "assistant", TUTOR_OFF_TOPIC_REPLY, createdAt, 0, {
         groundingStatus: "off-topic",
       });
+      safeRecordTutorQueryEvent({
+        eventType: "reject",
+        raw: body.message,
+        hadSession: true,
+      });
       return jsonOk({
         onTopic: false,
         reply: TUTOR_OFF_TOPIC_REPLY,
         sessionId,
+        webSources: [],
+        webSupplementStatus: webSupplementStatusWithoutFetch(),
         ...tutorDailyUsage(learnerId),
         dailyLimit: TUTOR_DAILY_LIMIT,
       });
     }
 
-    const grounding = findTutorGrounding(normalizedMessage, groundingContext, curriculum);
+    const grounding = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
+      preferredTopicId,
+    });
     if (unclear) {
+      const clarifyTopicId = grounding.topicId ?? preferredTopicId;
+      safeRecordTutorQueryEvent({
+        eventType: "clarify",
+        raw: body.message,
+        hadSession: sessionId !== null,
+      });
       return jsonOk({
         clarify: true,
         reply: TUTOR_QUERY_CLARIFY_REPLY,
-        candidates: buildClarifyCandidates(
-          body.message,
-          groundingContext,
-          curriculum,
-          grounding.topicId,
+        candidates: withTopicCardQuestions(
+          buildClarifyCandidates(
+            body.message,
+            groundingContext,
+            curriculum,
+            clarifyTopicId,
+          ),
+          clarifyTopicId,
         ),
         sessionId,
+        topicId: clarifyTopicId,
+        webSources: [],
+        webSupplementStatus: webSupplementStatusWithoutFetch(),
         ...tutorDailyUsage(learnerId),
         dailyLimit: TUTOR_DAILY_LIMIT,
       });
@@ -267,9 +440,28 @@ export async function POST(request: Request) {
       throw error;
     }
     const createdAt = hongKongTimestamp();
-    if (sessionId === null) sessionId = createTutorSession(learnerId, createdAt);
+    if (sessionId === null) {
+      sessionId = createTutorSession(learnerId, createdAt, {
+        topicId: preferredTopicId,
+        practiceContext,
+      });
+    } else {
+      attachSessionContext(sessionId);
+    }
     setTutorSessionLastTurnOnTopic(sessionId, true);
     saveTutorMessage(sessionId, "user", body.message, createdAt);
+
+    // 外部參考（白名單網頁補充）：只在日額及 generation 預留**之後**才執行——它是為
+    // 即將呼叫的主回答服務，不是獨立的 AI 操作，因此不另計次數、不改動每日額度。
+    // 預設關閉時立即回傳 disabled，零外網請求；澄清／離題路徑已在上方返回，所以永遠
+    // 不會為澄清句單獨抓網。整體預算 TUTOR_WEB_BUDGET_MS（預設 1.5 秒）用完即放棄，
+    // 不會把主回答的首字推遲到使用者以為當機。
+    const webSupplement: TutorWebSupplementResult = await collectTutorWebSupplement({
+      query: body.message,
+      topicId: grounding.topicId ?? preferredTopicId,
+      grounding: grounding.status === "grounded" ? "grounded" : "not-covered",
+      config: getServerConfig().webSupplement,
+    });
 
     // 教材依據：只使用已開放給學生的教材段落（見 services/tutor-grounding.ts）。
     // 找不到時仍會回答，但提示詞要求模型先說「我在教材片段中找不到這部分」，
@@ -281,7 +473,19 @@ export async function POST(request: Request) {
     );
 
     const messages = [
-      { role: "system", content: buildTutorSystemPrompt({ grounding, glossary }) },
+      {
+        role: "system",
+        content: buildTutorSystemPrompt({
+          grounding,
+          glossary,
+          webSources: webSupplement.promptSources,
+          practiceContextBlock:
+            effectivePracticeContext === null
+              ? null
+              : describeTutorPracticeContextForPrompt(effectivePracticeContext),
+          goalTopicTitle: goalTopic?.published === true ? goalTopic.title : null,
+        }),
+      },
       ...promptHistory,
       { role: "user", content: body.message },
     ];
@@ -346,6 +550,9 @@ export async function POST(request: Request) {
               grounding: grounding.status,
               topicTitle: grounding.topicTitle,
               sources: grounding.sources,
+              webSources: webSupplement.sources,
+              webSupplementStatus: webSupplement.status,
+              skillHint: practiceSkillHint(effectivePracticeContext),
             }),
           );
         }
@@ -444,6 +651,8 @@ export async function POST(request: Request) {
             sources: finalSources,
             groundingStatus: finalStatus,
             termNotes,
+            webSources: webSupplement.sources,
+            webSupplementStatus: webSupplement.status,
           });
           if (!cancelled) {
             controller.enqueue(
@@ -454,6 +663,13 @@ export async function POST(request: Request) {
                 grounding: finalStatus,
                 sources: finalSources,
                 topicTitle: finalStatus === "not-covered" ? null : grounding.topicTitle,
+                // 外部參考與教材依據是兩條軌道：模型說「教材找不到」不會令已抓取的
+                // 外部參考消失，也不會令它變成課本說法。
+                webSources: webSupplement.sources,
+                webSupplementStatus: webSupplement.status,
+                // 技能提示（M3）：只在有練習上下文且題目有技能標籤時出現
+                skillHint: practiceSkillHint(effectivePracticeContext),
+                practiceQuestionId: effectivePracticeContext?.questionId ?? null,
               }),
             );
           }

@@ -16,6 +16,82 @@
 
 ---
 
+## [未發布] — 2026-11-01：學伴學習閉環（練習 ↔ 學伴、回覆結構、匿名事件、教師統計、外網策略）
+
+**狀態**：已完成程式碼、測試及文件；**未部署、未合併到 main**。
+
+### 新增
+
+- **練習 → 學伴（P0）**：練習頁每題新增「🏛️ 問學伴這題的概念」入口，只帶 `questionId`／練習 `sessionId`。新端點 `GET /api/tutor/practice-context` 回傳**學生安全**上下文（課題、題型、技能標籤、題幹摘要 ≤300 字、引導問題）。唯一出口是 [tutor-practice-context.ts](src/server/services/tutor-practice-context.ts)：有 `sessionId` 時走學生自己的練習快照（`StudentQuestion` 白名單結構，含 AI 即時生成題目），否則查題庫並要求「已發布 + 課題已發布 + 達到派題要求」。`POST /api/tutor/chat` 亦接受 `practiceQuestionId`／`practiceSessionId`，由伺服器重新組裝並注入 system 的「【練習上下文】」區塊；前端夾帶的 `correctAnswer`、`explanation` 等欄位完全不被讀取。
+- **學伴開場引導**：由練習進入時顯示平台說明氣泡（課題、題幹摘要、技能提示、1–3 個建議問題），**不呼叫模型、不寫入資料庫**；重新載入後由 `tutor_sessions.practiceContextJson` 重建。
+- **回覆固定短結構**：system prompt 新增「【回覆結構】」——① 一句定位 → ② 2–3 點線索／引導問題 → ③ 依據說明（教材有／沒有；外部參考要說明不是課本）→ ④「下一步你可以問……」。既有的禁代抄、禁背全文要求全部保留。
+- **匿名事件記錄**：新表 `tutor_query_events`（append-only）記錄 `reject`／`clarify`／`normalize`，句子截斷至 120 字；**不含 learnerId、電郵、班別或對話全文**，與每日額度及 AI 用量完全無關。
+- **匯出 CLI**：`npm run tutor:export-utterances`（唯讀、需 `--database` 或預設 `data/app.db`），支援 `--days`／`--limit`／`--type`／`--format json|csv`。
+- **教師端「學伴使用概況」**：新頁 `/teacher/tutor` 及 `GET /api/teacher/tutor-stats?days=7|30`（`requireTeacher`）。只有聚合數字（成功回答、離題、澄清、正規化、外部參考狀態、按日彙總），固定回 `contentIncluded: false`，**不含對話正文**。
+- **學習目標課題（M4）**：學伴頁可選「溫習課題」（只列已發布課題），保存於 `tutor_sessions.topicId`；檢索次序為「當前提問 → 學習目標 → 對話歷史」，保留「上一題蓋過當前題」的回歸保護。
+- **課題卡（M2）**：內建 [tutor-topic-cards.ts](src/server/seed/tutor-topic-cards.ts) 兩個課題示例；`data/tutor-topic-cards/*.json` 可覆蓋。澄清候選及練習開場建議問題優先使用卡片內容（只含引導問題及混淆點，不含答案）。
+- **技能提示（M3）**：練習題有 `skill` 時，SSE `meta`／`done` 新增 `skillHint`，介面以 🎯 顯示；不評分。
+- **額度用盡體驗**：429／額度用完時提供 `/review`（重溫錯題）及 `/`（練習進度）按鈕，並說明離題及澄清不計入每日次數。
+
+### 變更
+
+- **外網補充策略（M1）**：新增 `TUTOR_WEB_MODE`（`off`／`always`／`not-covered-only`，**開啟時的預設為 `not-covered-only`**：只有教材 `not-covered` 才抓網）、`TUTOR_WEB_TOPIC_ALLOWLIST`（正面清單）及 `TUTOR_WEB_BUDGET_MS`（搜尋＋抓取整體預算，預設 1500ms、硬上限 2000ms）。超時即放棄（`webSupplementStatus=failed`），主回答照常串流；UI 顯示「🌐 本回合未能取得外部參考」。**關閉外網時行為不變。**
+- 學伴存取守衛由 `route.ts` 移至 [tutor-request-access.ts](src/server/services/tutor-request-access.ts)，讓 `/api/tutor/chat` 與 `/api/tutor/practice-context` 共用同一支（行為不變）。
+- 「正規化改寫」事件只在**實際換詞**時記錄；只統一標點／大小寫不算（`tutorQueryWasRewritten`），避免事件表被無價值樣本淹沒。
+
+### 安全
+
+- 練習上下文**永不**包含 `correctAnswer`、`acceptedAnswers`、選項對錯、`explanation`、`rubric`、`knowledgePoint`（往往是答案本身）、教材節錄或未發布題目；未發布／未達派題要求一律回 **404 同一句訊息**（不能用作探測），他人練習回 **403**。
+- 教師統計**不展示對話全文**；抽樣檢視屬 P1（需另設權限、二次確認、去識別化及保留期限）。
+- 事件表無學生身分欄位，測試會以 `PRAGMA table_info` 斷言不存在 `learnerId`／`email`。
+
+### 資料庫
+
+- Migration `0034-tutor-learning-loop`：`tutor_sessions` 新增 `practiceContextJson TEXT NOT NULL DEFAULT 'null'`、`tutor_messages` 新增 `webSupplementStatus TEXT NOT NULL DEFAULT 'none'`、新表 `tutor_query_events` 及兩個索引。**只新增，不改寫既有列**；啟動時由 `runMigrations` 自動套用，**本次沒有對正式 `data/app.db` 執行**。
+
+### 文件
+
+- README 第三節新增「練習 ↔ 學伴學習閉環」（資料流白名單、開場引導、回覆結構、事件與每月補正規化流程、教師統計、學習目標、課題卡、額度體驗），並更新 `/api/tutor/chat`、`/api/tutor/practice-context`、`/api/teacher/tutor-stats`、教師端頁面表及環境變數摘要。
+
+**已知限制**：① 沒有語意檢索，換一個說法仍可能找不到教材（既有已知限制）；② 教師抽樣檢視未實作（P1）；③ 課題卡只有 2 個課題示例，其餘退回自動產生；④ 學習目標只作 soft prior，短跟進在完全沒有課題線索時仍可能落到其他課題；⑤ 外網補充仍是「先抓後答」，最壞情況令首字延遲約 1.5 秒（已硬性封頂）。
+
+**驗證**：`npm run typecheck`、`npm test`（144 檔、1,922 通過 / 4 略過）、修改檔案 ESLint、`npm run build` 通過；`npm run tutor:export-utterances` 以臨時資料庫驗證 JSON 及 CSV 輸出。
+
+---
+
+## [未發布] — 2026-11-01：學伴白名單網頁補充（Web Supplement MVP，預設關閉）
+
+**狀態**：已完成程式碼、測試及文件；**未部署、未合併到 main**。
+
+### 新增
+
+- **學伴外部參考（白名單網頁補充）**：`POST /api/tutor/chat` 可選擇在回答前抓取**白名單網站**的短摘錄，作為課後擴充。校本教材依然是唯一的「課本依據」：外部內容以新欄位 `webSources`（`url`／`title`／`siteLabel`／`excerpt`）回傳，介面另設「🌐 外部參考（非課本・非考試標準）」區塊，與「📖 校本教材」分開列出；既有 `sources`／`grounding`／`termNotes` 語意不變。
+- API 契約擴充：SSE 的 `meta` 及 `done` 事件（以及澄清／離題的 JSON 回應）新增 `webSources` 及 `webSupplementStatus`（`disabled`／`not-used`／`ok`／`failed`／`blocked-topic`）。
+- 新模組：[tutor-web-supplement.ts](src/server/services/tutor-web-supplement.ts)（搜尋、抓取、正文抽取、逾時及大小上限）及 [tutor-web-allowlist.ts](src/server/services/tutor-web-allowlist.ts)（預設白名單、正規化、SSRF 位址判斷）。
+- 新環境變數：`TUTOR_WEB_SUPPLEMENT_ENABLED`、`TUTOR_WEB_SEARCH_ENDPOINT`、`TUTOR_WEB_ALLOWLIST`、`TUTOR_WEB_MAX_SOURCES`、`TUTOR_WEB_MAX_CHARS_PER_SOURCE`、`TUTOR_WEB_FETCH_TIMEOUT_MS`、`TUTOR_WEB_BLOCKED_TOPICS`。管理員系統狀態頁會提示無效白名單條目、非 https 搜尋端點及「已開啟但沒有搜尋端點」。
+
+### 安全
+
+- **預設零外網**：`TUTOR_WEB_SUPPLEMENT_ENABLED` 未設定（預設 `false`）時不發出任何請求，連 DNS 也不查；行為與加入此功能前完全一致。
+- **防 SSRF**：只准 `https`；host 必須在白名單（後綴匹配，`bbc.co.uk.evil.example` 不匹配）；連線前解析 DNS 並拒絕私網、迴路、link-local（含 `169.254.169.254`）、CGNAT、組播及保留位址；重定向逐跳檢查（最多 3 次），離開白名單即中止；總逾時預設 4 秒、回應只讀首 1 MB。搜尋端點本身亦要通過同樣的 https／公網位址檢查。
+- **不可成為第二條洩題路徑**：外部參考只進入提示詞的一個獨立區塊（「非校本教材、非評卷標準」），並要求與教材分開表述、教材優先、不可編造網址或站名。沒有實際抓取成功時不會有任何 `webSources`，因此不可能出現「根據 BBC 指出」而其實沒有抓過的情況。
+- **澄清／離題路徑不會觸發外網抓取**：兩者在上游呼叫前已返回，狀態固定為 `not-used`（或 `disabled`）。
+- 外部參考**與每日 15 次及 `generation` 時間窗無關**：它在日額及 `generation` 預留通過後才執行，是為主回答服務，不另計次數；抓取失敗只會靜默降級為「只有教材」，不會回 500。
+
+### 資料庫
+
+- Migration `0033-tutor-web-supplement`：`tutor_messages` 新增 `webSourcesJson TEXT NOT NULL DEFAULT '[]'`（**只新增欄位，不改寫任何既有列**）。舊資料一律為空陣列；功能關閉時不會寫入任何內容。啟動時由 `runMigrations` 自動套用；**本次沒有對正式 `data/app.db` 執行**。
+
+### 文件
+
+- README 第三節新增「學伴外部參考：白名單網頁補充」小節（觸發條件、分軌標示、SSRF 防護、預設白名單表、風險及已知限制），並更新 `/api/tutor/chat` 契約、`/tutor` 頁面說明及環境變數摘要表。
+
+**已知限制**：① 外部網站的史觀、用詞及年份可能與本校教材不同，教師應定期抽查；② `jstor.org` 等付費牆內容抓不到時如實留空（不會假引用）；③ 搜尋質素取決於 `TUTOR_WEB_SEARCH_ENDPOINT` 所接的服務，未設定時外部參考永遠為空；④ DNS 檢查與實際連線之間存在 TOCTOU 窗口（Node `fetch` 無法指定已解析 IP），以「連線前逐跳檢查＋只准白名單＋只准 https」作為防線；⑤ 外網抓取會令回覆首字延遲最多約 `TUTOR_WEB_FETCH_TIMEOUT_MS`。
+
+**驗證**：`npm run typecheck`、`npx vitest run tests/tutor*.ts`（含新增的 `tests/tutor-web-supplement.test.ts`，39 項）、修改檔案的 ESLint 及 `npm run build` 通過。
+
+---
+
 ## [未發布] — 2026-10-31：學生練習模擬、瀏覽器支援及學伴提問理解改善
 
 ### 修正

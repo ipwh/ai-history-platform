@@ -218,6 +218,24 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
       <article className="card flex flex-col gap-3">
         <h1 className="text-lg font-semibold leading-relaxed">{current.question}</h1>
 
+        {/*
+          練習 → 學伴的入口。只帶 questionId 及 sessionId：學伴 API 會用自己的
+          伺服器端資料重新組裝「學生安全」上下文（題幹摘要、課題、技能標籤），
+          不會經網址傳遞答案、選項對錯或解釋。
+        */}
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <Link
+            className="btn"
+            href={`/tutor?from=practice&questionId=${encodeURIComponent(current.id)}&sessionId=${encodeURIComponent(sessionId)}`}
+            title="以這條練習的概念與學伴討論（學伴不會提供標準答案）"
+          >
+            🏛️ 問學伴這題的概念
+          </Link>
+          <span className="text-xs text-gray-600">
+            學伴會協助你理解概念與思路，不會給出這題的標準答案。
+          </span>
+        </div>
+
         {current.questionType === "mc" ? (
           <div className="flex flex-col gap-2">
             {current.options.map((option, index) => {

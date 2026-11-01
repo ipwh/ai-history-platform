@@ -65,7 +65,8 @@
     "show:question": "node scripts/show-question-context.mjs",
     "search:materials": "node scripts/search-materials.mjs",
     "build:answer-plan": "tsx scripts/build-answer-verification-plan.ts",
-    "plan:topic-focus": "tsx scripts/plan-topic-focus.ts"
+    "plan:topic-focus": "tsx scripts/plan-topic-focus.ts",
+    "tutor:export-utterances": "tsx scripts/export-tutor-utterances.ts"
   },
   "dependencies": {
     "jszip": "^3.10.2",

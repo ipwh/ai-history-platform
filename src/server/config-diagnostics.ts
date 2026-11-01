@@ -10,6 +10,8 @@ import path from "node:path";
 import { getServerConfig, MIN_AUTH_SECRET_LENGTH, MATERIAL_AUTO_OPEN_POLICIES, isProductionRuntime } from "./config";
 import { isStudentPatternEmail } from "./auth/role";
 import { EXPLANATION_HOLD_POLICIES } from "./quality/explanation-quality";
+import { normalizeTutorWebAllowlistEntry } from "./services/tutor-web-allowlist";
+import { TUTOR_WEB_MODES } from "./services/tutor-web-supplement";
 
 export { MIN_AUTH_SECRET_LENGTH };
 
@@ -409,6 +411,64 @@ export function describeConfigIssues(): ConfigIssue[] {
       message:
         "MATERIAL_AUTO_OPEN_POLICY=lesson-content（擁有者指示）：匯入課文／筆記後會自動確認版權並開放給學生，" +
         "確認者記錄為 owner-policy:auto-open-all-materials。校內試題檔永不開放；檔名標示教師版／答案的材料仍需逐份人手確認內容。",
+    });
+  }
+
+  // 學伴白名單網頁補充（預設關閉，見 services/tutor-web-supplement.ts）
+  const rawWebAllowlist = process.env.TUTOR_WEB_ALLOWLIST;
+  if (rawWebAllowlist !== undefined && rawWebAllowlist.trim().length > 0) {
+    const entries = rawWebAllowlist
+      .split(/[,;|\s]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const dropped = entries.filter((item) => normalizeTutorWebAllowlistEntry(item) === null);
+    if (dropped.length > 0) {
+      issues.push({
+        level: "warning",
+        code: "tutor-web-allowlist-invalid",
+        message:
+          `TUTOR_WEB_ALLOWLIST 有 ${dropped.length} 項無法使用（${dropped.slice(0, 5).join("、")}）。` +
+          "只接受不含協議及路徑的網域；IP 位址、單一主機名（例如 localhost）及共筆百科／社交平台一律忽略。",
+      });
+    }
+  }
+  if (config.webSupplement.enabled) {
+    const rawMode = (process.env.TUTOR_WEB_MODE ?? "").trim().toLowerCase();
+    if (rawMode.length > 0 && !(TUTOR_WEB_MODES as readonly string[]).includes(rawMode)) {
+      issues.push({
+        level: "warning",
+        code: "tutor-web-mode-invalid",
+        message: `TUTOR_WEB_MODE="${rawMode}" 不是有效值（${TUTOR_WEB_MODES.join("／")}）；已按預設 not-covered-only 處理。`,
+      });
+    }
+    if (config.webSupplement.searchEndpoint === null) {
+      issues.push({
+        level: "warning",
+        code: "tutor-web-supplement-no-search",
+        message:
+          "TUTOR_WEB_SUPPLEMENT_ENABLED=true 但未設定 TUTOR_WEB_SEARCH_ENDPOINT：學伴不會有任何外部參考" +
+          "（狀態固定為 not-used）。平台不會退化成爬取搜尋引擎結果頁。",
+      });
+    } else if (!config.webSupplement.searchEndpoint.toLowerCase().startsWith("https://")) {
+      issues.push({
+        level: "error",
+        code: "tutor-web-supplement-search-not-https",
+        message: "TUTOR_WEB_SEARCH_ENDPOINT 必須以 https:// 開頭，否則每次搜尋都會因防 SSRF 而失敗。",
+      });
+    }
+    if (config.webSupplement.allowlist.length === 0) {
+      issues.push({
+        level: "error",
+        code: "tutor-web-supplement-empty-allowlist",
+        message: "TUTOR_WEB_ALLOWLIST 沒有任何有效項目：外網補充永遠不會抓到任何頁面。",
+      });
+    }
+    issues.push({
+      level: "info",
+      code: "tutor-web-supplement-active",
+      message:
+        "已開啟學伴外部參考：只會抓取白名單網站的短摘錄，介面以「🌐 外部參考（非課本・非考試標準）」與教材分開標示。" +
+        "外部網站的史觀及用詞可能與課本不同，不屬評卷標準；校本教材仍是唯一課本依據。",
     });
   }
 

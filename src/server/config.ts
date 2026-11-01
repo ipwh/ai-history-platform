@@ -8,6 +8,17 @@ import {
   EXPLANATION_HOLD_POLICIES,
   type ExplanationHoldPolicy,
 } from "./quality/explanation-quality";
+import {
+  DEFAULT_TUTOR_WEB_ALLOWLIST,
+  normalizeTutorWebAllowlist,
+} from "./services/tutor-web-allowlist";
+import {
+  TUTOR_WEB_DEFAULT_BUDGET_MS,
+  TUTOR_WEB_MAX_BUDGET_MS,
+  TUTOR_WEB_MODES,
+  type TutorWebMode,
+  type TutorWebSupplementConfig,
+} from "./services/tutor-web-supplement";
 
 /**
  * 教材匯入後的自動開放政策（見 `ServerConfig.materialAutoOpenPolicy`）。
@@ -116,6 +127,15 @@ export interface ServerConfig {
    * 因此仍要求管理員人手確認（fail-closed）。
    */
   materialAutoOpenPolicy: MaterialAutoOpenPolicy;
+  /**
+   * 學伴的白名單網頁補充（**預設關閉**）。
+   *
+   * 預設關閉時零外網請求，行為與加入此設定之前完全一致。啟用後，學伴回答前會以
+   * 白名單網站（見 `services/tutor-web-allowlist.ts`）的短摘錄作補充，並在 API 及
+   * 介面與校本教材分開標示。外網補充**不取代**教材依據，亦不改動每日次數：
+   * 它依附在主回答之上，只在日額及 `generation` 預留通過後才執行。
+   */
+  webSupplement: TutorWebSupplementConfig;
   /** AI 用量上限（避免個別帳戶或整體用量失控） */
   aiLimits: AiLimitConfig;
   /** 資料庫備份（把 SQLite 檔案備份到 Cloud Storage，令容器重建後仍保留資料） */
@@ -556,6 +576,61 @@ function readBackupConfig(): BackupConfig {
   };
 }
 
+/**
+ * 讀取外網補充策略（`TUTOR_WEB_MODE`）。
+ *
+ * 未設定時：關閉 → `off`；已開啟 → `not-covered-only`（教材命中就不抓網，見
+ * `TUTOR_WEB_MODES` 的說明）。無效值回退到上述預設，並由 `describeConfigIssues()`
+ * 產生 warning，避免打錯字而靜默改變行為。
+ */
+function readTutorWebMode(enabled: boolean): TutorWebMode {
+  const fallback: TutorWebMode = enabled ? "not-covered-only" : "off";
+  const raw = readEnv("TUTOR_WEB_MODE");
+  if (raw === null) return fallback;
+  const value = raw.trim().toLowerCase();
+  if ((TUTOR_WEB_MODES as readonly string[]).includes(value)) return value as TutorWebMode;
+  return fallback;
+}
+
+/**
+ * 讀取學伴「白名單網頁補充」設定。
+ *
+ * **預設整項關閉**（`TUTOR_WEB_SUPPLEMENT_ENABLED` 未設定即 false）：關閉時學伴
+ * 不會發出任何外網請求，行為與加入此功能前一致。
+ *
+ * - `TUTOR_WEB_ALLOWLIST`：逗號分隔 host（不含協議）。未設定時使用程式碼內的預設
+ *   白名單；設定後**完全取代**預設值（不是追加），方便科組逐項收窄範圍。
+ * - `maxSources`／`maxCharsPerSource` 有硬上限：即使環境變數寫成很大的數字，
+ *   也不會令提示詞被外網內容淹沒（見 services/tutor-web-supplement.ts）。
+ * - `TUTOR_WEB_BLOCKED_TOPICS`：命中即不做外網（敏感課題由科組自行增設）。
+ * - `TUTOR_WEB_TOPIC_ALLOWLIST`：非空時只對列出的課題做外網（正面清單，較窄）。
+ * - `TUTOR_WEB_BUDGET_MS`：搜尋＋抓取的整體預算（預設 1.5 秒、硬上限 2 秒）；
+ *   超時即放棄外網，令主回答首字不會被外網拖慢。
+ */
+function readWebSupplementConfig(): TutorWebSupplementConfig {
+  const enabled = readBoolean("TUTOR_WEB_SUPPLEMENT_ENABLED", false);
+  const rawAllowlist = readEnv("TUTOR_WEB_ALLOWLIST");
+  const allowlist =
+    rawAllowlist === null
+      ? normalizeTutorWebAllowlist(DEFAULT_TUTOR_WEB_ALLOWLIST)
+      : normalizeTutorWebAllowlist(rawAllowlist.split(/[,;|\s]+/));
+  return {
+    enabled,
+    mode: readTutorWebMode(enabled),
+    allowlist,
+    topicAllowlist: readList("TUTOR_WEB_TOPIC_ALLOWLIST"),
+    maxSources: Math.min(readPositiveInt("TUTOR_WEB_MAX_SOURCES", 2), 5),
+    maxCharsPerSource: Math.min(readPositiveInt("TUTOR_WEB_MAX_CHARS_PER_SOURCE", 600), 2_000),
+    fetchTimeoutMs: readPositiveInt("TUTOR_WEB_FETCH_TIMEOUT_MS", 4_000),
+    budgetMs: Math.min(
+      readPositiveInt("TUTOR_WEB_BUDGET_MS", TUTOR_WEB_DEFAULT_BUDGET_MS),
+      TUTOR_WEB_MAX_BUDGET_MS,
+    ),
+    blockedTopicIds: readList("TUTOR_WEB_BLOCKED_TOPICS"),
+    searchEndpoint: readEnv("TUTOR_WEB_SEARCH_ENDPOINT"),
+  };
+}
+
 export function getServerConfig(): ServerConfig {
   const projectRoot = process.cwd();
   const provider = readProviderName();
@@ -654,6 +729,7 @@ export function getServerConfig(): ServerConfig {
     // 並由 describeConfigIssues() 產生 error 級設定警示。
     explanationHoldPolicy: readExplanationHoldPolicy(),
     materialAutoOpenPolicy: readMaterialAutoOpenPolicy(),
+    webSupplement: readWebSupplementConfig(),
     aiLimits: readAiLimits(),
     backup: readBackupConfig(),
     maxUploadBytes: readPositiveInt("APP_MAX_UPLOAD_BYTES", DEFAULT_MAX_UPLOAD_BYTES),

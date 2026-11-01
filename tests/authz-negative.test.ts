@@ -108,6 +108,13 @@ const ROUTES: RouteCase[] = [
     load: () => import("@/app/api/teacher/overview/route"),
   },
   {
+    // 學伴使用概況：只回傳聚合數字（不含對話正文）。學生 403 由 requireTeacher 拒絕。
+    target: "GET /api/teacher/tutor-stats",
+    method: "GET",
+    adminOnly: false,
+    load: () => import("@/app/api/teacher/tutor-stats/route"),
+  },
+  {
     target: "GET /api/teacher/questions",
     method: "GET",
     adminOnly: false,
@@ -508,6 +515,9 @@ const PUBLIC_API_ROUTES = new Set([
   // 負向授權（401／跨學生 session 404／超額 429）見 tests/tutor-chat.test.ts。
   "GET /api/tutor/chat",
   "POST /api/tutor/chat",
+  // 練習→學伴的安全上下文（只回學生本來就看得到的欄位）。
+  // 負向授權（401／他人練習 403／未發布題目 404）見 tests/tutor-practice-link.test.ts。
+  "GET /api/tutor/practice-context",
 ]);
 
 /** 由檔案系統取得完整的 API 路由清單（route.ts 及其匯出的 HTTP 方法） */

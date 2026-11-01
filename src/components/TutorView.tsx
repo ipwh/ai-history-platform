@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-import type { TutorGroundingStatus, TutorSource, TutorTermNote } from "@/lib/types";
+import type {
+  TopicOverview,
+  TutorGroundingStatus,
+  TutorPracticeContext,
+  TutorSource,
+  TutorTermNote,
+  TutorWebSource,
+} from "@/lib/types";
 import {
   parseTutorQuestionSuggestions,
   type TutorQuestionCandidate,
@@ -17,12 +24,28 @@ interface TutorMessage {
   grounding?: TutorGroundingStatus;
   topicTitle?: string | null;
   termNotes?: TutorTermNote[];
+  /** 🌐 白名單網站的外部參考（非課本・非考試標準），與教材出處分開顯示 */
+  webSources?: TutorWebSource[];
   candidates?: TutorQuestionCandidate[];
 }
 
 interface TutorState {
   remaining: number;
   dailyLimit: number;
+}
+
+/**
+ * 由練習進入時的開場引導。
+ *
+ * 這是**平台**的說明，不是學生或模型的對話，因此不寫入資料庫、也不呼叫模型：
+ * 它只把「我們會針對哪條練習／哪個課題討論」講清楚，並列出 1–3 個引導問題。
+ * 內容全部來自 `/api/tutor/practice-context`（學生安全欄位），不含任何答案。
+ */
+interface TutorOpening {
+  topicTitle: string;
+  stemSummary: string;
+  skillHint: string | null;
+  suggestions: string[];
 }
 
 /** 伺服器回傳的訊息格式（`GET /api/tutor/chat`） */
@@ -32,6 +55,7 @@ interface TutorWireMessage {
   sources?: TutorSource[];
   groundingStatus?: TutorGroundingStatus;
   termNotes?: TutorTermNote[];
+  webSources?: TutorWebSource[];
 }
 
 function toTutorMessage(message: TutorWireMessage): TutorMessage {
@@ -41,12 +65,13 @@ function toTutorMessage(message: TutorWireMessage): TutorMessage {
     sources: message.sources ?? [],
     grounding: message.groundingStatus ?? "none",
     termNotes: message.termNotes ?? [],
+    webSources: message.webSources ?? [],
   };
 }
 
 const SESSION_STORAGE_KEY = "history-tutor-session";
 const DISCLAIMER =
-  "⚠️ 內容由 AI 輔助生成，僅供課後複習參考。標示「已對照課本教材」的回覆會列出教材節錄及出處可供核對；標示「未找到教材依據」的部分屬補充，不是課本說法。正式史實與作答標準請以課本及科任老師教授為準。";
+  "⚠️ 內容由 AI 輔助生成，僅供課後複習參考。標示「已對照課本教材」的回覆會列出教材節錄及出處可供核對；標示「未找到教材依據」的部分屬補充，不是課本說法；標示「外部參考」的是白名單網站的短摘錄，不是課本亦不是考試標準。正式史實與作答標準請以課本及科任老師教授為準。";
 
 function readStoredSessionId(): string | null {
   if (typeof window === "undefined") return null;
@@ -106,16 +131,22 @@ function TutorMarkdown({ content }: { content: string }) {
  *
  * 三種狀態直接對應學生要做的判斷：這句可否照背（已對照課本）、這只是補充
  * （課本未涵蓋）、用字是否要跟課本（用語對照）。
+ *
+ * 🌐 外部參考另成一段，永遠與 📖 教材出處分開列出：學生要一眼看得出哪些內容
+ * 有課本依據、哪些只是課外延伸。
  */
 function TutorEvidence({ message }: { message: TutorMessage }) {
   // 只顯示真正有內容的出處：若資料殘缺，寧可顯示一句說明，也不要留下一列空白項目
   const sources = (message.sources ?? []).filter(
     (source) => source.excerpt.trim().length > 0 || source.location.trim().length > 0,
   );
+  const webSources = (message.webSources ?? []).filter(
+    (source) => source.url.trim().length > 0,
+  );
   const termNotes = message.termNotes ?? [];
   const grounded = message.grounding === "grounded";
   const notCovered = message.grounding === "not-covered";
-  if (!grounded && !notCovered && termNotes.length === 0) return null;
+  if (!grounded && !notCovered && termNotes.length === 0 && webSources.length === 0) return null;
 
   return (
     <div
@@ -169,6 +200,38 @@ function TutorEvidence({ message }: { message: TutorMessage }) {
           ))}
         </ul>
       ) : null}
+      {webSources.length > 0 ? (
+        <div
+          className="rounded-lg px-3 py-2 text-sm"
+          style={{ background: "var(--accent-soft)", border: "1px solid #c6d6ff" }}
+          aria-label="外部參考（非課本・非考試標準）"
+        >
+          <p className="text-xs font-semibold">🌐 外部參考（非課本・非考試標準）</p>
+          <ul className="mt-2 space-y-2">
+            {webSources.map((source, index) => (
+              <li key={`${source.url}-${index}`}>
+                <a
+                  className="font-semibold underline"
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {source.title.trim().length > 0 ? source.title : source.url}
+                </a>
+                {source.siteLabel.trim().length > 0 ? (
+                  <span className="ml-2 text-xs text-gray-600">{source.siteLabel}</span>
+                ) : null}
+                {source.excerpt.trim().length > 0 ? (
+                  <p className="mt-1 text-xs text-gray-700">「{source.excerpt}」</p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-gray-600">
+            外部網站內容僅供課後擴充，可能與課本表述不同；不可當作考試或評分標準。
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -201,6 +264,76 @@ export function TutorView({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [truncation, setTruncation] = useState<{ shown: number; total: number } | null>(null);
+  /** 練習開場引導（本機顯示，不入資料庫） */
+  const [opening, setOpening] = useState<TutorOpening | null>(null);
+  /** 學習目標課題（M4）：soft prior，只用於檢索及澄清排序 */
+  const [goalTopicId, setGoalTopicId] = useState<string>("");
+  const [goalTopics, setGoalTopics] = useState<{ id: string; title: string }[]>([]);
+  /** 練習關聯（只作關聯用；伺服器會重新組裝安全上下文） */
+  const practiceLink = useRef<{ questionId: string; sessionId: string | null } | null>(null);
+  /** 最近一次回覆的技能提示（M3） */
+  const [skillHint, setSkillHint] = useState<string | null>(null);
+  /** 最近一次回覆的外部參考狀態（用於如實顯示「本回合未取得外部參考」） */
+  const [webStatus, setWebStatus] = useState<string | null>(null);
+
+  /**
+   * 練習 → 學伴：讀取網址上的 questionId／sessionId，向伺服器換取安全上下文。
+   *
+   * 只接受 `from=practice`；失敗（404／403／網絡）時靜默略過——學生仍然可以正常
+   * 提問，只是沒有開場引導，不會因為一條已下架的題目而卡在錯誤畫面。
+   */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("from") !== "practice") return;
+    const questionId = params.get("questionId");
+    if (questionId === null || questionId.length === 0) return;
+    const practiceSessionId = params.get("sessionId");
+    practiceLink.current = { questionId, sessionId: practiceSessionId };
+    void (async () => {
+      try {
+        const query = new URLSearchParams({ questionId });
+        if (practiceSessionId !== null) query.set("sessionId", practiceSessionId);
+        const response = await fetch(`/api/tutor/practice-context?${query.toString()}`, {
+          cache: "no-store",
+        });
+        if (!response.ok) return;
+        const payload = (await response.json()) as {
+          practiceContext?: TutorPracticeContext;
+          skillHint?: string | null;
+        };
+        const context = payload.practiceContext;
+        if (!context) return;
+        setOpening({
+          topicTitle: context.topicTitle,
+          stemSummary: context.stemSummary,
+          skillHint: payload.skillHint ?? null,
+          suggestions: context.suggestedQuestions,
+        });
+      } catch {
+        // 練習上下文只是開場輔助，讀不到就照常讓學生提問
+      }
+    })();
+  }, []);
+
+  /** 學習目標課題清單（只用已發布課題） */
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/topics?publishedOnly=true", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { topics?: TopicOverview[] } | null) => {
+        if (cancelled || !payload?.topics) return;
+        setGoalTopics(
+          payload.topics.map((topic) => ({ id: topic.id, title: topic.title })),
+        );
+      })
+      .catch(() => {
+        // 課題清單讀不到時只是沒有下拉選單，不影響提問
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const storedSession = initialSessionId.current;
@@ -224,6 +357,8 @@ export function TutorView({
           windowLimitReached?: boolean;
           truncated?: boolean;
           messageCount?: number;
+          topicId?: string | null;
+          practiceContext?: TutorPracticeContext | null;
       };
       if (!response.ok) throw new Error(responseError(payload, response.status));
       setMessages((payload.messages ?? []).map(toTutorMessage));
@@ -238,6 +373,23 @@ export function TutorView({
         dailyLimit: payload.dailyLimit ?? 15,
       });
       setWindowLimitReached(payload.windowLimitReached === true);
+      // 學習目標課題：沿用對話已保存的設定（學生可隨時更改）
+      if (typeof payload.topicId === "string") setGoalTopicId(payload.topicId);
+      // 重新載入後重建練習開場（網址沒有 from=practice 時，用對話保存的上下文）
+      if (payload.practiceContext) {
+        const context = payload.practiceContext;
+        setOpening((current) =>
+          current !== null
+            ? current
+            : {
+                topicTitle: context.topicTitle,
+                stemSummary: context.stemSummary,
+                skillHint:
+                  context.skill === null ? null : `這題較常練習：${context.skill}`,
+                suggestions: context.suggestedQuestions,
+              },
+        );
+      }
     })()
       .catch((cause: unknown) => {
         setError(cause instanceof Error ? cause.message : "未能載入學伴對話，請稍後再試。");
@@ -265,6 +417,16 @@ export function TutorView({
     setError(null);
     setInput("");
     setTruncation(null);
+    // 新對話同時清掉練習開場及學習目標：否則之後每一輪都會繼續帶舊題目的上下文。
+    setOpening(null);
+    setSkillHint(null);
+    setWebStatus(null);
+    setGoalTopicId("");
+    practiceLink.current = null;
+    if (typeof window !== "undefined") {
+      // 網址上的 from=practice 只對「今次」有效，重新開始對話時一併移除
+      window.history.replaceState(null, "", "/tutor");
+    }
     try {
       window.localStorage.removeItem(SESSION_STORAGE_KEY);
     } catch {
@@ -284,7 +446,20 @@ export function TutorView({
       const response = await fetch("/api/tutor/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message, ...(sessionId ? { sessionId } : {}) }),
+        body: JSON.stringify({
+          message,
+          ...(sessionId ? { sessionId } : {}),
+          ...(goalTopicId.length > 0 ? { goalTopicId } : {}),
+          // 只帶關聯 ID；伺服器會自行重組安全上下文，前端不會傳任何答案欄位。
+          ...(practiceLink.current
+            ? {
+                practiceQuestionId: practiceLink.current.questionId,
+                ...(practiceLink.current.sessionId
+                  ? { practiceSessionId: practiceLink.current.sessionId }
+                  : {}),
+              }
+            : {}),
+        }),
       });
 
       if (!response.ok) {
@@ -365,7 +540,9 @@ export function TutorView({
        * 之後再逐段附加文字。
        */
       const updateAssistant = (
-        patch: Partial<Pick<TutorMessage, "sources" | "grounding" | "topicTitle" | "termNotes">>,
+        patch: Partial<
+          Pick<TutorMessage, "sources" | "grounding" | "topicTitle" | "termNotes" | "webSources">
+        >,
         append = "",
       ) => {
         setMessages((current) => {
@@ -394,6 +571,9 @@ export function TutorView({
           topicTitle?: string | null;
           sources?: TutorSource[];
           termNotes?: TutorTermNote[];
+          webSources?: TutorWebSource[];
+          webSupplementStatus?: string;
+          skillHint?: string | null;
         };
         if (event === "delta" && typeof data.text === "string") {
           updateAssistant({}, data.text);
@@ -402,17 +582,22 @@ export function TutorView({
             grounding: data.grounding ?? "none",
             topicTitle: typeof data.topicTitle === "string" ? data.topicTitle : null,
             sources: Array.isArray(data.sources) ? data.sources : [],
+            ...(Array.isArray(data.webSources) ? { webSources: data.webSources } : {}),
           });
+          if (typeof data.skillHint === "string") setSkillHint(data.skillHint);
         } else if (event === "done") {
           if (typeof data.remaining === "number") {
             setQuota((current) => ({ ...current, remaining: data.remaining as number }));
           }
+          if (typeof data.skillHint === "string") setSkillHint(data.skillHint);
+          if (typeof data.webSupplementStatus === "string") setWebStatus(data.webSupplementStatus);
           updateAssistant({
             ...(Array.isArray(data.termNotes) ? { termNotes: data.termNotes } : {}),
             ...(data.grounding === "grounded" || data.grounding === "not-covered"
               ? { grounding: data.grounding }
               : {}),
             ...(Array.isArray(data.sources) ? { sources: data.sources } : {}),
+            ...(Array.isArray(data.webSources) ? { webSources: data.webSources } : {}),
             ...(data.topicTitle !== undefined ? { topicTitle: data.topicTitle } : {}),
           });
         } else if (event === "error") {
@@ -480,6 +665,36 @@ export function TutorView({
         </div>
       </header>
 
+      {/*
+        學習目標課題（M4）：只用作檢索的 soft prior。
+        學生問到另一個課題的專名時，仍以當前的問題為準（見 tutor-grounding.ts）。
+      */}
+      {goalTopics.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <label htmlFor="tutor-goal-topic" className="font-semibold">
+            溫習課題（可選）
+          </label>
+          <select
+            id="tutor-goal-topic"
+            className="rounded-lg border bg-white px-2 py-1"
+            style={{ borderColor: "var(--border-strong)" }}
+            value={goalTopicId}
+            disabled={sending}
+            onChange={(event) => setGoalTopicId(event.target.value)}
+          >
+            <option value="">不指定</option>
+            {goalTopics.map((topic) => (
+              <option key={topic.id} value={topic.id}>
+                {topic.title}
+              </option>
+            ))}
+          </select>
+          <span className="text-xs text-gray-600">
+            設定後，「咁之後呢？」這類短問題會優先留在這個課題；你明確問另一個課題時仍以你的問題為準。
+          </span>
+        </div>
+      ) : null}
+
       <p
         className="rounded-xl border px-4 py-3 text-sm font-medium"
         style={{
@@ -516,9 +731,61 @@ export function TutorView({
             此對話共有 {truncation.total} 則訊息，現時只顯示最近 {truncation.shown} 則；較早的內容仍保留在學習紀錄。
           </p>
         ) : null}
-        {!loading && messages.length === 0 ? (
+        {/*
+          練習開場引導：平台說明，不呼叫模型、不寫入資料庫。
+          只顯示課題、題幹摘要及引導問題（學生安全欄位），不含任何答案。
+        */}
+        {opening !== null ? (
+          <div
+            className="max-w-3xl rounded-xl px-4 py-3"
+            style={{ background: "#f4f5f8" }}
+            aria-label="練習開場引導"
+          >
+            <p className="mb-1 text-xs font-semibold text-gray-500">歷史自學學伴</p>
+            <p className="text-sm">
+              我們會針對你在練習中遇到的
+              {opening.topicTitle.length > 0 ? `「${opening.topicTitle}」` : ""}概念討論。
+              學伴只會協助你理解思路，<strong>不會提供這題的標準答案或哪個選項正確</strong>。
+            </p>
+            {opening.stemSummary.length > 0 ? (
+              <p className="mt-2 rounded-lg bg-white px-3 py-2 text-xs text-gray-700">
+                題幹摘要：{opening.stemSummary}
+              </p>
+            ) : null}
+            {opening.skillHint !== null ? (
+              <p className="mt-2 text-xs text-gray-600">🎯 {opening.skillHint}</p>
+            ) : null}
+            {opening.suggestions.length > 0 ? (
+              <div className="mt-3 space-y-2" aria-label="建議提問方向">
+                <p className="text-sm text-gray-600">可以從這些方向開始（點選後會放入輸入框）：</p>
+                <div className="flex flex-wrap gap-2">
+                  {opening.suggestions.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      className="btn text-left text-sm"
+                      disabled={sending || inputBlocked || loading}
+                      onClick={() => chooseQuestionSuggestion(suggestion)}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {!loading && messages.length === 0 && opening === null ? (
           <p className="text-sm text-gray-600">
             你可以提出歷史課題或事件；學伴會以問題和線索協助你思考，不會代答功課。
+          </p>
+        ) : null}
+        {skillHint !== null && messages.length > 0 ? (
+          <p className="text-xs text-gray-600">🎯 {skillHint}</p>
+        ) : null}
+        {webStatus === "failed" ? (
+          <p className="text-xs text-gray-500" aria-live="polite">
+            🌐 本回合未能取得外部參考（逾時或沒有可用來源），回答只根據教材及一般背景知識。
           </p>
         ) : null}
         {messages.map((message, index) => {
@@ -594,11 +861,29 @@ export function TutorView({
           </div>
         ) : null}
         {inputBlocked ? (
-          <p className="text-sm font-semibold" style={{ color: "var(--warning)" }}>
-            {quotaExhausted
-              ? "今日提問次數已用完，請明日再來。已通過歷史主題檢查的問題才會計入每日上限。"
-              : "目前已達 AI 使用時間窗上限，請稍後再試。"}
-          </p>
+          <div className="space-y-2">
+            <p className="text-sm font-semibold" style={{ color: "var(--warning)" }}>
+              {quotaExhausted
+                ? "今日提問次數已用完，明日再來就可以繼續問。"
+                : "目前已達 AI 使用時間窗上限，請稍後再試。"}
+            </p>
+            {/*
+              額度用盡不是處罰：立即給學生可行的下一步，而不是只有一句「不能再問」。
+              兩個連結都是既有路由，毋須新的權限或資料。
+            */}
+            <p className="text-sm text-gray-600">這段時間你可以：</p>
+            <div className="flex flex-wrap gap-2">
+              <Link className="btn" href="/review">
+                🔁 重溫錯題
+              </Link>
+              <Link className="btn" href="/">
+                📚 返回課題首頁，查看練習進度
+              </Link>
+            </div>
+            <p className="text-xs text-gray-600">
+              離題及澄清的問題不會計入每日次數，所以明天的 15 次會全數留給你真正想問的歷史問題。
+            </p>
+          </div>
         ) : null}
       </div>
 
@@ -621,7 +906,7 @@ export function TutorView({
         />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-gray-500">
-            問題可以不太完整；若學伴未能確定你的意思，會列出可能方向供你選擇，或自行改寫。學伴只會引用已開放教材節錄，不會取得題庫、標準答案或評分參考。
+            問題可以不太完整；若學伴未能確定你的意思，會列出可能方向供你選擇，或自行改寫。學伴只會引用已開放教材節錄，不會取得題庫、標準答案或評分參考；若學校已開啟外部參考，亦只會引用事先核准的白名單網站短摘錄，並以「🌐 外部參考」另行標示。
           </p>
           <button
             type="submit"

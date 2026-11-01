@@ -1,11 +1,17 @@
 import { getDb, newId } from "../db/connection";
 import {
   tutorGroundingStatusSchema,
+  tutorPracticeContextSchema,
   tutorSourceSchema,
   tutorTermNoteSchema,
+  tutorWebSourceSchema,
+  tutorWebSupplementStatusSchema,
   type TutorGroundingStatus,
+  type TutorPracticeContext,
   type TutorSource,
   type TutorTermNote,
+  type TutorWebSource,
+  type TutorWebSupplementStatus,
 } from "../../lib/types";
 
 export type TutorMessageRole = "user" | "assistant";
@@ -17,6 +23,9 @@ export type TutorMessageRole = "user" | "assistant";
  * 而不是無聲截斷（見 `truncated` 與 `messageCount`）。
  */
 export const TUTOR_MESSAGE_WINDOW = 80;
+
+/** 訊息層級的外部參考狀態；`none` = 該則訊息沒有記錄（例如舊資料或學生提問） */
+export type TutorMessageWebStatus = TutorWebSupplementStatus | "none";
 
 export interface TutorMessage {
   id: string;
@@ -31,6 +40,10 @@ export interface TutorMessage {
   groundingStatus: TutorGroundingStatus;
   /** 模型用了課本以外寫法的對照 */
   termNotes: TutorTermNote[];
+  /** 白名單網站的外部參考（與 `sources` 分軌，永不當成課本依據） */
+  webSources: TutorWebSource[];
+  /** 外部參考狀態（只用於教師端聚合統計，不影響顯示） */
+  webSupplementStatus: TutorMessageWebStatus;
 }
 
 /** 寫入訊息時可一併保存的教材依據資料（學生提問不需要） */
@@ -38,6 +51,8 @@ export interface TutorMessageMetadata {
   sources?: TutorSource[];
   groundingStatus?: TutorGroundingStatus;
   termNotes?: TutorTermNote[];
+  webSources?: TutorWebSource[];
+  webSupplementStatus?: TutorWebSupplementStatus;
 }
 
 interface TutorMessageRow {
@@ -50,6 +65,8 @@ interface TutorMessageRow {
   sourcesJson: string | null;
   groundingStatus: string | null;
   termNotesJson: string | null;
+  webSourcesJson: string | null;
+  webSupplementStatus: string | null;
 }
 
 /**
@@ -72,8 +89,25 @@ function parseJsonArray<T>(value: string | null, schema: { safeParse: (input: un
   }
 }
 
+/** 解析單一 JSON 物件（例如練習上下文）；格式損壞時回傳 null，不拋錯 */
+export function parseTutorJsonObject<T>(
+  value: string | null,
+  schema: { safeParse: (input: unknown) => { success: boolean; data?: unknown } },
+): T | null {
+  if (value === null || value.length === 0) return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const result = schema.safeParse(parsed);
+    return result.success && result.data !== undefined ? (result.data as T) : null;
+  } catch {
+    return null;
+  }
+}
+
 function mapMessage(row: TutorMessageRow): TutorMessage {
   const status = tutorGroundingStatusSchema.safeParse(row.groundingStatus);
+  const webStatus = tutorWebSupplementStatusSchema.safeParse(row.webSupplementStatus);
   return {
     id: row.id,
     sessionId: row.sessionId,
@@ -84,23 +118,84 @@ function mapMessage(row: TutorMessageRow): TutorMessage {
     sources: parseJsonArray<TutorSource>(row.sourcesJson, tutorSourceSchema),
     groundingStatus: status.success ? status.data : "none",
     termNotes: parseJsonArray<TutorTermNote>(row.termNotesJson, tutorTermNoteSchema),
+    webSources: parseJsonArray<TutorWebSource>(row.webSourcesJson, tutorWebSourceSchema),
+    webSupplementStatus: webStatus.success ? webStatus.data : "none",
   };
 }
 
 interface TutorSessionRow {
   learnerId: string;
+  topicId: string | null;
+  practiceContextJson: string | null;
 }
 
 interface TutorCountRow {
   total: number;
 }
 
-export function createTutorSession(learnerId: string, createdAt: string): string {
+/** 建立的對話工作階段可附帶學習目標課題及練習上下文（兩者都只含學生安全資料） */
+export interface CreateTutorSessionOptions {
+  topicId?: string | null;
+  practiceContext?: TutorPracticeContext | null;
+}
+
+export function createTutorSession(
+  learnerId: string,
+  createdAt: string,
+  options: CreateTutorSessionOptions = {},
+): string {
   const id = newId("tutor");
   getDb()
-    .prepare("INSERT INTO tutor_sessions (id, learnerId, createdAt, topicId) VALUES (?, ?, ?, NULL)")
-    .run(id, learnerId, createdAt);
+    .prepare(
+      `INSERT INTO tutor_sessions (id, learnerId, createdAt, topicId, practiceContextJson)
+       VALUES (?, ?, ?, ?, ?)`,
+    )
+    .run(
+      id,
+      learnerId,
+      createdAt,
+      options.topicId ?? null,
+      JSON.stringify(options.practiceContext ?? null),
+    );
   return id;
+}
+
+/**
+ * 讀取對話工作階段的學習目標課題及練習上下文。
+ *
+ * 重新載入頁面時用來重建開場引導：開場氣泡本身不寫入 `tutor_messages`
+ * （它是平台的說明，不是學生或模型的對話），所以需要另外保存這一小段安全資料。
+ */
+export function getTutorSessionContext(sessionId: string): {
+  topicId: string | null;
+  practiceContext: TutorPracticeContext | null;
+} {
+  const row = getDb()
+    .prepare("SELECT learnerId, topicId, practiceContextJson FROM tutor_sessions WHERE id = ?")
+    .get(sessionId) as unknown as TutorSessionRow | undefined;
+  if (!row) return { topicId: null, practiceContext: null };
+  return {
+    topicId: row.topicId,
+    practiceContext: parseTutorJsonObject<TutorPracticeContext>(
+      row.practiceContextJson,
+      tutorPracticeContextSchema,
+    ),
+  };
+}
+
+/** 更新學習目標課題（只影響檢索的 soft prior，不會改寫學生原句或既有回覆） */
+export function setTutorSessionTopicId(sessionId: string, topicId: string | null): void {
+  getDb().prepare("UPDATE tutor_sessions SET topicId = ? WHERE id = ?").run(topicId, sessionId);
+}
+
+/** 保存練習上下文；只接受已由伺服器重組的安全資料 */
+export function setTutorSessionPracticeContext(
+  sessionId: string,
+  context: TutorPracticeContext | null,
+): void {
+  getDb()
+    .prepare("UPDATE tutor_sessions SET practiceContextJson = ? WHERE id = ?")
+    .run(JSON.stringify(context ?? null), sessionId);
 }
 
 export function getTutorSessionLearnerId(sessionId: string): string | null {
@@ -127,7 +222,7 @@ export function getTutorMessages(sessionId: string, limit = TUTOR_MESSAGE_WINDOW
   const rows = getDb()
     .prepare(
       `SELECT id, sessionId, role, content, tokensUsed, createdAt,
-              sourcesJson, groundingStatus, termNotesJson
+              sourcesJson, groundingStatus, termNotesJson, webSourcesJson, webSupplementStatus
        FROM tutor_messages WHERE sessionId = ?
        ORDER BY createdAt DESC, rowid DESC LIMIT ?`,
     )
@@ -147,8 +242,8 @@ export function saveTutorMessage(
     .prepare(
       `INSERT INTO tutor_messages
          (id, sessionId, role, content, tokensUsed, createdAt,
-          sourcesJson, groundingStatus, termNotesJson)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          sourcesJson, groundingStatus, termNotesJson, webSourcesJson, webSupplementStatus)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       newId("tmsg"),
@@ -160,6 +255,8 @@ export function saveTutorMessage(
       JSON.stringify(metadata.sources ?? []),
       metadata.groundingStatus ?? "none",
       JSON.stringify(metadata.termNotes ?? []),
+      JSON.stringify(metadata.webSources ?? []),
+      metadata.webSupplementStatus ?? "none",
     );
 }
 
