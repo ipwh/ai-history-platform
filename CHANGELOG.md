@@ -16,6 +16,28 @@
 
 ---
 
+## [未發布] — 2026-11-01：生產開啟學伴外網補充開關（尚未接搜尋端點，暫無作用）
+
+**狀態**：程式及部署設定已完成；**已部署**（GitOps：push main → Cloud Build → Cloud Run）。
+
+### 變更
+
+- [cloudbuild.yaml](cloudbuild.yaml) 的 `--set-env-vars` 新增 `TUTOR_WEB_SUPPLEMENT_ENABLED=true` 及 `TUTOR_WEB_MODE=not-covered-only`（擁有者於 2026-11-01 確認開啟）。
+- **仍未設定 `TUTOR_WEB_SEARCH_ENDPOINT`**，因此每次學伴回答的 `webSupplementStatus` 為 `not-used`、`webSources` 為空：**零外網請求、零外部參考**，學生介面不會出現 🌐 區塊，回答內容與開啟前完全相同。管理員端系統狀態頁會顯示 `tutor-web-supplement-no-search` 警告，提醒尚未接上搜尋端點。
+- `TUTOR_WEB_MODE` 明確設為 `not-covered-only`（而非依賴預設值），令實際策略在部署設定中可見：只在教材 `not-covered` 時才會嘗試外網。
+
+### 新增
+
+- `GET /api/health` 新增 `tutorWeb: { enabled, mode, searchConfigured }`（**只有布林值及模式名，不回傳搜尋端點網址**）。用途是在無需登入的情況下核實開關是否真的生效：`enabled: true` 而 `searchConfigured: false` 即代表「已開啟但未有作用」。三個新測試鎖定此契約及「不外泄端點網址」。
+
+### 待辦（需擁有者決定）
+
+1. **接上搜尋端點**（`TUTOR_WEB_SEARCH_ENDPOINT`，必須 `https://`，相容 `POST {query, domains, limit}` → `{results:[{url,title}]}`）。未設定前本功能不會產生任何外部參考。
+2. 選項：學校自架搜尋代理（學生問題不離開校方控制）／第三方搜尋 API 薄包裝（**會把學生提問送到第三方**，需先通過私隱及條款審視）／主題種子 URL 清單（不需搜尋服務，但內容易過時）。
+3. 可選收窄：`TUTOR_WEB_TOPIC_ALLOWLIST`、`TUTOR_WEB_BLOCKED_TOPICS`、`TUTOR_WEB_MAX_SOURCES`、`TUTOR_WEB_BUDGET_MS`。
+
+---
+
 ## [未發布] — 2026-11-01：學伴學習閉環（練習 ↔ 學伴、回覆結構、匿名事件、教師統計、外網策略）
 
 **狀態**：已完成程式碼、測試及文件；**未部署、未合併到 main**。

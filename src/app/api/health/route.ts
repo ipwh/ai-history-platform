@@ -1,4 +1,5 @@
 import { healthSchema } from "@/lib/types";
+import { getServerConfig } from "@/server/config";
 import { handleRoute, jsonOk } from "@/server/http";
 import { resolveOcrProvider } from "@/server/ocr";
 import { requireTeacher } from "@/server/auth/guards";
@@ -24,6 +25,7 @@ export async function GET() {
     runMaintenance("ai-operation-retention");
     const status = await getSystemStatus();
     const roster = await getRosterStatus({ load: false });
+    const webSupplement = getServerConfig().webSupplement;
     return jsonOk(
       healthSchema.parse({
         ok: status.ok,
@@ -38,6 +40,12 @@ export async function GET() {
         ocrEnabled: status.ocr.enabled,
         authEnabled: status.auth.enabled,
         staffApiOpen: status.auth.staffApiOpen,
+        // 學伴外部參考開關（只有布林值及模式，不含搜尋端點網址）
+        tutorWeb: {
+          enabled: webSupplement.enabled,
+          mode: webSupplement.mode,
+          searchConfigured: webSupplement.searchEndpoint !== null,
+        },
         roster,
         // 教材庫概況（只有數量）：診斷「學生端為甚麼沒有教材」
         materials: materialLibrarySummary(),

@@ -337,7 +337,9 @@ materials/
 
 #### 學伴外部參考：白名單網頁補充（2026-11-01，MVP，**預設關閉**）
 
-> **預設 `TUTOR_WEB_SUPPLEMENT_ENABLED=false`。** 未開啟時學伴不會發出任何外網請求（連 DNS 也不查），行為與加入此功能前**完全一致**；API 回覆仍會帶 `webSources: []` 及 `webSupplementStatus: "disabled"`，方便介面及測試分辨狀態。
+> **程式預設 `TUTOR_WEB_SUPPLEMENT_ENABLED=false`。** 未開啟時學伴不會發出任何外網請求（連 DNS 也不查），行為與加入此功能前**完全一致**；API 回覆仍會帶 `webSources: []` 及 `webSupplementStatus: "disabled"`，方便介面及測試分辨狀態。
+>
+> **生產環境現況（2026-11-01 起）**：[cloudbuild.yaml](cloudbuild.yaml) 已設 `TUTOR_WEB_SUPPLEMENT_ENABLED=true` 及 `TUTOR_WEB_MODE=not-covered-only`，但**仍未設定 `TUTOR_WEB_SEARCH_ENDPOINT`**。在補上搜尋端點之前，每次回答的 `webSupplementStatus` 為 `not-used`、`webSources` 為空，**不會有任何外網請求和外部參考**。可從公開的 `GET /api/health` → `tutorWeb: { enabled, mode, searchConfigured }` 核實（`enabled: true` 但 `searchConfigured: false` 表示「開了但未有作用」；該欄位刻意不回傳端點網址）。管理員端系統狀態頁同時會顯示 `tutor-web-supplement-no-search` 警告。
 
 **校本教材仍然是唯一的「課本依據」。** 外部參考只是課後擴充，永遠與教材分開標示：
 
@@ -2455,7 +2457,7 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 | `DEMO_AUTO_PUBLISH_QUESTIONS` | 本機 `true`／正式 `false` | 示範模式是否自動發布**本地示範生成**的題目（未經任何驗證）；只限非正式環境生效 |
 | `AUTO_PUBLISH_VALIDATED_QUESTIONS` | `true` | 是否讓**通過自動品質驗證**的題目立即供學生自學（Sprint 7.8；任何環境適用）。設為 `false` 即回復「只發布經人工覆核題目」的舊行為，已驗證題目會留在草稿 |
 | `EXPLANATION_HOLD_POLICY` | `off` | 解釋未達標是否暫緩派發：`off`／`placeholder`／`placeholder-or-answer-only`。**屬產品決定**：以 2026-10-20 題庫計，`placeholder` 會令可派發題目由 1,875 題減至 546 題，`placeholder-or-answer-only` 則為 0 題。無效值回退 `off` 並顯示 error 級設定警示；啟用時顯示 warning 及影響範圍 |
-| `TUTOR_WEB_SUPPLEMENT_ENABLED` | `false` | 學伴白名單網頁補充（外部參考）開關。**預設關閉＝零外網請求**，行為與加入此功能前一致 |
+| `TUTOR_WEB_SUPPLEMENT_ENABLED` | `false`（**生產於 2026-11-01 設為 `true`**） | 學伴白名單網頁補充（外部參考）開關。程式預設關閉＝零外網請求；生產現已開啟，但在補上 `TUTOR_WEB_SEARCH_ENDPOINT` 前為 `not-used`、不會有外部參考 |
 | `TUTOR_WEB_SEARCH_ENDPOINT` | 空 | 相容 `POST {query, domains, limit}` → `{results: [{url, title}]}` 的搜尋端點（必須 `https://` 及公網位址）。未設定＝不做搜尋，外部參考狀態為 `not-used`；平台不會自行爬取搜尋結果頁 |
 | `TUTOR_WEB_ALLOWLIST` | 內建白名單 | 逗號分隔 host（不含協議），**整份覆蓋**預設白名單。IP、單一主機名、共筆百科及社交平台一律忽略（見第三節「學伴外部參考」） |
 | `TUTOR_WEB_MAX_SOURCES`／`TUTOR_WEB_MAX_CHARS_PER_SOURCE` | `2`／`600` | 每次回答最多引用幾段外部參考、每段送入提示詞的字數（硬上限 5／2,000） |

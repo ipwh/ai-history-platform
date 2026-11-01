@@ -686,6 +686,43 @@ describe("學伴 API：外部參考", () => {
     expect(getServerConfig().webSupplement.mode).toBe("not-covered-only");
   });
 
+  it("health 端點回報外網補充開關狀態（只有布林值，不含搜尋端點網址）", async () => {
+    const { GET: health } = await import("@/app/api/health/route");
+    const payload = (await (await health()).json()) as {
+      tutorWeb: { enabled: boolean; mode: string; searchConfigured: boolean };
+    };
+    expect(payload.tutorWeb).toEqual({
+      enabled: false,
+      mode: "off",
+      searchConfigured: false,
+    });
+  });
+
+  it("開啟後 health 如實反映開關及「是否已設定搜尋端點」，且不外泄端點網址", async () => {
+    enableWebSupplement();
+    const { GET: health } = await import("@/app/api/health/route");
+    const raw = await (await health()).text();
+    expect(raw).not.toContain("search.example.com");
+    const payload = JSON.parse(raw) as {
+      tutorWeb: { enabled: boolean; mode: string; searchConfigured: boolean };
+    };
+    expect(payload.tutorWeb).toEqual({
+      enabled: true,
+      mode: "always",
+      searchConfigured: true,
+    });
+  });
+
+  it("只開啟開關而未設定搜尋端點時，health 顯示 searchConfigured=false（不會誤報可用）", async () => {
+    enableWebSupplement({ searchEndpoint: null });
+    const { GET: health } = await import("@/app/api/health/route");
+    const payload = (await (await health()).json()) as {
+      tutorWeb: { enabled: boolean; mode: string; searchConfigured: boolean };
+    };
+    expect(payload.tutorWeb.enabled).toBe(true);
+    expect(payload.tutorWeb.searchConfigured).toBe(false);
+  });
+
   it("mode=not-covered-only 時，教材已命中就不抓外網", async () => {
     enableWebSupplement({ mode: "not-covered-only" });
     const fetchMock = installFetchMock({});

@@ -1253,6 +1253,22 @@ export const healthSchema = z.object({
   authEnabled: z.boolean().default(false),
   /** 後台 API（題目、記錄、教材、系統）是否未受登入保護（只應在本機示範時為 true） */
   staffApiOpen: z.boolean().default(false),
+  /**
+   * 學伴「白名單網頁補充」（外部參考）的開關狀態。
+   *
+   * 只有三個非敏感值：是否開啟、策略模式、以及**是否已設定**搜尋端點。
+   * **刻意不回傳搜尋端點網址**：那屬內部基建資訊，健康檢查是公開端點。
+   *
+   * 用途：部署後可在無需登入的情況下核實開關是否真的生效
+   * （`enabled: true` 但 `searchConfigured: false` 表示開了但永遠不會有外部參考）。
+   */
+  tutorWeb: z
+    .object({
+      enabled: z.boolean().default(false),
+      mode: z.string().default("off"),
+      searchConfigured: z.boolean().default(false),
+    })
+    .default({ enabled: false, mode: "off", searchConfigured: false }),
   /** 學生名冊狀態（不含任何學生個人資料） */
   roster: rosterStatusSchema,
   /**
