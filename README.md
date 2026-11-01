@@ -335,7 +335,7 @@ materials/
 - **詞庫譯名修正**：核對教材原文後修正了四個以台灣／內地譯名作「課本寫法」的詞條——希特拉（原「希特勒」）、史太林（原「史達林」）、塞拉耶佛事件（原「薩拉熱窩事件」）、美國革命（原「美國獨立戰爭」）。教材原文出現 41 次「希特拉」、0 次「希特勒」，其餘同理；填充題批改的同義詞比對不受影響（同一組內互為別名）。2026-10-27 另補：米開蘭基羅（教材寫法，原以「米開朗基羅」為準）、新增拉斐爾，並把達文西的範圍由「高中」改為「課題5」（教材在初中課題5 筆記列出三人）。
 - 測試：[tests/tutor-grounding.test.ts](tests/tutor-grounding.test.ts)（檢索、段落合併、過濾、用語對照，另驗證未確認版權及校內試題檔不會被引用）及 [tests/tutor-grounding-api.test.ts](tests/tutor-grounding-api.test.ts)（SSE 標示、提示詞內容、保存後重新載入）。
 
-#### 學伴外部參考：白名單網頁補充（2026-11-01，MVP，**預設關閉**）
+#### 學伴外部參考：白名單網頁補充（2026-11-01；程式預設關閉，生產已開啟但未接搜尋端點）
 
 > **程式預設 `TUTOR_WEB_SUPPLEMENT_ENABLED=false`。** 未開啟時學伴不會發出任何外網請求（連 DNS 也不查），行為與加入此功能前**完全一致**；API 回覆仍會帶 `webSources: []` 及 `webSupplementStatus: "disabled"`，方便介面及測試分辨狀態。
 >
@@ -373,6 +373,67 @@ materials/
 - **風險（已記錄）**：① 外部網站的史觀、用詞及年份可能與本校教材不同，甚至互相矛盾——提示詞要求以教材為準，但模型仍可能取捨不當，教師應定期抽查；② 白名單網站不是評卷標準，`jstor.org` 等大部分正文在付費牆後，抓不到時如實留空（**不會**假引用）；③ 搜尋質素取決於 `TUTOR_WEB_SEARCH_ENDPOINT` 所接的服務；④ DNS 檢查與實際連線之間存在 TOCTOU 窗口，Node 的 `fetch` 無法指定已解析 IP，故以「連線前逐跳檢查＋只准白名單＋只准 https」作為防線；⑤ 外網抓取會令回覆首字延遲最多約 `TUTOR_WEB_BUDGET_MS`（預設 1.5 秒，硬上限 2 秒）。
 - **策略模式（`TUTOR_WEB_MODE`，2026-11-01）**：`off`（等同關閉）、`always`（通過閘門就嘗試，舊行為）、`not-covered-only`（**開啟時的預設**：只有教材 grounding 為 `not-covered` 才抓網）。教材已命中時再抓外網只會增加延遲及「兩個來源說法不同」的風險。另可設 `TUTOR_WEB_TOPIC_ALLOWLIST`（正面清單）與 `TUTOR_WEB_BLOCKED_TOPICS`（封鎖清單）。
 - 測試：[tests/tutor-web-supplement.test.ts](tests/tutor-web-supplement.test.ts)（開關關閉零請求、成功抓取、非白名單丟棄、SSRF、教材與外網並存、外網失敗降級、澄清／離題不觸發、重定向離開白名單、封鎖課題、三種模式、時間預算；全部外網以 mock 取代，並以 `vi.mock("node:dns/promises")` 驗證 DNS／私網檢查）及 `tutor-web-allowlist.ts` 的純函式單元測試。
+
+#### 如何設定 `TUTOR_WEB_SEARCH_ENDPOINT`（2026-11-01）
+
+`TUTOR_WEB_SEARCH_ENDPOINT` 是外網補充的**必要條件**：平台沒有付費搜尋 API，也不會自行爬取搜尋引擎結果頁，因此未設定此變數時，即使 `TUTOR_WEB_SUPPLEMENT_ENABLED=true`，每次回答的 `webSupplementStatus` 也只會是 `not-used`、`webSources` 為空。
+
+**端點契約**（平台送出的請求固定如下）
+
+| 項目 | 內容 |
+| --- | --- |
+| 方法 | `POST`，`content-type: application/json`，`accept: application/json` |
+| 請求 body | `{ "query": "<學生原句>", "domains": ["britannica.com", …], "limit": 6 }`（`limit` = max(4, `TUTOR_WEB_MAX_SOURCES` × 3)） |
+| 回應 body | `{ "results": [ { "url": "https://…", "title": "…" } ] }`，或直接是陣列 `[ {url, title}, … ]` |
+| 狀態碼 | 必須 2xx；非 2xx 視為失敗 |
+| **不可重定向** | 平台的請求設 `redirect: "error"`；回應 3xx 會直接判定失敗 |
+| **回應時限** | 受 `TUTOR_WEB_BUDGET_MS`（預設 **1500ms**，硬上限 2000ms）限制，且**與頁面抓取共用同一個預算**——建議搜尋端點在 **300ms 內**回應，否則沒有時間抓取任何頁面 |
+| 網址要求 | 必須 `https://`；host 必須解析到**公網**位址（私網／迴路位址會被防 SSRF 檢查拒絕） |
+| 結果過濾 | 平台會**再過濾一次**：只保留白名單 host 及 `https` 的結果，其餘丟棄且不會被抓取（所以代理回傳非白名單結果不會造成洩漏，但會浪費預算） |
+
+**設定步驟**
+
+1. **準備端點**（三選一，需擁有者決定）：
+   - 學校自架搜尋代理（學生提問不離開校方控制，最符合私隱要求）；
+   - 第三方搜尋 API 的薄包裝（例：Programmable Search／Brave Search API）——**會把學生提問送到第三方**，須先通過私隱及服務條款審視；
+   - 主題種子 URL 清單（不需搜尋服務，但內容易過時）。
+2. **在 [cloudbuild.yaml](cloudbuild.yaml) 的 `substitutions` 填入**（**不要**用一次性 `gcloud run services update`，因為下一次 `git push main` 的 `--set-env-vars` 會覆蓋整個清單）：
+
+   ```yaml
+   substitutions:
+     _TUTOR_WEB_SEARCH_ENDPOINT: "https://search.example.edu.hk/tutor"
+   ```
+
+   留空（`""`）＝ 未設定，等於關閉搜尋（行為與現在相同）。
+3. **`git push origin main`** 觸發 Cloud Build 部署（或在本機執行 `gcloud builds submit --config cloudbuild.yaml --substitutions=_TUTOR_WEB_SEARCH_ENDPOINT=...`）。
+4. **核實**：
+
+   ```bash
+   curl -s https://<服務網址>/api/health | jq .tutorWeb
+   # 期望：{ "enabled": true, "mode": "not-covered-only", "searchConfigured": true }
+   ```
+
+   之後在學伴問一個**教材未涵蓋**的課題（`not-covered-only` 模式只在教材找不到時才抓外網），回覆的 `done` 事件應為 `webSupplementStatus: "ok"` 並帶 `webSources`；若為 `failed` 表示端點超時、非 2xx、回 3xx 或解析到私網位址。
+
+**狀態值對照**
+
+| `webSupplementStatus` | 意思 |
+| --- | --- |
+| `disabled` | 開關關閉 |
+| `not-used` | 已開啟但沒有搜尋端點，或搜尋結果全部不在白名單 |
+| `failed` | 逾時／非 2xx／3xx／非 https／DNS 解析到私網／頁面抓取失敗 |
+| `blocked-topic` | 課題列於 `TUTOR_WEB_BLOCKED_TOPICS` |
+| `ok` | 至少一段外部參考成功抓取並附上摘錄 |
+
+**設定時常見錯誤**
+
+- 把端點寫成 `http://`：`config-diagnostics` 會出 error 級警示，且每次搜尋都會被拒。
+- 端點落在內網位址（例如 `10.x`、`*.internal`、GCE 中繼資料）：防 SSRF 檢查會拒絕；必須是公網可解析的 host。
+- 端點會 301 到結尾有斜線或 HTTPS 版本：改用最終網址，否則一律 `failed`。
+- 期望「教材已命中時也抓外網」：`not-covered-only` 不會；需改 `TUTOR_WEB_MODE=always`。
+- 只改 `gcloud run services update`：下次 push 部署即失效。
+
+
 
 #### 練習 ↔ 學伴學習閉環（2026-11-01）
 

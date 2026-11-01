@@ -29,6 +29,8 @@
 ### 新增
 
 - `GET /api/health` 新增 `tutorWeb: { enabled, mode, searchConfigured }`（**只有布林值及模式名，不回傳搜尋端點網址**）。用途是在無需登入的情況下核實開關是否真的生效：`enabled: true` 而 `searchConfigured: false` 即代表「已開啟但未有作用」。三個新測試鎖定此契約及「不外泄端點網址」。
+- [cloudbuild.yaml](cloudbuild.yaml) 新增 substitution `_TUTOR_WEB_SEARCH_ENDPOINT`（預設 `""`）並接入 `--set-env-vars`，令接上搜尋端點只需改**一行** substitution，毋須改動長長的 env 清單；留空即等同未設定（`readEnv` 會把空白視為 `null`），行為與現狀相同。
+- README 新增「如何設定 `TUTOR_WEB_SEARCH_ENDPOINT`」：完整端點契約（請求／回應格式、`redirect: error`、`TUTOR_WEB_BUDGET_MS` 共用預算、https 及公網位址要求）、設定步驟、核實方法、狀態值對照及常見錯誤。
 
 ### 待辦（需擁有者決定）
 
