@@ -23,6 +23,10 @@ process.env.AI_LIMIT_WINDOW_MINUTES = "60";
 process.env.AI_GENERATIONS_PER_LEARNER = "100";
 process.env.AI_GENERATIONS_GLOBAL = "100";
 process.env.BACKUP_ENABLED = "false";
+// 學伴的語意改寫（services/tutor-query-expansion.ts）預設開啟，但它會令「字詞檢索失敗」的提問
+// 多發一次模型請求；本檔以固定次序的假回應模擬模型，因此明確關閉。語意改寫本身由
+// tests/tutor-query-expansion.test.ts 及 tests/tutor-query-expansion-route.test.ts 專項驗證。
+process.env.TUTOR_QUERY_EXPANSION_ENABLED = "false";
 
 const STUDENT = "school:s2024301@pochiu.edu.hk";
 

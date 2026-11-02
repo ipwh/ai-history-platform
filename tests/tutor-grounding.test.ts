@@ -111,6 +111,71 @@ describe("學伴教材依據：查詢詞抽取", () => {
     expect(passages.length).toBeGreaterThan(0);
     expect(passages[0]?.promptText).toContain("學者");
   });
+
+  it("「開埠」會展開成課題8 教材的寫法（自由港／割讓／侵佔）", () => {
+    const weightOf = (value: string) =>
+      groundingModule
+        .extractQueryTerms("列出香港開埠的過程")
+        .find((term) => term.term === value)?.weight ?? 0;
+
+    expect(weightOf("自由港")).toBeGreaterThanOrEqual(5);
+    expect(weightOf("割讓")).toBeGreaterThanOrEqual(5);
+    expect(weightOf("侵佔")).toBeGreaterThanOrEqual(5);
+  });
+
+  it("錯一個字的專名會以課程寫法加入檢索詞（2026-11-02）", () => {
+    const weights = new Map(
+      groundingModule
+        .extractQueryTerms("凡爾塞條約對德國有咩影響")
+        .map((term) => [term.term, term.weight]),
+    );
+    expect(weights.get("凡爾賽條約")).toBeGreaterThanOrEqual(5);
+  });
+
+  it("命中同組任何寫法時，同組的中文寫法亦會加入檢索詞（2026-11-02）", () => {
+    // 學生寫英文，教材寫中文：「Japanese occupation」→ 亦要有「日佔時期」等
+    const weights = new Map(
+      groundingModule
+        .extractQueryTerms("Japanese occupation 期間香港發生咩事？")
+        .map((term) => [term.term, term.weight]),
+    );
+    expect(weights.get("三年零八個月")).toBeGreaterThanOrEqual(5);
+    expect(weights.get("日佔時期")).toBeGreaterThanOrEqual(5);
+    expect(weights.get("日治時期")).toBeGreaterThanOrEqual(5);
+  });
+
+  it("「香港開埠的過程」可以召回教材只寫「割讓」「自由港」的段落", () => {
+    // 課題8 的溫習筆記全篇沒有「開埠」二字：寫的是「英國侵佔香港」及
+    // 「割讓香港島／九龍半島」；若沒有類別詞展開，這段問題會一段都召回不到，
+    // 學伴只能答「教材找不到」（2026-11-02 實際發生）。
+    const passages = groundingModule.selectTutorPassages(
+      [
+        block({
+          id: "k1",
+          order: 0,
+          text: "香港位於中國南部沿海，擁有水深良港。英國於1841年強佔香港島後，隨即宣布香港為自由港。",
+        }),
+        block({
+          id: "k2",
+          order: 1,
+          text: "1842年，清政府與英國簽訂《南京條約》，被迫割讓香港島予英國。",
+        }),
+        block({
+          id: "k3",
+          order: 0,
+          documentId: "doc-b",
+          text: "文藝復興時期畫家開始採用透視法作畫，重視人體比例。",
+        }),
+      ],
+      groundingModule.extractQueryTerms("列出香港開埠的過程"),
+    );
+
+    const combined = passages.map((passage) => passage.promptText).join("\n");
+    expect(passages.length).toBeGreaterThan(0);
+    expect(combined).toContain("自由港");
+    expect(combined).toContain("割讓");
+    expect(combined).not.toContain("透視法");
+  });
 });
 
 describe("學伴教材依據：段落評分與段落組合併", () => {
@@ -318,6 +383,107 @@ describe("學伴教材依據：課題推斷", () => {
   it("無法判斷時不猜課題（避免用另一個課題的教材作答）", () => {
     expect(groundingModule.guessTutorTopic("今天天氣如何？", topics, sections)).toBeNull();
   });
+
+  it("詞庫範疇寫錯時，教師維護的分節關鍵詞仍可把提問帶到正確課題（2026-11-02）", () => {
+    // 重現：「聯合國喺戰後國際合作有咩角色？」原本因詞庫「聯合國」標為課題9 的
+    // +10，壓過課題11 的分節「聯合國」+6，結果引用兩次世界大戰的教材。
+    const index = {
+      topics: [
+        { id: "topic-9", title: "課題9：20世紀的國際紛爭及危機(I)–兩次世界大戰" },
+        { id: "topic-11", title: "課題11：20世紀以來的國際合作" },
+      ],
+      sectionsByTopic: new Map([
+        ["topic-9", [{ id: "topic-9-ww1", title: "第一次世界大戰的起因", matchKeywords: ["戰爭爆發"] }]],
+        ["topic-11", [{ id: "topic-11-un", title: "國際組織與合作", matchKeywords: ["聯合國"] }]],
+      ]),
+    };
+    expect(
+      groundingModule.guessTutorTopic("聯合國喺戰後國際合作有咩角色？", index.topics, index.sectionsByTopic)
+        ?.topicId,
+    ).toBe("topic-11");
+  });
+
+  it("分節關鍵詞只差一個「的」仍可命中（4 字窗口，2026-11-02）", () => {
+    expect(
+      groundingModule.keywordMatchStrength("中國早期現代化努力有幾次改革", "中國早期的現代化努力"),
+    ).toBe("window");
+    expect(
+      groundingModule.keywordMatchStrength("中國早期的現代化努力是甚麼", "中國早期的現代化努力"),
+    ).toBe("exact");
+    // 3 字以下不設窗口，避免「香港」「戰爭」在任何句子都命中
+    expect(groundingModule.keywordMatchStrength("香港歷史", "香港")).toBe("exact");
+    expect(groundingModule.keywordMatchStrength("九龍歷史", "香港")).toBeNull();
+  });
+
+  it("窗口命中可令少一個「的」的提問通過硬閘並定位課題", () => {
+    const index = {
+      topics: [{ id: "hs-topic-2", title: "課題2：中國的現代化與蛻變" }],
+      sectionsByTopic: new Map([
+        [
+          "hs-topic-2",
+          [
+            {
+              id: "hs-topic-2-early",
+              title: "中國早期的現代化努力：改革與革命",
+              matchKeywords: ["洋務運動"],
+            },
+          ],
+        ],
+      ]),
+    };
+    expect(
+      groundingModule.matchesCurriculumTerms(index, "中國早期現代化努力有邊幾次改革？"),
+    ).toBe(true);
+    expect(
+      groundingModule.guessTutorTopic(
+        "中國早期現代化努力有邊幾次改革？",
+        index.topics,
+        index.sectionsByTopic,
+      )?.topicId,
+    ).toBe("hs-topic-2");
+  });
+
+  it("「課題12」不會被當成「課題1」（2026-11-02）", () => {
+    const index = {
+      topics: [
+        { id: "topic-1", title: "課題1：人類的需要：古與今" },
+        { id: "topic-12", title: "課題12：20世紀香港的成長與蛻變" },
+      ],
+      sectionsByTopic: new Map<string, { id: string; title: string; matchKeywords: string[] }[]>(),
+    };
+    expect(
+      groundingModule.guessTutorTopic("課題12有咩內容？", index.topics, index.sectionsByTopic)
+        ?.topicId,
+    ).toBe("topic-12");
+    expect(
+      groundingModule.guessTutorTopic("課題1講咩？", index.topics, index.sectionsByTopic)?.topicId,
+    ).toBe("topic-1");
+  });
+
+  it("同分時以分節關鍵詞為先（避免引用完全沒有該內容的課題）", () => {
+    // 重現：「香港如何由轉口港發展成國際金融中心？」同時命中課題8（詞庫「轉口港」）
+    // 及高中課題1（分節「國際金融中心」）各 10 分；「國際金融中心」只在高中教材出現。
+    const index = {
+      topics: [
+        { id: "topic-8", title: "課題8：香港直至19世紀末的成長與發展" },
+        { id: "hs-topic-1", title: "課題1：香港的現代化與蛻變" },
+      ],
+      sectionsByTopic: new Map([
+        ["topic-8", [{ id: "topic-8-economy", title: "經濟與社會民生狀況", matchKeywords: ["轉口貿易"] }]],
+        [
+          "hs-topic-1",
+          [{ id: "hs-topic-1-economy", title: "經濟發展：由轉口港到國際金融中心", matchKeywords: ["國際金融中心"] }],
+        ],
+      ]),
+    };
+    expect(
+      groundingModule.guessTutorTopic(
+        "香港如何由轉口港發展成國際金融中心？",
+        index.topics,
+        index.sectionsByTopic,
+      )?.topicId,
+    ).toBe("hs-topic-1");
+  });
 });
 
 describe("學伴教材依據：課本用語對照", () => {
@@ -340,6 +506,17 @@ describe("學伴教材依據：課本用語對照", () => {
   it("課本用語表包含提問涉及的專名", () => {
     const glossary = groundingModule.buildTutorGlossary("topic-9", "希特拉如何崛起？");
     expect(glossary.map((term) => term.canonical)).toContain("希特拉");
+  });
+
+  it("課題8 的課本寫法是「英國侵佔香港」，回覆寫「開埠」時提示改用課本寫法", () => {
+    expect(groundingModule.detectTermMismatches("香港在開埠後迅速發展成轉口港。")).toEqual([
+      { canonical: "英國侵佔香港", used: "開埠" },
+    ]);
+  });
+
+  it("學生用「開埠」提問時，課本用語表給出「英國侵佔香港」", () => {
+    const glossary = groundingModule.buildTutorGlossary("topic-8", "列出香港開埠的過程");
+    expect(glossary.map((term) => term.canonical)).toContain("英國侵佔香港");
   });
 });
 
@@ -599,5 +776,90 @@ describe("學伴教材依據：資料庫檢索（只使用已開放給學生的�
     const grounding = groundingModule.findTutorGrounding("點解？", ["凡爾賽條約如何約束德國？"]);
     expect(grounding.status).toBe("grounded");
     expect(grounding.topicId).toBe("topic-9");
+  });
+});
+
+describe("學伴教材依據：語意改寫詞（extraTerms）", () => {
+  beforeAll(() => {
+    const db = getDb();
+    const now = "2026-11-02T00:00:00.000+08:00";
+    db.prepare(
+      `INSERT INTO topics (id, title, description, published, sort_order, created_at, updated_at)
+       VALUES ('topic-8', '課題8：香港直至19世紀末的成長與發展', '', 1, 8, ?, ?)`,
+    ).run(now, now);
+    db.prepare(
+      `INSERT INTO material_documents
+         (id, file_name, kind, status, created_at, student_distribution, rights_confirmed_at)
+       VALUES ('doc-hk-notes', '課題8 香港直至十九世紀末的成長與發展_筆記.docx', 'demo', 'ready', ?, 1, ?)`,
+    ).run(now, now);
+    db.prepare(
+      `INSERT INTO material_blocks
+         (id, document_id, topic_id, section_id, sort_order, type, text, source_location, created_at, extraction_method)
+       VALUES ('doc-hk-notes-b0', 'doc-hk-notes', 'topic-8', NULL, 0, 'paragraph', ?, ?, ?, 'native')`,
+    ).run(
+      "香港位於中國南部沿海，擁有水深良港。英國於1841年強佔香港島後，隨即宣布香港為自由港。",
+      "課題8 香港直至十九世紀末的成長與發展_筆記.docx · 第 1 段（段落）",
+      now,
+    );
+    // 分節關鍵詞：改寫詞可能正是它，令「完全沒有課題線索」的提問也能定位課題
+    db.prepare(
+      `INSERT INTO sections (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+       VALUES ('topic-8-freeport', 'topic-8', NULL, '自由港', '', '["自由港"]', 1, ?, ?)`,
+    ).run(now, now);
+  });
+
+  it("改寫詞以固定權重併入，不會降低既有查詢詞的權重", () => {
+    const merged = groundingModule.withExpandedTerms(
+      [
+        { term: "開埠", weight: 5 },
+        { term: "藝術三傑", weight: 20 },
+      ],
+      ["自由港", "藝術三傑", "甚麼"],
+    );
+
+    expect(merged.find((term) => term.term === "自由港")?.weight).toBe(
+      groundingModule.TUTOR_EXPANSION_TERM_WEIGHT,
+    );
+    expect(merged.find((term) => term.term === "藝術三傑")?.weight).toBe(20);
+    expect(merged.some((term) => term.term === "甚麼")).toBe(false);
+  });
+
+  it("字詞檢索失敗時，改寫詞可令同一條提問找到教材", () => {
+    // 教材只寫「自由港」，學生的問法是「港口…開放」（字面完全不重疊）：
+    // 這正是語意改寫要補的漏洞，見 services/tutor-query-expansion.ts。
+    const message = "點樣睇嗰個港口嘅開放安排？";
+
+    expect(
+      groundingModule.findTutorGrounding(message, [], undefined, {
+        preferredTopicId: "topic-8",
+      }).status,
+    ).toBe("not-covered");
+
+    const expanded = groundingModule.findTutorGrounding(message, [], undefined, {
+      preferredTopicId: "topic-8",
+      extraTerms: ["自由港"],
+    });
+    expect(expanded.status).toBe("grounded");
+    expect(expanded.passages.map((passage) => passage.promptText).join("\n")).toContain("自由港");
+  });
+
+  it("完全沒有課題線索時，改寫詞亦可令課題推斷成功", () => {
+    const message = "點樣睇嗰個港口嘅安排？";
+    expect(groundingModule.findTutorGrounding(message).status).toBe("not-covered");
+
+    const expanded = groundingModule.findTutorGrounding(message, [], undefined, {
+      extraTerms: ["自由港"],
+    });
+    expect(expanded.status).toBe("grounded");
+    expect(expanded.topicId).toBe("topic-8");
+  });
+
+  it("改寫詞不會令無關段落成為依據", () => {    const grounding = groundingModule.findTutorGrounding(
+      "點樣睇嗰個港口嘅開放安排？",
+      [],
+      undefined,
+      { preferredTopicId: "topic-8", extraTerms: ["文藝復興"] },
+    );
+    expect(grounding.status).toBe("not-covered");
   });
 });

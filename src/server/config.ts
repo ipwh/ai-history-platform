@@ -20,6 +20,12 @@ import {
   type TutorWebSupplementConfig,
 } from "./services/tutor-web-supplement";
 import { parseTutorWebSearchProvider } from "./services/tutor-web-search-provider";
+import {
+  TUTOR_EXPANSION_DEFAULT_BUDGET_MS,
+  TUTOR_EXPANSION_HARD_MAX_TERMS,
+  TUTOR_EXPANSION_MAX_BUDGET_MS,
+  type TutorQueryExpansionConfig,
+} from "./services/tutor-query-expansion";
 
 /**
  * 教材匯入後的自動開放政策（見 `ServerConfig.materialAutoOpenPolicy`）。
@@ -137,6 +143,18 @@ export interface ServerConfig {
    * 它依附在主回答之上，只在日額及 `generation` 預留通過後才執行。
    */
   webSupplement: TutorWebSupplementConfig;
+  /**
+   * 學伴提問的語意改寫（LLM query expansion，2026-11-02，**預設開啟**）。
+   *
+   * 只在字詞檢索已確定找不到教材（`not-covered`）時，才請模型把學生用語改寫成
+   * 教材用語並重試檢索。正常提問零額外呼叫、零額外延遲；失敗提問最多多等
+   * `budgetMs`（預設 2.5 秒），逾時即放棄並保留「未找到教材依據」的標示。
+   *
+   * 由 `TUTOR_QUERY_EXPANSION_ENABLED`（預設 true）、`TUTOR_QUERY_EXPANSION_BUDGET_MS`
+   * 及 `TUTOR_QUERY_EXPANSION_MAX_TERMS` 設定；關閉後行為與加入此功能前完全一致。
+   * 使用者的決定（2026-11-02）：預設開啟，見 services/tutor-query-expansion.ts。
+   */
+  tutorQueryExpansion: TutorQueryExpansionConfig;
   /** AI 用量上限（避免個別帳戶或整體用量失控） */
   aiLimits: AiLimitConfig;
   /** 資料庫備份（把 SQLite 檔案備份到 Cloud Storage，令容器重建後仍保留資料） */
@@ -643,6 +661,31 @@ function readWebSupplementConfig(): TutorWebSupplementConfig {
   };
 }
 
+/**
+ * 讀取學伴「語意改寫」設定（2026-11-02 擁有者決定：**預設開啟**）。
+ *
+ * 只在字詞檢索已確定找不到教材（`not-covered`）時才呼叫模型，把學生用語改寫成
+ * 教材用語並重試檢索；正常提問零額外請求、零額外延遲。
+ *
+ * - `TUTOR_QUERY_EXPANSION_ENABLED`（預設 true）：設為 false 即完全回退舊行為。
+ * - `TUTOR_QUERY_EXPANSION_BUDGET_MS`（預設 2.5 秒、硬上限 5 秒）：逾時即放棄改寫，
+ *   令主回答首字不會被改寫拖慢。
+ * - `TUTOR_QUERY_EXPANSION_MAX_TERMS`（預設 6、硬上限 10）：拆詞過多會令無關段落命中。
+ */
+function readTutorQueryExpansionConfig(): TutorQueryExpansionConfig {
+  return {
+    enabled: readBoolean("TUTOR_QUERY_EXPANSION_ENABLED", true),
+    budgetMs: Math.min(
+      readPositiveInt("TUTOR_QUERY_EXPANSION_BUDGET_MS", TUTOR_EXPANSION_DEFAULT_BUDGET_MS),
+      TUTOR_EXPANSION_MAX_BUDGET_MS,
+    ),
+    maxTerms: Math.min(
+      readPositiveInt("TUTOR_QUERY_EXPANSION_MAX_TERMS", 6),
+      TUTOR_EXPANSION_HARD_MAX_TERMS,
+    ),
+  };
+}
+
 export function getServerConfig(): ServerConfig {
   const projectRoot = process.cwd();
   const provider = readProviderName();
@@ -742,6 +785,7 @@ export function getServerConfig(): ServerConfig {
     explanationHoldPolicy: readExplanationHoldPolicy(),
     materialAutoOpenPolicy: readMaterialAutoOpenPolicy(),
     webSupplement: readWebSupplementConfig(),
+    tutorQueryExpansion: readTutorQueryExpansionConfig(),
     aiLimits: readAiLimits(),
     backup: readBackupConfig(),
     maxUploadBytes: readPositiveInt("APP_MAX_UPLOAD_BYTES", DEFAULT_MAX_UPLOAD_BYTES),

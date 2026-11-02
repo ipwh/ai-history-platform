@@ -1,6 +1,12 @@
-import { HISTORY_TERM_GROUPS, normalizeHistoryAnswer } from "@/lib/history-lexicon";
+import {
+  HISTORY_TERM_GROUPS,
+  canonicalHistoryTerm,
+  findLooseHistoryTerms,
+  normalizeHistoryAnswer,
+} from "@/lib/history-lexicon";
 import type { TutorQuestionCandidate } from "@/lib/tutor-question-suggestions";
 import type { TutorCurriculumIndex } from "@/server/services/tutor-grounding";
+import { keywordMatchStrength } from "@/server/services/tutor-grounding";
 
 export const TUTOR_QUERY_CLARIFY_REPLY =
   "我未能確定你想問哪一件歷史事或哪個方向。請選擇以下一個問題，或自行改寫後再問：";
@@ -177,6 +183,9 @@ export function hasWeakHistorySignal(raw: string): boolean {
   return (
     // 只把完整的短代詞回合視為待澄清訊號，不推測其指涉人物。
     /^(?:佢|佢哋|嗰個|嗰位)(?:呢|呀|咧|嗎|嘛)?[？?！!。…]*$/.test(normalized.trim()) ||
+    // 「課題8講咩？」「幫我溫習課題9」：用課程編號提問，屬歷史科，但沒有具體
+    // 內容詞——應走澄清並以該課題的分節提供選項（2026-11-02）。
+    /課題\s*\d+/.test(normalized) ||
     /(?:公元前|公元|西元)?\d{1,4}(?:年|世紀|年代)|\b(?:1[0-9]{3}|20[0-2][0-9])\b/.test(
       normalized,
     ) ||
@@ -206,12 +215,17 @@ function hasSpecificHistoryAnchor(
   ) {
     return true;
   }
+  // 錯一個字的專名（「凡爾塞條約」「希特立」）仍算有具體歷史錨點，
+  // 否則會先被判定為「含混」而要求澄清（2026-11-02）。
+  if (findLooseHistoryTerms(normalized).length > 0) return true;
 
   for (const topic of curriculum.topics) {
     for (const section of curriculum.sectionsByTopic.get(topic.id) ?? []) {
       for (const term of [section.title, ...section.matchKeywords]) {
         const key = normalizeTutorQuery(term);
-        if (key.length >= 2 && normalized.includes(key)) return true;
+        // 與主題硬閘使用同一比對規則：關鍵詞的 4 字窗口出現於提問亦算錨點，
+        // 否則「中國早期現代化努力」這類少一個「的」的問法會被要求澄清（2026-11-02）。
+        if (keywordMatchStrength(normalized, key) !== null) return true;
       }
     }
   }
@@ -225,20 +239,26 @@ export function isUnclearTutorQuery(
 ): boolean {
   if (hasValidHistoryContext || !hasWeakHistorySignal(raw)) return false;
   const normalized = normalizeTutorQuery(raw);
-  if (
-    /(?:嗰啲嘢|那些事情|那些東西|嗰堆|那些|係點|是怎樣|好慘|很慘|慘不慘|好唔好|好不好)/.test(
-      normalized,
-    )
-  ) {
+  // 真正無法判斷的只有「明顯含糊」的講法（「嗰啲嘢」「那些」「好慘」）。「係點」「是怎樣」
+  // 曾經列在這裡，但它們同樣是最常見的問法（「三年零八個月期間香港人生活係點？」）：
+  // 只要句中有具體歷史錨點，就應照常作答，不可要求學生重新輸入（2026-11-02 修正）。
+  if (/(?:嗰啲嘢|那些事情|那些東西|嗰堆|那些|好慘|很慘|慘不慘|好唔好|好不好)/.test(normalized)) {
     return true;
   }
   if (!hasSpecificHistoryAnchor(normalized, curriculum)) return true;
-  return (
-    normalized.length < 24 &&
-    !/(?:為什麼|為何|如何|怎樣|成因|起因|背景|影響|特色|特點|內容|分別|誰|哪些|哪個|哪一|何時|幾時|哪裡|邊度|順序|改變|爆發|佔領|解釋|說明|方法|計算|甚麼|什麼|是否|一樣|做了|做過|做咩|做乜|乜|割|列出|整理|提示|抄)/.test(
-      normalized,
-    )
+  // 學生只打了一個課程專名（例如「五功？」「凡爾賽條約」）：提問對象已經明確，
+  // 不應再要求澄清（2026-11-02）。
+  if (normalized.length <= 8 && canonicalHistoryTerm(normalized) !== null) return false;
+  const hasQuestionWord = /(?:為什麼|為何|如何|怎樣|成因|起因|原因|背景|影響|特色|特點|內容|分別|比較|誰|哪些|哪個|哪一|何時|幾時|哪裡|邊度|順序|次序|時序|排列|配對|填充|完成|下表|表格|改變|爆發|佔領|解釋|說明|方法|計算|甚麼|什麼|是否|一樣|做了|做過|做咩|做乜|乜|割|列出|整理|提示|抄|例子|舉例|例如|評論|評價|分析|角色|立場|看法|意見|背|記住|記憶|溫習|讀|成功|失敗|會唔會|咩|邊(?:個|幾|一|二|三|四|五|六|七|八|九|十|多|樣|年|月|日)|幾多|幾耐|關係|係點|是怎樣)/.test(
+    normalized,
   );
+  // 純英文提問（"Who was Hitler?"）：正規化已去掉空格，因此不可用 \b 邊界，
+  // 改為直接在原文（未去空格）中找英文疑問詞。
+  const hasEnglishQuestionWord =
+    /(?:^|[^a-z])(?:who|what|why|how|when|which|where|explain|describe|compare|discuss|evaluate)(?:[^a-z]|$)/i.test(
+      raw,
+    );
+  return normalized.length < 24 && !hasQuestionWord && !hasEnglishQuestionWord;
 }
 
 function relevanceSignals(raw: string, context: string[]): string[] {

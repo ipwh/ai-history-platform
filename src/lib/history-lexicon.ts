@@ -68,6 +68,10 @@ const SIMPLIFIED_TRADITIONAL_PAIRS = [
   "声聲 壳殼 壶壺 处處 备備 够夠 头頭 夹夾 夺奪 奋奮 奖獎 奥奧 妆妝 妇婦 妈媽",
   "娱娛 娲媧 娴嫻 婴嬰 婵嬋 孙孫 学學 宁寧 宝寶 实實 宠寵 审審 宪憲 宫宮 宽寬",
   "宾賓 寝寢 对對 寻尋 导導 寿壽 尘塵 尝嘗 尧堯 尽盡 层層 届屆 属屬 屡屢 屿嶼",
+  // 2026-11-02：學生以簡體提問時最常見卻未收錄的字（「冷戰為什麼會結束」原本只轉成
+  // 「冷戰為什么會結束」，令「為什麼」等疑問詞及檢索詞對不上繁體教材）。
+  "么麼 与與 两兩 个個 们們 从從 写寫 习習 临臨 乐樂 将將 艰艱 艳艷 节節 荆荊",
+  "荧熒 荫蔭 蕴蘊 邻鄰 桥橋 桦樺 桧檜 桨槳 枣棗 栖棲 烟煙 炽熾 烨燁 烩燴 瓮甕 痴癡",
   "岂豈 岗崗 岛島 岭嶺 峡峽 峥崢 峦巒 崭嶄 巩鞏 币幣 帅帥 师師 帐帳 帘簾 帜幟",
   "带帶 帮幫 并並 广廣 庄莊 庆慶 庐廬 库庫 应應 庙廟 庞龐 废廢 开開 异異 弃棄",
   "弥彌 弯彎 强強 归歸 当當 录錄 彻徹 径徑 忆憶 忧憂 怀懷 态態 怜憐 总總 恋戀",
@@ -266,6 +270,14 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     category: "institution",
     scope: "課題1",
   },
+  {
+    // 2026-11-02：教材分節寫「四大古代文明」「大河文明」，學生慣說「四大古文明」；
+    // 逐字比對下兩者不同，令「點解四大古文明都係喺大河旁邊興起？」被主題硬閘擋下。
+    canonical: "四大古代文明",
+    aliases: ["四大古文明", "四大文明", "大河文明", "古代文明"],
+    category: "institution",
+    scope: "課題1",
+  },
 
   /* 課題2 歐洲文明的發展 */
   {
@@ -390,11 +402,28 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     category: "institution",
     scope: "課題3",
   },
+  {
+    // 2026-11-02：教材分節寫「阿拉伯帝國的擴張」；學生問「阿拉伯帝國係點樣擴張？」
+    // 逐字比對不到，被主題硬閘擋下（教材有 16 段）。
+    canonical: "阿拉伯帝國",
+    aliases: ["大食", "阿拉伯帝國擴張", "arab empire", "arab caliphate"],
+    category: "institution",
+    scope: "課題3",
+  },
+  {
+    // 2026-11-02：學生問「咩係五功？」時，2 字查詢詞權重不足（<6 分），
+    // 令教材明明有 10 段相關內容仍回「找不到」；收入詞庫後以專名權重 8 命中。
+    canonical: "五功",
+    aliases: ["五項功課", "five pillars of islam", "five pillars"],
+    category: "institution",
+    scope: "課題3",
+  },
 
   /* 課題4 早期香港地區的歷史 */
   {
     canonical: "新界五大族",
-    aliases: ["五大族", "新界五大氏族"],
+    // 2026-11-02：教材分節寫「新界五大姓族」，學生亦慣用此寫法。
+    aliases: ["五大族", "新界五大氏族", "新界五大姓族", "五大姓族"],
     category: "institution",
     scope: "課題4",
   },
@@ -604,6 +633,14 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     category: "reform",
     scope: "課題5",
   },
+  {
+    // 2026-11-02：由「高中」改為課題5——教材 107 段在課題5 筆記（高中只有約 15 段）。
+    // 原本的範疇令「Industrial Revolution 幾時開始？」被帶到高中課題1 並回「找不到」。
+    canonical: "工業革命",
+    aliases: ["產業革命", "industrial revolution"],
+    category: "event",
+    scope: "課題5",
+  },
 
   /* 課題6 歐洲國家的殖民擴張（亦涵蓋高中中國近代史條約） */
   {
@@ -616,6 +653,22 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     canonical: "帝國主義",
     aliases: ["帝國主義政策", "帝国主义", "imperialism"],
     category: "reform",
+    scope: "課題6",
+  },
+  {
+    // 2026-11-02：教材有 21 段提及「保護國」（分節關鍵詞亦有），但只以 3 字查詢詞
+    // 命中（2 分）低於門檻，令「咩叫保護國？」回「找不到」。
+    canonical: "保護國",
+    aliases: ["保護國制度", "保護領", "protectorate"],
+    category: "institution",
+    scope: "課題6",
+  },
+  {
+    // 2026-11-02：學生問「歐洲國家點樣瓜分非洲？」，教材用「非洲」「勢力範圍」，
+    // 沒有「瓜分非洲」四字；收入詞庫後至少能定位課題6 並如實說明覆蓋範圍。
+    canonical: "瓜分非洲",
+    aliases: ["非洲爭奪", "爭奪非洲", "scramble for africa"],
+    category: "event",
     scope: "課題6",
   },
   {
@@ -731,7 +784,13 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   {
     // 本校課程及教材用「美國革命」（教材 44 處，分節題為「美國革命與建國」）。
     canonical: "美國革命",
-    aliases: ["美國獨立戰爭", "獨立戰爭", "american revolutionary war", "american war of independence"],
+    aliases: [
+      "美國獨立戰爭",
+      "美國獨立革命",
+      "獨立戰爭",
+      "american revolutionary war",
+      "american war of independence",
+    ],
     category: "event",
     scope: "課題7",
   },
@@ -816,8 +875,18 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     scope: "課題8",
   },
   {
-    canonical: "香港開埠",
-    aliases: ["開埠", "opening of the port"],
+    // 2026-11-02（擁有者決定）：本校課題8 教材的寫法是「英國侵佔香港」（章節標題及分節
+    // 關鍵詞都用此語），全份溫習筆記沒有「開埠」二字。因此課本寫法改為「英國侵佔香港」，
+    // 「香港開埠」「開埠」保留為別名：學生用此詞提問仍可定位課題及檢索，介面亦會在
+    // 回覆使用「開埠」時提示課本寫法（見 services/tutor-grounding.ts 的 detectTermMismatches）。
+    canonical: "英國侵佔香港",
+    aliases: [
+      "香港開埠",
+      "開埠",
+      "佔領香港",
+      "佔據香港",
+      "opening of the port",
+    ],
     category: "event",
     scope: "課題8",
   },
@@ -1035,7 +1104,8 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     canonical: "邱吉爾",
     aliases: ["丘吉爾", "溫斯頓邱吉爾", "winston churchill", "churchill"],
     category: "person",
-    scope: "課題9",
+    // 2026-11-02：教材以冷戰（課題10，21 段）為主，課題9 沒有出現此名。
+    scope: "課題10",
   },
   {
     canonical: "威爾遜",
@@ -1047,7 +1117,9 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     canonical: "聯合國",
     aliases: ["聯合國組織", "united nations", "un"],
     category: "institution",
-    scope: "課題9",
+    // 2026-11-02：教材以課題11（國際合作）為主（158 段），課題9 只順帶提及（12 段）。
+    // 原本設為課題9，令「聯合國…角色？」被拉到兩次世界大戰的教材。
+    scope: "課題11",
   },
   {
     canonical: "聯合國憲章",
@@ -1163,7 +1235,10 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     canonical: "改革開放",
     aliases: ["改革開放政策", "對外開放", "改革开放", "改革开放政策", "reform and opening up"],
     category: "reform",
-    scope: "課題10",
+    // 2026-11-02：教材主要在高中「中國的現代化與蛻變」（hs-topic-2，36 段）；
+    // 課題10 只有 6 段順帶提及。原本設為課題10，令「改革開放對中國現代化…」
+    // 被拉到冷戰教材。
+    scope: "高中",
   },
   {
     canonical: "九一一事件",
@@ -1175,7 +1250,8 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     canonical: "全球化",
     aliases: ["全球一體化", "globalisation", "globalization"],
     category: "event",
-    scope: "課題10",
+    // 2026-11-02：教材在課題11（國際合作，5 段），課題10 沒有相關段落。
+    scope: "課題11",
   },
 
   /* 課題11 二十世紀以來的國際合作 */
@@ -1273,7 +1349,14 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "三年零八個月",
-    aliases: ["日佔時期", "日治時期", "日本佔領時期", "three years and eight months"],
+    aliases: [
+      "日佔時期",
+      "日治時期",
+      "日本佔領時期",
+      "japanese occupation",
+      "japanese occupation of hong kong",
+      "three years and eight months",
+    ],
     category: "event",
     scope: "課題12",
   },
@@ -1300,6 +1383,13 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     aliases: ["廉政專員公署", "icac", "independent commission against corruption"],
     category: "institution",
     scope: "課題12",
+  },
+  {
+    // 2026-11-02：教材在高中課題1（香港的現代化與蛻變，3 段）；學生亦會問「六七暴動」。
+    canonical: "六七暴動",
+    aliases: ["1967年暴動", "六七事件"],
+    category: "event",
+    scope: "高中",
   },
   {
     canonical: "九年免費教育",
@@ -1558,9 +1648,11 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     scope: "高中",
   },
   {
-    canonical: "工業革命",
-    aliases: ["產業革命", "industrial revolution"],
-    category: "event",
+    // 2026-11-02：教材只寫「工業化」（hs-topic-1 有 5 段），沒有「工業革命」四字；
+    // 學生問「香港戰後工業化嘅原因」時，3 字查詢詞只得 2 分，低於命中門檻。
+    canonical: "工業化",
+    aliases: ["工業發展", "工業化過程", "industrialisation", "industrialization"],
+    category: "reform",
     scope: "高中",
   },
   {
@@ -1716,6 +1808,74 @@ export function canonicalHistoryTerm(value: string): string | null {
   const key = normalizeHistoryAnswer(value);
   if (key.length === 0) return null;
   return canonicalIndex.get(key) ?? null;
+}
+
+/** 錯別字比對容許的最少字數（2 字詞太容易誤配，例如「英國／美國」） */
+const LOOSE_MIN_LENGTH = 3;
+/** 只對短句做錯別字比對（長段落多數不是打錯字，亦避免不必要的運算） */
+const LOOSE_MAX_TEXT_LENGTH = 160;
+/** 不可互相替換的字：數字一改就變成另一件事（一戰／二戰、第一次／第二次） */
+const NUMERAL_CHARS: ReadonlySet<string> = new Set(
+  "一二三四五六七八九十百千萬億零〇兩两0123456789".split(""),
+);
+/**
+ * 國名／方位字亦不可互換：「美國革命」與「法國革命」、「東印度公司」與「西印度公司」
+ * 是不同的事件或組織，容許替換會把學生的提問帶到另一個課題。
+ */
+const ENTITY_CHARS: ReadonlySet<string> = new Set(
+  "美法英德日中蘇俄義奧荷葡西韓印越泰菲加紐澳東西南北".split(""),
+);
+
+/**
+ * 找出提問中**錯了一個字**的詞庫專名，回傳對應的課程慣用寫法。
+ *
+ * 學生打字錯誤非常普遍（「凡爾塞條約」「文藝復與」「希特立」「明治為新」
+ * 「馬些爾計劃」全部只錯一個字），逐字比對下整句會被判為離題。
+ *
+ * **只用於主題判斷及教材檢索，不用於批改**：把錯字當成正確答案需要教師判斷，
+ * 這裡只是「用學生的意思去搵教材」。
+ *
+ * 安全限制：
+ *   1. 只比對 3 字以上的**純中文**專名（英文別名不參與）；
+ *   2. 只容許 **1 個字**不同，且長度必須相同；
+ *   3. 不同的是**數字**時一律不接受（否則「第一次世界大戰」會誤配「第二次世界大戰」）；
+ *   4. 句子太長（>160 字）不做比對。
+ */
+export function findLooseHistoryTerms(normalizedText: string): string[] {
+  if (normalizedText.length < LOOSE_MIN_LENGTH) return [];
+  if (normalizedText.length > LOOSE_MAX_TEXT_LENGTH) return [];
+
+  const hits = new Set<string>();
+  for (const group of HISTORY_TERM_GROUPS) {
+    for (const value of [group.canonical, ...group.aliases]) {
+      const term = normalizeHistoryAnswer(value);
+      if (term.length < LOOSE_MIN_LENGTH) continue;
+      if (!/^[\u3400-\u9fff]+$/.test(term)) continue;
+      // 已逐字命中：交由既有邏輯處理，不必再模糊比對
+      if (normalizedText.includes(term)) continue;
+
+      for (let start = 0; start + term.length <= normalizedText.length; start += 1) {
+        const window = normalizedText.slice(start, start + term.length);
+        if (!/^[\u3400-\u9fff]+$/.test(window)) continue;
+        let differences = 0;
+        let firstDifference = -1;
+        for (let index = 0; index < term.length; index += 1) {
+          if (window[index] === term[index]) continue;
+          differences += 1;
+          firstDifference = index;
+          if (differences > 1) break;
+        }
+        if (differences !== 1) continue;
+        const expected = term[firstDifference] ?? "";
+        const actual = window[firstDifference] ?? "";
+        if (NUMERAL_CHARS.has(expected) || NUMERAL_CHARS.has(actual)) continue;
+        if (ENTITY_CHARS.has(expected) || ENTITY_CHARS.has(actual)) continue;
+        hits.add(group.canonical);
+        break;
+      }
+    }
+  }
+  return [...hits];
 }
 
 /** 詞庫中與指定寫法同組的所有標準化寫法（包含標準答案本身） */

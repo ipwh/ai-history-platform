@@ -1,4 +1,8 @@
-import { HISTORY_TERM_GROUPS, normalizeHistoryAnswer } from "@/lib/history-lexicon";
+import {
+  HISTORY_TERM_GROUPS,
+  findLooseHistoryTerms,
+  normalizeHistoryAnswer,
+} from "@/lib/history-lexicon";
 import { countAnsweredTutorQuestionsSince } from "../repositories/tutor";
 import type { TutorMessage } from "../repositories/tutor";
 
@@ -12,7 +16,12 @@ const HISTORY_TERMS = HISTORY_TERM_GROUPS.flatMap((group) => [
   ...group.aliases,
 ])
   .filter((term) => term.trim().length >= 2)
-  .map((term) => term.toLowerCase());
+  // 必須用與提問相同的正規化（去空白、全半形、繁簡）。原本只用 toLowerCase，
+  // 令帶空格的英文別名（"industrial revolution"、"japanese occupation"、
+  // "treaty of versailles"…）永遠對不上已去空白的提問，"Industrial Revolution"
+  // 因此被當成離題（2026-11-02 修正）。
+  .map((term) => normalizeHistoryAnswer(term))
+  .filter((term) => term.length >= 2);
 
 const SHORT_FOLLOW_UP =
   /^(?:點解|為甚麼|為什麼|原因呢|邊一年|哪一年|何時|幾時|然後呢|結果呢|有什麼影響|有何影響|呢個呢|那麼呢|之後呢|咁跟住呢|咁跟住點|(?:跟住|之後|最後)點(?:呀|啊|呢)?|咁之後發生咩事|咁佢最後點|後來呢|有咩結果|咁結果係點|咁呢個有咩影響|仲有呢|再講多少少|可否再說|可以再講|再解釋|詳細一點|再舉例)$/;
@@ -29,6 +38,8 @@ export function hongKongDayStart(now = new Date()): string {
 export function isHistoryTopicPrompt(message: string): boolean {
   const normalized = normalizeHistoryAnswer(message);
   if (HISTORY_TERMS.some((term) => normalized.includes(term))) return true;
+  // 錯一個字的專名（「凡爾塞條約」）仍屬歷史提問：逐字比對會把它當成離題。
+  if (findLooseHistoryTerms(normalized).length > 0) return true;
   return /(?:公元前|公元|西元)?\s*\d{1,4}\s*(?:年|世紀|年代)|\b(?:1[0-9]{3}|20[0-2][0-9])\b/.test(
     normalized,
   );

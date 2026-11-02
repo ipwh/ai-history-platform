@@ -30,6 +30,12 @@ export const TUTOR_COLLOQUIAL_UTTERANCES: readonly TutorColloquialUtterance[] = 
   { id: "history-ww1-spaced-lowercase", raw: "ww 1 嘅成因係咩？", category: "history" },
   { id: "history-world-war-2-english", raw: "World War II 點解會爆發？", category: "history" },
   { id: "history-hitler-variant", raw: "希特勒點解可以上台？", category: "history" },
+  {
+    id: "history-hitler-alias-question",
+    raw: "希特勒係咪同希特拉同一個人？",
+    category: "history",
+    notes: "A4：學生自己問兩個譯名是否同一人。屬歷史提問，不應被當成閒聊。",
+  },
   { id: "history-sarajevo-local-name", raw: "塞拉耶佛事件係咪一戰導火線？", category: "history" },
   {
     id: "history-versailles-simplified-colloquial",
@@ -66,6 +72,12 @@ export const TUTOR_COLLOQUIAL_UTTERANCES: readonly TutorColloquialUtterance[] = 
     category: "clarify",
     notes: "沒有有效對話上文。",
   },
+  {
+    id: "clarify-afterwards-ne",
+    raw: "之後呢",
+    category: "clarify",
+    notes: "B2：空白新對話的短跟進，沒有上文 → 宜擋或澄清，不可瞎猜。",
+  },
   { id: "clarify-1919", raw: "1919 年嗰陣", category: "clarify" },
   { id: "clarify-germany", raw: "個德國係咪好慘", category: "clarify" },
   { id: "clarify-reform", raw: "改革嗰堆", category: "clarify" },
@@ -89,6 +101,19 @@ export const TUTOR_COLLOQUIAL_UTTERANCES: readonly TutorColloquialUtterance[] = 
   { id: "reject-chat", raw: "陪我傾偈", category: "reject" },
   { id: "reject-math", raw: "數學方程式點解", category: "reject" },
   { id: "reject-code", raw: "幫我寫 JavaScript code", category: "reject" },
+  {
+    id: "reject-math-quadratic",
+    raw: "數學 quadratic formula 點計",
+    category: "reject",
+    notes: "C4：數學科問題，固定拒答。",
+  },
+  {
+    id: "reject-english-essay",
+    raw: "幫我寫英文 essay 關於 my hobby",
+    category: "reject",
+    notes:
+      "C5：英文科作文，沒有任何歷史訊號 → 固定拒答（不是澄清）。若句中另有歷史課題（例如「寫一篇關於冷戰的作文」），則屬作業口吻，應走鷹架。",
+  },
 
   {
     id: "homework-copy-list",
@@ -100,6 +125,18 @@ export const TUTOR_COLLOQUIAL_UTTERANCES: readonly TutorColloquialUtterance[] = 
     id: "homework-cold-war-long",
     raw: "試解釋冷戰起因，要長篇",
     category: "homework",
+  },
+  {
+    id: "homework-cold-war-long-submit",
+    raw: "試解釋冷戰起因，要長篇，我要交功課",
+    category: "homework",
+    notes: "D2：明言要交功課，仍須鷹架而非長答。",
+  },
+  {
+    id: "homework-model-answer",
+    raw: "直接俾我 model answer 一戰成因",
+    category: "homework",
+    notes: "D3：直接索取模範答案，須提供思考框架及引導問題，不可交出可抄答案。",
   },
   {
     id: "homework-treaty-scaffold",

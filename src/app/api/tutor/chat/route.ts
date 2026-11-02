@@ -53,6 +53,7 @@ import {
   collectTutorWebSupplement,
   type TutorWebSupplementResult,
 } from "@/server/services/tutor-web-supplement";
+import { expandTutorQuery } from "@/server/services/tutor-query-expansion";
 import {
   describeTutorPracticeContextForPrompt,
   resolveTutorPracticeContext,
@@ -268,8 +269,11 @@ export async function POST(request: Request) {
           hasValidHistoryContext &&
           isShortHistoryFollowUp(normalizedMessage)));
 
+    // 傳入**原文**：`isUnclearTutorQuery` 內部會自行正規化，而英文疑問詞
+    // （"Who was Hitler?"）需要原文的空格才判斷得到（正規化會把空格去掉，
+    // 變成無法分詞的 "whowashitler"）。中文的判斷結果不受影響（2026-11-02）。
     const unclear = isUnclearTutorQuery(
-      normalizedMessage,
+      body.message,
       curriculum,
       hasValidHistoryContext,
     );
@@ -372,7 +376,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const grounding = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
+    let grounding = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
       preferredTopicId,
     });
     if (unclear) {
@@ -450,6 +454,28 @@ export async function POST(request: Request) {
     }
     setTutorSessionLastTurnOnTopic(sessionId, true);
     saveTutorMessage(sessionId, "user", body.message, createdAt);
+
+    // 語意改寫（2026-11-02）：只在字詞檢索**已確定**找不到教材時，才請模型把學生用語
+    // 改寫成教材用語並重試檢索。正常提問零額外請求、零額外延遲；失敗提問最多多等
+    // budgetMs（預設 2.5 秒），逾時即放棄並保留「未找到教材依據」。
+    // 這是同一次提問的內部步驟，不另計每日額度（額度已在上方以 reserveAiOperation 預留）。
+    if (grounding.status === "not-covered") {
+      const expansion = await expandTutorQuery({
+        message: normalizedMessage,
+        topicTitle:
+          grounding.topicTitle ?? (goalTopic?.published === true ? goalTopic.title : null),
+        topicId: grounding.topicId ?? preferredTopicId,
+        config: getServerConfig().tutorQueryExpansion,
+        llm: { provider: llm.provider, apiKey: llm.apiKey, baseUrl: llm.baseUrl, model: llm.model },
+      });
+      if (expansion.terms.length > 0) {
+        const expanded = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
+          preferredTopicId,
+          extraTerms: expansion.terms,
+        });
+        if (expanded.status === "grounded") grounding = expanded;
+      }
+    }
 
     // 外部參考（白名單網頁補充）：只在日額及 generation 預留**之後**才執行——它是為
     // 即將呼叫的主回答服務，不是獨立的 AI 操作，因此不另計次數、不改動每日額度。

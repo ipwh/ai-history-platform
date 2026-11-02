@@ -25,7 +25,7 @@
  * 缺點是**召回率**比不上語意檢索（換句問法可能找不到段落），因此找不到時一律如實
  * 標示「課本未涵蓋」，而不是靜默假裝有依據。
  */
-import { HISTORY_TERM_GROUPS, normalizeHistoryAnswer } from "@/lib/history-lexicon";
+import { HISTORY_TERM_GROUPS, findLooseHistoryTerms, normalizeHistoryAnswer } from "@/lib/history-lexicon";
 import type { TutorWebPromptSource } from "./tutor-web-supplement";
 import {
   IMAGE_PLACEHOLDER_MESSAGE,
@@ -147,11 +147,46 @@ const RETRIEVAL_CONCEPT_TERMS: readonly {
   { trigger: "專制", expansions: ["極權", "獨裁"] },
   { trigger: "統治者", expansions: ["君主", "皇帝", "元首", "領袖"] },
   { trigger: "措施", expansions: ["政策", "規定", "條款"] },
+  // 2026-11-02：學生問「香港開埠」時，課題8 的溫習筆記全篇沒有「開埠」二字——
+  // 教材寫的是「英國侵佔香港」→「割讓香港島／九龍半島」及「自由港政策的確立」。
+  // 只靠字詞重疊會一段都召回不到，令學伴回覆「教材找不到」（屬補充）。
+  { trigger: "開埠", expansions: ["自由港", "割讓", "侵佔"] },
 ];
 
 export interface QueryTerm {
   term: string;
   weight: number;
+}
+
+/**
+ * 語意改寫詞（由 `services/tutor-query-expansion.ts` 產生）的權重。
+ *
+ * 低於人手維護的類別詞展開（20）：那些人手詞由失敗個案逐一核對過，可信度最高；
+ * 模型改寫只是「另一個說法」，足夠令相關段落排前，但不應蓋過已驗證的對應關係。
+ */
+export const TUTOR_EXPANSION_TERM_WEIGHT = 12;
+
+/**
+ * 把語意改寫詞併入查詢詞。
+ *
+ * 已存在且權重更高的詞不會被降低；回傳值與 `extractQueryTerms` 一樣按權重排序。
+ */
+export function withExpandedTerms(
+  terms: readonly QueryTerm[],
+  extraTerms: readonly string[],
+): QueryTerm[] {
+  if (extraTerms.length === 0) return [...terms];
+  const weights = new Map(terms.map((term) => [term.term, term.weight]));
+  for (const raw of extraTerms) {
+    const term = normalizeHistoryAnswer(raw);
+    if (term.length < 2 || isStopTerm(term)) continue;
+    if ((weights.get(term) ?? 0) >= TUTOR_EXPANSION_TERM_WEIGHT) continue;
+    weights.set(term, TUTOR_EXPANSION_TERM_WEIGHT);
+  }
+  return [...weights.entries()]
+    .map(([term, weight]) => ({ term, weight }))
+    .sort((left, right) => right.weight - left.weight || right.term.length - left.term.length)
+    .slice(0, MAX_QUERY_TERMS);
 }
 
 export interface TutorPassage {
@@ -214,14 +249,30 @@ export function extractQueryTerms(message: string, context: string[] = []): Quer
 
   for (const group of HISTORY_TERM_GROUPS) {
     const canonical = normalizeHistoryAnswer(group.canonical);
-    if (canonical.length >= 2 && normalizedText.includes(canonical)) add(group.canonical, 8);
+    let groupMatched = canonical.length >= 2 && normalizedText.includes(canonical);
+    if (groupMatched) add(group.canonical, 8);
     for (const alias of group.aliases) {
       const key = normalizeHistoryAnswer(alias);
       if (key.length >= 2 && normalizedText.includes(key)) {
         add(group.canonical, 8);
         add(alias, 5);
+        groupMatched = true;
       }
     }
+    // 命中組內任何寫法後，把同組的中文寫法一併加入檢索詞。教材未必用學生那種寫法：
+    // 學生寫「Japanese occupation」，教材寫「日佔時期」；只加被命中的英文寫法，
+    // 會令明明有 10 段相關教材仍回「找不到」（2026-11-02）。
+    if (groupMatched) {
+      for (const alias of group.aliases) {
+        if (!/[\u3400-\u9fff]/.test(alias)) continue;
+        add(alias, 5);
+      }
+    }
+  }
+
+  // 錯一個字的專名（例如「凡爾塞條約」）：以課程慣用寫法檢索，權重略低於逐字命中。
+  for (const canonical of findLooseHistoryTerms(normalizedText)) {
+    add(canonical, 6);
   }
 
   for (const run of normalizedText.match(/[\u3400-\u9fff]+/g) ?? []) {
@@ -474,13 +525,26 @@ export function guessTutorTopic(
   const normalizedText = normalizeHistoryAnswer(message);
   if (normalizedText.length === 0) return null;
 
+  // 「課題12」不可被當成「課題1」：逐字包含會令課題12 的提問同時命中課題1
+  // （初中及高中各有一個），平手時按次序取到課題1（2026-11-02 修復）。
+  const requestedTopicIds = new Set(
+    [...normalizedText.matchAll(/課題\s*(\d+)/g)].map((match) => `topic-${match[1]}`),
+  );
+  const looseTerms = new Set(findLooseHistoryTerms(normalizedText));
+
   let best: TutorTopicGuess | null = null;
   for (const topic of topics) {
     let score = 0;
     const sectionIds: string[] = [];
+    // 學生直接說出課程編號：這是最明確的訊號，優先於其他比對。
+    if (requestedTopicIds.has(topic.id)) score += 24;
     for (const segment of topic.title.split(/[：:–—()（）及]/)) {
+      if (/^課題\s*\d+$/.test(segment.trim())) continue;
       const key = normalizeHistoryAnswer(stripPageReferences(segment));
-      if (key.length >= 3 && normalizedText.includes(key)) score += 6;
+      // 課題標題的片段較分節關鍵詞寬鬆，命中 4 字窗口只給 3 分
+      const strength = keywordMatchStrength(normalizedText, key);
+      if (strength === "exact") score += 6;
+      else if (strength === "window") score += 3;
     }
     for (const section of sectionsByTopic.get(topic.id) ?? []) {
       let matched = false;
@@ -489,8 +553,13 @@ export function guessTutorTopic(
         if (key.length < 3 || isStopTerm(key)) continue;
         // 關鍵詞由教師逐節維護，命中一個 3 字以上的分節關鍵詞已足以定位課題
         // （例如「絲綢之路」→ 課題3），故權重較課題標題片段高。
-        if (normalizedText.includes(key)) {
+        const strength = keywordMatchStrength(normalizedText, key);
+        if (strength === "exact") {
           score += Math.min(key.length * 2, 10);
+          matched = true;
+        } else if (strength === "window") {
+          // 只命中部份短語（「中國早期」）：仍算命中，但分數較低
+          score += 6;
           matched = true;
         }
       }
@@ -500,12 +569,36 @@ export function guessTutorTopic(
     if (
       scope !== null &&
       HISTORY_TERM_GROUPS.some(
-        (group) => group.scope === scope && groupMatchesText(normalizedText, group),
+        (group) =>
+          group.scope === scope &&
+          (groupMatchesText(normalizedText, group) || looseTerms.has(group.canonical)),
       )
     ) {
       score += 10;
     }
-    if (!best || score > best.score) {
+    // 錯別字命中的專名若是某分節的關鍵詞（「明治為新」→ 分節「明治維新」），
+    // 以該分節所屬課題為先；否則詞庫的「高中」範疇會令所有高中課題同分，
+    // 平手時取到第一個（2026-11-02）。
+    if (
+      looseTerms.size > 0 &&
+      (sectionsByTopic.get(topic.id) ?? []).some((section) =>
+        [section.title, ...section.matchKeywords].some((value) => {
+          const key = normalizeHistoryAnswer(stripPageReferences(value));
+          return [...looseTerms].some((term) => key.includes(term));
+        }),
+      )
+    ) {
+      score += 8;
+    }
+    // 同分時以「命中分節」為先：分節關鍵詞由教師逐節維護，比詞庫的範疇標籤具體。
+    // 例：「香港如何由轉口港發展成國際金融中心？」同時命中課題8（詞庫「轉口港」）
+    // 及高中課題1（分節「國際金融中心」）各 10 分，而「國際金融中心」只在高中教材
+    // 出現，取分節命中可避免引用完全沒有該內容的課題（2026-11-02）。
+    if (
+      !best ||
+      score > best.score ||
+      (score === best.score && sectionIds.length > best.sectionIds.length)
+    ) {
       best = { topicId: topic.id, topicTitle: topic.title, score, sectionIds };
     }
   }
@@ -657,20 +750,52 @@ export function loadTutorCurriculumIndex(): TutorCurriculumIndex {
 export function matchesCurriculumTerms(index: TutorCurriculumIndex, message: string): boolean {
   const normalized = normalizeHistoryAnswer(message);
   if (normalized.length === 0) return false;
+  // 學生直接說課程編號（「課題8」）：屬課程用語，但不可用逐字包含判斷
+  // （「課題12」會命中「課題1」）。
+  for (const match of normalized.matchAll(/課題\s*(\d+)/g)) {
+    if (index.topics.some((topic) => topic.id === `topic-${match[1]}`)) return true;
+  }
   for (const topic of index.topics) {
     for (const segment of topic.title.split(/[：:–—()（）及]/)) {
+      if (/^課題\s*\d+$/.test(segment.trim())) continue;
       const key = normalizeHistoryAnswer(stripPageReferences(segment));
-      if (key.length >= 3 && normalized.includes(key)) return true;
+      if (keywordMatchStrength(normalized, key) !== null) return true;
     }
     for (const section of index.sectionsByTopic.get(topic.id) ?? []) {
       for (const value of [section.title, ...section.matchKeywords]) {
         const key = normalizeHistoryAnswer(stripPageReferences(value));
         if (key.length < 2 || isStopTerm(key)) continue;
-        if (normalized.includes(key)) return true;
+        if (keywordMatchStrength(normalized, key) !== null) return true;
       }
     }
   }
   return false;
+}
+
+/**
+ * 分節關鍵詞／課題標題與提問的比對強度。
+ *
+ * 逐字包含不足：教師維護的關鍵詞多數是完整短語（例如「中國早期的現代化努力」），
+ * 學生寫成「中國早期現代化努力」時只差一個「的」，就完全對不上，於是被當成離題。
+ * 這裡額外接受「關鍵詞中任何連續 4 字出現在提問中」（例如「中國早期」「新界五大」）。
+ *
+ * 4 字下限是刻意的：2–3 字的片段（「香港」「戰爭」）在任何段落都出現，容許它們
+ * 會令主題硬閘形同虛設。
+ */
+const KEYWORD_WINDOW = 4;
+
+export function keywordMatchStrength(
+  normalizedMessage: string,
+  normalizedKeyword: string,
+): "exact" | "window" | null {
+  if (normalizedKeyword.length < 2) return null;
+  if (normalizedMessage.includes(normalizedKeyword)) return "exact";
+  if (normalizedKeyword.length < KEYWORD_WINDOW) return null;
+  for (let start = 0; start + KEYWORD_WINDOW <= normalizedKeyword.length; start += 1) {
+    const window = normalizedKeyword.slice(start, start + KEYWORD_WINDOW);
+    if (normalizedMessage.includes(window)) return "window";
+  }
+  return null;
 }
 
 /**
@@ -683,13 +808,17 @@ export function matchesCurriculumTerms(index: TutorCurriculumIndex, message: str
  * 這樣既能令「咁之後呢？」留在學生正在溫習的課題，又不會出現「上一題蓋過當前題」
  * 的回歸。
  *
+ * `options.extraTerms` 是**語意改寫詞**（見 `services/tutor-query-expansion.ts`）：
+ * 只在字詞檢索失敗後才由呼叫方提供，用於重試檢索；同時用於補充課題推斷，
+ * 因為模型改寫出的教材用語可能正是分節關鍵詞（例如「割讓香港島」）。
+ *
  * 任何步驟出錯都回傳 `not-covered`：寧可如實說沒有依據，也不可聲稱查過教材。
  */
 export function findTutorGrounding(
   message: string,
   context: string[] = [],
   curriculum: TutorCurriculumIndex = loadTutorCurriculumIndex(),
-  options: { preferredTopicId?: string | null } = {},
+  options: { preferredTopicId?: string | null; extraTerms?: readonly string[] } = {},
 ): TutorGrounding {
   try {
     const { topics, sectionsByTopic } = curriculum;
@@ -716,10 +845,15 @@ export function findTutorGrounding(
             score: 0,
             sectionIds: (sectionsByTopic.get(preferredTopic.id) ?? []).map((section) => section.id),
           };
+    const extraTerms = options.extraTerms ?? [];
     const guess =
       currentGuess ??
       preferredGuess ??
-      guessTutorTopic([...recentContext, message].join("\n"), topics, sectionsByTopic);
+      guessTutorTopic(
+        [...recentContext, message, ...extraTerms].join("\n"),
+        topics,
+        sectionsByTopic,
+      );
     if (guess === null) return notCovered(null, null);
 
     const distributable = listStudentDistributableDocumentIds();
@@ -740,7 +874,10 @@ export function findTutorGrounding(
     // 檢索詞同樣以當前提問為主：只有提問本身幾乎沒有內容詞（例如「點解？」）時才借助
     // 上一輪的提問，否則上一輪的詞會把不相關段落的排名推高。
     const messageTerms = extractQueryTerms(message);
-    const terms = messageTerms.length >= 3 ? messageTerms : extractQueryTerms(message, recentContext);
+    const terms = withExpandedTerms(
+      messageTerms.length >= 3 ? messageTerms : extractQueryTerms(message, recentContext),
+      extraTerms,
+    );
     const passages = selectTutorPassages(blocks, terms, {
       preferredSectionIds: guess.sectionIds,
       enumerate: ENUMERATE_PATTERN.test(normalizeHistoryAnswer(message)),

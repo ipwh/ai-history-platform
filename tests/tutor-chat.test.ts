@@ -34,6 +34,10 @@ process.env.AI_LIMIT_WINDOW_MINUTES = "60";
 process.env.AI_GENERATIONS_PER_LEARNER = "100";
 process.env.AI_GENERATIONS_GLOBAL = "100";
 process.env.BACKUP_ENABLED = "false";
+// 學伴的語意改寫（services/tutor-query-expansion.ts）預設開啟，但它會令「字詞檢索失敗」的提問
+// 多發一次模型請求；本檔以固定次序的假回應模擬模型，因此明確關閉。語意改寫本身由
+// tests/tutor-query-expansion.test.ts 及 tests/tutor-query-expansion-route.test.ts 專項驗證。
+process.env.TUTOR_QUERY_EXPANSION_ENABLED = "false";
 
 const STUDENT_A = "school:s2024101@pochiu.edu.hk";
 const STUDENT_B = "school:s2024102@pochiu.edu.hk";
@@ -619,5 +623,36 @@ describe("AI 歷史自學學伴 API", () => {
 
     expect(followUp.headers.get("content-type")).toContain("application/json");
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("同一對話連打兩次離題：兩次都不呼叫 LLM、不扣額度，並各自留下紀錄", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const first = await postChat(requestFor("POST", STUDENT_A, { message: "今日天氣點？" }));
+    const firstPayload = (await first.json()) as { sessionId: string; remaining: number };
+    expect(firstPayload.remaining).toBe(15);
+    // 離題分支回傳的是 JSON（不是串流），對話編號在 body 的 sessionId
+    const sessionId = firstPayload.sessionId;
+    expect(sessionId.length).toBeGreaterThan(0);
+
+    const second = await postChat(
+      requestFor("POST", STUDENT_A, { message: "幫我寫 python", sessionId }),
+    );
+    expect((await second.json()).remaining).toBe(15);
+
+    // 兩次都沒有呼叫模型
+    expect(fetchMock).toHaveBeenCalledTimes(0);
+
+    // 紀錄：兩輪各有一則 user + 一則 platform 引導回覆，且 assistant 標記為 off-topic
+    const messages = getTutorMessages(sessionId);
+    expect(messages.filter((message) => message.role === "user")).toHaveLength(2);
+    const assistant = messages.filter((message) => message.role === "assistant");
+    expect(assistant).toHaveLength(2);
+    expect(assistant.every((message) => message.groundingStatus === "off-topic")).toBe(true);
+
+    // 額度維持 15
+    const status = await getChat(requestFor("GET", STUDENT_A));
+    expect(await status.json()).toMatchObject({ remaining: 15, dailyLimit: 15 });
   });
 });

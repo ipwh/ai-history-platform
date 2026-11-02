@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 import {
   HISTORY_TERM_GROUPS,
   canonicalHistoryTerm,
+  findLooseHistoryTerms,
   historyAnswersMatch,
   historyTermAliases,
   normalizeHistoryAnswer,
@@ -34,6 +35,14 @@ describe("歷史答案標準化", () => {
     expect(normalizeHistoryAnswer("凡尔赛条约")).toBe("凡爾賽條約");
     expect(normalizeHistoryAnswer("明治维新")).toBe("明治維新");
     expect(normalizeHistoryAnswer("文艺复兴")).toBe("文藝復興");
+  });
+
+  it("2026-11-02：常見簡體虛詞亦已收錄（不再出現半繁半簡）", () => {
+    // 之前「什么」「与」「两」未收錄，令整句只轉換一半，疑問詞及檢索詞對不上教材
+    expect(normalizeHistoryAnswer("冷战为什么会结束")).toBe("冷戰為什麼會結束");
+    expect(normalizeHistoryAnswer("战争与和平")).toBe("戰爭與和平");
+    expect(normalizeHistoryAnswer("两德统一")).toBe("兩德統一");
+    expect(normalizeHistoryAnswer("工业革命对英国有什么影响")).toBe("工業革命對英國有什麼影響");
   });
 
   it("常見簡體歷史詞彙可反查至課程慣用詞", () => {
@@ -128,11 +137,61 @@ describe("專名同義詞比對", () => {
     expect(canonicalHistoryTerm("完全不在詞庫的答案")).toBeNull();
   });
 
+  it("開埠以課本寫法「英國侵佔香港」為準（2026-11-02）", () => {
+    expect(canonicalHistoryTerm("開埠")).toBe("英國侵佔香港");
+    expect(canonicalHistoryTerm("香港開埠")).toBe("英國侵佔香港");
+    expect(historyAnswersMatch("香港開埠", "英國侵佔香港")).toBe(true);
+  });
+
+  it("學生與教材常見的同義問法可反查課本寫法（2026-11-02）", () => {
+    // 教材寫「美國革命」，學生多寫「美國獨立革命」
+    expect(canonicalHistoryTerm("美國獨立革命")).toBe("美國革命");
+    // 教材分節寫「四大古代文明」，學生慣說「四大古文明」
+    expect(canonicalHistoryTerm("四大古文明")).toBe("四大古代文明");
+    expect(canonicalHistoryTerm("大河文明")).toBe("四大古代文明");
+    // 教材寫「侵佔香港」，學生多寫「佔領香港」
+    expect(canonicalHistoryTerm("佔領香港")).toBe("英國侵佔香港");
+    // 教材寫「新界本地人五大姓族」，學生問「新界五大姓族」
+    expect(canonicalHistoryTerm("新界五大姓族")).toBe("新界五大族");
+    // 2 字課程專名亦要認得，否則短問句只得 1–2 分，取不到教材
+    expect(canonicalHistoryTerm("五功")).toBe("五功");
+    expect(canonicalHistoryTerm("保護國")).toBe("保護國");
+  });
+
   it("可列出某一專名的所有可接受寫法", () => {
     const aliases = historyTermAliases("第一次世界大戰");
     expect(aliases).toContain("一戰");
     expect(aliases).toContain("wwi");
     expect(aliases).toContain("第一次世界大戰");
+  });
+});
+
+describe("錯別字容錯（只用於檢索及主題判斷，不用於批改）", () => {
+  it("錯一個字的專名可對應回課程寫法", () => {
+    expect(findLooseHistoryTerms(normalizeHistoryAnswer("凡爾塞條約對德國有咩影響"))).toContain(
+      "凡爾賽條約",
+    );
+    expect(findLooseHistoryTerms(normalizeHistoryAnswer("文藝復與有咩代表人物"))).toContain("文藝復興");
+    expect(findLooseHistoryTerms(normalizeHistoryAnswer("希特立係點樣上台"))).toContain("希特拉");
+    expect(findLooseHistoryTerms(normalizeHistoryAnswer("明治為新對日本有咩影響"))).toContain(
+      "明治維新",
+    );
+    expect(findLooseHistoryTerms(normalizeHistoryAnswer("馬些爾計劃係咩"))).toContain("馬歇爾計劃");
+  });
+
+  it("數字不同不會互相誤配（一戰／二戰）", () => {
+    // 「第二次世界大戰」逐字命中，不會被模糊比對成「第一次世界大戰」
+    expect(findLooseHistoryTerms(normalizeHistoryAnswer("第二次世界大戰的成因"))).not.toContain(
+      "第一次世界大戰",
+    );
+    expect(findLooseHistoryTerms(normalizeHistoryAnswer("第二次世界大戰的成因"))).not.toContain(
+      "第二次世界大戰",
+    );
+  });
+
+  it("相差多於一個字或太短的詞不會誤配", () => {
+    expect(findLooseHistoryTerms(normalizeHistoryAnswer("凡爾條約"))).toEqual([]);
+    expect(findLooseHistoryTerms(normalizeHistoryAnswer("美國革命"))).toEqual([]);
   });
 });
 

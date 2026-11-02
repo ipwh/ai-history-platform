@@ -1690,7 +1690,16 @@ export interface LlmUsage {
   outputTokens: number | null;
 }
 
-export const LLM_REQUEST_TYPES = ["question-instant", "question-bank", "grading"] as const;
+export const LLM_REQUEST_TYPES = [
+  "question-instant",
+  "question-bank",
+  "grading",
+  /**
+   * 學伴提問的語意改寫（2026-11-02）：只在字詞檢索找不到教材時才呼叫，
+   * 用來把學生用語改寫成教材用語，見 services/tutor-query-expansion.ts。
+   */
+  "tutor-expansion",
+] as const;
 export const llmRequestTypeSchema = z.enum(LLM_REQUEST_TYPES);
 export type LlmRequestType = z.infer<typeof llmRequestTypeSchema>;
 
@@ -1698,6 +1707,7 @@ export const LLM_REQUEST_TYPE_LABELS: Record<LlmRequestType, string> = {
   "question-instant": "學生即時出題",
   "question-bank": "題庫批次生成",
   grading: "AI 語意批改",
+  "tutor-expansion": "學伴提問語意改寫",
 };
 
 export const llmUsageEntrySchema = z.object({
