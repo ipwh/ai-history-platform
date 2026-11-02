@@ -16,6 +16,38 @@
 
 ---
 
+## [未發布] — 2026-11-02（七）：測試暫存物件清理（修復 2.9 GB 級的資源洩漏）
+
+**狀態**：已實作、已測試；**未提交**（只影響測試基建，不影響執行期）。
+
+### 修正
+
+- **回報**：分析暫存檔時發現 `%TEMP%` 有 4,132 項 `hist-test-*`、合計 2.27 GB；另有 867 個 `hist-test-materials-*`、102 個 `hist-test-storage-*`、102 個 `hist-test-secret-*`、158 個 `hist-test-golden-candidates-*.json`。
+- **根因（兩個）**：
+  1. `tests/global-setup.ts` 只清理 `hist-test-*.db*` 與 `hist-test-uploads-*`；其餘四類**從未被任何程式碼刪除**。
+  2. 清理只在**下一次執行**、且「超過 6 小時未更新」時生效（6 小時是為免刪到並行執行的測試），因此同日多次執行會不斷累積——實測一天約 15 次全套執行已達 2,903 個資料庫檔案。
+- **修法**：
+  1. 新增 [tests/test-artifacts.ts](tests/test-artifacts.ts)：`isOwnedTestArtifact()` 集中定義四類命名（資料庫、上載／教材／儲存／密鑰資料夾、合成候選清單），維持「完整名稱比對、拒絕路徑、不認得就不刪」的安全規則；其餘前綴（`hist-queue-*`、`tutor-cards-*` 等）**刻意不納入**，因為它們會自行清理。
+  2. [tests/global-setup.ts](tests/global-setup.ts)：新增 `cleanStaleTestArtifacts()`（`globalSetup` 改用它），三個清理函式改為共用同一個迴圈，避免規則分歧；資料夾以遞歸刪除，仍只處理超過 6 小時的項目。
+  3. 新增 [tests/setup-databases.ts](tests/setup-databases.ts) 並加入 `vitest.config.mts` 的 `setupFiles`：**每個測試檔結束後立即刪除自己的暫存資料庫**（先 `closeDefaultDatabase()`，因為 Windows 會鎖住仍開啟的 SQLite 檔案），正常情況不再留下任何檔案。
+  4. 修源頭：[tests/fixtures/pilot-material.ts](tests/fixtures/pilot-material.ts)（`removeTestMaterialsDir` 原本從未被呼叫）、[tests/fixtures/golden-candidates.ts](tests/fixtures/golden-candidates.ts)、[tests/session-secret.test.ts](tests/session-secret.test.ts)、[tests/storage-and-config.test.ts](tests/storage-and-config.test.ts)（後兩者只用 `mkdtempSync` 而從不清理）改為在 `afterAll` 自行刪除；刪除失敗只作後備交由 6 小時清掃，不令測試失敗。
+
+### 成效
+
+| 指標 | 修正前 | 修正後 |
+| --- | --- | --- |
+| 一次全套執行後留下的暫存物件 | 約 147 個資料庫（＋WAL／SHM） | **0** |
+| 實測累積（1 天約 15 次執行） | 2,903 個檔案、2,273 MB | 0 |
+| 從未被清理的物件類別 | 4 類（教材／儲存／密鑰／候選清單） | 0 類 |
+
+### 測試
+
+- [tests/test-database-cleanup.test.ts](tests/test-database-cleanup.test.ts) 新增：8 個應接受的名稱、13 個應拒絕的名稱（含 `hist-test-notes.json`、`hist-test-materials-abc`、`../` 等）、資料夾只接受白名單樣式；以及「過期的教材／儲存資料夾與候選清單會被刪除，近期及無關項目保留」的實刪測試。
+
+**驗證**：`npm test`（**147 檔、2,056 通過 / 4 略過**）；`npm run typecheck`；`npx eslint src tests`；全套執行後 `%TEMP%` 的 `hist-test-*` 為 **0 項**（修正前為 147 項）。
+
+---
+
 ## [未發布] — 2026-11-02（六）：A–D 語料擴充（擁有者評分表）＋對話壓力測試
 
 **狀態**：已實作、已測試；**未部署**。

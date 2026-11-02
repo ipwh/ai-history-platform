@@ -15,7 +15,8 @@ export default defineConfig({
     globalSetup: ["./tests/global-setup.ts"],
     // 匯入教材的測試會經儲存層寫檔；未指定上載目錄時會寫進專案的 data/uploads，
     // 令真實資料夾累積無用的重複副本，詳見 tests/test-uploads.ts。
-    setupFiles: ["./tests/setup-uploads.ts"],
+    // setup-databases.ts 在每個測試檔結束後刪除自己的暫存資料庫（詳見該檔說明）。
+    setupFiles: ["./tests/setup-uploads.ts", "./tests/setup-databases.ts"],
     testTimeout: 30_000,
     hookTimeout: 30_000,
   },

@@ -16,8 +16,29 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { afterAll } from "vitest";
+
 /** 本套件使用的暫存候選清單檔名前綴 */
 export const TEST_GOLDEN_CANDIDATES_PREFIX = "hist-test-golden-candidates-";
+
+/** 最近一次寫出的候選清單路徑（供 afterAll 清理） */
+let lastWrittenFile: string | null = null;
+
+/**
+ * 測試檔結束後刪除本程序寫出的合成候選清單。
+ *
+ * 以往每次都寫入 `hist-test-golden-candidates-<pid>.json` 而從不刪除，實測在 2026-11-02
+ * 累積 158 個；在 fixture 內註冊 `afterAll`，令使用它的測試檔自動清理。
+ */
+afterAll(() => {
+  if (lastWrittenFile === null) return;
+  try {
+    fs.rmSync(lastWrittenFile, { force: true });
+  } catch {
+    // 清理失敗不應令測試失敗
+  }
+  lastWrittenFile = null;
+});
 
 /**
  * 寫出合成候選清單並令 `GOLDEN_CANDIDATES_FILE` 指向它。
@@ -37,6 +58,7 @@ export function writeGoldenCandidatesFile(items: unknown[]): string {
   };
   fs.writeFileSync(file, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
   process.env.GOLDEN_CANDIDATES_FILE = file;
+  lastWrittenFile = file;
   return file;
 }
 

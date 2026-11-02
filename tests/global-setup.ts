@@ -12,12 +12,14 @@
  * `tests/setup-uploads.ts` 在測試檔結束後刪除，這裡只清理程序被強制終止時留下的資料夾。
  *
  * ── 安全規則（Sprint 5 要求逐項驗證；測試見 tests/test-database-cleanup.test.ts）──
- *   1. **只限本套件的檔案**：檔名必須以 `hist-test-` 開頭，並以 `.db`／`.db-wal`／
- *      `.db-shm` 結尾（見 tests/test-database.ts 的 `isTestDatabaseFile`），或為
- *      `hist-test-uploads-<pid>` 形式的資料夾（見 tests/test-uploads.ts 的
- *      `isTestUploadsDir`）。
- *   2. **不會刪除無關檔案**：比對的是完整檔名（前綴 + 副檔名），不是包含關係，
- *      因此 `hist-test-…txt`、`hist-test-….db.bak`、`my-hist-test-….db`、
+ *   1. **只限本套件的檔案**：檔名必須以 `hist-test-` 開頭，並屬下列之一（規則集中在
+ *      `tests/test-artifacts.ts` 的 `isOwnedTestArtifact`，避免兩處定義不一致）：
+ *        - 暫存資料庫：`.db`／`.db-wal`／`.db-shm`；
+ *        - 暫存資料夾：`hist-test-uploads-<pid>`、`hist-test-materials-<pid>`、
+ *          `hist-test-storage-<id>`、`hist-test-secret-<id>`；
+ *        - 合成 golden 候選清單：`hist-test-golden-candidates-<pid>.json`。
+ *   2. **不會刪除無關檔案**：比對的是完整檔名（前綴 + 副檔名／白名單樣式），不是包含
+ *      關係，因此 `hist-test-…txt`、`hist-test-….db.bak`、`my-hist-test-….db`、
  *      其他專案的 `.db` 一律不受影響。
  *   3. **不影響並行執行**：只刪除**超過 6 小時沒有更新**的檔案；並行執行的另一個
  *      vitest 程序，其檔案是數秒前建立的，因此永遠不會被本程序刪除。
@@ -29,6 +31,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { isOwnedTestArtifact } from "./test-artifacts";
 import { isTestDatabaseFile } from "./test-database";
 import { isTestUploadsDir } from "./test-uploads";
 
@@ -53,36 +56,13 @@ export interface CleanupReport {
 
 /** 清理遺留的暫存測試資料庫；回傳統計供測試及診斷使用 */
 export function cleanStaleTestDatabases(now: number = Date.now()): CleanupReport {
-  const directory = os.tmpdir();
-  const report: CleanupReport = { candidates: 0, removed: 0, skippedRecent: 0, failed: 0 };
-
-  let entries: string[];
-  try {
-    entries = fs.readdirSync(directory);
-  } catch {
-    return report;
-  }
-
-  for (const entry of entries) {
-    if (!isTestDatabaseFile(entry)) continue;
-    report.candidates += 1;
-    const fullPath = path.join(directory, entry);
-    try {
-      // lstat：符號連結只看連結本身的時間，不會跟隨到目標（否則會把目標的更新時間
-      // 當成連結的時間，甚至把連結目標當成候選檔案刪除）。
-      const stats = fs.lstatSync(fullPath);
-      if (now - stats.mtimeMs < STALE_AFTER_MS) {
-        report.skippedRecent += 1;
-        continue;
-      }
-      fs.rmSync(fullPath, { force: true });
-      report.removed += 1;
-    } catch {
-      report.failed += 1;
-    }
-  }
-
-  return report;
+  // `recursiveDirs: false` 保留原本已測試的行為：名稱像資料庫的**資料夾**不會被
+  // 當成檔案刪除（計入 failed），避免刪掉意料之外的目錄。
+  return cleanStaleEntries(
+    (entry) => isTestDatabaseFile(entry),
+    now,
+    { recursiveDirs: false },
+  );
 }
 
 /**
@@ -93,6 +73,41 @@ export function cleanStaleTestDatabases(now: number = Date.now()): CleanupReport
  * 資料夾），這裡只處理程序被強制終止等例外情況。
  */
 export function cleanStaleTestUploadDirs(now: number = Date.now()): CleanupReport {
+  return cleanStaleEntries(
+    (entry) => isTestUploadsDir(entry),
+    now,
+    { recursiveDirs: true },
+  );
+}
+
+/**
+ * 清理遺留的暫存測試物件（資料庫、上載／教材／儲存／密鑰資料夾、合成候選清單）。
+ *
+ * 這是 `globalSetup` 實際使用的入口：一次掃描暫存目錄，處理所有登記於
+ * `tests/test-artifacts.ts` 的樣式。規則與舊有的兩個函式相同——只碰本套件命名、
+ * 且超過 `STALE_AFTER_MS` 未更新的項目，資料夾以遞歸刪除。
+ *
+ * 為甚麼要合併：以往只清理資料庫與上載資料夾，`hist-test-materials-*`、
+ * `hist-test-storage-*`、`hist-test-secret-*` 及 `hist-test-golden-candidates-*.json`
+ * 從不清除，實測累積 1,229 項（2026-11-02）。
+ */
+export function cleanStaleTestArtifacts(now: number = Date.now()): CleanupReport {
+  return cleanStaleEntries(
+    (entry, isDirectory) => isOwnedTestArtifact(entry, isDirectory),
+    now,
+    { recursiveDirs: true },
+  );
+}
+
+/**
+ * 共用的清理迴圈：`predicate` 決定「是否本套件的物件」，其餘安全規則（只刪過期、
+ * 不跟隨符號連結、失敗只計數）一律相同，避免三個清理函式各自實作而出現分歧。
+ */
+function cleanStaleEntries(
+  predicate: (entry: string, isDirectory: boolean) => boolean,
+  now: number,
+  options: { recursiveDirs: boolean },
+): CleanupReport {
   const directory = os.tmpdir();
   const report: CleanupReport = { candidates: 0, removed: 0, skippedRecent: 0, failed: 0 };
 
@@ -104,17 +119,28 @@ export function cleanStaleTestUploadDirs(now: number = Date.now()): CleanupRepor
   }
 
   for (const entry of entries) {
-    if (!isTestUploadsDir(entry)) continue;
-    report.candidates += 1;
     const fullPath = path.join(directory, entry);
+    let isDirectory = false;
     try {
-      // lstat：與資料庫清理相同，只看資料夾／連結本身的時間，不會跟隨符號連結
+      isDirectory = fs.lstatSync(fullPath).isDirectory();
+    } catch {
+      report.failed += 1;
+      continue;
+    }
+    if (!predicate(entry, isDirectory)) continue;
+    report.candidates += 1;
+    try {
+      // lstat：符號連結只看連結本身的時間，不會跟隨到目標（否則會把目標的更新時間
+      // 當成連結的時間，甚至把連結目標當成候選檔案刪除）。
       const stats = fs.lstatSync(fullPath);
       if (now - stats.mtimeMs < STALE_AFTER_MS) {
         report.skippedRecent += 1;
         continue;
       }
-      fs.rmSync(fullPath, { recursive: true, force: true });
+      fs.rmSync(fullPath, {
+        recursive: isDirectory && options.recursiveDirs,
+        force: true,
+      });
       report.removed += 1;
     } catch {
       report.failed += 1;
@@ -125,15 +151,11 @@ export function cleanStaleTestUploadDirs(now: number = Date.now()): CleanupRepor
 }
 
 export default function globalSetup(): () => void {
-  const databases = cleanStaleTestDatabases();
-  const uploads = cleanStaleTestUploadDirs();
+  const artifacts = cleanStaleTestArtifacts();
 
   if (process.env.VITEST_VERBOSE_SETUP === "1") {
     console.log(
-      `[test-setup] 暫存測試資料庫：移除 ${databases.removed}、保留（近期，可能屬並行執行）${databases.skippedRecent}、失敗 ${databases.failed}`,
-    );
-    console.log(
-      `[test-setup] 暫存上載資料夾：移除 ${uploads.removed}、保留（近期，可能屬並行執行）${uploads.skippedRecent}、失敗 ${uploads.failed}`,
+      `[test-setup] 暫存測試物件：移除 ${artifacts.removed}、保留（近期，可能屬並行執行）${artifacts.skippedRecent}、失敗 ${artifacts.failed}`,
     );
   }
 

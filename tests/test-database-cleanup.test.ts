@@ -16,9 +16,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 type GlobalSetup = typeof import("./global-setup");
 type TestDatabase = typeof import("./test-database");
+type TestArtifacts = typeof import("./test-artifacts");
 
 let setup: GlobalSetup;
 let helper: TestDatabase;
+let artifacts: TestArtifacts;
 
 /** 這個測試檔專用的沙盒目錄（不與其他測試共用） */
 const sandbox = path.join(os.tmpdir(), `hist-test-cleanup-sandbox-${process.pid}`);
@@ -38,6 +40,7 @@ const HOUR = 60 * 60 * 1000;
 beforeAll(async () => {
   setup = await import("./global-setup");
   helper = await import("./test-database");
+  artifacts = await import("./test-artifacts");
   fs.rmSync(sandbox, { recursive: true, force: true });
   fs.mkdirSync(sandbox, { recursive: true });
 });
@@ -126,8 +129,95 @@ describe("清理範圍", () => {
   });
 });
 
-describe("每個測試檔的資料庫路徑", () => {
-  it("只包含自己的名稱與 PID，且會先清空既有檔案", () => {
+describe("暫存物件命名（四類都認得，其餘一概不碰）", () => {
+  it.each([
+    "hist-test-lesson-1234.db",
+    "hist-test-lesson-1234.db-wal",
+    "hist-test-lesson-1234.db-shm",
+    "hist-test-uploads-1234",
+    "hist-test-materials-1234",
+    "hist-test-storage-a1b2c3",
+    "hist-test-secret-Z9y8X7",
+    "hist-test-golden-candidates-1234.json",
+  ])("接受本套件的暫存物件：%s", (name) => {
+    expect(artifacts.isOwnedTestArtifact(name)).toBe(true);
+  });
+
+  it.each([
+    "hist-test-notes.txt",
+    "hist-test-notes.json",
+    "hist-test-",
+    "my-hist-test-lesson.db",
+    "hist-test-lesson-1234.db.bak",
+    "app.db",
+    "hist-queue-abc123",
+    "tutor-cards-abc123",
+    "../hist-test-x-1.db",
+    "sub/hist-test-x-1.db",
+    "hist-test-..-1.db",
+    "hist-test-materials-abc",
+    "hist-test-storage-a1b2c", // 只有 5 字元，不符 mkdtemp 樣式
+  ])("拒絕無關名稱：%s", (name) => {
+    expect(artifacts.isOwnedTestArtifact(name)).toBe(false);
+  });
+
+  it("資料夾只接受白名單樣式（不會把名稱像資料庫的資料夾當成檔案）", () => {
+    expect(artifacts.isOwnedTestArtifact("hist-test-directory-1.db", true)).toBe(false);
+    expect(artifacts.isOwnedTestArtifact("hist-test-materials-1", true)).toBe(true);
+  });
+});
+
+describe("統一清理：涵蓋以往漏掉的四類", () => {
+  it("過期的資料夾與候選清單會被刪除，近期及無關項目保留", () => {
+    const token = `${process.pid}-${Date.now()}`;
+    const staleMaterials = path.join(os.tmpdir(), `hist-test-materials-9${process.pid}`);
+    const staleStorage = path.join(os.tmpdir(), `hist-test-storage-a1b2c${process.pid % 10}`);
+    const staleJson = path.join(
+      os.tmpdir(),
+      `hist-test-golden-candidates-9${process.pid}.json`,
+    );
+    const freshMaterials = path.join(os.tmpdir(), `hist-test-materials-8${process.pid}`);
+    const unrelatedDir = path.join(os.tmpdir(), `hist-unrelated-${token}`);
+
+    for (const dir of [staleMaterials, staleStorage, freshMaterials, unrelatedDir]) {
+      fs.rmSync(dir, { recursive: true, force: true });
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, "x.txt"), "x");
+    }
+    fs.writeFileSync(staleJson, "{}");
+    const old = new Date(Date.now() - 24 * HOUR);
+    for (const target of [staleMaterials, staleStorage, staleJson, unrelatedDir]) {
+      fs.utimesSync(target, old, old);
+      // 內容物的時間亦要夠舊，否則資料夾 mtime 可能被更新
+      for (const child of fs.existsSync(target) && fs.statSync(target).isDirectory()
+        ? [path.join(target, "x.txt")]
+        : []) {
+        fs.utimesSync(child, old, old);
+      }
+    }
+
+    try {
+      const report = setup.cleanStaleTestArtifacts();
+      expect(report.removed).toBeGreaterThanOrEqual(3);
+      expect(fs.existsSync(staleMaterials), "過期的教材資料夾應被刪除").toBe(false);
+      expect(fs.existsSync(staleStorage), "過期的儲存資料夾應被刪除").toBe(false);
+      expect(fs.existsSync(staleJson), "過期的候選清單應被刪除").toBe(false);
+      expect(fs.existsSync(freshMaterials), "近期資料夾必須保留（並行執行）").toBe(true);
+      expect(fs.existsSync(unrelatedDir), "無關資料夾必須保留").toBe(true);
+    } finally {
+      for (const target of [staleMaterials, staleStorage, freshMaterials, unrelatedDir]) {
+        fs.rmSync(target, { recursive: true, force: true });
+      }
+      fs.rmSync(staleJson, { force: true });
+    }
+  });
+
+  it("統一清理不會拋出", () => {
+    expect(() => setup.cleanStaleTestArtifacts()).not.toThrow();
+  });
+});
+
+describe("每個測試檔的資料庫路徑", () => {  it("只包含自己的名稱與 PID，且會先清空既有檔案", () => {
     const file = helper.freshTestDatabasePath("cleanup-check");
     const expected = path.join(os.tmpdir(), `hist-test-cleanup-check-${process.pid}.db`);
     expect(file).toBe(expected);

@@ -28,6 +28,25 @@ import path from "node:path";
 export const TEST_DATABASE_PREFIX = "hist-test-";
 
 /**
+ * 本測試程序已建立的暫存資料庫路徑。
+ *
+ * 只作**資料登記**：清理 hook 註冊在 `tests/setup-databases.ts`（Vitest setup file），
+ * 因為 `tests/global-setup.ts` 也會匯入本模組，若在此呼叫 `afterAll` 會在非測試檔
+ * 的情境下執行而報錯。
+ */
+const createdPaths = new Set<string>();
+
+/** 交回本程序建立過的暫存資料庫路徑（供 setup file 於測試檔結束時刪除） */
+export function listCreatedTestDatabasePaths(): string[] {
+  return [...createdPaths];
+}
+
+/** 清空登記（清理後呼叫，避免同一程序處理多個測試檔時重複刪除） */
+export function forgetCreatedTestDatabasePaths(): void {
+  createdPaths.clear();
+}
+
+/**
  * 取得（並清空）這個測試程序專用的資料庫路徑。
  *
  * @param name 測試檔的短名稱（例如 `learning-loop`），只用於可讀性。
@@ -43,6 +62,7 @@ export function freshTestDatabasePath(name: string): string {
     throw new Error(`測試資料庫路徑不在暫存目錄內：${file}`);
   }
 
+  createdPaths.add(file);
   for (const suffix of ["", "-wal", "-shm"]) {
     try {
       fs.rmSync(`${file}${suffix}`, { force: true });

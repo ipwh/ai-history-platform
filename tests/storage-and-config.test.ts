@@ -11,9 +11,28 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
+/**
+ * 這個測試檔專用的暫存根目錄。
+ *
+ * 檔案結束後必須刪除：以往只用 `mkdtempSync` 而不清理，令每次執行都在暫存目錄留下一個
+ * `hist-test-storage-<id>` 資料夾（2026-11-02 實測累積 102 個）。清理由
+ * `tests/global-setup.ts` 的 `cleanStaleTestArtifacts` 作最後防線，但正常執行應自行清理。
+ */
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hist-test-storage-"));
+
+afterAll(async () => {
+  // Windows 會鎖住仍開啟的 SQLite 檔案（rmSync → EPERM），因此先關閉預設連線。
+  const { closeDefaultDatabase } = await import("@/server/db/connection");
+  closeDefaultDatabase();
+  try {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  } catch {
+    // 仍被鎖住時不令測試失敗；tests/global-setup.ts 的 cleanStaleTestArtifacts
+    // 會在下一次執行（程序已結束、檔案已解鎖）清理。
+  }
+});
 process.env.APP_DATABASE_PATH = path.join(tempRoot, "app.db");
 process.env.APP_UPLOADS_DIR = path.join(tempRoot, "uploads");
 process.env.LLM_PROVIDER = "mock";

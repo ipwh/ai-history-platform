@@ -23,6 +23,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { afterAll } from "vitest";
+
 import JSZip from "jszip";
 
 /** 本套件使用的暫存教材資料夾名稱（供清理工具辨識） */
@@ -152,6 +154,19 @@ async function buildDocx(
 
 let materialsDir: string | null = null;
 const prepared = new Map<string, Promise<string>>();
+
+/**
+ * 測試檔結束後刪除本程序的暫存教材資料夾。
+ *
+ * 以往 `removeTestMaterialsDir` 從未被呼叫，因此每個匯入此 fixture 的測試檔都會在暫存
+ * 目錄留下一個 `hist-test-materials-<pid>`（2026-11-02 實測累積 867 個）。在 fixture
+ * 內註冊 `afterAll`，令所有使用它的測試檔自動清理，不必逐檔記得呼叫。
+ */
+afterAll(() => {
+  removeTestMaterialsDir();
+  prepared.clear();
+  materialsDir = null;
+});
 
 /**
  * 建立（或重用）本測試程序專用的暫存 materials 資料夾，並把合成教材寫進去。

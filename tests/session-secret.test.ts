@@ -12,11 +12,30 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+/**
+ * 這個測試檔專用的暫存根目錄。
+ *
+ * 檔案結束後必須刪除：以往只用 `mkdtempSync` 而不清理，令每次執行都在暫存目錄留下一個
+ * `hist-test-secret-<id>` 資料夾（2026-11-02 實測累積 102 個）。清理由
+ * `tests/global-setup.ts` 的 `cleanStaleTestArtifacts` 作最後防線，但正常執行應自行清理。
+ */
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hist-test-secret-"));
 process.env.APP_DATABASE_PATH = path.join(tempRoot, "app.db");
 process.env.AUTH_SCHOOL_DOMAINS = "pochiu.edu.hk";
+
+afterAll(async () => {
+  // Windows 會鎖住仍開啟的 SQLite 檔案（rmSync → EPERM），因此先關閉預設連線。
+  const { closeDefaultDatabase } = await import("@/server/db/connection");
+  closeDefaultDatabase();
+  try {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  } catch {
+    // 仍被鎖住時不令測試失敗；tests/global-setup.ts 的 cleanStaleTestArtifacts
+    // 會在下一次執行（程序已結束、檔案已解鎖）清理。
+  }
+});
 process.env.GOOGLE_CLIENT_ID = "test-client-id.apps.googleusercontent.com";
 process.env.GOOGLE_CLIENT_SECRET = "test-client-secret";
 process.env.AUTH_REQUIRE_SIGN_IN = "true";
