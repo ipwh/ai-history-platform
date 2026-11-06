@@ -439,6 +439,17 @@ materials/
    # printf '%s' "<新 key>" | gcloud secrets versions add history-brave-search-api-key --data-file=-
    ```
 
+   > **Windows PowerShell 不要用管道寫入 Secret**：PowerShell 5.1 會依 `$OutputEncoding` 重新編碼管道內容並附加換行，令 Secret 的實際位元組與原值不同（例如 31 字元的 key 變成 34 位元組），API 便會一律回 401。改用暫存檔（UTF-8 無 BOM、無結尾換行），完成後刪除：
+   >
+   > ```powershell
+   > $path = Join-Path $env:TEMP "secret.txt"
+   > [System.IO.File]::WriteAllText($path, "<你的 key>", (New-Object System.Text.UTF8Encoding($false)))
+   > gcloud secrets versions add history-brave-search-api-key --project pccss-ai-history --data-file $path
+   > Remove-Item -LiteralPath $path -Force
+   > ```
+   >
+   > 核實位元組數：`gcloud secrets versions access latest --secret=<名稱> --project=pccss-ai-history | Out-File $env:TEMP\v.txt -Encoding utf8 -NoNewline; (Get-Item $env:TEMP\v.txt).Length`（應等於 key 的長度）。[scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1) 已按此方式寫入。
+
    服務的執行身分必須有 `roles/secretmanager.secretAccessor`。`_TUTOR_WEB_SEARCH_SECRET` 留空時**不會**引用任何 secret，因此未建立 secret 的專案仍可正常部署；本專案自 2026-11-06 起預設指向 `history-brave-search-api-key`。
 
 4. **`git push origin main`** 觸發 Cloud Build 部署（或本機 `gcloud builds submit --config cloudbuild.yaml --substitutions=...`）。
@@ -2540,6 +2551,7 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 | 重複部署後教師被登出 | 每次執行部署指令碼都會產生新的 `AUTH_SECRET` | 指令碼改為只在 Secret 尚未有版本時才產生，之後保留原有密鑰（如需強制更換可手動新增版本） |
 | 首次部署到**新建專案**時，部署步驟失敗：`Secret projects/<編號>/secrets/history-auth-secret/versions/latest was not found` | 舊版指令碼以「輸出是否為空」判斷機密是否已有版本，但 `gcloud secrets versions list` 在沒有版本時會把 `Listed 0 items.` 寫到 **stderr**，而 helper 以 `2>&1` 合併輸出，令新建的 `history-auth-secret` 被誤判為已有版本，結果從未寫入第一個版本 | 已修正為檢查是否真的有版本編號（`^\d+$`）。如使用舊版指令碼，可手動補一個版本：`"隨機字串" \| gcloud secrets versions add history-auth-secret --project <專案> --data-file -`。另：新建專案首次執行若在第 2 步（Artifact Registry）失敗，是因為剛啟用的 API 尚未生效，等 1–2 分鐘重跑即可（指令碼可安全重複執行） |
 | 部署成功但服務回 `403 Forbidden`（未開放公開存取） | Cloud Build 執行身分無 `run.services.setIamPolicy`，`--allow-unauthenticated` 未能套用（部署輸出會提示） | 指令碼已在部署後自動補上 `allUsers` → `roles/run.invoker`；如仍失敗，手動執行：`gcloud run services add-iam-policy-binding history-self-study --region=asia-east2 --project <專案> --member=allUsers --role=roles/run.invoker` |
+| 學伴回覆需要外部參考時一直是 `webSupplementStatus: "failed"`（沒有 🌐 來源），但本機用相同設定卻正常 | Secret 的實際位元組與原值不同。曾因在 **PowerShell** 用管道寫入（`$Value \| gcloud secrets versions add … --data-file -`），PowerShell 5.1 依 `$OutputEncoding` 重新編碼並附加換行，令 31 字元的 Brave key 變成 34 位元組（含 `\n` 及非 ASCII），provider 一律回 401；fallback 到 DeepSeek 後又超出 1500ms 預算 | 用暫存檔重新寫入（見第十節第 3 步），核實位元組數等於 key 長度，然後 `gcloud run services update <服務> --region=<區域> --update-secrets=TUTOR_WEB_SEARCH_API_KEY=<secret 名稱>:latest` 讓 Cloud Run 讀取新版本 |
 | `fetch failed`（備份失敗） | Cloud Run 只會在處理請求時分配 CPU，容器閒置時的背景計時器會被節流；Next.js 亦有自己的 SIGTERM 處理，關機備份未必來得及完成 | 備份改為在 API 請求週期內執行（`handleRoute` 內 `await backupIfDue()`），並只在資料有變更時上載；實測 27 MB 備份可在請求內完成 |
 | 正式建置的後台 API 回 `403` | 未設定 Google 憑證（`authEnabled=false`），正式建置（`npm start` 或 Cloud Run）一律 fail-closed | 設定 `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` 後重新部署；只在本機臨時示範時可用 `HISTORY_ALLOW_UNSAFE_DEMO_MODE=true` |
 | 登入後進入 `/admin` 被導向「只限管理員帳戶使用」 | `AUTH_ADMIN_EMAILS` 未設定（`cloudbuild.yaml` 的 `_ADMIN_EMAILS` 留空），因此沒有任何帳戶是管理員 | 部署時加 `-AdminEmails 你的電郵`，或用 `gcloud run services update <服務> --region=<區域> --update-env-vars AUTH_ADMIN_EMAILS=你的電郵` |

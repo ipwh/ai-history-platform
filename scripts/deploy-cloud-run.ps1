@@ -274,18 +274,32 @@ function Invoke-Gcloud {
     return Invoke-GcloudCore @Args
 }
 
-<# 由標準輸入寫入 Secret 版本（避免機密出現在命令列或檔案） #>
+<#
+由暫存檔寫入 Secret 版本，寫入後立即刪除。
+
+為甚麼不用管道（`$Value | gcloud ... --data-file -`）：PowerShell 5.1 會依
+`$OutputEncoding` 重新編碼管道內容，並附加換行，令 Secret 的實際位元組與原值不同。
+2026-11-06 實測：一個 31 字元的 Brave API key 在 Secret Manager 內變成 34 個位元組
+（含換行及一個非 ASCII 位元組），令 Brave 一律回 401，外部參考永遠 failed。
+改用檔案並以 UTF-8（無 BOM、無結尾換行）寫入即可保持原值。
+#>
 function Add-SecretVersion {
     param([string]$Name, [string]$Value, [string]$Label)
 
     if ($Apply) {
-        $previous = $ErrorActionPreference
-        $ErrorActionPreference = "Continue"
+        $tempFile = Join-Path ([System.IO.Path]::GetTempPath()) ("history-secret-" + [guid]::NewGuid().ToString("N") + ".txt")
         try {
-            $Value | & gcloud secrets versions add $Name --project $Project --data-file - | Out-Null
-            $code = $LASTEXITCODE
+            [System.IO.File]::WriteAllText($tempFile, $Value, (New-Object System.Text.UTF8Encoding($false)))
+            $previous = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
+            try {
+                & gcloud secrets versions add $Name --project $Project --data-file $tempFile | Out-Null
+                $code = $LASTEXITCODE
+            } finally {
+                $ErrorActionPreference = $previous
+            }
         } finally {
-            $ErrorActionPreference = $previous
+            Remove-Item -LiteralPath $tempFile -Force -ErrorAction SilentlyContinue
         }
         if ($code -ne 0) {
             throw "更新 Secret 失敗：$Name（退出碼 $code）"

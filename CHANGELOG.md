@@ -16,6 +16,38 @@
 
 ---
 
+## [未發布] — 2026-11-06（十）：旋轉 `AUTH_SECRET`、修正部署腳本寫壞 Secret 位元組、生產環境學生模擬實測
+
+**狀態**：已實作、已驗證；**已部署**（revision `00091-pg4`）。
+
+### 安全
+
+- **`AUTH_SECRET` 已旋轉**：新版本為 **64 字元十六進位字串**（舊版為 48 位元組非 UTF-8 位元組，功能一直正常，但讀取時會被替換字元改寫）。因簽章密鑰改變，**所有使用者需重新登入一次**（預期行為，無資料影響）。
+
+### 修正
+
+- **回報**：生產環境自我模擬時，需要外部參考的提問（「凡爾賽條約對芬蘭有甚麼影響？」「試解釋冷戰起因…」）最終都是 `web=failed`，回覆沒有 🌐 來源；本機以相同設定重測卻正常（搜尋 538ms、抓取約 0.5s）。
+- **根因**：[scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1) 的 `Add-SecretVersion` 用管道寫入 Secret（`$Value | gcloud secrets versions add … --data-file -`）。PowerShell 5.1 會依 `$OutputEncoding` 重新編碼管道內容並附加換行，令 Secret 的實際位元組與原值不同——一個 31 字元的 Brave API key 在 Secret Manager 內變成 **34 位元組**（含 `\n` 及一個非 ASCII 位元組），令 Brave 一律回 **401**；接著 fallback 到 DeepSeek，但已超出 1500ms 預算，於是回報 `failed`。`AUTH_SECRET` 早前也是同一路徑寫入，所以同樣不是純 ASCII。
+- **修法**：改為以暫存檔寫入（`[System.IO.File]::WriteAllText` ＋ `UTF8Encoding($false)`，即無 BOM、無結尾換行），`gcloud … --data-file <暫存檔>`，完成後即刪除暫存檔。密鑰因此保持原值。
+
+### 驗證（對生產環境的學生模擬，5 條提問）
+
+| 提問 | grounding | 外部參考 | 來源 | 回應時間 |
+| --- | --- | --- | --- | --- |
+| 美國革命的起因是甚麼？ | grounded | not-used | 教材 3 段 | 2.8s |
+| 法國為何參與了美國革命？ | grounded | not-used | 教材 3 段（已含法國段落） | 2.2s |
+| 凡爾賽條約對芬蘭有甚麼影響？ | grounded | **ok** | 🌐 2（BBC 中文） | 4.0s |
+| 幫我寫英文 essay 關於 my hobby | — | — | 直接拒答（JSON） | 0.04s |
+| 試解釋冷戰起因，要長篇，我要交功課 | grounded | **ok** | 🌐 1（BBC 中文） | 4.4s |
+
+同時核實學生端新端點：`GET /api/records` 回 200（summary 以整個查詢範圍以 SQL 彙總，`truncated=true` 表示尚有更多）、`GET /api/records/export?format=csv` 回 200（21,620 bytes，內容只含該學生本人）。
+
+### 備註
+
+- `TUTOR_WEB_BUDGET_MS` 仍為 1500ms（硬上限 2000）。Brave 成功時餘裕充足；若日後主要來源暫停（連續失敗觸發 10 分鐘暫停）而須走 DeepSeek 後備，單次延遲會較高，屆時可考慮提高至 2000。
+
+---
+
 ## [未發布] — 2026-11-06（九）：教材「命中但未回答」時仍取外部參考＋檢索按提問關鍵詞加權
 
 **狀態**：已實作、已測試；**已部署**（revision 見下）。
