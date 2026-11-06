@@ -134,8 +134,8 @@ function jsonResponse(payload: unknown, status = 200): Response {
 function installFetchMock(handlers: {
   answer?: string;
   search?: () => Response | Promise<Response>;
-  /** 第三方 provider（Google Programmable Search） */
-  google?: () => Response | Promise<Response>;
+  /** 第三方 provider（Brave Search API） */
+  brave?: () => Response | Promise<Response>;
   pages?: Record<string, () => Response | Promise<Response>>;
 }) {
   const mock = vi.fn<typeof fetch>(async (input) => {
@@ -149,9 +149,9 @@ function installFetchMock(handlers: {
       if (!handlers.search) throw new Error(`unexpected search fetch: ${url}`);
       return handlers.search();
     }
-    if (url.startsWith("https://www.googleapis.com/customsearch/")) {
-      if (!handlers.google) throw new Error(`unexpected google fetch: ${url}`);
-      return handlers.google();
+    if (url.startsWith("https://api.search.brave.com/")) {
+      if (!handlers.brave) throw new Error(`unexpected brave fetch: ${url}`);
+      return handlers.brave();
     }
     if (url.includes("/chat/completions")) return streamingAnswer(handlers.answer);
     const page = handlers.pages?.[url];
@@ -200,7 +200,7 @@ function webConfig(overrides: Partial<TutorWebSupplementConfig> = {}): TutorWebS
     budgetMs: 1_500,
     blockedTopicIds: [],
     searchEndpoint: SEARCH_ENDPOINT,
-    provider: { provider: null, apiKey: null, engineId: null, siteHints: [] },
+    provider: { provider: null, apiKey: null, siteHints: [] },
     ...overrides,
   };
 }
@@ -262,7 +262,8 @@ beforeEach(() => {
   delete process.env.TUTOR_WEB_BUDGET_MS;
   delete process.env.TUTOR_WEB_SEARCH_PROVIDER;
   delete process.env.TUTOR_WEB_SEARCH_API_KEY;
-  delete process.env.TUTOR_WEB_SEARCH_ENGINE_ID;
+  delete process.env.TUTOR_WEB_SEARCH_FALLBACK_PROVIDER;
+  delete process.env.TUTOR_WEB_SEARCH_FALLBACK_API_KEY;
   delete process.env.TUTOR_WEB_SEARCH_SITE_HINTS;
   dnsState.addresses = [{ address: "93.184.216.34", family: 4 }];
   dnsState.byHost = {};
@@ -624,8 +625,11 @@ describe("學伴 API：外部參考", () => {
     expect(requestedUrls(fetchMock)).toHaveLength(1);
   });
 
-  it("未設定搜尋端點且未設定 provider 時如實回報 not-used，不嘗試其他抓取方式", async () => {
+  it("未設定任何搜尋來源時如實回報 not-used，不嘗試其他抓取方式", async () => {
     enableWebSupplement({ searchEndpoint: null });
+    process.env.TUTOR_WEB_SEARCH_PROVIDER = "brave";
+    delete process.env.TUTOR_WEB_SEARCH_API_KEY;
+    process.env.TUTOR_WEB_SEARCH_FALLBACK_PROVIDER = "none";
     const fetchMock = installFetchMock({});
 
     const response = await postChat(
@@ -640,17 +644,18 @@ describe("學伴 API：外部參考", () => {
 
   it("改用第三方 provider（無自訂端點）時仍能抓到外部參考，並走同一套白名單過濾", async () => {
     enableWebSupplement({ searchEndpoint: null });
-    process.env.TUTOR_WEB_SEARCH_PROVIDER = "google";
+    process.env.TUTOR_WEB_SEARCH_PROVIDER = "brave";
     process.env.TUTOR_WEB_SEARCH_API_KEY = "test-key";
-    process.env.TUTOR_WEB_SEARCH_ENGINE_ID = "test-cx";
     const fetchMock = installFetchMock({
-      google: () =>
+      brave: () =>
         jsonResponse({
-          items: [
-            { title: "Treaty of Versailles | Britannica", link: BRITANNICA_URL },
-            // provider 回傳非白名單結果：必須被丟棄，且不會被抓取
-            { title: "維基百科", link: "https://zh.wikipedia.org/wiki/凡爾賽條約" },
-          ],
+          web: {
+            results: [
+              { title: "Treaty of Versailles | Britannica", url: BRITANNICA_URL },
+              // provider 回傳非白名單結果：必須被丟棄，且不會被抓取
+              { title: "維基百科", url: "https://zh.wikipedia.org/wiki/凡爾賽條約" },
+            ],
+          },
         }),
       pages: { [BRITANNICA_URL]: () => htmlResponse() },
     });
@@ -674,7 +679,7 @@ describe("學伴 API：外部參考", () => {
     expect(done.sources.length).toBeGreaterThan(0);
 
     const urls = requestedUrls(fetchMock);
-    expect(urls.some((url) => url.startsWith("https://www.googleapis.com/customsearch/"))).toBe(true);
+    expect(urls.some((url) => url.startsWith("https://api.search.brave.com/"))).toBe(true);
     expect(urls.some((url) => url.includes("wikipedia.org"))).toBe(false);
   });
 
@@ -682,11 +687,9 @@ describe("學伴 API：外部參考", () => {
     enableWebSupplement({ searchEndpoint: null });
     process.env.TUTOR_WEB_SEARCH_PROVIDER = "brave";
     process.env.TUTOR_WEB_SEARCH_API_KEY = "test-key";
-    installFetchMock({
-      // brave 走 www.googleapis.com 以外的網域，這裡直接讓所有非 chat 請求失敗
-      google: () => jsonResponse({}, 500),
-    });
-    // 令 provider 的實際請求失敗（brave 主機不在 mock 分派內 → 會拋錯）
+    // 關閉後備，令「主要來源失敗」直接代表 failed
+    process.env.TUTOR_WEB_SEARCH_FALLBACK_PROVIDER = "none";
+    // 令 provider 的實際請求失敗（Brave 主機不在 mock 分派內 → 會拋錯）
     vi.stubGlobal(
       "fetch",
       vi.fn<typeof fetch>(async (input) => {
@@ -806,8 +809,12 @@ describe("學伴 API：外部參考", () => {
     });
   });
 
-  it("只開啟開關而未設定搜尋端點時，health 顯示 searchConfigured=false（不會誤報可用）", async () => {
+  it("只開啟開關而未設定任何搜尋來源時，health 顯示 searchConfigured=false（不會誤報可用）", async () => {
     enableWebSupplement({ searchEndpoint: null });
+    process.env.TUTOR_WEB_SEARCH_PROVIDER = "brave";
+    delete process.env.TUTOR_WEB_SEARCH_API_KEY;
+    // 沒有主要來源，也沒有後備 → 不應誤報可用
+    process.env.TUTOR_WEB_SEARCH_FALLBACK_PROVIDER = "none";
     const { GET: health } = await import("@/app/api/health/route");
     const payload = (await (await health()).json()) as {
       tutorWeb: { enabled: boolean; searchConfigured: boolean; searchProvider: string | null };
@@ -817,11 +824,10 @@ describe("學伴 API：外部參考", () => {
     expect(payload.tutorWeb.searchProvider).toBeNull();
   });
 
-  it("改用第三方 provider 時 health 顯示 searchProvider=google 且不外泄 API key", async () => {
+  it("改用第三方 provider 時 health 顯示 searchProvider=brave 且不外泄 API key", async () => {
     enableWebSupplement({ searchEndpoint: null });
-    process.env.TUTOR_WEB_SEARCH_PROVIDER = "google";
+    process.env.TUTOR_WEB_SEARCH_PROVIDER = "brave";
     process.env.TUTOR_WEB_SEARCH_API_KEY = "secret-key-should-not-leak";
-    process.env.TUTOR_WEB_SEARCH_ENGINE_ID = "test-cx";
     const { GET: health } = await import("@/app/api/health/route");
     const raw = await (await health()).text();
     expect(raw).not.toContain("secret-key-should-not-leak");
@@ -829,7 +835,7 @@ describe("學伴 API：外部參考", () => {
       tutorWeb: { searchConfigured: boolean; searchProvider: string | null };
     };
     expect(payload.tutorWeb.searchConfigured).toBe(true);
-    expect(payload.tutorWeb.searchProvider).toBe("google");
+    expect(payload.tutorWeb.searchProvider).toBe("brave");
   });
 
   it("mode=not-covered-only 時，教材已命中就不抓外網", async () => {

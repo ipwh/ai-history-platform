@@ -300,7 +300,8 @@ materials/
 | 練習作答 | `/practice/[sessionId]` | 一次一題、進度顯示、提交後顯示答案／解釋／知識點／教材來源；填充題另有 **AI 語意批改**；每題可**回報問題**；答案與標準答案極為接近時會標示「需要教師覆核」 |
 | 練習結果 | `/practice/[sessionId]/result` | 完成題數、答對題數、正確率、需重溫知識點、逐題回顧（含 AI 批改結果）、針對錯題再練習；教師／管理員測試時另有返回後台首頁的入口 |
 | 我的帳戶 | `/account` | 登入狀態及身分（學生／教師／管理員）、**班別及學號（來自學生名冊）**、登出；教師及管理員另有後台入口 |
-| **AI 歷史自學學伴 (Beta)** | `/tutor` | 只限名冊已核對學生；支援口語、香港粵語、常見簡體歷史詞、片語、一般錯字及 WW1／WWI／World War 1、WW2／WWII／World War 2、Cold War 等名稱，並容忍常見大小寫、空格及縮寫連字號差異；含混提問會提供 2–4 個歷史澄清方向，明確離題仍固定拒答；每日最多 15 個已成功取得回覆的提問，並共用 `ai_operations` 的 generation 全域時間窗上限；**以已開放給學生的教材段落為依據**，回覆會標示「已對照課本教材」（附節錄及出處）或「未找到教材依據」，另會提示課本用語；回答採固定短結構（一句定位 → 2–3 點線索／引導問題 → 依據說明 → 下一步可以問）；可選「溫習課題」作檢索 soft prior；由練習頁進入時會顯示開場引導及建議問題；學校可選擇開啟「🌐 外部參考」（白名單網站短摘錄，預設關閉，與教材分開標示、非考試標準）；不連接題庫，AI 回答僅供參考 |
+| **AI 歷史自學學伴 (Beta)** | `/tutor` | 只限名冊已核對學生；支援口語、香港粵語、常見簡體歷史詞、片語、一般錯字及 WW1／WWI／World War 1、WW2／WWII／World War 2、Cold War 等名稱，並容忍常見大小寫、空格及縮寫連字號差異；含混提問會提供 2–4 個歷史澄清方向，明確離題仍固定拒答；每日最多 15 個已成功取得回覆的提問，並共用 `ai_operations` 的 generation 全域時間窗上限；**以已開放給學生的教材段落為依據**，回覆會標示「已對照課本教材」（附節錄及出處）或「未找到教材依據」，另會提示課本用語；回答採固定短結構（一句定位 → 2–3 點線索／引導問題 → 依據說明 → 下一步可以問）；可選「溫習課題」作檢索 soft prior；由練習頁進入時會顯示開場引導及建議問題；學校可開啟「🌐 外部參考」（白名單網站短摘錄；2026-11-06 起以 Brave Search 為主、失效或額度用完時自動改用 DeepSeek，與教材分開標示、非考試標準）；不連接題庫，AI 回答僅供參考 |
+| **我的練習記錄** | `/records` | 學生查看及匯出自己的練習記錄（與教師端「學生練習記錄」同一份內容）；可按課題、日期、答對題數及答對百分比篩選，逐題回顧答對／答錯題目、正確答案、解釋及教材依據；可匯出 Excel／Word／PDF／CSV。學習者身分取自登入工作階段，不能讀取他人記錄 |
 
 #### AI 歷史自學學伴：教材依據與課本用語（2026-10-27）
 
@@ -343,11 +344,11 @@ materials/
 - **詞庫譯名修正**：核對教材原文後修正了四個以台灣／內地譯名作「課本寫法」的詞條——希特拉（原「希特勒」）、史太林（原「史達林」）、塞拉耶佛事件（原「薩拉熱窩事件」）、美國革命（原「美國獨立戰爭」）。教材原文出現 41 次「希特拉」、0 次「希特勒」，其餘同理；填充題批改的同義詞比對不受影響（同一組內互為別名）。2026-10-27 另補：米開蘭基羅（教材寫法，原以「米開朗基羅」為準）、新增拉斐爾，並把達文西的範圍由「高中」改為「課題5」（教材在初中課題5 筆記列出三人）。
 - 測試：[tests/tutor-grounding.test.ts](tests/tutor-grounding.test.ts)（檢索、段落合併、過濾、用語對照，另驗證未確認版權及校內試題檔不會被引用）及 [tests/tutor-grounding-api.test.ts](tests/tutor-grounding-api.test.ts)（SSE 標示、提示詞內容、保存後重新載入）。
 
-#### 學伴外部參考：白名單網頁補充（2026-11-01；程式預設關閉，生產已開啟但未接搜尋端點）
+#### 學伴外部參考：白名單網頁補充（2026-11-01 加入；2026-11-06 起接上搜尋來源）
 
 > **程式預設 `TUTOR_WEB_SUPPLEMENT_ENABLED=false`。** 未開啟時學伴不會發出任何外網請求（連 DNS 也不查），行為與加入此功能前**完全一致**；API 回覆仍會帶 `webSources: []` 及 `webSupplementStatus: "disabled"`，方便介面及測試分辨狀態。
 >
-> **生產環境現況（2026-11-01 起）**：[cloudbuild.yaml](cloudbuild.yaml) 已設 `TUTOR_WEB_SUPPLEMENT_ENABLED=true` 及 `TUTOR_WEB_MODE=not-covered-only`，但**仍未設定 `TUTOR_WEB_SEARCH_ENDPOINT`**。在補上搜尋端點之前，每次回答的 `webSupplementStatus` 為 `not-used`、`webSources` 為空，**不會有任何外網請求和外部參考**。可從公開的 `GET /api/health` → `tutorWeb: { enabled, mode, searchConfigured }` 核實（`enabled: true` 但 `searchConfigured: false` 表示「開了但未有作用」；該欄位刻意不回傳端點網址）。管理員端系統狀態頁同時會顯示 `tutor-web-supplement-no-search` 警告。
+> **生產環境現況（2026-11-06 起）**：[cloudbuild.yaml](cloudbuild.yaml) 設 `TUTOR_WEB_SUPPLEMENT_ENABLED=true`、`TUTOR_WEB_MODE=not-covered-only`、`TUTOR_WEB_SEARCH_PROVIDER=brave` 及 `TUTOR_WEB_SEARCH_FALLBACK_PROVIDER=deepseek`。主要來源是 Brave Search API；Brave **失效**（請求失敗、逾時、回傳結果全部不在白名單，或免費額度用完／被限流）時自動改用 DeepSeek Search（沿用學伴本身的 `DEEPSEEK_API_KEY`，不另需憑證）。因此在 Brave 的 key 尚未注入前，外部參考仍會經 DeepSeek 運作。可從公開的 `GET /api/health` → `tutorWeb: { enabled, mode, searchConfigured, searchProvider }` 核實（該欄位刻意不回傳端點網址或 API key）：`searchConfigured` 在開關關閉時固定 `false`，開啟時代表是否已有可用來源；`searchProvider` 顯示**實際可用**的一環（主要來源未就緒時會顯示 `deepseek`）。Google Programmable Search 分支已於同日移除（學校 Workspace 停用該服務，無法建立 cx；其 JSON API 亦於 2027-01-01 停止）。
 
 **校本教材仍然是唯一的「課本依據」。** 外部參考只是課後擴充，永遠與教材分開標示：
 
@@ -360,7 +361,11 @@ materials/
 - **觸發條件（必須同時成立）**：① `TUTOR_WEB_SUPPLEMENT_ENABLED=true`；② 請求已通過歷史主題硬閘、且不是澄清或固定離題拒答；③ 命中課題不在 `TUTOR_WEB_BLOCKED_TOPICS`；④ **已通過每日 15 次及 `generation` 時間窗預留**。澄清／離題分支會直接回 `webSupplementStatus: "not-used"`，**不會**為澄清句單獨抓網。
 - **與每日額度無關**：外網補充是為「即將呼叫的主回答」服務，不是獨立的 AI 操作，因此不另計次數、不改動每日 15 次或 `generation` 配額。抓取失敗只會靜默降級為「只有教材」，**不會**令學伴回 500。
 - **防 SSRF（P0）**：只准 `https`；host 必須在白名單（後綴匹配，`bbc.co.uk.evil.example` 不匹配）；連線前先解析 DNS，拒絕私網、迴路、link-local（含雲端中繼資料服務 `169.254.169.254`）、CGNAT、組播及保留位址；重定向逐跳檢查（最多 3 次），任何一跳離開白名單即中止；請求有逾時（預設 4 秒）、回應只讀首 1 MB、摘錄再截斷。搜尋端點本身亦要通過同樣的 https／公網位址檢查。
-- **如何搜尋**：平台沒有付費搜尋 API，`TUTOR_WEB_SEARCH_ENDPOINT` 指向一個相容 `POST {query, domains, limit}` → `{results: [{url, title}]}` 的服務（自建代理或任何搜尋 API 的薄包裝）。**未設定時不做搜尋**，狀態為 `not-used`；平台不會退化成爬取搜尋結果頁（既違反搜尋引擎條款，亦不穩定）。搜尋結果會先按白名單過濾，**非白名單網址不會被請求**。
+- **如何搜尋**：兩條路徑（二選一，端點優先）——① `TUTOR_WEB_SEARCH_ENDPOINT` 指向相容 `POST {query, domains, limit}` → `{results: [{url, title}]}` 的服務（自建代理或任何搜尋 API 的薄包裝）；② `TUTOR_WEB_SEARCH_PROVIDER` 在進程內直接呼叫第三方搜尋 API（`brave`／`deepseek`；`google` 已移除）。**兩者皆未設定時不做搜尋**，狀態為 `not-used`；平台不會退化成爬取搜尋結果頁（既違反搜尋引擎條款，亦不穩定）。主要來源失效時可改用 `TUTOR_WEB_SEARCH_FALLBACK_PROVIDER`（預設：主要為 `brave` 時用 `deepseek`）。搜尋結果會先按白名單過濾，**非白名單網址不會被請求**。
+- **主要／後備搜尋鏈（2026-11-06）**：`TUTOR_WEB_SEARCH_PROVIDER` 為主要來源；若請求失敗、逾時，或回傳結果全部不在白名單，便改用 `TUTOR_WEB_SEARCH_FALLBACK_PROVIDER`（主要為 `brave` 時預設 `deepseek`）。兩次嘗試各佔一半時間預算，整體仍受 `TUTOR_WEB_BUDGET_MS` 限制。DeepSeek Search 與學伴共用 `DEEPSEEK_API_KEY`，不另需憑證。
+- **配額用完自動切換（2026-11-06）**：主要來源回 **401／402／403／429**（金鑰失效、額度用完、權限不足、被限流）時，會暫停主要來源 **10 分鐘**（`TUTOR_WEB_PRIMARY_PAUSE_MS`），期間的提問**直接**使用後備，不再白等一次失敗請求；主要來源一次成功後即解除暫停。5xx 及逾時只作單次降級，不會暫停（避免短暫故障令主要來源長期停用）。
+- **Brave 的授權注意**：Brave 免費額度為每月 US$5（約 1,000 次，需信用卡），用完後請求會被拒（本專案會自動切換到 DeepSeek）。Brave 條款**禁止保存 API 回傳結果**；本專案只取 `title`／`url`，正文由平台自行抓取後再抽取摘錄，並保存該摘錄。是否接受此安排由科組決定；如要完全避免，改用自架 `TUTOR_WEB_SEARCH_ENDPOINT`（例如 SearXNG）。
+- **provider 語法差異（以真實 API 核對）**：DeepSeek 只接受**不加括號**的 `site:a OR site:b`（加括號會回 0 結果），且查詢上限 128 字符（超出回 400）；`buildProviderQuery()` 會先為 `site:` 提示預留長度。未設定 `TUTOR_WEB_SEARCH_SITE_HINTS` 時，預設使用白名單首 4 個 host 作提示——實測中文提問若不設提示，第三方搜尋多數回傳非白名單結果，外網補充會恒為 `not-used`。
 - **狀態值**：`disabled`（開關關閉）／`blocked-topic`（課題被封鎖）／`not-used`（未設定搜尋端點或沒有可用結果）／`failed`（搜尋或抓取出錯，已靜默降級）／`ok`（至少一段成功）。
 - **長度上限分兩層**：顯示給學生的 `excerpt` 最多 120 字（避免介面被長文淹沒）；送去提示詞的段落最多 `TUTOR_WEB_MAX_CHARS_PER_SOURCE`（預設 600 字）。較長的段落只進入提示詞，**不會**經 API 或資料庫外泄。
 
@@ -414,10 +419,9 @@ materials/
    substitutions:
      # 方式一：自訂代理
      _TUTOR_WEB_SEARCH_ENDPOINT: "https://search.example.edu.hk/tutor"
-     # 方式二：第三方 provider（此例為 Google Programmable Search）
-     _TUTOR_WEB_SEARCH_PROVIDER: "google"
-     _TUTOR_WEB_SEARCH_ENGINE_ID: "0123456789abcdefg"      # Google 的 cx；brave 留空
-     _TUTOR_WEB_SEARCH_SECRET: "history-tutor-search-key"  # Secret Manager 內的 secret 名稱
+     # 方式二：第三方 provider（此例為 Brave Search API）
+     _TUTOR_WEB_SEARCH_PROVIDER: "brave"
+     _TUTOR_WEB_SEARCH_SECRET: "history-brave-search-api-key"  # Secret Manager 內的 secret 名稱
      _TUTOR_WEB_SEARCH_SITE_HINTS: "britannica.com;bbc.co.uk;history.com"
    ```
 
@@ -426,10 +430,10 @@ materials/
 3. **建立 Secret（只用方式二時）**：
 
    ```bash
-   printf '%s' "<你的 API key>" | gcloud secrets create history-tutor-search-key \
+   printf '%s' "<你的 Brave API key>" | gcloud secrets create history-brave-search-api-key \
      --data-file=- --replication-policy=automatic --project pccss-ai-history
    # 已存在則新增版本：
-   # printf '%s' "<新 key>" | gcloud secrets versions add history-tutor-search-key --data-file=-
+   # printf '%s' "<新 key>" | gcloud secrets versions add history-brave-search-api-key --data-file=-
    ```
 
    服務的執行身分必須有 `roles/secretmanager.secretAccessor`。`_TUTOR_WEB_SEARCH_SECRET` 留空時**不會**引用任何 secret，因此未建立 secret 的專案仍可正常部署。
@@ -441,8 +445,8 @@ materials/
    ```bash
    curl -s https://<服務網址>/api/health | jq .tutorWeb
    # 自訂代理：{ "enabled": true, "mode": "not-covered-only", "searchConfigured": true, "searchProvider": "endpoint" }
-   # Google：  { "enabled": true, "mode": "not-covered-only", "searchConfigured": true, "searchProvider": "google" }
-   # Brave：   ... "searchProvider": "brave"
+   # Brave：   { "enabled": true, "mode": "not-covered-only", "searchConfigured": true, "searchProvider": "brave" }
+   # 只剩後備：{ "enabled": true, "mode": "not-covered-only", "searchConfigured": true, "searchProvider": "deepseek" }
    ```
 
    之後在學伴問一個**教材未涵蓋**的課題（`not-covered-only` 模式只在教材找不到時才抓外網），回覆的 `done` 事件應為 `webSupplementStatus: "ok"` 並帶 `webSources`；若為 `failed` 表示 provider 回非 2xx／超時／結果被白名單全部過濾。
@@ -450,8 +454,8 @@ materials/
 **第三方搜尋 API 薄包裝（實作說明）**
 
 - 實作位置：[tutor-web-search-provider.ts](src/server/services/tutor-web-search-provider.ts)。在**同一進程**內呼叫 provider，不另開 Cloud Run 服務、不需自我 HTTP 呼叫。
-- 支援 `google`（Programmable Search JSON API：`key` + `cx`）及 `brave`（Brave Search API：`X-Subscription-Token`）。
-- 查詢字串會**截斷至 200 字**並一律開啟嚴格安全搜尋（`safe=active`／`safesearch=strict`）；`TUTOR_WEB_SEARCH_SITE_HINTS` 會以 `(site:a OR site:b …)` 附加（最多 6 個），大幅提高「回傳結果真的落在白名單」的機會——中文提問若不加提示，provider 往往只回共筆百科，全部會被過濾成 `not-used`。
+- 支援 `brave`（Brave Search API：`X-Subscription-Token`）及 `deepseek`（DeepSeek Search：`Authorization: Bearer`）。`google` 分支已移除。
+- 查詢字串會**截斷至 200 字**並一律開啟嚴格安全搜尋（Brave `safesearch=strict`）；`TUTOR_WEB_SEARCH_SITE_HINTS` 會以 `(site:a OR site:b …)` 附加（最多 6 個），大幅提高「回傳結果真的落在白名單」的機會——中文提問若不加提示，provider 往往只回共筆百科，全部會被過濾成 `not-used`。DeepSeek 需用不加括號的 `site:a OR site:b`，且上限 128 字符（程式會自動處理）。
 - provider 回傳的結果仍要通過**同一套白名單過濾**（`toAllowlistedCandidates`）：非 https、非白名單 host 一律丟棄且**不會被抓取**。
 - API key 只以 `--set-secrets` 注入，**永不**寫入 `--set-env-vars`、映像檔或 `/api/health`。
 
@@ -484,7 +488,8 @@ materials/
 - 端點會 301 到結尾有斜線或 HTTPS 版本：改用最終網址，否則一律 `failed`。
 - 期望「教材已命中時也抓外網」：`not-covered-only` 不會；需改 `TUTOR_WEB_MODE=always`。
 - 只改 `gcloud run services update`：下次 push 部署即失效（`--set-env-vars`／`--set-secrets` 會整份覆蓋）。
-- 設了 provider 但沒有 `cx`（Google）：`searchConfigured` 會維持 `false`，即 `isTutorWebSearchProviderReady` 要求 `engineId` 齊全。
+- 設了 `TUTOR_WEB_SEARCH_PROVIDER=brave` 但沒有 API key：`searchConfigured` 會視乎後備來源；Brave 未就緒時會直接使用 DeepSeek（`searchProvider` 顯示 `deepseek`）。
+- Brave 回 402／429（免費額度用完／被限流）：系統會自動切換到 DeepSeek，並暫停 Brave 10 分鐘；充值或新月份後首次成功會自動回復。
 - 把 API key 放進 `TUTOR_WEB_SEARCH_API_KEY` 環境變數（而非 Secret）：會出現在 Cloud Run 環境變數清單及建置記錄；請用 `_TUTOR_WEB_SEARCH_SECRET`。
 
 
@@ -911,7 +916,7 @@ npm test
 | 學伴使用概況 | `/teacher/tutor` | 近 7／30 日的**聚合統計**：成功回答、離題（固定拒答）、澄清、正規化改寫、外部參考狀態分佈及按日彙總。**不含任何對話正文**（API 固定回 `contentIncluded: false`）；抽樣檢視屬 P1，未實作 |
 | 題目管理 | `/teacher/questions` | 生成題目預覽（附教材依據）、手動新增／編輯／發布／停用／刪除題目、依分節及狀態篩選、**題目回報覆核**（可按狀態及課題篩選，標記已處理／已略過／重設待覆核；即時生成題目會標示「AI 即時生成題目」及「只存於該次練習，未存入題庫」） |
 | 題目生成與審核 | `/teacher/questions/generate` | 同上，預設捲動至生成區塊，方便直接出題及審核 |
-| 學生練習記錄 | `/teacher/records` | **單一頁面、由上而下一個流程**：篩選 → 本次查詢統計 → 學習者使用概況（可展開）→ 練習記錄（逐題作答）。所有篩選集中在「篩選」卡：第一行先選**班級**、再選**班別**（選擇後即時篩選下方記錄、學習者清單及匯出範圍；班別選項亦會按班級收窄），再提供搜尋及**學習者**選單；第二行是**記錄範圍**（課題、活動狀態、起訖日期）＋查詢／重設＋四種格式匯出。班級／班別條件由名冊配對的學生身分套用至練習記錄，避免混入其他班別學生；「班級」＝中一至中六（由名冊班別 `1A` 的級別推導）。「學習者」選單按**班級 → 班別 → 班號**排列（班號以數值比較，10 不會排在 9 之前），未列入名冊者排在最後。「學習者使用概況」預設**收起**（標題列已顯示「名冊 N 位・本次查詢 X 位有記錄・Y 位尚未開始」），選定學習者後自動收起，逐題記錄緊接統計出現；按「展開名冊」可檢視練習次數、累計答題、答對比率及最近活動（表內數字為**終身累計**，統計方塊才是本次查詢），按「查看記錄」會即時篩選該學習者、展開逐題作答並捲動到「練習記錄」區塊，該學習者沒有記錄時會顯示說明而不是毫無反應；按「查詢記錄」一律捲動到結果（不再停留在名冊列表）。**逐題記錄顯示完整題目**：題幹、選擇題全部選項（A／B／C／D，正確選項以綠框標示，學生所選另有「學生選擇」標記）、學生答案、正確答案、解釋、知識點，以及可展開的「教材依據」（來源位置及原文節錄）；標題列可勾選「只看答錯／未作答」，與學生回顧錯題時不必再逐題掃視答對的題目 |
+| 學生練習記錄 | `/teacher/records` | **單一頁面、由上而下一個流程**：篩選 → 本次查詢統計 → 學習者使用概況（可展開）→ 練習記錄（逐題作答）。所有篩選集中在「篩選」卡：第一行先選**班級**、再選**班別**（選擇後即時篩選下方記錄、學習者清單及匯出範圍；班別選項亦會按班級收窄），再提供搜尋及**學習者**選單；第二行是**記錄範圍**（課題、活動狀態、起訖日期）＋查詢／重設＋四種格式匯出。班級／班別條件由名冊配對的學生身分套用至練習記錄，避免混入其他班別學生；「班級」＝中一至中六（由名冊班別 `1A` 的級別推導）。「學習者」選單按**班級 → 班別 → 班號**排列（班號以數值比較，10 不會排在 9 之前），未列入名冊者排在最後。「學習者使用概況」預設**收起**（標題列已顯示「名冊 N 位・本次查詢 X 位有記錄・Y 位尚未開始」），選定學習者後自動收起，逐題記錄緊接統計出現；按「展開名冊」可檢視練習次數、累計答題、答對比率及最近活動（表內數字為**終身累計**，統計方塊才是本次查詢），按「查看記錄」會即時篩選該學習者、展開逐題作答並捲動到「練習記錄」區塊，該學習者沒有記錄時會顯示說明而不是毫無反應；按「查詢記錄」一律捲動到結果（不再停留在名冊列表）。**逐題記錄顯示完整題目**：題幹、選擇題全部選項（A／B／C／D，正確選項以綠框標示，學生所選另有「學生選擇」標記）、學生答案、正確答案、解釋、知識點，以及可展開的「教材依據」（來源位置及原文節錄）；標題列可勾選「只看答錯／未作答」，與學生回顧錯題時不必再逐題掃視答對的題目。**2026-11-06 新增**：第三行提供**答對題數**（最少／最多）及**答對百分比**（最少／最多，0–100）範圍篩選，同時套用於逐次練習記錄（匯出範圍跟隨）及「學習者使用概況」的終身累計數值；下限大於上限時即時提示。「本次查詢統計」改由伺服器以 SQL 彙總**整個查詢範圍**（不再只加總清單內的記錄），逐次練習清單受 200 次上限時會如實說明「統計已包括其餘 N 次、匯出上限 2,000 次」，並額外顯示整體答對百分比 |
 
 #### 練習記錄匯出（CSV／Excel／Word／PDF，2026-10-22）
 
@@ -934,6 +939,16 @@ npm test
 - **長度上限**：Word／PDF 最多顯示最近 120 次練習（`MAX_READABLE_SESSIONS`），並在文件開頭註明只列最近若干次及總數；Excel／CSV 沒有此限制（最多 2000 次，與 API 的 `limit` 一致）。
 - 檔名固定為 `practice-records-YYYY-MM-DD.<ext>`（香港時間）；篩選條件、匯出時間及總計會寫進 Excel「匯出說明」工作表及 Word／PDF 開頭，存檔後仍知道範圍。
 - 安全性：`requireTeacher` 守衛（教師／管理員）；回應含 `Cache-Control: private, no-store`；CSV 仍會把 `=`、`+`、`-`、`@` 起首的儲存格加前置單引號（XLSX 以 inline string 寫入、DOCX／PDF 為純文字，本身不會被當成公式）。
+
+#### 學生端：我的練習記錄（`/records`，2026-11-06）
+
+學生可在頂部導覽「我的記錄」或「我的帳戶 → 查看我的練習記錄」進入，內容與教師端「學生練習記錄」相同，但**只有自己的記錄**：
+
+- **身分只取自工作階段**：`GET /api/records` 及 `/api/records/export` 以登入帳戶推導學習者 ID；查詢參數 `learnerId` 只在未啟用登入的匿名示範模式下使用，已登入時會被忽略，因此改網址不能讀取其他學生。未登入（且已要求登入）回 401。
+- **可篩選及匯出**：課題、起訖日期、答對題數（最少／最多）、答對百分比（最少／最多）；匯出 Excel／Word／PDF／CSV，套用目前選擇的篩選（上限 2,000 次）。
+- **統計口徑與教師端一致**：`summary` 由 SQL 彙總整個查詢範圍；逐次清單上限 200 次時會說明「統計已包括其餘 N 次」。
+- **逐題回顧**：與教師端共用同一個呈現元件（[PracticeRecordCard.tsx](src/components/PracticeRecordCard.tsx)），包括選項標記、學生答案、正確答案、解釋、知識點及教材依據，避免兩端用語不一致。
+- 教師／管理員以學生身分測試時，`/records` 顯示的是該教職員帳戶自己的測試記錄（與教師端一致）。
 
 ### 管理員端
 
@@ -1005,7 +1020,7 @@ src/server/materials/             DOCX、PDF 解析、圖片與段落對應、�
 src/server/ocr/                   OCR provider 介面、tesseract.js、Google Vision、PNG 編碼
 src/server/auth/                  Google OAuth、工作階段 cookie、角色判定、guards.ts 集中授權
 src/server/llm/                   provider 介面、mock、DeepSeek、Gemini、OpenAI 相容、輸出驗證、填充題歷史元素判定（historical-answer.ts）、題目品質閘門（question-quality.ts）、填充題題幹規則（fill-question.ts）、題目重複判定（question-dedupe.ts）
-src/server/services/              練習流程、題目生成、題庫批次生成、OCR、教材管理、評分、回報、AI 用量統計、練習記錄匯出（records-export.ts）、學伴教材依據（tutor-grounding.ts）及學伴外部參考（tutor-web-supplement.ts／tutor-web-allowlist.ts，預設關閉）
+src/server/services/              練習流程、題目生成、題庫批次生成、OCR、教材管理、評分、回報、AI 用量統計、練習記錄匯出（records-export.ts）、學伴教材依據（tutor-grounding.ts）及學伴外部參考（tutor-web-supplement.ts／tutor-web-allowlist.ts／tutor-web-search-provider.ts；程式預設關閉，生產已開啟並以 Brave＋DeepSeek 後備搜尋）
 src/server/export/                教師端匯出檔案產生器（office.ts：XLSX／DOCX；pdf.ts：PDF＋中文字型）
 src/server/seed/                  教育局課程架構、學習重點（精簡摘要）、示範題庫、教材依據核對
 src/app/api/                      REST API（學生端、教師端 /api/teacher/**、管理員端 /api/admin/**）
@@ -1050,7 +1065,7 @@ scripts/setup-push-to-deploy.ps1  設定「推送即部署」的 GitHub → Clou
 | `GET /api/practice/[sessionId]/result?learnerId=` | 重看成績 |
 | `POST /api/reports` | 學生回報題目（`{ learnerId, questionId, sessionId, reason, detail }`；已登入時忽略前端 learnerId；題庫題目及 AI 即時生成的題目都可回報） |
 | `GET /api/tutor/chat?sessionId=` | 學伴對話（最近 80 則，每則附教材依據 `sources`／`groundingStatus`／`termNotes`，以及外部參考 `webSources`）、每日剩餘次數及全域時間窗狀態；只限名冊已核對學生（教師／管理員可作科組測試） |
-| `POST /api/tutor/chat` | 學伴提問：先檢索已開放給學生的教材段落（及可選的白名單外部參考），再以 SSE 串流回覆。事件依次為 `meta`（`grounding`／`sources`／`topicTitle`／`webSources`／`webSupplementStatus`／`skillHint`）、`delta`（文字）、`done`（剩餘次數 `remaining`、課本用語對照 `termNotes`、`webSources`、`webSupplementStatus`、`skillHint`、`practiceQuestionId`）。可選 body 欄位：`practiceQuestionId`／`practiceSessionId`（伺服器自行重組**學生安全**練習上下文）、`goalTopicId`（學習目標課題，soft prior）。外部參考預設關閉（`TUTOR_WEB_SUPPLEMENT_ENABLED=false`），關閉時 `webSources` 為空、狀態為 `disabled` |
+| `POST /api/tutor/chat` | 學伴提問：先檢索已開放給學生的教材段落（及可選的白名單外部參考），再以 SSE 串流回覆。事件依次為 `meta`（`grounding`／`sources`／`topicTitle`／`webSources`／`webSupplementStatus`／`skillHint`）、`delta`（文字）、`done`（剩餘次數 `remaining`、課本用語對照 `termNotes`、`webSources`、`webSupplementStatus`、`skillHint`、`practiceQuestionId`）。可選 body 欄位：`practiceQuestionId`／`practiceSessionId`（伺服器自行重組**學生安全**練習上下文）、`goalTopicId`（學習目標課題，soft prior）。外部參考沿用 `TUTOR_WEB_SUPPLEMENT_ENABLED`（程式預設關閉；生產已開啟，主要用 Brave、失效或額度用完時改用 DeepSeek），關閉時 `webSources` 為空、狀態為 `disabled` |
 | `GET /api/tutor/practice-context?questionId=&sessionId=` | 練習 → 學伴的**學生安全**上下文（課題、題型、技能標籤、題幹摘要 ≤300 字、引導問題）。**不含**標準答案、解釋、知識點或選項對錯；未發布／未達派題要求 → 404（同一句訊息），他人練習 → 403 |
 | `GET/POST /api/admin/materials` | 教材清單／上載（亦可用 `source=pilot` 匯入專案內試點教材）—**管理員** |
 | `GET/POST /api/admin/materials/[documentId]/ocr` | 查詢 OCR 狀態／開始辨識（背景執行，`?wait=1` 為同步） |
@@ -1065,8 +1080,10 @@ scripts/setup-push-to-deploy.ps1  設定「推送即部署」的 GitHub → Clou
 | `GET/POST /api/teacher/questions/[questionId]/review` | 查閱題目的覆核狀態及紀錄／記錄人工覆核決定（`{decision: "approved" \| "rejected" \| "returned", reason?}`；退回或不可用必須有原因；重複提交不會重複記錄） |
 | `GET/PATCH /api/teacher/reports` | 題目回報清單（可按狀態／課題篩選）／處理回報。`PATCH` 可用 `{status}` 只更新回報，或用 `{action: "withdraw-question"}` 一併暫時下架題目、`{action: "revalidate-question"}` 重新執行自動品質驗證；實際行動會記錄在回報的 `resolution_action` |
 | `GET/POST /api/teacher/content-improvement` | 解釋補寫／技能確認的工作佇列（唯讀，可按標記、解釋分類、建議改進類型及是否已標記篩選）／批次標記 `explanation_needs_rewrite`、`skill_needs_confirmation`（`{flag, action: "mark" \| "clear", questionIds, reason}`，最多 200 題、必須有理由）。標記只寫入 `question_content_flags`（只可新增），**不會**改變題目內容、答案、技能或發布狀態 |
-| `GET /api/teacher/records` | 學生練習記錄（可按 `topicId`、`learnerId`、`from`／`to` 日期篩選），每筆含作答日期、課題、題型及答對／答錯的題目；每題另附 `options`（選擇題全部選項）、`explanation`、`knowledgePoint`、`sourceLocation`、`sourceExcerpt`，供教師與學生回顧完整題目（**學生端作答時的回應不含這些欄位**）。另回傳 `learners`（每位學生的姓名、班別、學號、電郵、練習次數、累計答題及答對比率）及 `rosterSource`（`live`／`snapshot`／`none`） |
-| `GET /api/teacher/records/export` | 下載學生練習記錄：`?format=csv`（預設，每題一列，UTF-8 BOM）、`xlsx`（匯出說明＋練習概況＋逐題記錄三張工作表）、`docx`／`pdf`（每次練習一節，附逐題表格）。同樣支援上述篩選；不支援的格式回 400 |
+| `GET /api/teacher/records` | 學生練習記錄（可按 `topicId`、`learnerId`、`from`／`to` 日期、`correctMin`／`correctMax` 答對題數及 `accuracyMin`／`accuracyMax` 答對百分比篩選），每筆含作答日期、課題、題型及答對／答錯的題目；每題另附 `options`（選擇題全部選項）、`explanation`、`knowledgePoint`、`sourceLocation`、`sourceExcerpt`，供教師與學生回顧完整題目（**學生端作答時的回應不含這些欄位**）。另回傳 `summary`（**整個查詢範圍**的練習次數、學習者人數、答對／答錯／已評分題數）、`truncated`（清單是否受 200 次上限截斷）、`learners`（每位學生的姓名、班別、學號、電郵、練習次數、累計答題及答對比率）及 `rosterSource`（`live`／`snapshot`／`none`） |
+| `GET /api/teacher/records/export` | 下載學生練習記錄：`?format=csv`（預設，每題一列，UTF-8 BOM）、`xlsx`（匯出說明＋練習概況＋逐題記錄三張工作表）、`docx`／`pdf`（每次練習一節，附逐題表格）。同樣支援上述篩選（上限 2,000 次）；不支援的格式回 400 |
+| `GET /api/records` | **學生端**：我的練習記錄。學習者身分只取自工作階段（`learnerId` 參數只在匿名示範模式使用，已登入時會被忽略），回傳格式與教師端相同（`records`／`summary`／`truncated`／`limit`／`topics`），但永遠只包含自己的記錄 |
+| `GET /api/records/export` | **學生端**：下載自己的練習記錄（`csv`／`xlsx`／`docx`／`pdf`，上限 2,000 次）。學習者身分同樣只取自工作階段 |
 | `PATCH /api/admin/sections/[sectionId]` | 修改分節名稱、說明及關鍵詞（**管理員**） |
 | `PATCH /api/admin/topics/[topicId]` | 發布／取消發布課題（**管理員**） |
 | `GET /api/admin/system/health` | 管理員端系統狀態（版本、資料庫、LLM、OCR、登入、部署提示、環境變數問題）（**管理員**） |
@@ -2302,7 +2319,7 @@ npm run open:materials -- --owner-email ipwh@pochiu.edu.hk --reason "…" --topi
 | [.gcloudignore](.gcloudignore) | `gcloud builds submit` 上載時排除 `secrets/`、`data/`、`node_modules`、`.next`、`.env*`。**`gcloud builds submit` 只看 `.gcloudignore`，不會理會 `.gitignore`**，若沒有這個檔案，服務帳戶金鑰就會被上載到 Cloud Build 暫存 bucket |
 | [.gitattributes](.gitattributes) | 標示 `*.pdf` 為二進位：`core.autocrlf=true` 的環境會把 PDF 當文字檔改寫行尾，令 `tests/fixtures/` 的測試樣本 xref 位移失效而無法解析 |
 | [cloudbuild.yaml](cloudbuild.yaml) | Cloud Build：建置映像檔 → 推送 Artifact Registry → 部署 Cloud Run（環境變數及 `--set-secrets` 已備妥） |
-| [scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1) | 一鍵完成：啟用 API → 建立 Artifact Registry → 建立**資料備份 bucket 並授權執行身分** → 建立 Secret（`AUTH_SECRET` 隨機產生）→ 建立名冊服務帳戶 → 建置及部署 → 輸出服務網址與 OAuth 重新導向網址。**預設為模擬模式，加 `-Apply` 才真正執行**；LLM API key 及 Google 憑證未經參數提供時會自動讀取本機 `.env.local`，仍沒有時**不會**覆寫線上已設定的 Secret |
+| [scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1) | 一鍵完成：啟用 API → 建立 Artifact Registry → 建立**資料備份 bucket 並授權執行身分** → 建立 Secret（`AUTH_SECRET` 隨機產生）→ 建立名冊服務帳戶 → 建置及部署 → 輸出服務網址與 OAuth 重新導向網址。**預設為模擬模式，加 `-Apply` 才真正執行**；LLM API key、Google 憑證及學伴外部參考的 Brave Search key（`-TutorWebSearchApiKey`）未經參數提供時會自動讀取本機 `.env.local`，仍沒有時**不會**覆寫線上已設定的 Secret |
 
 ```powershell
 # 1. 先看會執行哪些指令（不會建立任何雲端資源）
@@ -2323,6 +2340,13 @@ npm run open:materials -- --owner-email ipwh@pochiu.edu.hk --reason "…" --topi
 >
 > **LLM API key 及 Google 憑證**：未以參數或環境變數提供時，指令碼會讀取本機
 > [.env.local](.env.local) 的 `DEEPSEEK_API_KEY`／`GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET`。
+>
+> **學伴「外部參考」的 Brave 搜尋**（選用）：在 `.env.local` 填好 `TUTOR_WEB_SEARCH_API_KEY`
+> （Brave Search API key）後，直接執行同一條部署指令即可——指令碼會建立／更新
+> Secret `history-brave-search-api-key`、授權執行身分讀取，並把 secret 名稱傳給
+> Cloud Build（provider 及後備已在 cloudbuild 預設為 `brave`／`deepseek`）。
+> 亦可用 `-TutorWebSearchApiKey` 明確指定。未提供時不會注入，外部參考會自動使用
+> DeepSeek 後備來源。
 > 若兩者都沒有，指令碼**只會在該 Secret 完全沒有版本時**才寫入佔位值，
 > 已有版本則保留原值——避免一次忘記傳參數就把線上登入及 AI 出題弄壞。
 
@@ -2572,10 +2596,11 @@ docker run --rm -p 8080:8080 -e LLM_PROVIDER=mock -e APP_DATABASE_PATH=/tmp/data
 | `DEMO_AUTO_PUBLISH_QUESTIONS` | 本機 `true`／正式 `false` | 示範模式是否自動發布**本地示範生成**的題目（未經任何驗證）；只限非正式環境生效 |
 | `AUTO_PUBLISH_VALIDATED_QUESTIONS` | `true` | 是否讓**通過自動品質驗證**的題目立即供學生自學（Sprint 7.8；任何環境適用）。設為 `false` 即回復「只發布經人工覆核題目」的舊行為，已驗證題目會留在草稿 |
 | `EXPLANATION_HOLD_POLICY` | `off` | 解釋未達標是否暫緩派發：`off`／`placeholder`／`placeholder-or-answer-only`。**屬產品決定**：以 2026-10-20 題庫計，`placeholder` 會令可派發題目由 1,875 題減至 546 題，`placeholder-or-answer-only` 則為 0 題。無效值回退 `off` 並顯示 error 級設定警示；啟用時顯示 warning 及影響範圍 |
-| `TUTOR_WEB_SUPPLEMENT_ENABLED` | `false`（**生產於 2026-11-01 設為 `true`**） | 學伴白名單網頁補充（外部參考）開關。程式預設關閉＝零外網請求；生產現已開啟，但在補上 `TUTOR_WEB_SEARCH_ENDPOINT` 前為 `not-used`、不會有外部參考 |
-| `TUTOR_WEB_SEARCH_ENDPOINT` | 空 | 相容 `POST {query, domains, limit}` → `{results: [{url, title}]}` 的搜尋端點（必須 `https://` 及公網位址）。未設定＝不做搜尋，外部參考狀態為 `not-used`；平台不會自行爬取搜尋結果頁 |
-| `TUTOR_WEB_SEARCH_PROVIDER`／`TUTOR_WEB_SEARCH_ENGINE_ID`／`TUTOR_WEB_SEARCH_API_KEY` | 空 | 第三方搜尋 API 薄包裝：`google`（另需 `cx`＝`ENGINE_ID`）或 `brave`。與 `TUTOR_WEB_SEARCH_ENDPOINT` 二選一（端點優先）。**API key 只可由 Secret Manager 注入**；⚠️ 選用後學生提問會送到該第三方 |
-| `TUTOR_WEB_SEARCH_SITE_HINTS` | 空 | 附加 `(site:a OR site:b …)` 到 provider 查詢（最多 6 個）。中文提問若不設，結果多數被白名單過濾成 `not-used` |
+| `TUTOR_WEB_SUPPLEMENT_ENABLED` | `false`（**生產於 2026-11-01 設為 `true`**） | 學伴白名單網頁補充（外部參考）開關。程式預設關閉＝零外網請求；生產已開啟（2026-11-06 起配合 `TUTOR_WEB_SEARCH_PROVIDER=brave` 及 DeepSeek 後備，外部參考會實際運作） |
+| `TUTOR_WEB_SEARCH_ENDPOINT` | 空 | 相容 `POST {query, domains, limit}` → `{results: [{url, title}]}` 的搜尋端點（必須 `https://` 及公網位址）。未設定時改用 `TUTOR_WEB_SEARCH_PROVIDER`；兩者皆空＝`not-used`；平台不會自行爬取搜尋結果頁 |
+| `TUTOR_WEB_SEARCH_PROVIDER`／`TUTOR_WEB_SEARCH_API_KEY`／`TUTOR_WEB_SEARCH_BASE_URL` | `brave`（預設）／空／空 | 主要搜尋來源：`brave` 或 `deepseek`（`google` 已移除）。與 `TUTOR_WEB_SEARCH_ENDPOINT` 二選一（端點優先）。**API key 只可由 Secret Manager 注入**；⚠️ 選用後學生提問會送到該第三方 |
+| `TUTOR_WEB_SEARCH_FALLBACK_PROVIDER`／`TUTOR_WEB_SEARCH_FALLBACK_API_KEY`／`TUTOR_WEB_SEARCH_FALLBACK_BASE_URL` | 主要來源為 `brave` 時預設 `deepseek`／空（沿用 `DEEPSEEK_API_KEY`）／空 | 後備搜尋來源：主要來源**失效**（請求失敗、逾時，或結果全部不在白名單）時改用。設為 `none` 可關閉後備。DeepSeek 與學伴共用同一個 API key，不另需憑證；兩次嘗試各佔一半時間預算。主要來源回 **401／402／403／429（配額、帳單、權限）** 時會暫停 10 分鐘，期間直接使用後備 |
+| `TUTOR_WEB_SEARCH_SITE_HINTS` | 白名單首 4 個 host（例如 `britannica.com`、`bbc.co.uk`、`bbc.com`、`history.com`） | 附加 `site:` 提示到 provider 查詢（最多 6 個）。**2026-11-06 以真實 API 核對**：中文提問若不設提示，第三方搜尋多數回傳共筆百科／內容農場，全部被白名單丟棄成 `not-used`；加上提示後能命中已核准網站。DeepSeek 只接受不加括號的 `site:a OR site:b`，且查詢上限 128 字符（超出回 400），程式會先為提示預留長度 |
 | `TUTOR_WEB_ALLOWLIST` | 內建白名單 | 逗號分隔 host（不含協議），**整份覆蓋**預設白名單。IP、單一主機名、共筆百科及社交平台一律忽略（見第三節「學伴外部參考」） |
 | `TUTOR_WEB_MAX_SOURCES`／`TUTOR_WEB_MAX_CHARS_PER_SOURCE` | `2`／`600` | 每次回答最多引用幾段外部參考、每段送入提示詞的字數（硬上限 5／2,000） |
 | `TUTOR_WEB_FETCH_TIMEOUT_MS` | `4000` | 單次外網請求逾時 |

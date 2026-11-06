@@ -27,6 +27,19 @@ export async function GET() {
     const status = await getSystemStatus();
     const roster = await getRosterStatus({ load: false });
     const webSupplement = getServerConfig().webSupplement;
+    /**
+     * 「實際可用」的搜尋來源：主要來源已就緒就用它，否則用已就緒的後備。
+     * 只回報名稱，不會回傳端點網址或 API key。
+     */
+    const fallbackProvider = webSupplement.provider.fallback ?? null;
+    const activeSearchProvider =
+      webSupplement.searchEndpoint !== null
+        ? "endpoint"
+        : isTutorWebSearchProviderReady(webSupplement.provider)
+          ? webSupplement.provider.provider
+          : fallbackProvider !== null && isTutorWebSearchProviderReady(fallbackProvider)
+            ? fallbackProvider.provider
+            : null;
     return jsonOk(
       healthSchema.parse({
         ok: status.ok,
@@ -45,13 +58,9 @@ export async function GET() {
         tutorWeb: {
           enabled: webSupplement.enabled,
           mode: webSupplement.mode,
-          searchConfigured:
-            webSupplement.searchEndpoint !== null ||
-            isTutorWebSearchProviderReady(webSupplement.provider),
-          searchProvider:
-            webSupplement.searchEndpoint !== null
-              ? "endpoint"
-              : webSupplement.provider.provider,
+          // 關閉時固定 false（沒有「正在使用」的搜尋來源）；開啟時代表是否已有可用來源
+          searchConfigured: webSupplement.enabled && activeSearchProvider !== null,
+          searchProvider: webSupplement.enabled ? activeSearchProvider : null,
         },
         roster,
         // 教材庫概況（只有數量）：診斷「學生端為甚麼沒有教材」

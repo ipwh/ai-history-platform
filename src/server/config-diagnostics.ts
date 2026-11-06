@@ -446,24 +446,57 @@ export function describeConfigIssues(): ConfigIssue[] {
       });
     }
     const rawProvider = (process.env.TUTOR_WEB_SEARCH_PROVIDER ?? "").trim().toLowerCase();
-    if (rawProvider.length > 0 && config.webSupplement.provider.provider === null) {
+    if (rawProvider.length > 0 && !(TUTOR_WEB_SEARCH_PROVIDERS as readonly string[]).includes(rawProvider)) {
       issues.push({
         level: "warning",
         code: "tutor-web-search-provider-invalid",
-        message: `TUTOR_WEB_SEARCH_PROVIDER="${rawProvider}" 不是有效值（${TUTOR_WEB_SEARCH_PROVIDERS.join("／")}）；已當作未設定。`,
+        message:
+          `TUTOR_WEB_SEARCH_PROVIDER="${rawProvider}" 不是有效值（${TUTOR_WEB_SEARCH_PROVIDERS.join("／")}）；` +
+          `已改用預設 ${config.webSupplement.provider.provider}。`,
+      });
+    }
+    if (rawProvider === "google") {
+      issues.push({
+        level: "warning",
+        code: "tutor-web-search-provider-google-removed",
+        message:
+          "TUTOR_WEB_SEARCH_PROVIDER=google 已移除（Google Programmable Search 在學校 Workspace 被停用，" +
+          "且 Custom Search JSON API 已於 2027-01-01 停止）：已改用預設 Brave。",
+      });
+    }
+    const fallback = config.webSupplement.provider.fallback ?? null;
+    const rawFallback = (process.env.TUTOR_WEB_SEARCH_FALLBACK_PROVIDER ?? "").trim().toLowerCase();
+    if (rawFallback.length > 0 && rawFallback !== "none" && fallback === null) {
+      issues.push({
+        level: "warning",
+        code: "tutor-web-search-fallback-invalid",
+        message: `TUTOR_WEB_SEARCH_FALLBACK_PROVIDER="${rawFallback}" 不是有效值（${TUTOR_WEB_SEARCH_PROVIDERS.join("／")}；設 none 可關閉後備）；已當作未設定。`,
       });
     }
     const providerReady = isTutorWebSearchProviderReady(config.webSupplement.provider);
-    if (config.webSupplement.provider.provider === "google" && !providerReady) {
+    const fallbackReady =
+      fallback !== null && isTutorWebSearchProviderReady(fallback);
+    if (config.webSupplement.provider.provider === "brave" && !providerReady) {
       issues.push({
         level: "warning",
         code: "tutor-web-search-provider-incomplete",
         message:
-          "TUTOR_WEB_SEARCH_PROVIDER=google 但缺少 TUTOR_WEB_SEARCH_ENGINE_ID（cx）或 API key（Secret Manager）：" +
-          "學伴不會有任何外部參考。",
+          "TUTOR_WEB_SEARCH_PROVIDER=brave 但缺少 TUTOR_WEB_SEARCH_API_KEY（Secret Manager 的 Brave Search API key）：" +
+          (fallbackReady
+            ? `主要來源不可用，學伴會改用後備來源（${fallback?.provider}）。`
+            : "學伴不會有任何外部參考。"),
       });
     }
-    if (config.webSupplement.searchEndpoint === null && !providerReady) {
+    if (fallback !== null && !fallbackReady) {
+      issues.push({
+        level: "warning",
+        code: "tutor-web-search-fallback-incomplete",
+        message:
+          `已設定後備搜尋來源（${fallback.provider}）但缺少 API key：主要來源失效時不會有後備。` +
+          "（DeepSeek 會沿用 DEEPSEEK_API_KEY／LLM_API_KEY。）",
+      });
+    }
+    if (config.webSupplement.searchEndpoint === null && !providerReady && !fallbackReady) {
       issues.push({
         level: "warning",
         code: "tutor-web-supplement-no-search",
@@ -472,12 +505,18 @@ export function describeConfigIssues(): ConfigIssue[] {
           "TUTOR_WEB_SEARCH_PROVIDER：學伴不會有任何外部參考（狀態固定為 not-used）。" +
           "平台不會退化成爬取搜尋引擎結果頁。",
       });
-    } else if (providerReady && config.webSupplement.searchEndpoint === null) {
+    } else if ((providerReady || fallbackReady) && config.webSupplement.searchEndpoint === null) {
+      const chain = [
+        config.webSupplement.provider.provider,
+        fallback === null ? null : fallback.provider,
+      ]
+        .filter((name): name is NonNullable<typeof name> => typeof name === "string")
+        .join(" → ");
       issues.push({
         level: "info",
         code: "tutor-web-search-provider-active",
         message:
-          `已使用第三方搜尋 API（${config.webSupplement.provider.provider}）作外部參考來源：` +
+          `已使用第三方搜尋 API（${chain}）作外部參考來源：` +
           "學生的提問內容（截斷至 200 字、不含任何身分資料）會送到該第三方，且只在教材找不到時才送出。" +
           "請確認符合學校私隱政策；如需完全留在校方，改用 TUTOR_WEB_SEARCH_ENDPOINT 自架代理。",
       });

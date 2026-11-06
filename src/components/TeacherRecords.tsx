@@ -8,12 +8,19 @@ import { learnerAccuracyLabel, practiceTopicLabel } from "@/lib/practice-summary
 import type {
   PracticeRecordLearner,
   PracticeRecordSession,
+  PracticeRecordSummary,
   PracticeRecordTopicOption,
 } from "@/lib/types";
 import { ErrorNotice, Loading, Notice, StatBox } from "@/components/ui";
+import { formatDateTime, PracticeRecordCard } from "@/components/PracticeRecordCard";
 
 interface RecordsResponse {
   records: PracticeRecordSession[];
+  /** 整個查詢範圍的統計（不受記錄清單筆數上限影響） */
+  summary?: PracticeRecordSummary;
+  /** 清單因筆數上限而只顯示部分記錄 */
+  truncated?: boolean;
+  limit?: number;
   topics: PracticeRecordTopicOption[];
   learners: PracticeRecordLearner[];
   rosterNotice: string | null;
@@ -27,6 +34,12 @@ interface Filters {
   learnerId: string;
   from: string;
   to: string;
+  /** 答對題數範圍（每次練習）；空字串＝不限 */
+  correctMin: string;
+  correctMax: string;
+  /** 答對百分比範圍（0-100）；空字串＝不限 */
+  accuracyMin: string;
+  accuracyMax: string;
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -36,6 +49,10 @@ const EMPTY_FILTERS: Filters = {
   learnerId: "",
   from: "",
   to: "",
+  correctMin: "",
+  correctMax: "",
+  accuracyMin: "",
+  accuracyMax: "",
 };
 
 function learnerName(learner: PracticeRecordLearner): string {
@@ -52,10 +69,21 @@ function learnerDetails(learner: PracticeRecordLearner): string {
     .join(" ・ ");
 }
 
-function formatDateTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("zh-HK", { hour12: false });
+/** 成績篩選是否「下限大於上限」（必然沒有結果，應即時提示而不是靜靜顯示空清單） */
+function rangeReversed(min: string, max: string): boolean {
+  if (min.trim().length === 0 || max.trim().length === 0) return false;
+  const lower = Number(min);
+  const upper = Number(max);
+  return Number.isFinite(lower) && Number.isFinite(upper) && lower > upper;
+}
+
+/** 數值是否落在（可為空的）範圍內 */
+function withinRange(value: number, min: string, max: string): boolean {
+  const lower = min.trim().length === 0 ? null : Number(min);
+  const upper = max.trim().length === 0 ? null : Number(max);
+  if (lower !== null && Number.isFinite(lower) && value < lower) return false;
+  if (upper !== null && Number.isFinite(upper) && value > upper) return false;
+  return true;
 }
 
 function learnerActivity(learner: PracticeRecordLearner): {
@@ -88,27 +116,11 @@ function queryString(filters: Filters): string {
   if (filters.learnerId) params.set("learnerId", filters.learnerId);
   if (filters.from) params.set("from", filters.from);
   if (filters.to) params.set("to", filters.to);
+  if (filters.correctMin.trim()) params.set("correctMin", filters.correctMin.trim());
+  if (filters.correctMax.trim()) params.set("correctMax", filters.correctMax.trim());
+  if (filters.accuracyMin.trim()) params.set("accuracyMin", filters.accuracyMin.trim());
+  if (filters.accuracyMax.trim()) params.set("accuracyMax", filters.accuracyMax.trim());
   return params.toString();
-}
-
-function outcomeBadge(record: PracticeRecordSession["questions"][number]) {
-  if (!record.answered) return { label: "未作答", className: "badge" };
-  if (record.isCorrect === true) return { label: "答對", className: "badge badge-success" };
-  if (record.isCorrect === false) return { label: "答錯", className: "badge badge-danger" };
-  return {
-    label: record.selfAssessment === "needs-review" ? "需重溫" : "待自我檢查",
-    className: "badge badge-warning",
-  };
-}
-
-/** 選擇題選項的 A／B／C／D 標記（與學生作答時看到的次序一致） */
-function optionLetter(index: number): string {
-  return String.fromCharCode(65 + index);
-}
-
-/** 需要與學生逐題回顧的題目：答錯或未作答 */
-function needsReview(question: PracticeRecordSession["questions"][number]): boolean {
-  return !question.answered || question.isCorrect === false;
 }
 
 /** 教師端：學生練習記錄查閱及下載（作答日期、課題、題型、答對及答錯的題目） */
@@ -257,11 +269,31 @@ export function TeacherRecords() {
             : activityFilter === "never-started"
               ? learner.sessions === 0
               : false);
-    return matchesClass && matchesForm && matchesSearch && matchesActivity;
+    // 成績篩選同時套用於名冊名單（終身累計答對題數及答對比率）
+    const matchesCorrect = withinRange(learner.correctCount, draft.correctMin, draft.correctMax);
+    const matchesAccuracy = withinRange(
+      learner.accuracy === null ? 0 : Math.round(learner.accuracy * 100),
+      draft.accuracyMin,
+      draft.accuracyMax,
+    );
+    return matchesClass && matchesForm && matchesSearch && matchesActivity && matchesCorrect && matchesAccuracy;
   });
-  const correctTotal = records.reduce((sum, record) => sum + record.correctCount, 0);
-  const wrongTotal = records.reduce((sum, record) => sum + record.wrongCount, 0);
-  const learnerCountInRecords = new Set(records.map((record) => record.learnerId)).size;
+  /**
+   * 本次查詢統計一律取伺服器彙總（涵蓋整個查詢範圍）。
+   *
+   * 2026-11-06 審核：舊版以 `records` 加總，而清單受 API 預設 200 次上限約束，
+   * 因此練習次數最多只會顯示 200，答對／答錯題數亦只計算最新 200 次；與匯出
+   * （上限 2,000）不一致。現改由 SQL 彙總，並在清單被截斷時如實說明。
+   */
+  const correctTotal = data?.summary?.correct ?? records.reduce((sum, record) => sum + record.correctCount, 0);
+  const wrongTotal = data?.summary?.wrong ?? records.reduce((sum, record) => sum + record.wrongCount, 0);
+  const sessionTotal = data?.summary?.sessions ?? records.length;
+  const learnerCountInRecords =
+    data?.summary?.learners ?? new Set(records.map((record) => record.learnerId)).size;
+  const gradedTotal = data?.summary?.graded ?? correctTotal + wrongTotal;
+  const accuracyTotal = gradedTotal > 0 ? Math.round((correctTotal / gradedTotal) * 100) : null;
+  const recordsTruncated = data?.truncated === true;
+  const recordLimit = data?.limit ?? 200;
   const notStartedCount = learners.filter((learner) => learner.sessions === 0).length;
   const learnerById = new Map(learners.map((learner) => [learner.learnerId, learner]));
   /**
@@ -467,6 +499,64 @@ export function TeacherRecords() {
             />
           </label>
         </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="text-sm">
+            答對題數（最少）
+            <input
+              type="number"
+              min={0}
+              inputMode="numeric"
+              value={draft.correctMin}
+              onChange={(event) => setDraft({ ...draft, correctMin: event.target.value })}
+              placeholder="不限"
+            />
+          </label>
+          <label className="text-sm">
+            答對題數（最多）
+            <input
+              type="number"
+              min={0}
+              inputMode="numeric"
+              value={draft.correctMax}
+              onChange={(event) => setDraft({ ...draft, correctMax: event.target.value })}
+              placeholder="不限"
+            />
+          </label>
+          <label className="text-sm">
+            答對百分比（最少，0-100）
+            <input
+              type="number"
+              min={0}
+              max={100}
+              inputMode="numeric"
+              value={draft.accuracyMin}
+              onChange={(event) => setDraft({ ...draft, accuracyMin: event.target.value })}
+              placeholder="不限"
+            />
+          </label>
+          <label className="text-sm">
+            答對百分比（最多，0-100）
+            <input
+              type="number"
+              min={0}
+              max={100}
+              inputMode="numeric"
+              value={draft.accuracyMax}
+              onChange={(event) => setDraft({ ...draft, accuracyMax: event.target.value })}
+              placeholder="不限"
+            />
+          </label>
+        </div>
+        <p className="text-xs text-gray-500">
+          「答對題數」及「答對百分比」會同時篩選逐次練習記錄（匯出範圍亦跟隨），以及下方
+          「學習者使用概況」的<strong>終身累計</strong>數值；未作答／未評分的練習不計入百分比。
+        </p>
+        {rangeReversed(draft.correctMin, draft.correctMax) ? (
+          <Notice tone="warning">「答對題數」下限大於上限，不會有符合條件的記錄。</Notice>
+        ) : null}
+        {rangeReversed(draft.accuracyMin, draft.accuracyMax) ? (
+          <Notice tone="warning">「答對百分比」下限大於上限，不會有符合條件的記錄。</Notice>
+        ) : null}
         <p className="text-xs text-gray-500">
           「活動狀態」只收窄下面的「學習者使用概況」清單，<strong>不會改變已查詢的記錄</strong>。
         </p>
@@ -556,11 +646,23 @@ export function TeacherRecords() {
         >
           <span className="text-sm font-semibold">本次查詢統計</span>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            <StatBox label="練習次數" value={`${records.length}`} />
+            <StatBox label="練習次數" value={`${sessionTotal}`} />
             <StatBox label="學習者人數" value={`${learnerCountInRecords}`} />
             <StatBox label="答對題數" value={`${correctTotal}`} />
             <StatBox label="答錯題數" value={`${wrongTotal}`} />
           </div>
+          <p className="text-xs text-gray-500">
+            統計涵蓋<strong>符合目前篩選的全部記錄</strong>
+            {accuracyTotal !== null ? `；整體答對百分比 ${accuracyTotal}%（${correctTotal}／${gradedTotal} 已評分題目）` : ""}
+            。
+          </p>
+          {recordsTruncated ? (
+            <Notice tone="info">
+              下方逐題記錄只顯示最新 <strong>{records.length}</strong> 次（上限 {recordLimit} 次），
+              但上方統計已包括其餘 <strong>{Math.max(sessionTotal - records.length, 0)}</strong> 次。
+              如需完整資料，請使用匯出功能（上限 2,000 次）。
+            </Notice>
+          ) : null}
         </div>
 
         <div
@@ -708,7 +810,8 @@ export function TeacherRecords() {
               </label>
               <span className="text-sm text-gray-600">
                 {applied.learnerId ? `目前顯示：${activeLearnerName}` : "目前顯示：全部學習者"}
-                ・共 {records.length} 次練習
+                ・共 {sessionTotal} 次練習
+                {recordsTruncated ? `（列表只顯示最新 ${records.length} 次）` : ""}
               </span>
             </div>
           </div>
@@ -725,133 +828,15 @@ export function TeacherRecords() {
         ) : null}
 
         {records.map((record) => (
-          <article
+          <PracticeRecordCard
             key={record.sessionId}
-            className="rounded-xl border p-3 flex flex-col gap-2"
-            style={{ borderColor: "var(--border)" }}
-          >
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="badge badge-accent">
-                {learnerById.get(record.learnerId)?.name || record.learnerLabel}
-              </span>
-              {record.learnerClassName || record.learnerStudentNumber ? (
-                <span className="text-xs text-gray-500">
-                  {[record.learnerClassName, record.learnerStudentNumber ? `學號 ${record.learnerStudentNumber}` : ""]
-                    .filter(Boolean)
-                    .join(" ・ ")}
-                </span>
-              ) : null}
-              <span className="font-semibold">{formatDateTime(record.createdAt)}</span>
-              <span>{topicLabelById.get(record.topicId) ?? record.topicTitle}</span>
-              {record.questionTypeLabels.map((label) => (
-                <span key={label} className="badge">
-                  {label}
-                </span>
-              ))}
-              <span className="badge badge-success">答對 {record.correctCount}</span>
-              <span className="badge badge-danger">答錯 {record.wrongCount}</span>
-              {record.accuracy !== null ? (
-                <span className="text-gray-600">
-                  準確率 {Math.round(record.accuracy * 100)}%
-                </span>
-              ) : null}
-              <button
-                type="button"
-                className="btn ml-auto"
-                onClick={() => toggle(record.sessionId)}
-              >
-                {expanded.includes(record.sessionId) ? "收起題目" : `查看題目（${record.totalQuestions}）`}
-              </button>
-            </div>
-
-            {expanded.includes(record.sessionId) ? (
-              (() => {
-                const visible = record.questions
-                  .map((question, index) => ({ question, index }))
-                  .filter((item) => !wrongOnly || needsReview(item.question));
-                if (visible.length === 0) {
-                  return (
-                    <p className="text-sm text-gray-600 mt-1">
-                      這次練習沒有答錯或未作答的題目。
-                    </p>
-                  );
-                }
-                return (
-                  <ul className="flex flex-col gap-2 mt-1">
-                    {visible.map(({ question, index }) => {
-                      const badge = outcomeBadge(question);
-                      const chosen = question.studentAnswer.trim();
-                      return (
-                        <li
-                          key={question.questionId}
-                          className="rounded-lg border p-2 text-sm flex flex-col gap-2"
-                          style={{ borderColor: "var(--border)" }}
-                        >
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-gray-500">{index + 1}.</span>
-                            <span className="badge">{question.questionTypeLabel}</span>
-                            <span className={badge.className}>{badge.label}</span>
-                            {question.sectionTitle ? (
-                              <span className="text-xs text-gray-500">{question.sectionTitle}</span>
-                            ) : null}
-                          </div>
-                          <p className="whitespace-pre-wrap font-medium">{question.question}</p>
-                          {question.options.length > 0 ? (
-                            <ol className="flex flex-col gap-1">
-                              {question.options.map((option, optionIndex) => {
-                                const isCorrect = option === question.correctAnswer;
-                                const isChosen = chosen.length > 0 && option === chosen;
-                                return (
-                                  <li
-                                    key={`${question.questionId}-${optionIndex}`}
-                                    className="flex flex-wrap items-start gap-2 rounded-lg px-2 py-1"
-                                    style={{
-                                      border: `1px solid ${isCorrect ? "var(--success)" : "var(--border)"}`,
-                                      background: isCorrect ? "var(--success-soft)" : "transparent",
-                                    }}
-                                  >
-                                    <span className="font-semibold">{optionLetter(optionIndex)}</span>
-                                    <span className="flex-1">{option}</span>
-                                    {isChosen ? (
-                                      <span
-                                        className={isCorrect ? "badge badge-success" : "badge badge-danger"}
-                                      >
-                                        學生選擇
-                                      </span>
-                                    ) : null}
-                                    {isCorrect ? <span className="badge badge-success">正確答案</span> : null}
-                                  </li>
-                                );
-                              })}
-                            </ol>
-                          ) : null}
-                          <p className="text-gray-700">
-                            學生答案：
-                            {chosen.length > 0 ? question.studentAnswer : "（未作答）"}
-                          </p>
-                          <p className="text-gray-700">正確答案：{question.correctAnswer}</p>
-                          {question.explanation ? (
-                            <p className="text-gray-700">解釋：{question.explanation}</p>
-                          ) : null}
-                          {question.knowledgePoint ? (
-                            <p className="text-gray-700">知識點：{question.knowledgePoint}</p>
-                          ) : null}
-                          {question.sourceExcerpt ? (
-                            <details className="text-xs text-gray-600">
-                              <summary className="cursor-pointer">
-                                教材依據{question.sourceLocation ? `：${question.sourceLocation}` : ""}
-                              </summary>
-                              <p className="whitespace-pre-wrap mt-1">{question.sourceExcerpt}</p>
-                            </details>
-                          ) : null}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                );
-              })()
-            ) : null}
-          </article>
+            record={record}
+            expanded={expanded.includes(record.sessionId)}
+            onToggle={() => toggle(record.sessionId)}
+            wrongOnly={wrongOnly}
+            learnerLabel={learnerById.get(record.learnerId)?.name || record.learnerLabel}
+            topicLabel={topicLabelById.get(record.topicId) ?? record.topicTitle}
+          />
         ))}
         </div>
       </section>

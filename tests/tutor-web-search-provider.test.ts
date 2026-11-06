@@ -12,21 +12,10 @@ import {
 
 const BRITANNICA = "https://www.britannica.com/event/Treaty-of-Versailles";
 
-function googleConfig(overrides: Partial<TutorWebSearchProviderConfig> = {}): TutorWebSearchProviderConfig {
-  return {
-    provider: "google",
-    apiKey: "test-key",
-    engineId: "test-cx",
-    siteHints: [],
-    ...overrides,
-  };
-}
-
 function braveConfig(overrides: Partial<TutorWebSearchProviderConfig> = {}): TutorWebSearchProviderConfig {
   return {
     provider: "brave",
     apiKey: "test-key",
-    engineId: null,
     siteHints: [],
     ...overrides,
   };
@@ -52,17 +41,17 @@ beforeEach(() => {
 });
 
 describe("provider 設定判斷", () => {
-  it("只接受 google／brave，其餘視為未設定", () => {
-    expect(parseTutorWebSearchProvider("google")).toBe("google");
+  it("接受 brave／deepseek，其餘（包括已移除的 google）視為未設定", () => {
+    expect(parseTutorWebSearchProvider("google")).toBeNull();
     expect(parseTutorWebSearchProvider(" BRAVE ")).toBe("brave");
+    expect(parseTutorWebSearchProvider("deepseek")).toBe("deepseek");
+    expect(parseTutorWebSearchProvider(" DEEPSEEK ")).toBe("deepseek");
     expect(parseTutorWebSearchProvider("bing")).toBeNull();
     expect(parseTutorWebSearchProvider("")).toBeNull();
     expect(parseTutorWebSearchProvider(null)).toBeNull();
   });
 
-  it("key 齊全才算 ready；google 另需 cx，brave 不需要", () => {
-    expect(isTutorWebSearchProviderReady(googleConfig())).toBe(true);
-    expect(isTutorWebSearchProviderReady(googleConfig({ engineId: null }))).toBe(false);
+  it("Brave 及 DeepSeek 都只需 API key", () => {
     expect(isTutorWebSearchProviderReady(braveConfig())).toBe(true);
     expect(isTutorWebSearchProviderReady(braveConfig({ apiKey: "  " }))).toBe(false);
     expect(isTutorWebSearchProviderReady(braveConfig({ provider: null }))).toBe(false);
@@ -94,38 +83,22 @@ describe("查詢字串組裝", () => {
     expect(query).toContain("(site:britannica.com OR site:bbc.co.uk");
     expect(query).not.toContain("site:un.org");
   });
+
+  it("DeepSeek 語法：site 提示不加括號，並在 128 字符內保留完整提示", () => {
+    const hints = ["britannica.com", "bbc.co.uk", "history.com", "worldhistory.org"];
+    const query = buildProviderQuery("凡爾賽條約如何約束德國？".repeat(12), hints, TUTOR_WEB_SEARCH_QUERY_MAX_CHARS, {
+      hintSyntax: "plain",
+      hardMaxChars: 128,
+    });
+    expect(query.length).toBeLessThanOrEqual(128);
+    expect(query).not.toContain("(site:");
+    expect(query).toContain("site:britannica.com OR site:bbc.co.uk");
+    // 提示本身已超出上限時只用問題，不會留下半截 "site:"
+    expect(query.endsWith("site:")).toBe(false);
+  });
 });
 
 describe("呼叫第三方 provider", () => {
-  it("Google：帶 key／cx／num／safe=active，並映射 items", async () => {
-    const fetchMock = vi.fn<typeof fetch>(async () =>
-      jsonResponse({
-        items: [
-          { title: "Treaty of Versailles", link: BRITANNICA },
-          { title: "Ignored", link: "https://example.com/x" },
-          { title: "No link" },
-        ],
-      }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    const hits = await searchWithProvider({ query: "凡爾賽條約", config: googleConfig(), timeoutMs: 500 });
-    expect(hits).toEqual([
-      { url: BRITANNICA, title: "Treaty of Versailles" },
-      { url: "https://example.com/x", title: "Ignored" },
-    ]);
-
-    const url = calledUrl(fetchMock);
-    expect(url.origin + url.pathname).toBe("https://www.googleapis.com/customsearch/v1");
-    expect(url.searchParams.get("key")).toBe("test-key");
-    expect(url.searchParams.get("cx")).toBe("test-cx");
-    expect(url.searchParams.get("q")).toBe("凡爾賽條約");
-    expect(url.searchParams.get("num")).toBe("10");
-    // 學生使用：一律嚴格安全搜尋
-    expect(url.searchParams.get("safe")).toBe("active");
-    expect((calledInit(fetchMock) as { redirect?: string }).redirect).toBe("error");
-  });
-
   it("Brave：帶 X-Subscription-Token 及 safesearch=strict，並映射 web.results", async () => {
     const fetchMock = vi.fn<typeof fetch>(async () =>
       jsonResponse({ web: { results: [{ title: "條約", url: BRITANNICA }] } }),
@@ -143,10 +116,46 @@ describe("呼叫第三方 provider", () => {
     expect(headers["X-Subscription-Token"]).toBe("test-key");
   });
 
+  it("DeepSeek：POST /v1/tools/search（Bearer key、need_content=false），並映射 results", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      jsonResponse({
+        results: [
+          { title: "Treaty of Versailles | Britannica", url: BRITANNICA },
+          { title: "沒有網址" },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const hits = await searchWithProvider({
+      query: "凡爾賽條約如何約束德國？",
+      config: {
+        provider: "deepseek",
+        apiKey: "deepseek-key",
+        siteHints: ["britannica.com", "bbc.co.uk"],
+      },
+      timeoutMs: 500,
+    });
+    expect(hits).toEqual([{ url: BRITANNICA, title: "Treaty of Versailles | Britannica" }]);
+
+    const url = calledUrl(fetchMock);
+    expect(url.origin + url.pathname).toBe("https://api.deepseek.com/v1/tools/search");
+    const init = calledInit(fetchMock);
+    expect((init as { method?: string }).method).toBe("POST");
+    expect((init as { redirect?: string }).redirect).toBe("error");
+    const headers = (init as { headers?: Record<string, string> }).headers ?? {};
+    expect(headers.authorization).toBe("Bearer deepseek-key");
+    const body = JSON.parse(String(init.body)) as { query: string; count: number; need_content: boolean };
+    expect(body.need_content).toBe(false);
+    expect(body.count).toBe(10);
+    expect(body.query).toContain("site:britannica.com OR site:bbc.co.uk");
+    expect(body.query).not.toContain("(site:");
+  });
+
   it("未設定或不完整時回空陣列，且不發出請求", async () => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetchMock);
-    expect(await searchWithProvider({ query: "x", config: googleConfig({ engineId: null }), timeoutMs: 500 })).toEqual([]);
+    expect(await searchWithProvider({ query: "x", config: braveConfig({ apiKey: "  " }), timeoutMs: 500 })).toEqual([]);
     expect(await searchWithProvider({ query: "x", config: braveConfig({ provider: null }), timeoutMs: 500 })).toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -154,14 +163,14 @@ describe("呼叫第三方 provider", () => {
   it.each([401, 429, 500])("非 2xx（%i）會拋出，由呼叫方降級為 failed", async (status) => {
     vi.stubGlobal("fetch", vi.fn<typeof fetch>(async () => jsonResponse({}, status)));
     await expect(
-      searchWithProvider({ query: "凡爾賽條約", config: googleConfig(), timeoutMs: 500 }),
+      searchWithProvider({ query: "凡爾賽條約", config: braveConfig(), timeoutMs: 500 }),
     ).rejects.toThrow(String(status));
   });
 
-  it("回應格式不符（沒有 items）時回空陣列而不是拋錯", async () => {
-    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async () => jsonResponse({ kind: "customsearch#search" })));
+  it("回應格式不符（沒有 web.results）時回空陣列而不是拋錯", async () => {
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async () => jsonResponse({ kind: "brave#search" })));
     expect(
-      await searchWithProvider({ query: "凡爾賽條約", config: googleConfig(), timeoutMs: 500 }),
+      await searchWithProvider({ query: "凡爾賽條約", config: braveConfig(), timeoutMs: 500 }),
     ).toEqual([]);
   });
 });

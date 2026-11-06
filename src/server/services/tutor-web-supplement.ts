@@ -36,6 +36,7 @@ import {
   isTutorWebSearchProviderReady,
   searchWithProvider,
   toAllowlistedCandidates,
+  TutorWebSearchHttpError,
   type TutorWebSearchHit,
   type TutorWebSearchProviderConfig,
 } from "./tutor-web-search-provider";
@@ -237,6 +238,35 @@ export async function collectTutorWebSupplement(input: {
 }
 
 /**
+ * 主要來源因配額／權限問題而暫停多長時間（毫秒）。
+ *
+ * Brave 免費額度屬**每月**計算，用完後每次請求都會被拒（402／429）；若每題都先撞一次
+ * 才轉後備，學生會白等一次網絡往返。暫停 10 分鐘足以跨過「同一位學生連續提問」的時段，
+ * 到期後會再試一次，額度若已補充（新月份）便自動回復正常。
+ */
+export const TUTOR_WEB_PRIMARY_PAUSE_MS = 10 * 60 * 1000;
+
+/** 這些狀態代表「重試也不會成功」：配額、帳單、權限或金鑰問題 */
+const PRIMARY_PAUSE_STATUSES: readonly number[] = [401, 402, 403, 429];
+
+let primaryPausedUntil = 0;
+let primaryPausedProvider: string | null = null;
+
+/** 測試用：清除暫停狀態（正式執行時只有時間到期或主要來源恢復才會解除） */
+export function resetTutorWebSearchPause(): void {
+  primaryPausedUntil = 0;
+  primaryPausedProvider = null;
+}
+
+/** 主要來源的暫停狀態（供測試／診斷；不含任何金鑰） */
+export function tutorWebSearchPauseState(): { provider: string | null; until: number } {
+  return {
+    provider: primaryPausedUntil > Date.now() ? primaryPausedProvider : null,
+    until: primaryPausedUntil,
+  };
+}
+
+/**
  * 取得候選來源（**已按白名單過濾**）。
  *
  * 兩條路徑共用同一個過濾器 `toAllowlistedCandidates`：
@@ -244,20 +274,70 @@ export async function collectTutorWebSupplement(input: {
  *      回應 `{results:[{url,title}]}`（或陣列）；
  *   2. 未設端點但已設定 `TUTOR_WEB_SEARCH_PROVIDER`：進程內呼叫第三方搜尋 API（薄包裝）。
  * **任何**非白名單、非 https 的結果都會被丟棄，不會進入抓取階段。
+ *
+ * 若主要 provider「失效」（請求失敗、逾時，或回傳結果全部不在白名單），而設定了
+ * `fallback`，會再試後備來源（例如 Google／Brave 失效後改用 DeepSeek）。兩次嘗試各佔
+ * 一半時間預算，避免主要來源用盡預算而令後備永遠沒有機會。
+ *
+ * 配額或權限錯誤（401／402／403／429）會令主要來源暫停 `TUTOR_WEB_PRIMARY_PAUSE_MS`，
+ * 期間的提問直接使用後備；主要來源一次成功後即解除暫停。
  */
 export async function searchAllowlistedSources(
   query: string,
   config: TutorWebSupplementConfig,
 ): Promise<TutorWebCandidate[]> {
-  const hits =
-    config.searchEndpoint !== null
-      ? await searchViaEndpoint(query, config)
-      : await searchWithProvider({
-          query,
-          config: config.provider,
-          timeoutMs: config.fetchTimeoutMs,
-        });
-  return toAllowlistedCandidates(hits, config.allowlist);
+  if (config.searchEndpoint !== null) {
+    return toAllowlistedCandidates(await searchViaEndpoint(query, config), config.allowlist);
+  }
+
+  const primary = config.provider;
+  const fallback = primary.fallback ?? null;
+  const fallbackReady = fallback !== null && isTutorWebSearchProviderReady(fallback);
+  const attemptTimeoutMs = fallbackReady
+    ? Math.max(1, Math.floor(config.fetchTimeoutMs / 2))
+    : config.fetchTimeoutMs;
+  // 只有存在可用後備時才套用暫停；否則即使上次失敗也要再試，避免完全沒有外部參考
+  const primaryPaused =
+    fallbackReady &&
+    primaryPausedProvider === primary.provider &&
+    Date.now() < primaryPausedUntil;
+
+  let primaryError: unknown = null;
+  if (!primaryPaused) {
+    try {
+      const hits = await searchWithProvider({
+        query,
+        config: primary,
+        timeoutMs: attemptTimeoutMs,
+      });
+      // 主要來源恢復：解除暫停
+      primaryPausedUntil = 0;
+      primaryPausedProvider = null;
+      const candidates = toAllowlistedCandidates(hits, config.allowlist);
+      if (candidates.length > 0 || !fallbackReady) return candidates;
+    } catch (error) {
+      primaryError = error;
+      if (
+        fallbackReady &&
+        error instanceof TutorWebSearchHttpError &&
+        PRIMARY_PAUSE_STATUSES.includes(error.status)
+      ) {
+        primaryPausedUntil = Date.now() + TUTOR_WEB_PRIMARY_PAUSE_MS;
+        primaryPausedProvider = primary.provider;
+      }
+      if (!fallbackReady) throw error;
+    }
+  }
+
+  const fallbackHits = await searchWithProvider({
+    query,
+    config: fallback!,
+    timeoutMs: attemptTimeoutMs,
+  });
+  const fallbackCandidates = toAllowlistedCandidates(fallbackHits, config.allowlist);
+  // 後備沒有可用結果時，主要來源本身的錯誤較能解釋「為甚麼這次沒有外部參考」
+  if (fallbackCandidates.length === 0 && primaryError !== null) throw primaryError;
+  return fallbackCandidates;
 }
 
 /** 走自訂代理端點（HTTP 契約） */

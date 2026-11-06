@@ -16,6 +16,49 @@
 
 ---
 
+## [未發布] — 2026-11-06（八）：外部參考正式接上（Brave → DeepSeek 後備）＋記錄統計審核＋成績篩選＋學生端「我的記錄」
+
+**狀態**：已實作、已測試；**未部署**。
+
+### 新增
+
+- **學伴「外部參考」正式接上搜尋來源**：新增 DeepSeek Search provider（`POST https://api.deepseek.com/v1/tools/search`，與學伴共用 `DEEPSEEK_API_KEY`，不另需憑證），並支援「主要 → 後備」搜尋鏈。
+  - 預設 `TUTOR_WEB_SEARCH_PROVIDER=brave`；若 Brave 失敗（非 2xx、逾時）或回傳結果全部不在白名單，自動改用 `TUTOR_WEB_SEARCH_FALLBACK_PROVIDER`（預設 `deepseek`）。
+  - 兩次嘗試各佔一半時間預算（`TUTOR_WEB_BUDGET_MS`），避免主要來源用盡預算令後備永遠沒有機會。
+  - DeepSeek 只取標題及網址（`need_content: false`），正文仍由平台自行抓取，令白名單及 SSRF 檢查只有一套。
+  - `cloudbuild.yaml` 預設改為 `brave` ＋ `deepseek`；`.env.local` 同步開啟，令本機開發與生產行為一致。
+  - **provider 語法差異（以真實 API 核對）**：DeepSeek 只接受**不加括號**的 `site:a OR site:b`（加括號回 0 結果），查詢上限 128 字符（超出回 400 並帶 `invalid_request_error`）。`buildProviderQuery()` 因此支援 `hintSyntax: "plain"` 及 `hardMaxChars`，先為 `site:` 提示預留長度，避免截斷後留下半截 `site:`。
+  - **預設 `site:` 提示**：未設定 `TUTOR_WEB_SEARCH_SITE_HINTS` 時，使用白名單首 4 個 host。實測中文提問若不設提示，第三方搜尋回傳大量非白名單結果；加上提示後可命中已核准網站（`britannica.com`／`bbc.co.uk`／`history.com`／`worldhistory.org`）。
+  - **配額／權限錯誤會暫停主要來源**：主要來源回 401／402／403／429 時暫停 10 分鐘（`TUTOR_WEB_PRIMARY_PAUSE_MS`），期間的提問直接使用後備，不再每題白撞一次；主要來源一次成功後即解除。5xx／逾時只作單次降級，不會暫停。後備預設：主要來源為 `brave` 時使用 `deepseek`。
+  - **部署指令碼支援**：`scripts/deploy-cloud-run.ps1` 新增 `-TutorWebSearchApiKey` 及 `-TutorWebSearchSecret`；未提供時讀取 `.env.local` 的 `TUTOR_WEB_SEARCH_API_KEY`，自動建立或更新 Secret（預設名稱 `history-brave-search-api-key`）、授權 Cloud Run 執行身分讀取，並把 `_TUTOR_WEB_SEARCH_SECRET` 傳給 Cloud Build（在此之前，用指令碼部署不會注入任何搜尋 key）。
+  - **移除 Google 分支（同日）**：學校 Workspace 已停用「程式化搜尋引擎」，無法建立 `cx`（實際錯誤：機構已為使用者關閉這項服務）；加上 Custom Search JSON API 已停止接受新客戶並於 2027-01-01 結束。因此 `TUTOR_WEB_SEARCH_PROVIDERS` 只保留 `brave`／`deepseek`，並移除 `TUTOR_WEB_SEARCH_ENGINE_ID`、`TUTOR_WEB_SEARCH_FALLBACK_ENGINE_ID`、`isTutorWebSearchProviderReady` 的 cx 檢查、健康檢查的 `google` 值，以及 `searchWithProvider` 的 Google 請求；設定仍寫 `google` 時會出現 `tutor-web-search-provider-google-removed` 警示並改用預設 Brave。
+  - **實測**（2026-11-06，以專案 `DEEPSEEK_API_KEY` 直接呼叫）：中文提問「凡爾賽條約如何約束德國？」→ Brave 未設定 key 時自動改用 DeepSeek → 10 個白名單候選 → 抓取 BBC 頁面並抽取 600 字摘錄，整條路徑可用。
+  - 設定診斷：新增 `tutor-web-search-fallback-invalid`／`tutor-web-search-fallback-incomplete`；`tutor-web-supplement-no-search` 只在主要及後備皆不可用時出現；`searchProvider` 會回報實際可用的一環。`GET /api/health` 的 `searchConfigured` 亦把後備來源計算在內。
+- **教師端「學生練習記錄」：答對題數及答對百分比篩選**（擁有者要求「兩者都套用」）：新增 `correctMin`／`correctMax`／`accuracyMin`／`accuracyMax` 範圍篩選，同時套用於逐次練習記錄（匯出範圍跟隨）及「學習者使用概況」的終身累計數值；下限大於上限時即時提示。
+- **學生端「我的練習記錄」（`/records`）**：內容與教師端「學生練習記錄」相同，但只包含自己的記錄。
+  - 新 API `GET /api/records` 及 `GET /api/records/export`（CSV／XLSX／DOCX／PDF）：學習者身分只取自工作階段；查詢參數 `learnerId` 只在匿名示範模式使用，已登入時會被忽略（未登入且要求登入 → 401）。
+  - 導覽新增「我的記錄」；「我的帳戶」加入入口。
+  - 逐題回顧抽成共用元件 [PracticeRecordCard.tsx](src/components/PracticeRecordCard.tsx)，教師端與學生端顯示一致。
+
+### 修正
+
+- **「本次查詢統計」被 200 次上限截斷（審核發現）**：
+  - **現象**：教師端統計顯示「練習次數 200、學習者 25、答對 963、答錯 296」，而 200 正好等於 `recordFilterFromParams` 的預設 `limit`。
+  - **根因**：`correctTotal`／`wrongTotal`／`learnerCountInRecords` 以 `records` 陣列加總，而 `records` 只包含 API 回傳的最新 200 次練習；匯出用 2,000 次上限，因此畫面與匯出的數字不一致（統計只代表最新 200 次，不是整個查詢範圍）。
+  - **修法**：新增 `summarizeSessionsForRecords()`，由 SQL 以 session 為單位彙總**整個查詢範圍**（練習次數、學習者人數、答對／答錯／已評分題數），經 `summary` 回傳；`truncated` 如實說明清單是否被截斷，畫面同時顯示整體答對百分比。逐次清單仍保留上限（避免一次渲染過多逐題內容）。
+  - **迴歸測試**：[tests/practice-records-summary.test.ts](tests/practice-records-summary.test.ts)（`limit: 1` 時統計仍涵蓋 3 次；成績篩選的統計與清單一致）。
+
+### 資料庫
+
+- 無 migration：統計改以現有 `practice_sessions`／`attempts` 即時彙總。
+
+### 測試
+
+- **測試**：[tests/practice-records-summary.test.ts](tests/practice-records-summary.test.ts)、[tests/student-records-api.test.ts](tests/student-records-api.test.ts)（忽略他人 `learnerId`、401、匯出只含自己）、[tests/tutor-web-fallback.test.ts](tests/tutor-web-fallback.test.ts)（Google 失敗／空結果／全被白名單剔除 → DeepSeek；Google 成功不呼叫後備；兩者皆失敗 → 拋錯降級；Brave 402／429 → 改用 DeepSeek 且在冷卻期內不再呼叫 Brave；5xx 不暫停）。
+- `tests/authz-negative.test.ts` 的路由清單加入 `/api/records` 及 `/api/records/export`。
+
+---
+
 ## [未發布] — 2026-11-02（七）：測試暫存物件清理（修復 2.9 GB 級的資源洩漏）
 
 **狀態**：已實作、已測試；**未提交**（只影響測試基建，不影響執行期）。

@@ -90,6 +90,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     ...(role === "student" || role === "teacher" || role === "admin"
       ? [{ href: "/tutor", label: "歷史學伴", exact: false }]
       : []),
+    // 我的練習記錄：按教師端「學生練習記錄」的同一份內容，只顯示自己的記錄並可匯出
+    ...(authEnabled || demoMode ? [{ href: "/records", label: "我的記錄", exact: false }] : []),
     ...(authEnabled ? [{ href: "/account", label: "我的帳戶", exact: false }] : []),
     ...(showAdminNav ? ADMIN_NAV_ITEMS : []),
     ...(showTeacherNav ? TEACHER_NAV_ITEMS : []),

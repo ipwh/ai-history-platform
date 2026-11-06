@@ -234,12 +234,24 @@ export function recordLearnerIdsForFilters(
     .map((learner) => learner.learnerId);
 }
 
-/** 由查詢參數建立篩選條件（教師端 API 共用） */
+/**
+ * 由查詢參數建立篩選條件（教師端 API 共用）。
+ *
+ * 成績篩選（答對題數／答對百分比）只接受有限數字；空白或無效值一律視為「不限」，
+ * 避免使用者輸入未完成時把整個結果清空。
+ */
 export function recordFilterFromParams(
   params: URLSearchParams,
   defaultLimit = 200,
 ): PracticeRecordFilter {
   const limit = Number.parseInt(params.get("limit") ?? String(defaultLimit), 10);
+  const numberParam = (name: string, min: number, max: number): number | null => {
+    const raw = params.get(name)?.trim() ?? "";
+    if (raw.length === 0) return null;
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return null;
+    return Math.min(Math.max(value, min), max);
+  };
   return {
     topicId: params.get("topicId")?.trim() || null,
     learnerId: params.get("learnerId")?.trim() || null,
@@ -247,6 +259,10 @@ export function recordFilterFromParams(
     formLevel: params.get("formLevel")?.trim() || null,
     from: params.get("from")?.trim() || null,
     to: params.get("to")?.trim() || null,
+    correctMin: numberParam("correctMin", 0, 1_000),
+    correctMax: numberParam("correctMax", 0, 1_000),
+    accuracyMin: numberParam("accuracyMin", 0, 100),
+    accuracyMax: numberParam("accuracyMax", 0, 100),
     limit: Number.isFinite(limit) ? limit : defaultLimit,
   };
 }

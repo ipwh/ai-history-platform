@@ -397,44 +397,139 @@ export interface SessionRecordFilter {
   from?: string | null;
   /** 結束日期（含當日） */
   to?: string | null;
+  /** 每次練習的答對題數下限（含） */
+  correctMin?: number | null;
+  /** 每次練習的答對題數上限（含） */
+  correctMax?: number | null;
+  /** 每次練習的答對百分比下限（0-100，含） */
+  accuracyMin?: number | null;
+  /** 每次練習的答對百分比上限（0-100，含） */
+  accuracyMax?: number | null;
   limit?: number;
 }
 
-/** 教師端查閱用的練習記錄清單（最新在前，可依學習者、課題及日期篩選） */
-export function listSessionsForRecords(filter: SessionRecordFilter = {}): PracticeSession[] {
-  if (filter.learnerIds?.length === 0) return [];
+/** 每次練習的作答統計；以 session 為單位彙總，供篩選及統計共用（避免逐次讀取題目） */
+const SESSION_ATTEMPT_STATS_JOIN = `LEFT JOIN (
+    SELECT session_id,
+           SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) AS correct_count,
+           SUM(CASE WHEN is_correct = 0 THEN 1 ELSE 0 END) AS wrong_count,
+           COUNT(is_correct) AS graded_count
+    FROM attempts
+    GROUP BY session_id
+  ) attempt_stats ON attempt_stats.session_id = s.id`;
 
+/** 把篩選條件轉成 SQL 條件（`s` 為 practice_sessions 的別名） */
+function sessionRecordWhere(filter: SessionRecordFilter): { clause: string; params: (string | number)[] } {
   const conditions: string[] = [];
-  const params: string[] = [];
+  const params: (string | number)[] = [];
 
   if (filter.learnerIds) {
-    conditions.push(`learner_id IN (${filter.learnerIds.map(() => "?").join(", ")})`);
+    conditions.push(`s.learner_id IN (${filter.learnerIds.map(() => "?").join(", ")})`);
     params.push(...filter.learnerIds);
   }
   if (filter.learnerId) {
-    conditions.push("learner_id = ?");
+    conditions.push("s.learner_id = ?");
     params.push(filter.learnerId);
   }
   if (filter.topicId) {
-    conditions.push("topic_id = ?");
+    conditions.push("s.topic_id = ?");
     params.push(filter.topicId);
   }
   // created_at 為 ISO 字串，取前 10 個字元即日期部分，可直接作字串比較
   if (filter.from) {
-    conditions.push("substr(created_at, 1, 10) >= ?");
+    conditions.push("substr(s.created_at, 1, 10) >= ?");
     params.push(filter.from);
   }
   if (filter.to) {
-    conditions.push("substr(created_at, 1, 10) <= ?");
+    conditions.push("substr(s.created_at, 1, 10) <= ?");
     params.push(filter.to);
   }
+  if (typeof filter.correctMin === "number") {
+    conditions.push("COALESCE(attempt_stats.correct_count, 0) >= ?");
+    params.push(filter.correctMin);
+  }
+  if (typeof filter.correctMax === "number") {
+    conditions.push("COALESCE(attempt_stats.correct_count, 0) <= ?");
+    params.push(filter.correctMax);
+  }
+  // 答對百分比只對「有可評分題目」的練習有意義；沒有評分結果時不應符合任何百分比範圍
+  if (typeof filter.accuracyMin === "number") {
+    conditions.push(
+      "attempt_stats.graded_count > 0 AND (1.0 * attempt_stats.correct_count / attempt_stats.graded_count) >= ?",
+    );
+    params.push(filter.accuracyMin / 100);
+  }
+  if (typeof filter.accuracyMax === "number") {
+    conditions.push(
+      "attempt_stats.graded_count > 0 AND (1.0 * attempt_stats.correct_count / attempt_stats.graded_count) <= ?",
+    );
+    params.push(filter.accuracyMax / 100);
+  }
 
-  const clause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  return {
+    clause: conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "",
+    params,
+  };
+}
+
+/** 教師端查閱用的練習記錄清單（最新在前，可依學習者、課題、日期及成績篩選） */
+export function listSessionsForRecords(filter: SessionRecordFilter = {}): PracticeSession[] {
+  if (filter.learnerIds?.length === 0) return [];
+
+  const { clause, params } = sessionRecordWhere(filter);
   const limit = Math.min(Math.max(filter.limit ?? 500, 1), 2000);
   const rows = getDb()
-    .prepare(`SELECT * FROM practice_sessions ${clause} ORDER BY created_at DESC LIMIT ${limit}`)
+    .prepare(
+      `SELECT s.* FROM practice_sessions s ${SESSION_ATTEMPT_STATS_JOIN} ${clause}
+       ORDER BY s.created_at DESC LIMIT ${limit}`,
+    )
     .all(...params) as unknown as SessionRow[];
   return rows.map(mapSession);
+}
+
+/** 篩選範圍的完整統計（不受清單筆數上限影響） */
+export interface SessionRecordSummary {
+  /** 符合篩選條件的練習次數 */
+  sessions: number;
+  /** 符合篩選條件的學習者人數 */
+  learners: number;
+  /** 已評分並答對的題數 */
+  correct: number;
+  /** 已評分並答錯的題數 */
+  wrong: number;
+  /** 已評分題數（correct + wrong） */
+  graded: number;
+}
+
+/**
+ * 彙總符合篩選條件的所有練習記錄。
+ *
+ * 查閱用的記錄清單有筆數上限（避免一次渲染過多逐題內容），若統計只加總清單內的記錄，
+ * 「本次查詢統計」就會被上限截斷（例如永遠顯示 200 次練習）。因此統計改由 SQL 直接彙總，
+ * 令畫面數字代表整個查詢範圍。
+ */
+export function summarizeSessionsForRecords(filter: SessionRecordFilter = {}): SessionRecordSummary {
+  if (filter.learnerIds?.length === 0) {
+    return { sessions: 0, learners: 0, correct: 0, wrong: 0, graded: 0 };
+  }
+  const { clause, params } = sessionRecordWhere(filter);
+  const row = getDb()
+    .prepare(
+      `SELECT COUNT(*) AS sessions,
+              COUNT(DISTINCT s.learner_id) AS learners,
+              COALESCE(SUM(attempt_stats.correct_count), 0) AS correct,
+              COALESCE(SUM(attempt_stats.wrong_count), 0) AS wrong,
+              COALESCE(SUM(attempt_stats.graded_count), 0) AS graded
+       FROM practice_sessions s ${SESSION_ATTEMPT_STATS_JOIN} ${clause}`,
+    )
+    .get(...params) as unknown as SessionRecordSummary;
+  return {
+    sessions: Number(row.sessions) || 0,
+    learners: Number(row.learners) || 0,
+    correct: Number(row.correct) || 0,
+    wrong: Number(row.wrong) || 0,
+    graded: Number(row.graded) || 0,
+  };
 }
 
 /** 教師端查閱用：彙總所有曾使用平台的學習者活動（最新記錄在前） */

@@ -117,6 +117,19 @@ export function AccountView() {
       </section>
 
       <section className="card flex flex-col gap-3 text-sm">
+        <h2 className="font-semibold">我的練習記錄</h2>
+        <p className="text-gray-600">
+          你可以隨時查看自己的練習記錄（答對／答錯題目及教材依據），並以 Excel、Word、PDF 或
+          CSV 下載；內容與教師端看到的相同，但只包含你自己的記錄。
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/records" className="btn btn-primary">
+            查看我的練習記錄
+          </Link>
+        </div>
+      </section>
+
+      <section className="card flex flex-col gap-3 text-sm">
         <h2 className="font-semibold">登出</h2>
         <p className="text-gray-600">
           練習記錄會保留在學校系統內，供歷史科教師查閱及下載，登出不會刪除記錄。

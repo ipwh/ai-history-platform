@@ -34,6 +34,16 @@ function describeFilter(params: URLSearchParams, learnerLabel: string | null): s
   const from = params.get("from")?.trim();
   const to = params.get("to")?.trim();
   if (from || to) parts.push(`日期 ${from || "不限"} 至 ${to || "不限"}`);
+  const correctMin = params.get("correctMin")?.trim();
+  const correctMax = params.get("correctMax")?.trim();
+  if (correctMin || correctMax) {
+    parts.push(`答對題數 ${correctMin || "不限"} 至 ${correctMax || "不限"}`);
+  }
+  const accuracyMin = params.get("accuracyMin")?.trim();
+  const accuracyMax = params.get("accuracyMax")?.trim();
+  if (accuracyMin || accuracyMax) {
+    parts.push(`答對百分比 ${accuracyMin || "不限"} 至 ${accuracyMax || "不限"}`);
+  }
   return parts.length > 0 ? parts.join("、") : "全部課題、全部學習者";
 }
 

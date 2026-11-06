@@ -511,6 +511,11 @@ const PUBLIC_API_ROUTES = new Set([
   "POST /api/reports",
   // 學生自己的學習進度、重溫佇列及建議（學習者身分由工作階段推導，不接受偽造）
   "GET /api/progress",
+  // 學生自己的練習記錄及匯出（與教師端「學生練習記錄」同一份內容；學習者身分由
+  // 工作階段推導，查詢參數不能用來讀取他人記錄）。
+  // 負向授權（401／忽略他人 learnerId／匯出只含自己）見 tests/student-records-api.test.ts。
+  "GET /api/records",
+  "GET /api/records/export",
   // AI 歷史自學學伴：只限已登入且在名冊內的學生（身分由工作階段推導）。
   // 負向授權（401／跨學生 session 404／超額 429）見 tests/tutor-chat.test.ts。
   "GET /api/tutor/chat",

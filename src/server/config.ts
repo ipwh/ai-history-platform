@@ -636,6 +636,57 @@ function readWebSupplementConfig(): TutorWebSupplementConfig {
     rawAllowlist === null
       ? normalizeTutorWebAllowlist(DEFAULT_TUTOR_WEB_ALLOWLIST)
       : normalizeTutorWebAllowlist(rawAllowlist.split(/[,;|\s]+/));
+  const configuredHints = readList("TUTOR_WEB_SEARCH_SITE_HINTS");
+  /**
+   * 未設定 `TUTOR_WEB_SEARCH_SITE_HINTS` 時，以白名單首 4 個 host 作提示。
+   *
+   * 原因（2026-11-06 以真實 API 核對）：第三方搜尋引擎對中文提問會回傳大量共筆百科／
+   * 內容農場，全部被白名單丟棄，結果恒為「沒有外部參考」。加上少量 `site:` 後，
+   * 中文提問也能命中已核准網站。只用 4 個是為 DeepSeek 的 128 字符查詢上限預留空間。
+   */
+  const siteHints = configuredHints.length > 0 ? configuredHints : allowlist.slice(0, 4);
+  /**
+   * 主要搜尋來源（2026-11-06 擁有者決定）：**預設 Brave**。
+   *
+   * Google Programmable Search 分支已移除（學校 Workspace 停用該服務，無法建立 cx；
+   * 且 Custom Search JSON API 已於 2027-01-01 停止）。未設定時直接用 Brave；
+   * 沒有 Brave key 時不會有主要來源，會由後備 DeepSeek 接手。
+   */
+  const providerName = parseTutorWebSearchProvider(readEnv("TUTOR_WEB_SEARCH_PROVIDER")) ?? "brave";
+  /**
+   * 後備搜尋來源（2026-11-06 擁有者決定：Brave → DeepSeek）。
+   *
+   * 未設定 `TUTOR_WEB_SEARCH_FALLBACK_PROVIDER` 而主要來源是 Brave 時，預設使用
+   * DeepSeek：平台已為學伴設定 DeepSeek API key，因此「Brave 未接好、免費額度用完或
+   * 被限流（401／402／403／429）」時仍會有外部參考，不需要額外申請憑證。
+   * 設為 `none` 可明確關閉後備。
+   */
+  const rawFallback = readEnv("TUTOR_WEB_SEARCH_FALLBACK_PROVIDER");
+  const fallbackName =
+    rawFallback === null
+      ? providerName === "brave"
+        ? "deepseek"
+        : null
+      : parseTutorWebSearchProvider(rawFallback);
+
+  const provider = {
+    provider: providerName,
+    apiKey: readEnv("TUTOR_WEB_SEARCH_API_KEY"),
+    siteHints,
+    baseUrl: readEnv("TUTOR_WEB_SEARCH_BASE_URL"),
+    fallback:
+      fallbackName === null
+        ? null
+        : {
+            provider: fallbackName,
+            apiKey:
+              readEnv("TUTOR_WEB_SEARCH_FALLBACK_API_KEY") ??
+              (fallbackName === "deepseek" ? readLlmApiKey("deepseek") : null),
+            siteHints,
+            baseUrl: readEnv("TUTOR_WEB_SEARCH_FALLBACK_BASE_URL"),
+            fallback: null,
+          },
+  };
   return {
     enabled,
     mode: readTutorWebMode(enabled),
@@ -650,14 +701,7 @@ function readWebSupplementConfig(): TutorWebSupplementConfig {
     ),
     blockedTopicIds: readList("TUTOR_WEB_BLOCKED_TOPICS"),
     searchEndpoint: readEnv("TUTOR_WEB_SEARCH_ENDPOINT"),
-    // 第三方搜尋 API 薄包裝：與 searchEndpoint 二選一（端點優先）。API key 只由
-    // Secret Manager 注入，永不寫入 --set-env-vars 或映像檔。
-    provider: {
-      provider: parseTutorWebSearchProvider(readEnv("TUTOR_WEB_SEARCH_PROVIDER")),
-      apiKey: readEnv("TUTOR_WEB_SEARCH_API_KEY"),
-      engineId: readEnv("TUTOR_WEB_SEARCH_ENGINE_ID"),
-      siteHints: readList("TUTOR_WEB_SEARCH_SITE_HINTS"),
-    },
+    provider,
   };
 }
 

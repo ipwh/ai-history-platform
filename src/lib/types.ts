@@ -1015,6 +1015,46 @@ export interface PracticeRecordSession {
   questions: PracticeRecordQuestion[];
 }
 
+/**
+ * 篩選範圍的完整統計。
+ *
+ * 逐次練習清單有筆數上限，但統計數字必須代表整個查詢範圍，否則「本次查詢統計」
+ * 會隨上限截斷（例如練習次數永遠停在 200）。
+ */
+export interface PracticeRecordSummary {
+  /** 符合篩選條件的練習次數 */
+  sessions: number;
+  /** 符合篩選條件的學習者人數 */
+  learners: number;
+  /** 已評分並答對的題數 */
+  correct: number;
+  /** 已評分並答錯的題數 */
+  wrong: number;
+  /** 已評分題數（correct + wrong） */
+  graded: number;
+}
+
+/** 練習記錄清單及統計（教師端與學生端共用） */
+export interface PracticeRecordsPayload {
+  records: PracticeRecordSession[];
+  summary: PracticeRecordSummary;
+  topics: PracticeRecordTopicOption[];
+  /** 清單是否因筆數上限而只顯示部分記錄（統計仍涵蓋全部） */
+  truncated: boolean;
+  /** 清單最多顯示多少次練習 */
+  limit: number;
+}
+
+/** 教師端：學生練習記錄（另含名冊學習者及名冊狀態） */
+export interface TeacherRecordsPayload extends PracticeRecordsPayload {
+  learners: PracticeRecordLearner[];
+  rosterNotice: string | null;
+  rosterSource: "live" | "snapshot" | "none";
+}
+
+/** 學生端：我的練習記錄（只有自己的工作階段學習者 ID） */
+export type StudentRecordsPayload = PracticeRecordsPayload;
+
 /** 教師端學習記錄篩選器可選用的課題 */
 export interface PracticeRecordTopicOption {
   id: string;
@@ -1267,7 +1307,7 @@ export const healthSchema = z.object({
       enabled: z.boolean().default(false),
       mode: z.string().default("off"),
       searchConfigured: z.boolean().default(false),
-      /** 已設定的搜尋方式：`endpoint`（自訂代理）／`google`／`brave`／null */
+      /** 已設定的搜尋方式：`endpoint`（自訂代理）／`brave`／`deepseek`／null */
       searchProvider: z.string().nullable().default(null),
     })
     .default({ enabled: false, mode: "off", searchConfigured: false, searchProvider: null }),

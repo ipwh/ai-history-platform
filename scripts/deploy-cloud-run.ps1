@@ -10,7 +10,8 @@
      1. 啟用所需 API（run、artifactregistry、secretmanager、sheets、cloudbuild）
      2. 建立 Artifact Registry 倉庫
      3. 建立／更新 Secret Manager 機密：
-        AUTH_SECRET（隨機產生）、LLM API key、Google OAuth 用戶端 ID 及密碼
+         AUTH_SECRET（隨機產生）、LLM API key、Google OAuth 用戶端 ID 及密碼、
+         Brave Search API key（只在你提供時才建立）
      4. 建立名冊讀取服務帳戶及金鑰（JSON 存放於 ./secrets/，已被 .gitignore 忽略）
      5. 以 Cloud Build 建置映像檔並部署到 Cloud Run
      6. 輸出服務網址及需要登記的 OAuth 重新導向網址
@@ -29,6 +30,8 @@
        - AUTH_SECRET 未提供時即時隨機產生（已有版本時保留，避免登出所有使用者）
       - LLM API key 以 -LlmApiKey 或環境變數 DEEPSEEK_API_KEY 提供
       - Google 憑證以 -GoogleClientId／-GoogleClientSecret 或環境變數提供
+      - 學伴外部參考的 Brave key 以 -TutorWebSearchApiKey 或環境變數 TUTOR_WEB_SEARCH_API_KEY 提供
+        （未提供時會讀 .env.local；都沒有時不注入，外部參考自動使用 DeepSeek 後備）
        - 以上兩者未提供時，會依序讀取本機 .env.local；仍然沒有時**不會**覆寫
          已存在的 Secret（只在完全沒有版本時才寫入佔位值）
 
@@ -98,6 +101,11 @@ param(
     [string]$GoogleClientId = "",
     # Google OAuth 用戶端密碼（未提供時沿用環境變數 GOOGLE_CLIENT_SECRET）
     [string]$GoogleClientSecret = "",
+    # 學伴「外部參考」的 Brave Search API key（未提供時沿用環境變數
+    # TUTOR_WEB_SEARCH_API_KEY 或本機 .env.local）。留空即不注入，外部參考會改用 DeepSeek 後備。
+    [string]$TutorWebSearchApiKey = "",
+    # 存放 Brave Search API key 的 Secret Manager 名稱
+    [string]$TutorWebSearchSecret = "history-brave-search-api-key",
     # 服務帳戶金鑰 JSON 檔案路徑（未提供時自動建立 ./secrets/roster-service-account.json）
     [string]$RosterServiceAccountFile = "",
     # 不要自動建立名冊服務帳戶金鑰（Cloud Run 部署需要該 Secret，一般毋須使用）
@@ -224,6 +232,7 @@ $llmSecretName = "history-deepseek-api-key"
 $rosterSecretName = "history-roster-service-account"
 $googleIdSecretName = "history-google-client-id"
 $googleSecretSecretName = "history-google-client-secret"
+$tutorWebSearchSecretName = $TutorWebSearchSecret
 
 function Write-Step([string]$Text) {
     Write-Host ""
@@ -412,6 +421,25 @@ if ($googleId -and $googleSecret) {
     Write-Warning "未提供 Google OAuth 憑證：已放入佔位值（可設 GOOGLE_CLIENT_ID／GOOGLE_CLIENT_SECRET 或在 .env.local 填寫）。未啟用登入時，Cloud Run 上的後台 API 會被拒絕。"
 }
 
+$tutorSearchKey = if ($TutorWebSearchApiKey) {
+    $TutorWebSearchApiKey
+} elseif ($env:TUTOR_WEB_SEARCH_API_KEY) {
+    $env:TUTOR_WEB_SEARCH_API_KEY
+} else {
+    $localEnv["TUTOR_WEB_SEARCH_API_KEY"]
+}
+# 只在真的提供 key（或線上已有該 secret）時才注入；避免部署後指向不存在的 secret。
+$tutorSearchSecretExists = $existingSecrets -match [regex]::Escape($tutorWebSearchSecretName)
+if ($tutorSearchKey) {
+    Ensure-Secret -Name $tutorWebSearchSecretName -Existing $existingSecrets
+    Add-SecretVersion -Name $tutorWebSearchSecretName -Value $tutorSearchKey -Label "Brave Search API key（學伴外部參考）"
+} elseif (-not $Apply) {
+    Write-Host "  （模擬）如提供 Brave Search API key，會更新 $tutorWebSearchSecretName" -ForegroundColor DarkGray
+} else {
+    Write-Host "  未提供 Brave Search API key：外部參考會使用 DeepSeek 後備來源" -ForegroundColor DarkGray
+}
+$tutorWebSearchSecretForDeploy = if ($tutorSearchKey -or $tutorSearchSecretExists) { $tutorWebSearchSecretName } else { "" }
+
 Write-Step "5/8 建立名冊讀取服務帳戶及金鑰"
 $serviceAccountEmail = "$RosterServiceAccount@${Project}.iam.gserviceaccount.com"
 $existingAccounts = Invoke-Gcloud iam service-accounts list --project $Project --format "value(email)"
@@ -466,7 +494,9 @@ if ($Apply -and $existingAccounts -notmatch [regex]::Escape($runtimeServiceAccou
     Invoke-Gcloud iam service-accounts create $RuntimeServiceAccount --project $Project --display-name "History self-study Cloud Run runtime" --quiet | Out-Null
 }
 Write-Host "  Cloud Run 執行身分：$runtimeServiceAccountEmail" -ForegroundColor DarkGray
-foreach ($secretName in @($authSecretName, $llmSecretName, $rosterSecretName, $googleIdSecretName, $googleSecretSecretName)) {
+$secretNamesToGrant = @($authSecretName, $llmSecretName, $rosterSecretName, $googleIdSecretName, $googleSecretSecretName)
+if ($tutorWebSearchSecretForDeploy) { $secretNamesToGrant += $tutorWebSearchSecretName }
+foreach ($secretName in $secretNamesToGrant) {
     Invoke-Gcloud secrets add-iam-policy-binding $secretName --project $Project --member "serviceAccount:$runtimeServiceAccountEmail" --role roles/secretmanager.secretAccessor --quiet | Out-Null
 }
 # 只授權讀寫這個備份 bucket（不使用專案層級權限）
@@ -485,7 +515,7 @@ if (-not $RosterSheetId -and $Apply) {
 }
 # --allow-unauthenticated 是切換式旗標（不能寫 =true）；不允許公開存取時留空，改由 IAP／身分權杖保護
 $authFlag = if ($AllowUnauthenticated) { "--allow-unauthenticated" } else { "" }
-$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13},_STAFF_ACCESS_POLICY={14},_STAFF_DOMAINS={15},_REVIEWER_EMAILS={16},_ROSTER_CLASS_PREFIXES={17}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $adminEmailList, $teacherEmailList, $StaffAccessPolicy, $staffDomainList, $reviewerEmailList, $RosterClassPrefixes)
+$substitutions = ('_REGION={0},_SERVICE={1},_REPOSITORY={2},_IMAGE_NAME={3},_MAX_INSTANCES={4},_AUTH_FLAG={5},_RUNTIME_SA={6},_ROSTER_SHEET_ID={7},_ROSTER_SHEET_NAME={8},_BACKUP_BUCKET={9},_BACKUP_PREFIX={10},_BACKUP_INTERVAL_SECONDS={11},_ADMIN_EMAILS={12},_TEACHER_EMAILS={13},_STAFF_ACCESS_POLICY={14},_STAFF_DOMAINS={15},_REVIEWER_EMAILS={16},_ROSTER_CLASS_PREFIXES={17},_TUTOR_WEB_SEARCH_SECRET={18}' -f $Region, $Service, $Repository, $ImageName, $MaxInstances, $authFlag, $runtimeServiceAccountEmail, $RosterSheetId, $RosterSheetName, $backupBucketName, $BackupPrefix, $BackupIntervalSeconds, $adminEmailList, $teacherEmailList, $StaffAccessPolicy, $staffDomainList, $reviewerEmailList, $RosterClassPrefixes, $tutorWebSearchSecretForDeploy)
 Invoke-Gcloud builds submit --project $Project --config cloudbuild.yaml --substitutions $substitutions --timeout=1800s . | Out-Null
 
 # 已棄用的舊變數不會授予任何權限，但留著會產生 error 級設定警示，也容易令人誤以為仍然生效。

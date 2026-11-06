@@ -1,6 +1,6 @@
 import { handleRoute, jsonOk } from "@/server/http";
 import { requireTeacher } from "@/server/auth/guards";
-import { listRecordLearners } from "@/server/repositories/practice";
+import { listRecordLearners, summarizeSessionsForRecords } from "@/server/repositories/practice";
 import { listStoredRosterStudents } from "@/server/repositories/roster-identities";
 import { listTopics } from "@/server/repositories/topics";
 import { getRosterSnapshot } from "@/server/roster";
@@ -29,13 +29,16 @@ export async function GET(request: Request) {
     const rosterStudents = roster.students.length > 0 ? roster.students : listStoredRosterStudents();
     const learners = enrichRecordLearners(listRecordLearners(), rosterStudents);
     const filter = recordFilterFromParams(params);
+    const scopedFilter = {
+      ...filter,
+      learnerIds: recordLearnerIdsForFilters(learners, filter),
+    };
     const records = enrichPracticeRecordLabels(
-      listPracticeRecords({
-        ...filter,
-        learnerIds: recordLearnerIdsForFilters(learners, filter),
-      }),
+      listPracticeRecords(scopedFilter),
       learners,
     );
+    // 統計由 SQL 直接彙總整個查詢範圍；記錄清單則受筆數上限約束（見 truncated）
+    const summary = summarizeSessionsForRecords(scopedFilter);
     const topics = listTopics()
       .filter((topic) => topic.level !== 0)
       .map((topic) => ({
@@ -52,6 +55,10 @@ export async function GET(request: Request) {
         : null;
     return jsonOk({
       records,
+      summary,
+      // 清單被筆數上限截斷時，畫面要說明統計與清單的差異，避免誤以為只有這些記錄
+      truncated: records.length < summary.sessions,
+      limit: filter.limit ?? 200,
       topics,
       learners,
       rosterNotice,
