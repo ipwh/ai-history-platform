@@ -117,9 +117,10 @@ substitutions:
   # 後備搜尋來源；留空 = 主要來源是 brave 時自動使用 deepseek，其他情況不設後備。
   # 設為 none 可明確關閉後備。
   _TUTOR_WEB_SEARCH_FALLBACK_PROVIDER: "deepseek"
-  # Secret Manager 內存放 Brave Search API key 的 secret 名稱；留空 = 不注入該 secret
-  # （令尚未建立 secret 的專案仍可正常部署）。API key 絕不可寫進 --set-env-vars。
-  _TUTOR_WEB_SEARCH_SECRET: ""
+  # Secret Manager 內存放 Brave Search API key 的 secret 名稱；留空 = 不注入該 secret。
+  # 2026-11-06：生產已建立 `history-brave-search-api-key`，這裡設為預設值，令
+  # GitHub push-to-deploy（使用 cloudbuild.yaml 預設值）亦會注入 Brave key。
+  _TUTOR_WEB_SEARCH_SECRET: "history-brave-search-api-key"
   _BACKUP_BUCKET: ""
   _BACKUP_PREFIX: "history"
   _BACKUP_INTERVAL_SECONDS: "300"

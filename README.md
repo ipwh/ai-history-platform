@@ -436,7 +436,7 @@ materials/
    # printf '%s' "<新 key>" | gcloud secrets versions add history-brave-search-api-key --data-file=-
    ```
 
-   服務的執行身分必須有 `roles/secretmanager.secretAccessor`。`_TUTOR_WEB_SEARCH_SECRET` 留空時**不會**引用任何 secret，因此未建立 secret 的專案仍可正常部署。
+   服務的執行身分必須有 `roles/secretmanager.secretAccessor`。`_TUTOR_WEB_SEARCH_SECRET` 留空時**不會**引用任何 secret，因此未建立 secret 的專案仍可正常部署；本專案自 2026-11-06 起預設指向 `history-brave-search-api-key`。
 
 4. **`git push origin main`** 觸發 Cloud Build 部署（或本機 `gcloud builds submit --config cloudbuild.yaml --substitutions=...`）。
 
@@ -3201,7 +3201,7 @@ STUDENT_ROSTER_SERVICE_ACCOUNT_JSON=./secrets/roster-service-account.json
 健康檢查會回報狀態（例如 `sqlite`／`ok`）而不回報完整路徑，避免在公開部署時洩漏部署資訊或憑證。管理員端的系統狀態頁會顯示較詳細的設定提示（仍不含憑證）。
 
 **Q：`git push` 之後會自動部署到 Cloud Run 嗎？**
-預設不會。推送只更新 GitHub 上的原始碼，部署仍是手動執行 `./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply`（或 `gcloud builds submit --project pccss-ai-history --config cloudbuild.yaml`）。專案內沒有任何 GitHub Actions 設定，GCP 端亦預設沒有觸發程序。要改成「推送即部署」，執行 `./scripts/setup-push-to-deploy.ps1 -Project pccss-ai-history -Apply`：它會把 `materials/` 上載到**私有** bucket（版權內容不進 GitHub）、授權 Cloud Build 服務帳戶，並以線上服務現有設定建立 GitHub 觸發程序；`cloudbuild.yaml` 會先跑 `npm run lint` 及 `npm test`，再同步教材、建置及部署（見第十節）。
+預設不會。推送只更新 GitHub 上的原始碼，部署仍是手動執行 `./scripts/deploy-cloud-run.ps1 -Project pccss-ai-history -Apply`（或 `gcloud builds submit --project pccss-ai-history --config cloudbuild.yaml`）。專案內沒有任何 GitHub Actions 設定；正式環境（`pccss-ai-history`）已設有 GitHub 觸發程序 `history-main-push`，推送 `main` 會自動建置及部署（`cloudbuild.yaml` 先跑 `npm run lint` 及 `npm test`，再同步教材、建置及部署；`_TUTOR_WEB_SEARCH_SECRET` 預設已指向 `history-brave-search-api-key`）。要在其他專案建立同樣流程，執行 `./scripts/setup-push-to-deploy.ps1 -Project <專案> -Apply`：它會把 `materials/` 上載到**私有** bucket（版權內容不進 GitHub）、授權 Cloud Build 服務帳戶，並以線上服務現有設定建立 GitHub 觸發程序（見第十節）。
 
 **Q：部署 Cloud Run 前要改甚麼？**
 專案已包含 [Dockerfile](Dockerfile)、[cloudbuild.yaml](cloudbuild.yaml) 及 [scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1)（見第十節）。部署時必做：`AUTH_SECRET`／LLM API key／名冊服務帳戶由 Secret Manager 注入（指令碼會建立）、把服務網址加進 OAuth 重新導向 URI、把 Google Sheet 分享給名冊服務帳戶。**資料持久化**已內建（SQLite 快照 + Cloud Storage，見第十節「資料持久化」）：設定 `BACKUP_BUCKET`（指令碼會自動建立 bucket 並授權）即會在重新部署後自動還原資料。教材檔案仍建議打包在映像檔的 `materials/`，試行階段請保持 `--max-instances=1`。
