@@ -112,6 +112,70 @@ describe("學伴教材依據：查詢詞抽取", () => {
     expect(passages[0]?.promptText).toContain("學者");
   });
 
+  it("關鍵詞抽取：只取名詞類片段，不會產生跨詞噪音（2026-11-06）", () => {
+    expect(groundingModule.extractDistinctiveTerms("法國為何參與了美國革命?")).toEqual(
+      expect.arrayContaining(["法國", "美國革命"]),
+    );
+    // 舊版 n-gram 做法會產生「何參」「法國為」「要人」「算方」等噪音
+    const noisy = groundingModule.extractDistinctiveTerms("法國為何參與了美國革命?");
+    expect(noisy).not.toContain("何參");
+    expect(noisy).not.toContain("法國為");
+    // 疑問詞、功能字、常見動詞及抽象焦點詞一律不當作關鍵詞
+    expect(groundingModule.extractDistinctiveTerms("文藝復興有甚麼重要人物?")).toEqual([
+      "文藝復興",
+    ]);
+    expect(groundingModule.extractDistinctiveTerms("十三個殖民地為何反抗英國?")).toEqual(
+      expect.arrayContaining(["殖民地", "英國"]),
+    );
+    expect(groundingModule.extractDistinctiveTerms("十三個殖民地為何反抗英國?")).not.toContain(
+      "十三",
+    );
+    expect(groundingModule.extractDistinctiveTerms("點解?")).toEqual([]);
+  });
+
+  it("關鍵詞涵蓋判斷容許教材用較短寫法（伊斯蘭曆法 vs 伊斯蘭曆）", () => {
+    expect(groundingModule.termCoveredBy("該年亦成為伊斯蘭曆的元年", "伊斯蘭曆法")).toBe(true);
+    expect(groundingModule.termCoveredBy("美國革命激發歐洲的革命浪潮", "法國")).toBe(false);
+  });
+
+  it("提問的稀有關鍵詞會提高含該詞段落的分數（法國 → 含法國的段落）", () => {
+    const blocks = [
+      block({
+        id: "e0",
+        order: 0,
+        documentId: "doc-e0",
+        text: "美國革命的原因與美國革命的背景，以及美國革命的深遠影響。",
+      }),
+      block({
+        id: "e1",
+        order: 1,
+        documentId: "doc-e1",
+        text: "十七至十八世紀初，英國於北美洲東岸建立起十三個殖民地，並實施貿易管制。",
+      }),
+      block({
+        id: "e2",
+        order: 2,
+        documentId: "doc-e2",
+        text: "美國革命鼓舞法國人民，最終推翻君主專制，歐洲政局因而出現重大轉變。",
+      }),
+    ];
+    const terms = groundingModule.extractQueryTerms("法國為何參與了美國革命?");
+    const scoreOf = (
+      passages: ReturnType<GroundingModule["selectTutorPassages"]>,
+      blockId: string,
+    ): number => passages.find((passage) => passage.anchorBlockId === blockId)?.score ?? 0;
+
+    const withoutEmphasis = groundingModule.selectTutorPassages(blocks, terms, { maxSources: 3 });
+    const withEmphasis = groundingModule.selectTutorPassages(blocks, terms, {
+      maxSources: 3,
+      emphasisTerms: ["法國"],
+    });
+
+    // 只加權「法國」所在的段落，其餘段落分數不變
+    expect(scoreOf(withEmphasis, "e2")).toBeGreaterThan(scoreOf(withoutEmphasis, "e2"));
+    expect(scoreOf(withEmphasis, "e0")).toBe(scoreOf(withoutEmphasis, "e0"));
+  });
+
   it("「開埠」會展開成課題8 教材的寫法（自由港／割讓／侵佔）", () => {
     const weightOf = (value: string) =>
       groundingModule
@@ -756,6 +820,20 @@ describe("學伴教材依據：資料庫檢索（只使用已開放給學生的�
     const grounding = groundingModule.findTutorGrounding("伊斯蘭曆法的計算方法是甚麼？");
     expect(grounding.status).toBe("not-covered");
     expect(grounding.sources).toHaveLength(0);
+  });
+
+  it("關鍵詞已涵蓋時 uncoveredTerms 為空（不會多花一次外部搜尋）", () => {
+    const grounding = groundingModule.findTutorGrounding("凡爾賽條約如何約束德國？");
+    expect(grounding.status).toBe("grounded");
+    expect(grounding.uncoveredTerms).toEqual([]);
+  });
+
+  it("教材命中但提問的關鍵詞不在段落中時，uncoveredTerms 如實列出", () => {
+    // 「芬蘭」不在課題9 的教材中：仍然引用《凡爾賽條約》的段落，但要指出關鍵詞缺口，
+    // 令 API 即使在 not-covered-only 模式下仍會抓取外部參考（2026-11-06）。
+    const grounding = groundingModule.findTutorGrounding("凡爾賽條約對芬蘭有甚麼影響？");
+    expect(grounding.status).toBe("grounded");
+    expect(grounding.uncoveredTerms).toContain("芬蘭");
   });
 
   it("上一輪問文藝復興，不會令本輪的凡爾賽條約引用課題5 教材", () => {

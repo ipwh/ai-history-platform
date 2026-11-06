@@ -485,7 +485,17 @@ export async function POST(request: Request) {
     const webSupplement: TutorWebSupplementResult = await collectTutorWebSupplement({
       query: body.message,
       topicId: grounding.topicId ?? preferredTopicId,
-      grounding: grounding.status === "grounded" ? "grounded" : "not-covered",
+      /**
+       * 「教材命中但關鍵詞缺口」視同未涵蓋（2026-11-06）。
+       *
+       * 實際個案：「法國為何參與了美國革命？」命中了課題7 三段教材（都只講美國革命的
+       * 背景），但三段都沒有「法國」，答案其實沒有依據。`not-covered-only` 若只看
+       * `status`，這類問題會剛好最需要外部參考時反而不抓網。
+       */
+      grounding:
+        grounding.status === "grounded" && (grounding.uncoveredTerms ?? []).length === 0
+          ? "grounded"
+          : "not-covered",
       config: getServerConfig().webSupplement,
     });
 

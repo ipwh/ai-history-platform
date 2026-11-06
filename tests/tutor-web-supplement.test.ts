@@ -855,6 +855,27 @@ describe("學伴 API：外部參考", () => {
     expect(requestedUrls(fetchMock)).toHaveLength(1);
   });
 
+  it("教材命中但提問關鍵詞缺口時，not-covered-only 仍會抓外網（2026-11-06）", async () => {
+    enableWebSupplement({ mode: "not-covered-only" });
+    // 「芬蘭」不在教材中：屬「命中課題但未回答問題」，應容許外部參考
+    const fetchMock = installFetchMock({
+      search: () =>
+        jsonResponse({ results: [{ title: "Treaty of Versailles | Britannica", url: BRITANNICA_URL }] }),
+      pages: { [BRITANNICA_URL]: () => htmlResponse() },
+    });
+
+    const response = await postChat(
+      requestFor("POST", { message: "凡爾賽條約對芬蘭有甚麼影響？" }),
+    );
+    const done = sseEvents(await response.text()).find((entry) => entry.event === "done")
+      ?.data as { webSupplementStatus: string; webSources: { url: string }[]; grounding: string };
+
+    expect(done.grounding).toBe("grounded");
+    expect(done.webSupplementStatus).toBe("ok");
+    expect(done.webSources[0]?.url).toBe(BRITANNICA_URL);
+    expect(requestedUrls(fetchMock).some((url) => url.startsWith(SEARCH_ENDPOINT))).toBe(true);
+  });
+
   it("TUTOR_WEB_TOPIC_ALLOWLIST 未包含當前課題時不做外網", async () => {
     enableWebSupplement();
     process.env.TUTOR_WEB_TOPIC_ALLOWLIST = "topic-5";

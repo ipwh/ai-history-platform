@@ -209,6 +209,15 @@ export interface TutorGrounding {
   sources: TutorSource[];
   /** 僅用於組裝提示詞，不保存、不回傳 */
   passages: TutorPassage[];
+  /**
+   * 提問的關鍵詞中，**在所選教材段落裡完全找不到**的詞（例如問「法國為何參與了美國革命」，
+   * 但取到的三段都沒有「法國」）。
+   *
+   * 用途：`status` 仍然是 `grounded`（確實引用了 3 段教材），但這代表「命中課題」不等於
+   * 「回答到問題」。API 會據此在 `not-covered-only` 模式下仍然抓取外部參考，避免學生
+   * 在教材只有背景、沒有答案時，連課外延伸都沒有。
+   */
+  uncoveredTerms?: string[];
 }
 
 export interface TutorGlossaryTerm {
@@ -305,6 +314,116 @@ export function extractQueryTerms(message: string, context: string[] = []): Quer
     .slice(0, MAX_QUERY_TERMS);
 }
 
+/**
+ * 提問中的「不可替換關鍵詞」（名詞類）：用於① 檢索加權 ② 判斷教材是否真的涵蓋問題。
+ *
+ * 為甚麼需要：n-gram 權重只看長度，「法國」這類 2 字國家名只有權重 1，而課本專名
+ * （「美國革命」）有 8，令含「法國」的段落永遠排不上來（2026-11-06 實際個案：課題7
+ * 有 8 段提及法國，卻一段都選不到）。同時「命中課題」不等於「回答到問題」，需要一個
+ * 獨立訊號指出哪些關鍵詞真的沒有出現在所選段落中。
+ *
+ * 這裡刻意只認**名詞類**詞：疑問詞、功能字及常見動詞／抽象名詞（參與、影響、起因…）
+ * 即使未在段落出現，也不代表教材沒有回答問題，不應據此觸發外網補充。
+ */
+const NON_KEYWORD_PHRASES = [
+  "為何",
+  "為什麼",
+  "甚麼",
+  "什麼",
+  "如何",
+  "怎樣",
+  "點解",
+  "點樣",
+  "邊個",
+  "邊度",
+  "幾時",
+  "哪些",
+  "哪個",
+  "哪一",
+  "是否",
+  "有冇",
+  "係咪",
+  "係唔係",
+  "可以",
+  "有咩",
+] as const;
+
+const NON_KEYWORD_CHARS = new Set(
+  "的了嗎呢呀啊啦咩就都也很最請與和及對在是有會你我們這那個些樣問吧嘅咗啲何為麼如關於由從並其把被讓給跟麼".split(
+    "",
+  ),
+);
+
+const NON_KEYWORD_WORDS = new Set([
+  // 常見動詞
+  "參與", "參戰", "影響", "導致", "促成", "引起", "造成", "推動", "幫助", "支持", "反對",
+  "反抗", "推翻", "建立", "發展", "成為", "出現", "發生", "包括", "屬於", "比較", "分析",
+  "解釋", "說明", "評價", "討論", "認為", "覺得", "知道", "學習", "溫習", "指出", "描述",
+  "列出", "列舉", "沒有", "需要", "經過", "實行", "統治", "計算", "約束", "要求", "主張",
+  "採取", "使用", "利用", "帶來", "產生", "破壞", "維持", "保衛", "爭取", "侵略", "擴張",
+  "統一", "分裂", "改革", "改善", "增長", "減少", "上升", "下降", "規定", "承認", "簽署",
+  "加入", "退出", "組成", "合併", "恢復", "結束", "開始", "勝利", "失敗", "死亡", "出生",
+  // 提問焦點（教材通常用另一個說法表達，例如「因素」「概況」）
+  "原因", "成因", "因素", "起因", "結果", "後果", "作用", "重要", "意義", "過程", "背景",
+  "內容", "特色", "特徵", "關係", "分別", "差異", "好處", "壞處", "優點", "缺點", "例子",
+  "人物", "事件", "時間", "地點", "程度", "方式", "方法", "概況", "定義", "目的", "貢獻",
+]);
+
+/** 純數字（含中文數字）不是關鍵詞：「十三」單獨出現沒有檢索意義 */
+const NUMBER_ONLY = /^[一二三四五六七八九十百千萬零0-9]+$/;
+
+/** 分詞用的分隔符（不會出現在正規化後的文字） */
+const CHUNK_SEPARATOR = "|";
+
+/**
+ * 抽出提問中「不可替換」的名詞類關鍵詞（已去除疑問詞、功能字、常見動詞及抽象焦點詞）。
+ *
+ * 做法：先把功能字及常見動詞換成分隔符，再取剩下的連續片段。這樣才不會出現
+ * 「要人」「算方」「抗英國」這類跨詞 n-gram（2026-11-06 實測會造成誤判）。
+ */
+export function extractDistinctiveTerms(message: string): string[] {
+  const normalized = normalizeHistoryAnswer(message);
+  if (normalized.length === 0) return [];
+
+  let text = normalized;
+  for (const phrase of NON_KEYWORD_PHRASES) text = text.split(phrase).join(CHUNK_SEPARATOR);
+  for (const word of NON_KEYWORD_WORDS) text = text.split(word).join(CHUNK_SEPARATOR);
+  for (const char of NON_KEYWORD_CHARS) text = text.split(char).join(CHUNK_SEPARATOR);
+
+  const chunks = new Set<string>();
+  for (const raw of text.split(CHUNK_SEPARATOR)) {
+    const chunk = raw.replace(/[^\u3400-\u9fff]/g, "");
+    if (chunk.length < 2) continue;
+    if (NUMBER_ONLY.test(chunk)) continue;
+    if (NON_KEYWORD_PHRASES.some((phrase) => chunk.includes(phrase))) continue;
+    chunks.add(chunk);
+  }
+  const kept = [...chunks];
+  // 只保留最長寫法：若同時得到「法國」與「法國大革命」，較短者只是子字串
+  return kept.filter((term) => !kept.some((other) => other !== term && other.includes(term)));
+}
+
+/**
+ * 該關鍵詞是否已出現在段落文字中。
+ *
+ * 長詞容許前後 3 字吻合（「伊斯蘭曆法」與教材的「伊斯蘭曆」屬同一概念），避免只因
+ * 教材用了較短寫法就誤判成「教材沒有涵蓋」而多花一次外部搜尋。
+ */
+export function termCoveredBy(passageText: string, term: string): boolean {
+  if (passageText.includes(term)) return true;
+  if (term.length < 4) return false;
+  return passageText.includes(term.slice(0, 3)) || passageText.includes(term.slice(-3));
+}
+
+/**
+ * 只在課題教材中屬少數段落出現的關鍵詞才用於**檢索加權**的上限比例。
+ *
+ * 為甚麼要限制：「德國」在課題9 幾乎每段都有，用它加權等於把大量無關段落（例如
+ * 1939 年入侵波蘭）推前，反而蓋過真正講《凡爾賽條約》內容的段落（2026-11-06 實測）。
+ * 只有像「法國」這種在課題7 僅 8／283 段出現的詞，才是有用的區分訊號。
+ */
+const EMPHASIS_MAX_DOCUMENT_SHARE = 0.1;
+
 /** 一段文字與查詢詞的重疊程度；`strong` 為長詞（3 字以上或課本專名）的命中數 */
 export function scoreBlockText(
   blockText: string,
@@ -388,10 +507,18 @@ export function selectTutorPassages(
     preferredSectionIds?: string[];
     /** 提問要求列舉時，表格／清單段落優先 */
     enumerate?: boolean;
+    /**
+     * 提問的關鍵詞（見 `extractDistinctiveTerms`）：含這些詞的段落優先。
+     *
+     * 為甚麼需要：只靠 n-gram 權重時，2 字專有名詞（「法國」）權重僅 1，
+     * 會被課本專名（「美國革命」權重 8）完全蓋過，令真正回答問題的段落排不上來。
+     */
+    emphasisTerms?: readonly string[];
   } = {},
 ): TutorPassage[] {
   const maxSources = options.maxSources ?? TUTOR_MAX_SOURCES;
   const preferredSections = new Set(options.preferredSectionIds ?? []);
+  const emphasis = options.emphasisTerms ?? [];
   const usable = blocks
     .map((block) => ({ block, text: usableText(block) }))
     .filter(
@@ -413,7 +540,18 @@ export function selectTutorPassages(
         options.enumerate === true && (entry.block.type === "table" || entry.block.type === "list")
           ? 1.3
           : 1;
-      return { index, score: scored.score * sectionBonus * listBonus, strong: scored.strong };
+      // 提問的關鍵詞（例如「法國」）：命中即是強烈訊號，最多加成 1.8 倍
+      const normalizedText = emphasis.length === 0 ? "" : normalizeHistoryAnswer(entry.text);
+      const emphasisHits =
+        emphasis.length === 0
+          ? 0
+          : emphasis.filter((term) => normalizedText.includes(term)).length;
+      const emphasisBonus = emphasisHits === 0 ? 1 : 1 + Math.min(emphasisHits, 2) * 0.4;
+      return {
+        index,
+        score: scored.score * sectionBonus * listBonus * emphasisBonus,
+        strong: scored.strong,
+      };
     })
     .filter((hit) => hit.score >= MIN_HIT_SCORE && hit.strong > 0)
     .sort((left, right) => right.score - left.score)
@@ -878,16 +1016,55 @@ export function findTutorGrounding(
       messageTerms.length >= 3 ? messageTerms : extractQueryTerms(message, recentContext),
       extraTerms,
     );
+    /**
+     * 提問的關鍵詞（名詞類）。先剔除「該課題本身就有」的詞（課題標題、分節標題及分節
+     * 關鍵詞）：那些詞出現與否只反映「有沒有命中課題」，不能說明答案是否涵蓋問題。
+     * 剩下的（例如問美國革命時的「法國」）才是需要用來加權及判斷缺口的訊號。
+     */
+    const topicScaffold = normalizeHistoryAnswer(
+      [
+        guess.topicTitle,
+        ...(sectionsByTopic.get(guess.topicId) ?? []).flatMap((section) => [
+          section.title,
+          ...(section.matchKeywords ?? []),
+        ]),
+      ].join("\n"),
+    );
+    const distinctiveTerms = extractDistinctiveTerms(message).filter(
+      (term) => !topicScaffold.includes(term),
+    );
+    /**
+     * 檢索加權只使用「稀有」關鍵詞（見 `EMPHASIS_MAX_DOCUMENT_SHARE`）：
+     * 常見詞（例如課題9 的「德國」）本身就會命中大量段落，加權只會擾亂排序。
+     */
+    const blockTexts = blocks.map((block) => normalizeHistoryAnswer(block.text));
+    const emphasisTerms =
+      blockTexts.length === 0
+        ? []
+        : distinctiveTerms.filter((term) => {
+            const share =
+              blockTexts.filter((text) => termCoveredBy(text, term)).length / blockTexts.length;
+            return share > 0 && share <= EMPHASIS_MAX_DOCUMENT_SHARE;
+          });
     const passages = selectTutorPassages(blocks, terms, {
       preferredSectionIds: guess.sectionIds,
       enumerate: ENUMERATE_PATTERN.test(normalizeHistoryAnswer(message)),
+      emphasisTerms,
     });
     if (passages.length === 0) return notCovered(guess.topicId, guess.topicTitle);
+
+    // 關鍵詞缺口：確實引用了教材，但提問的關鍵詞在所選段落中完全找不到
+    // （例如三段都只有「美國革命」的背景，沒有「法國」）。API 會據此仍然抓取外部參考。
+    const passageText = normalizeHistoryAnswer(passages.map((passage) => passage.promptText).join("\n"));
+    const uncoveredTerms = distinctiveTerms.filter(
+      (term) => !termCoveredBy(passageText, term),
+    );
 
     return {
       status: "grounded",
       topicId: guess.topicId,
       topicTitle: guess.topicTitle,
+      uncoveredTerms,
       sources: passages.map((passage) => ({
         blockId: passage.anchorBlockId,
         documentLabel: passage.documentLabel,
