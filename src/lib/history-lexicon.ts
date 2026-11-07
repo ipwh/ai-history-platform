@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 香港中學歷史科專名同義詞庫（中一至中六）。
  *
  * 背景：學生作答填充題時，同一個歷史概念常有幾種都正確的寫法——
@@ -1347,6 +1347,15 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
 
   /* 課題11 二十世紀以來的國際合作 */
   {
+    // Sprint 34：教材 6 段提到種族隔離（課題11 聯合國制裁南非白人政府；課題7 美國
+    // 南部《吉姆・克勞法》）。Sprint 33 真實模型評估中，學生問「什么是种族隔离？」
+    // 因詞庫沒有此詞而檢索失敗，模型於是回報「教材找不到」（實際有 6 段）。
+    canonical: "種族隔離",
+    aliases: ["種族隔離政策", "種族隔離制度", "apartheid", "racial segregation"],
+    category: "event",
+    scope: "課題11",
+  },
+  {
     canonical: "安全理事會",
     aliases: ["安理會", "聯合國安全理事會", "security council", "un security council"],
     category: "institution",
@@ -1692,7 +1701,7 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   /* 高中：世界近代史 */
   {
     canonical: "明治維新",
-    aliases: ["明治變法", "明治改革", "meiji restoration", "meiji reform"],
+    aliases: ["明治變法", "明治改革", "明治時期", "明治時代", "明治政府", "meiji restoration", "meiji reform", "meiji period", "meiji era"],
     category: "reform",
     scope: "高中",
     // 「高中」範疇橫跨五個課題，`scope` 只會令它們同分（平手時取第一個，即香港現代化）。

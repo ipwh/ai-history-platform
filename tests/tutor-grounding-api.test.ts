@@ -106,10 +106,60 @@ beforeAll(async () => {
      VALUES ('topic-5', '課題5：近代歐洲的興起', '', 1, 5, ?, ?)`,
   ).run(now, now);
   db.prepare(
+    `INSERT INTO sections (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+     VALUES ('topic-5-french-revolution', 'topic-5', NULL, '法國大革命', '', '["法國大革命","法國革命"]', 3, ?, ?)` ,
+  ).run(now, now);
+  db.prepare(
+    `INSERT INTO topics (id, title, description, published, sort_order, created_at, updated_at)
+     VALUES ('topic-7', '課題7：美國的成立及發展', '', 1, 7, ?, ?)` ,
+  ).run(now, now);
+  db.prepare(
+    `INSERT INTO sections (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+     VALUES ('topic-7-american-revolution', 'topic-7', NULL, '美國革命與建國', '', '["美國革命","美國獨立"]', 1, ?, ?)` ,
+  ).run(now, now);
+  db.prepare(
+    `INSERT INTO topics (id, title, description, published, sort_order, created_at, updated_at)
+     VALUES ('topic-2', '課題2：歐洲文明的發展', '', 1, 2, ?, ?)` ,
+  ).run(now, now);
+  db.prepare(
+    `INSERT INTO sections (id, topic_id, parent_id, title, summary, match_keywords_json, sort_order, created_at, updated_at)
+     VALUES ('topic-2-ancient-rome', 'topic-2', NULL, '古羅馬文明', '', '["古羅馬文明","羅馬共和"]', 1, ?, ?)` ,
+  ).run(now, now);
+  db.prepare(
     `INSERT INTO material_documents
        (id, file_name, kind, status, created_at, student_distribution, rights_confirmed_at)
-     VALUES ('doc-renaissance', '課題5 近代歐洲的興起_筆記.docx', 'demo', 'ready', ?, 1, ?)`,
+     VALUES ('doc-renaissance', '課題5 近代歐洲的興起_筆記.docx', 'demo', 'ready', ?, 1, ?)` ,
   ).run(now, now);
+  db.prepare(
+    `INSERT INTO material_documents
+       (id, file_name, kind, status, created_at, student_distribution, rights_confirmed_at)
+     VALUES ('doc-american', '課題7 美國的成立及發展_筆記.docx', 'demo', 'ready', ?, 1, ?)` ,
+  ).run(now, now);
+  db.prepare(
+    `INSERT INTO material_documents
+       (id, file_name, kind, status, created_at, student_distribution, rights_confirmed_at)
+     VALUES ('doc-french', '課題5 近代歐洲的興起_筆記.docx', 'demo', 'ready', ?, 1, ?)` ,
+  ).run(now, now);
+  for (let index = 0; index < 8; index += 1) {
+    db.prepare(
+      `INSERT INTO material_blocks
+         (id, document_id, topic_id, section_id, sort_order, type, text, source_location, created_at, extraction_method)
+       VALUES (?, 'doc-american', 'topic-7', 'topic-7-american-revolution', ?, 'paragraph', ?, ?, ?, 'native')`,
+    ).run(
+      `block-american-${index}`,
+      index,
+      `美國革命的發展與十三個殖民地的自治要求有關，英國殖民政策引起衝突，AMERICAN-EVIDENCE ${index}。`,
+      `課題7 美國的成立及發展_筆記.docx · 第 ${index + 1} 段（段落）`,
+      now,
+    );
+  }
+  db.prepare(
+    `INSERT INTO material_blocks
+       (id, document_id, topic_id, section_id, sort_order, type, text, source_location, created_at, extraction_method)
+     VALUES ('block-french-revolution', 'doc-french', 'topic-5', 'topic-5-french-revolution', 0,
+             'paragraph', '法國大革命於1789年爆發，革命者推翻舊制度，並提出人民主權等政治主張。FRENCH-EVIDENCE。',
+             '課題5 近代歐洲的興起_筆記.docx · 法國大革命段落', ?, 'native')`,
+  ).run(now);
   db.prepare(
     `INSERT INTO material_blocks
        (id, document_id, topic_id, section_id, sort_order, type, text, source_location, created_at, extraction_method)
@@ -181,6 +231,51 @@ describe("學伴 API：教材依據", () => {
     const answer = saved.find((message) => message.role === "assistant");
     expect(answer?.groundingStatus).toBe("grounded");
     expect(answer?.sources.length).toBeGreaterThan(0);
+  });
+
+  it("跨課題比較時，模型實際上下文包含兩方教材證據", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      mockStreamingAnswer("兩場革命可從制度與政治理念比較。"),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(
+      requestFor("POST", { message: "比較美國革命與法國大革命有哪些相同和不同？" }),
+    );
+    await response.text();
+
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
+      messages: { role: string; content: string }[];
+    };
+    const systemPrompt = requestBody.messages[0]?.content ?? "";
+    expect(systemPrompt).toContain("AMERICAN-EVIDENCE");
+    expect(systemPrompt).toContain("FRENCH-EVIDENCE");
+    const topic7Passages = systemPrompt.match(/<教材[^>]*課題ID="topic-7"/g) ?? [];
+    const topic5Passages = systemPrompt.match(/<教材[^>]*課題ID="topic-5"/g) ?? [];
+    expect(topic7Passages.length).toBeGreaterThan(0);
+    expect(topic5Passages.length).toBeGreaterThan(0);
+    expect(Math.abs(topic7Passages.length - topic5Passages.length)).toBeLessThanOrEqual(1);
+  });
+
+  it("比較題其中一方沒有可用段落時，提示詞要求明確披露證據不足", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      mockStreamingAnswer("現有片段不足以比較兩方。"),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(
+      requestFor("POST", { message: "比較美國革命與古羅馬文明有哪些相同和不同？" }),
+    );
+    await response.text();
+
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
+      messages: { role: string; content: string }[];
+    };
+    const systemPrompt = requestBody.messages[0]?.content ?? "";
+    expect(systemPrompt).toContain("課題2：歐洲文明的發展");
+    expect(systemPrompt).toContain("0 段");
+    expect(systemPrompt).toContain("明確說明該方的教材證據不足");
+    expect(systemPrompt).not.toContain('課題ID="topic-2"');
   });
 
   it("模型用了課本以外譯名時，回覆完成事件會帶同課本用語對照", async () => {

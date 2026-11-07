@@ -58,6 +58,7 @@ npm run dev          # 啟動開發伺服器
 | `npm test` | 單元及整合測試（Vitest） |
 | `npm run e2e` | 端對端流程測試（需先啟動伺服器） |
 | `npm run tutor:export-utterances` | **唯讀**匯出學伴澄清／離題／正規化事件（匿名，不含學生身分），供每月補強提問理解規則；可加 `-- --days 30 --limit 200 --type reject,clarify --format csv` |
+| `npm run tutor:export-review-packet` | **唯讀**準備全部學伴學生提問矩陣的教師覆核套件（不呼叫模型；`-- --database <核准本機資料庫> --out <版本庫外路徑>`；不會自動核准，見[教師覆核流程](docs/tutor-teacher-review-process.md)） |
 | `npm run setup` | 重建／更新示範資料（可加 `-- --ocr` 同時執行 OCR、`-- --pilot` 只匯入課題5；**`--` 不可省略**，否則 npm 會把參數吞掉） |
 | `npm run import:materials` | 由命令列匯入 `materials/` 內的教材及校內試題（可加 `--books`、`--questions`、`--topic`、`--senior`、`--ocr`） |
 | `npm run generate:questions` | 為各課題生成題目（`--topic`、`--count`、`--types mc`、`--draft-only`） |
@@ -345,6 +346,58 @@ materials/
   - **關閉方法**：`TUTOR_QUERY_EXPANSION_ENABLED=false`（完全回退舊行為，零額外請求）。
 - **詞庫譯名修正**：核對教材原文後修正了四個以台灣／內地譯名作「課本寫法」的詞條——希特拉（原「希特勒」）、史太林（原「史達林」）、塞拉耶佛事件（原「薩拉熱窩事件」）、美國革命（原「美國獨立戰爭」）。教材原文出現 41 次「希特拉」、0 次「希特勒」，其餘同理；填充題批改的同義詞比對不受影響（同一組內互為別名）。2026-10-27 另補：米開蘭基羅（教材寫法，原以「米開朗基羅」為準）、新增拉斐爾，並把達文西的範圍由「高中」改為「課題5」（教材在初中課題5 筆記列出三人）。
 - 測試：[tests/tutor-grounding.test.ts](tests/tutor-grounding.test.ts)（檢索、段落合併、過濾、用語對照，另驗證未確認版權及校內試題檔不會被引用）及 [tests/tutor-grounding-api.test.ts](tests/tutor-grounding-api.test.ts)（SSE 標示、提示詞內容、保存後重新載入）。
+
+#### 學伴可答性與證據政策（Sprint 29，2026-11-07）
+
+**檢索是否命中，不等於問題可否回答。** 舊有主題硬閘把兩者混在一起，令「蒙古帝國點解會分裂？」「香港係幾時割讓俾英國？」「什麼是種族隔離？」等清楚的歷史提問因為詞庫／課程關鍵詞沒有逐字命中而收到「只能討論歷史科」的固定引導句。現在由 [tutor-answerability.ts](src/server/services/tutor-answerability.ts) 先判斷「是否歷史提問」與「教材涵蓋程度」，再決定回覆政策：
+
+| 狀態 | 條件 | 回覆政策 |
+| --- | --- | --- |
+| A 教材支持 | 片段覆蓋提問關鍵詞，比較課題兩方都有片段 | 以教材為唯一事實依據直接作答 |
+| B 教材部分支持 | 有片段但部分關鍵詞／比較一方找不到 | 先答教材支持的部分 → 說明缺口 → 才補充並標明一般歷史知識 |
+| C 教材未涵蓋 | 沒有可用片段，但問題清楚且屬歷史科 | **必須作答**：開首說明「校本教材找不到這部分」，其後以一般歷史知識回答並標明 |
+| D 需澄清 | 只有代詞／指示詞而無上文、明確含糊、單講課題名 | 只問一條澄清問題及 2–4 個方向（不呼叫模型、不扣額度） |
+
+- **教材找不到不會變成拒絕**：C 狀態的提示詞明確寫「不可以因為找不到教材而拒絕回答」，同時禁止虛構課本段落、引文、頁數或出處；一般歷史知識必須標明。
+- **仍保留檢索門檻**：低分段落不會被選入，C 狀態不會把無關段落當成依據（避免「假依據」）。
+- **兩個已修正的邊界**：①英文疑問詞（`who`／`what`）不再撞上詞庫別名（WHO 世界衛生組織），「Who won the World Cup in 2022?」不會再被當成歷史提問；②年份只有在 **1999 年或以前**或配合歷史題材形態時才算歷史訊號——2022 年世界盃、天氣、寫詩等要求一律走原有引導句。
+- **粵語追問與代詞**：有有效上文時，「天皇係咩角色？」「算唔算成功？」「佢有咩影響？」沿用上文課題；沒有上文時只會澄清，不猜對象。
+- **深度調整**：因果判斷（「是否主要原因」）、`significance`、`Was X a failure?`、`historians disagree`、「算唔算成功？」等由 `advanced` 升為 `challenge`（需判斷準則及反駁），避免把所有分析題都當成同一種結構。
+- **評估文件**：[docs/tutor-answer-quality-policy.md](docs/tutor-answer-quality-policy.md)（四個狀態、深度規則、35 類提問、學生人物設定、15 項 0–4 分評分表、自動與人手覆核分工、限制）；教師逐題覆核流程見 [docs/tutor-teacher-review-process.md](docs/tutor-teacher-review-process.md)。
+
+**Sprint 30 追加（2026-11-07）**：
+
+- **A 狀態不再等於「關鍵詞重疊」**：新增 `evidenceSupport`（direct／inferential／insufficient／none）。即使提問的所有關鍵詞都出現在片段中，若片段沒有交代提問所問的關係（因果／比較／評價），一律降為 B，並要求提示詞標明「片段未有直接說明，不可當成教材結論」。
+- **C 狀態分三級謹慎程度**：C1 可靠一般知識（直接作答並標明）、C2 部分知識或史學爭議（只答可靠部分、區分爭議）、C3 無法核實（要求逐字引文／精確數字時，說明無法核實的部分及所需證據）。**C3 不是拒絕**：仍要交代可確認的背景。
+- **非歷史邊界擴充**：體育、天氣、娛樂、科學、數學、創作、2000 年後年份單獨出現一律 `out-of-scope`；歷史與非歷史混合題仍按歷史處理。
+- **提示詞版本**：`TUTOR_PROMPT_VERSION = 2026-11-07.2`，評估及教師套件都會記錄。
+- **受控模型評估**：`npm run tutor:plan-live-eval` 只輸出計劃（零模型呼叫）；真正呼叫須同時具備 `--apply`、`TUTOR_EVAL_ALLOW_LIVE_CALLS=1`、`--budget-usd` 及 `--pricing-*`，缺一即拒絕（[計劃文件](docs/tutor-live-evaluation-plan-2026-11-07.md)）。Sprint 30 當時未執行付費呼叫；**Sprint 33 已在明示授權下完成 12 次真實呼叫**，結果見 [Sprint 33 報告](docs/sprint-33-report-2026-11-07.md)。
+
+**Sprint 32 追加（2026-11-07）**：
+
+- **執行引擎**：[tutor-eval-engine.ts](src/server/quality/tutor-eval-engine.ts) 以注入式 transport 實作預算前置檢查、重試上限（429／5xx／空白最多 1 次）、timeout／network 不自動重試、resume、journal 逐案寫入及 micro-USD 整數記帳；**不 import 資料庫或 provider，不含 `fetch`**（有原始碼斷言測試）。
+- **成本估算修正**：Sprint 31 的 0.04 美元漏算輸入 token。加入輸入上限後，12 條的保守上限在 in 0.28／out 2.5 假設下為 **US$0.0627**，超過 0.05；工具因此**強制**要求 `--pricing-*`（未提供則上限為 `null`、閘門不放行）。
+- **Live transport 仍是缺口**（Sprint 33 已補上，見下節）：學伴的串流呼叫內嵌在 `src/app/api/tutor/chat/route.ts`，Sprint 32 時沒有可共用的 client；依規格不得另寫 ad-hoc fetch provider，故當時執行會明確拒絕並列出可行方案（見 [Sprint 32 報告](docs/sprint-32-report-2026-11-07.md) §3）。
+- **案例 ID 映射**：[tutor-case-id-map.ts](tests/fixtures/tutor-case-id-map.ts) 證明 83＋91＋12＝186 條來源案例去重後為 **173 條獨立問題**（11 個重複組），避免覆核進度被重複計算。
+
+**Sprint 33 追加（2026-11-07）**：
+
+- **Live transport 已打通**：[stream-chat-completion.ts](src/server/llm/stream-chat-completion.ts) 把原本內嵌在 [route.ts](src/app/api/tutor/chat/route.ts) 的上游串流邏輯抽成正式 route 與評估共用的 adapter（`openChatStream` 在串流前檢查狀態碼，保留「上游 5xx → 503」行為；`consume` 讀 SSE 並抽取 usage）。`includeUsage` 預設 `false`，學生請求 body 不變。
+- **已執行 12 次真實模型評估**（owner 於 Sprint 33 明示授權 ≤US$0.10）：12/12 成功、0 重試、**US$0.012599**、輸入 20,778／輸出 5,044 tokens、`data/app.db` SHA-256 不變。判定：`LIVE EVALUATION VERIFIED`。
+- **答案質素**：歷史準確性平均 **3.92／4**（無捏造史實、無虛構引文或年份）；C3 拒絕引用《凡爾賽條約》第 231 條原文並要求以原文為準，屬正確；C2 以立場光譜陳述爭議；錯誤前提（「美國 1942 年才參戰」）被更正；粵語追問能保留上文並主動更正上一則回覆的證據層級。
+- **已發現未修正缺陷**：12 條中有 4 條（live-03、08、11、12）模型宣稱「教材找不到」，但教材實際有相關段落（種族隔離 9 段、珍珠港 7 段、第二次世界大戰 97 段、美國革命 44 段、法國大革命 59 段）——缺口在**問題→課題推斷與跨語言詞彙對應**，不在教材亦不在模型。現狀已用 [tutor-retrieval-recall-gap.test.ts](tests/tutor-retrieval-recall-gap.test.ts)（6 項特徵測試）固定，修正時必須同步更新。判定：`QUALITY REQUIRES FIXES`。
+- **正式環境仍有未評估階段**：`expandTutorQuery`（語意改寫重試檢索）與 `collectTutorWebSupplement`（`not-covered-only`）不在 12 次樣本內；D／out-of-scope 案例的回覆亦不代表產品行為（正式 route 不呼叫模型）。詳見 [Sprint 33 報告](docs/sprint-33-report-2026-11-07.md)。
+
+**Sprint 34 追加（2026-11-07）**：
+
+- **檢索召回缺口已修**：課程用語沒有線索（或推斷出的課題沒有可用片段）時，改以**教材內文反推課題**（`inferTopicFromMaterial`，零模型呼叫、零額外成本）。修正後「什么是种族隔离？」命中課題11、英文比較美國與法國革命命中課題5、「珍珠港事件」由課題7 修正為課題4。完整決策鏈見 [檢索與證據架構](docs/tutor-retrieval-architecture.md)。
+- **召回指標**（[tutor-retrieval-recall.test.ts](tests/tutor-retrieval-recall.test.ts)，18 條案例）：Recall@3 **1.00**、課題推斷準確率 **1.00**、跨語言召回 **1.00**、False Evidence Rate **0**、False No-Material Rate **0**；需語意改寫的 1 條（`recall-live-12`）另行標示，不混算。
+- **修正了三個真實缺陷**：①「日本明治時期如何處理武士特權？」曾被誤判離題（詞庫缺「明治時期」別名）；②`who` 作為「世界衛生組織」縮寫會令運動問題被推斷成課題11（主題硬閘早有限制，課題推斷層同步）；③**串流取消失效**：Sprint 33 抽出 adapter 時把 abort signal 只傳到 `consume()`，`fetch` 沒有收到，學生關掉分頁後伺服器仍會讀完整個回應並繼續計費（安全審核 P3，已修並加上回歸測試）。
+- **「不合作」反向保護**：教材那 4 段講的是**已發展國家在國際環保協作上的不合作態度**，與甘地無關；Sprint 34 特意保留「甘地的不合作運動」為 not-covered，避免字詞重疊造成假依據。
+- **第二輪 live evaluation 未執行**：Sprint 33 的 US$0.10 授權**不延伸**；[計劃](docs/tutor-live-evaluation-plan-2026-11-07.md#8-第二輪受控評估計劃sprint-34-制定)建議 8 條案例、上限 **US$0.06**、最多 20 attempts，待 owner 批准。
+
+
+
 
 #### 學伴外部參考：白名單網頁補充（2026-11-01 加入；2026-11-06 起接上搜尋來源）
 
@@ -2962,6 +3015,9 @@ node scripts/e2e-flow.mjs --start   # 端對端檢查全部通過（含版權閘
 | [tests/tutor-retrieval-regression.test.ts](tests/tutor-retrieval-regression.test.ts) | 規格 3.9／3.15／3.16：240／241／323 字命中段落、關鍵詞在段首／段中／段尾、多個命中詞分散、時間＋人物＋因果同時保留、多個長段落同時命中時的排序與排除原因、`TutorPassageSelectionAudit`（候選 ≠ 選段）、英文專名 ↔ 中文教材橋樑、`who` 不會配到世界衛生組織 |
 | [tests/tutor-topic-scope-regression.test.ts](tests/tutor-topic-scope-regression.test.ts) | 規格 3.10／3.17：`topicId` 指定的詞只提升該課題（明治維新 → 日本的現代化）、「高中」一對多範疇不再令五個課題同分、錯別字誤配（「開始」≈「開埠」、「改革」≈「文革」）不會帶錯課題、跨課題比較會加入被點名的第二個課題（最多兩個）、課程用語硬閘 |
 | [tests/tutor-coverage-classification.test.ts](tests/tutor-coverage-classification.test.ts) | 規格 3.13／3.14：更正學生錯誤前提的開場**不會**被當成「教材未涵蓋」、真正宣告找不到教材的寫法會被識別、只看第一句（分兩部分作答時不會整篇降級） |
+| [tests/tutor-answerability.test.ts](tests/tutor-answerability.test.ts) | **Sprint 29**：學生模擬矩陣（35 類提問 × 5 個人物設定，每類至少兩個難度層級）逐條核對可答性狀態及深度；教材未涵蓋仍為 C（不變成離題）、明確非歷史（寫詩／2022 世界盃／天氣）仍為 `out-of-scope`、含糊提問只澄清、代詞追問沿用上文；另核對 A／B／C 提示詞區塊 |
+| [tests/fixtures/tutor-simulation-matrix.ts](tests/fixtures/tutor-simulation-matrix.ts) | 模擬矩陣資料：人物、35 類提問、教材涵蓋程度、容許深度、教師覆核重點（全部 `pending-human-review`） |
+| [tests/tutor-answerability-route.test.ts](tests/tutor-answerability-route.test.ts) | **路線級**：教材未涵蓋的歷史提問會呼叫模型並帶 C 政策（不呼叫即拒絕）、非歷史要求不呼叫模型、含糊提問回澄清、C 狀態仍扣每日額度；明治維新五輪對話（含「天皇係咩角色？」「算唔算成功？」）及冷戰轉向後的「點解？」都不會被當成離題 |
 
 **Golden dataset 狀態（必須如實閱讀）**：矩陣內每條案例都有 `reviewStatus`。`automated-verified` 只代表「語言／意圖／深度／硬閘」等**系統行為**已由自動測試核對；任何涉及「歷史解釋是否合理」「教材是否真的這樣寫」的判斷一律是 `pending-human-review`，現時**沒有任何一條**經歷史科教師逐條審定。與題庫的 `docs/teacher-review/golden-questions.v1.json`（`pending-review`）同一個原則：自動測試不能代替教師核准。
 
@@ -3145,6 +3201,8 @@ node scripts/e2e-flow.mjs --start   # 端對端檢查全部通過（含版權閘
 52. **「學習技巧」類提問仍走澄清**：`DSE 歷史科比較題應該點答？` 會被當成「未能確定想問哪一件歷史事」而列出課題選項。回覆不算錯，但對高能力學生而言，先給通用比較題框架再問「想比較哪兩件事」會更有用；這屬產品定位決定（學科內容 vs 學習技巧），**尚未決定**。
 53. **跨課題比較只取「被點名」的課題**：比較題會加入提問逐字點名的第二個課題（最多兩個）。若學生只寫「兩者」（代詞）而沒有寫出課題名稱，系統只會檢索主課題，另一邊可能完全沒有教材依據——`uncoveredTerms` 會如實記錄，但不會自動猜另一個課題。
 54. **檢索稽核紀錄不保存**：`TutorPassageSelectionAudit`（候選／入選／截取／排除原因）只在單次請求內可用（測試及診斷用），**不會**寫入資料庫，教師端亦不顯示。若日後要做檢索品質統計，需要另設匿名事件表並經私隱審視。
+55. **可答性狀態下的答案品質仍取決於模型（Sprint 29）**：C 狀態（教材未涵蓋但問題清楚）現時會以一般歷史知識作答並要求標明，但系統只能約束「必須標明」「不可虛構出處」「有爭議要說明」，不能保證模型措辭完全準確。所有 83 條矩陣案例及模擬矩陣案例的歷史正確性、教學適切性及語言質素**仍待歷史科教師逐題覆核**；自動測試通過不等於內容已核准（見 [docs/tutor-answer-quality-policy.md](docs/tutor-answer-quality-policy.md)）。
+56. **模擬矩陣不是真實資料庫分佈**：模擬矩陣以「教材涵蓋程度」作測試替身，只驗證狀態判斷及政策，不代表實際檢索在正式教材上的召回率；真實分佈需以唯讀教師套件匯出核對。
 
 ---
 

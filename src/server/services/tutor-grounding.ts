@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 學伴的教材依據（grounding）與課本術語對齊。
  *
  * ── 為甚麼需要這個模組 ────────────────────────────────────────────────
@@ -27,6 +27,8 @@
  */
 import { HISTORY_TERM_GROUPS, findLooseHistoryTerms, normalizeHistoryAnswer } from "@/lib/history-lexicon";
 import type { TutorWebPromptSource } from "./tutor-web-supplement";
+import { describeTutorAnswerabilityForPrompt } from "./tutor-answerability-prompt";
+import type { TutorAnswerabilityDecision } from "./tutor-answerability";
 import {
   IMAGE_PLACEHOLDER_MESSAGE,
   type TutorGroundingStatus,
@@ -46,6 +48,14 @@ import { listSections, listTopics } from "../repositories/topics";
 
 /** 每次回答最多引用的教材段落組數 */
 export const TUTOR_MAX_SOURCES = 3;
+/**
+ * 學伴提示詞版本（Sprint 30）。
+ *
+ * 受控模型評估及教師覆核套件必須記錄這個版本，否則無法判斷某次回覆是用哪一套
+ * 可答性／證據規則產生的。任何改動 `buildTutorSystemPrompt` 組成部分（基礎提示、
+ * 結構、可答性政策、片段規則）都要更新此值。
+ */
+export const TUTOR_PROMPT_VERSION = "2026-11-07.2";
 /** 送去模型的段落組長度上限（控制 token，亦避免一次外泄大量原文） */
 export const TUTOR_MODEL_PASSAGE_MAX_CHARS = 240;
 /** 顯示給學生的節錄長度上限（與 mock-provider 的 MAX_EXPLANATION_QUOTE 一致） */
@@ -219,6 +229,8 @@ export interface TutorPassage {
   documentId: string;
   documentLabel: string;
   location: string;
+  topicId?: string | null;
+  topicTitle?: string | null;
   /** 送去模型的段落組（≤ TUTOR_MODEL_PASSAGE_MAX_CHARS） */
   promptText: string;
   /** 顯示給學生的節錄（≤ TUTOR_STUDENT_EXCERPT_MAX_CHARS） */
@@ -245,8 +257,29 @@ export interface TutorPassageSelectionAudit {
   belowThreshold: number;
   /** 實際檢索過的課題（跨課題比較時會多於一個） */
   searchedTopicIds?: string[];
+  /** 跨課題時，各課題通過門檻及實際選入的段落數 */
+  topicAllocation?: {
+    topicId: string;
+    qualifyingHits: number;
+    selectedPassages: number;
+  }[];
+  /**
+   * 課題推斷的來源（Sprint 34）。
+   *
+   * 沒有這項紀錄時，「為甚麼這條問題說教材沒有涵蓋」只能靠猜：
+   * `curriculum` 代表分節／詞庫命中，`material-fallback` 代表改由教材內文反推課題，
+   * `preferred-topic` 代表用學生設定的溫習課題補上，`none` 代表真的找不到。
+   */
+  topicInference?: {
+    source: "curriculum" | "preferred-topic" | "context" | "material-fallback" | "none";
+    /** 教材內文反推時的候選課題及合格段落數（由多至少） */
+    fallbackCandidates?: { topicId: string; qualifyingBlocks: number }[];
+    /** 教材內文反推時實際使用的檢索詞 */
+    fallbackTerms?: string[];
+  };
   selected: {
     blockId: string;
+    topicId?: string | null;
     score: number;
     /** 命中區塊的原始長度（字） */
     originalChars: number;
@@ -259,8 +292,16 @@ export interface TutorPassageSelectionAudit {
   }[];
   excluded: {
     blockId: string;
+    topicId?: string | null;
     reason: "max-sources" | "duplicate" | "already-used" | "too-short";
   }[];
+}
+
+export interface TutorTopicEvidence {
+  topicId: string;
+  topicTitle: string;
+  qualifyingHits: number;
+  selectedPassages: number;
 }
 
 export interface TutorGrounding {
@@ -271,6 +312,8 @@ export interface TutorGrounding {
   sources: TutorSource[];
   /** 僅用於組裝提示詞，不保存、不回傳 */
   passages: TutorPassage[];
+  /** 明確跨課題提問的逐課題證據數；只用於提示詞及診斷，不保存、不回傳學生端 */
+  topicEvidence?: TutorTopicEvidence[];
   /**
    * 提問的關鍵詞中，**在所選教材段落裡完全找不到**的詞（例如問「法國為何參與了美國革命」，
    * 但取到的三段都沒有「法國」）。
@@ -298,6 +341,8 @@ export interface TutorGroundingBlock {
   id: string;
   documentId: string;
   documentFileName: string;
+  topicId?: string | null;
+  topicTitle?: string | null;
   sectionId: string | null;
   type: string;
   text: string;
@@ -655,6 +700,8 @@ export function selectTutorPassages(
      * 會被課本專名（「美國革命」權重 8）完全蓋過，令真正回答問題的段落排不上來。
      */
     emphasisTerms?: readonly string[];
+    /** 明確跨課題提問：選段時輪替課題，避免高分課題佔滿來源名額。 */
+    balancedTopicIds?: readonly string[];
     /** 收集「候選 → 選段」的處理紀錄（供診斷及測試，見 `TutorPassageSelectionAudit`） */
     audit?: TutorPassageSelectionAudit;
   } = {},
@@ -663,6 +710,7 @@ export function selectTutorPassages(
   const audit = options.audit;
   const preferredSections = new Set(options.preferredSectionIds ?? []);
   const emphasis = options.emphasisTerms ?? [];
+  const balancedTopicIds = [...new Set(options.balancedTopicIds ?? [])];
   const usable = blocks
     .map((block) => ({ block, text: usableText(block) }))
     .filter(
@@ -673,9 +721,16 @@ export function selectTutorPassages(
         !isTeacherOnlyBlockText(entry.text),
     );
   if (audit !== undefined) audit.candidateBlocks = usable.length;
+  if (audit !== undefined && balancedTopicIds.length > 1) {
+    audit.topicAllocation = balancedTopicIds.map((topicId) => ({
+      topicId,
+      qualifyingHits: 0,
+      selectedPassages: 0,
+    }));
+  }
   if (usable.length === 0 || terms.length === 0) return [];
 
-  const scored = usable.map((entry, index) => {
+  const scored: ScoredTutorPassageHit[] = usable.map((entry, index) => {
     const scoredText = scoreBlockText(entry.text, terms);
     const window = windowAroundTerms(entry.text, terms, TUTOR_MODEL_PASSAGE_MAX_CHARS);
     const normalizedText = normalizeHistoryAnswer(entry.text);
@@ -718,10 +773,18 @@ export function selectTutorPassages(
   if (audit !== undefined) {
     audit.scoredHits = qualifying.length;
     audit.belowThreshold = scored.length - qualifying.length;
+    for (const allocation of audit.topicAllocation ?? []) {
+      allocation.qualifyingHits = qualifying.filter(
+        (hit) => usable[hit.index]?.block.topicId === allocation.topicId,
+      ).length;
+    }
   }
-  const hits = qualifying
-    .sort((left, right) => right.score - left.score)
-    .slice(0, MAX_HIT_BLOCKS);
+  const sortedQualifying = qualifying.sort((left, right) => right.score - left.score);
+  const balancedHits =
+    balancedTopicIds.length > 1
+      ? balanceHitsByTopic(sortedQualifying, usable, balancedTopicIds)
+      : sortedQualifying;
+  const hits = balancedHits.slice(0, MAX_HIT_BLOCKS);
   if (hits.length === 0) return [];
 
   const byDocument = new Map<string, number[]>();
@@ -773,6 +836,12 @@ export function selectTutorPassages(
       if (consumed.has(neighbourIndex)) return;
       const neighbour = usable[neighbourIndex];
       if (neighbour === undefined) return;
+      if (
+        balancedTopicIds.length > 1 &&
+        neighbour.block.topicId !== entry.block.topicId
+      ) {
+        return;
+      }
       if (length + neighbour.text.length + 1 > TUTOR_MODEL_PASSAGE_MAX_CHARS) return;
       sink.push(neighbour.text);
       length += neighbour.text.length + 1;
@@ -800,6 +869,12 @@ export function selectTutorPassages(
       if (neighbourIndex === undefined) continue;
       const neighbour = usable[neighbourIndex];
       if (neighbour === undefined) continue;
+      if (
+        balancedTopicIds.length > 1 &&
+        neighbour.block.topicId !== entry.block.topicId
+      ) {
+        continue;
+      }
       excerptParts.push(neighbour.text);
       excerptLength += neighbour.text.length;
       if (excerptLength >= TUTOR_STUDENT_EXCERPT_MAX_CHARS) break;
@@ -810,6 +885,8 @@ export function selectTutorPassages(
       documentId: entry.block.documentId,
       documentLabel: documentLabel(entry.block.documentFileName),
       location: shortLocation(entry.block.sourceLocation),
+      topicId: entry.block.topicId ?? null,
+      topicTitle: entry.block.topicTitle ?? null,
       promptText,
       excerpt: hardTruncate(excerptParts.join(" "), TUTOR_STUDENT_EXCERPT_MAX_CHARS),
       score: hit.score,
@@ -817,6 +894,7 @@ export function selectTutorPassages(
     if (audit !== undefined) {
       audit.selected.push({
         blockId: entry.block.id,
+        topicId: entry.block.topicId ?? null,
         score: hit.score,
         originalChars: entry.text.length,
         promptChars: promptText.length,
@@ -830,11 +908,68 @@ export function selectTutorPassages(
       const reason = exclusionReasons.get(hit.index);
       const entry = usable[hit.index];
       if (reason !== undefined && entry !== undefined) {
-        audit.excluded.push({ blockId: entry.block.id, reason });
+        audit.excluded.push({
+          blockId: entry.block.id,
+          topicId: entry.block.topicId ?? null,
+          reason,
+        });
       }
+    }
+    for (const allocation of audit.topicAllocation ?? []) {
+      allocation.selectedPassages = passages.filter(
+        (passage) => passage.topicId === allocation.topicId,
+      ).length;
     }
   }
   return passages;
+}
+
+interface ScoredTutorPassageHit {
+  index: number;
+  score: number;
+  strong: number;
+  window: { text: string; startSentence: number | null };
+}
+
+function balanceHitsByTopic(
+  hits: ScoredTutorPassageHit[],
+  usable: { block: TutorGroundingBlock; text: string }[],
+  topicIds: readonly string[],
+): ScoredTutorPassageHit[] {
+  const hitsByTopic = new Map<string, ScoredTutorPassageHit[]>();
+  for (const topicId of topicIds) hitsByTopic.set(topicId, []);
+  for (const hit of hits) {
+    const topicId = usable[hit.index]?.block.topicId;
+    if (topicId === undefined || topicId === null) continue;
+    hitsByTopic.get(topicId)?.push(hit);
+  }
+
+  const counts = new Map(topicIds.map((topicId) => [topicId, 0]));
+  const positions = new Map(topicIds.map((topicId) => [topicId, 0]));
+  const balanced: ScoredTutorPassageHit[] = [];
+  while (balanced.length < Math.min(hits.length, MAX_HIT_BLOCKS)) {
+    const topicId = topicIds
+      .filter((id) => (positions.get(id) ?? 0) < (hitsByTopic.get(id)?.length ?? 0))
+      .sort((left, right) => {
+        const countDifference = (counts.get(left) ?? 0) - (counts.get(right) ?? 0);
+        if (countDifference !== 0) return countDifference;
+        const leftPosition = positions.get(left) ?? 0;
+        const rightPosition = positions.get(right) ?? 0;
+        const leftScore = hitsByTopic.get(left)?.[leftPosition]?.score ?? 0;
+        const rightScore = hitsByTopic.get(right)?.[rightPosition]?.score ?? 0;
+        return rightScore - leftScore;
+      })[0];
+    if (topicId === undefined) break;
+    const position = positions.get(topicId) ?? 0;
+    const hit = hitsByTopic.get(topicId)?.[position];
+    if (hit === undefined) break;
+    balanced.push(hit);
+    positions.set(topicId, position + 1);
+    counts.set(topicId, (counts.get(topicId) ?? 0) + 1);
+  }
+
+  const balancedIndexes = new Set(balanced.map((hit) => hit.index));
+  return [...balanced, ...hits.filter((hit) => !balancedIndexes.has(hit.index))];
 }
 
 /** 課題對應的詞庫範圍（`課題N` 或 `高中`），詞庫本身以這兩個維度分組 */
@@ -849,6 +984,10 @@ function groupMatchesText(normalizedText: string, group: (typeof HISTORY_TERM_GR
   if (canonical.length >= 2 && normalizedText.includes(canonical)) return true;
   return group.aliases.some((alias) => {
     const key = normalizeHistoryAnswer(alias);
+    // 英文疑問詞沒有辨識價值（Sprint 34）：`who` 是「世界衛生組織」的縮寫別名，
+    // 若參與比對，「Who won the World Cup in 2022?」會被推斷成課題11（國際合作），
+    // 令運動問題取用完全無關的教材。主題硬閘早已排除，這裡同步。
+    if (isEnglishInterrogative(key)) return false;
     return key.length >= 2 && normalizedText.includes(key);
   });
 }
@@ -978,6 +1117,95 @@ export function guessTutorTopic(
 }
 
 /**
+ * 教材內文反推課題（Sprint 34）。
+ *
+ * ── 為甚麼需要 ──────────────────────────────────────────────────────
+ * `guessTutorTopic` 只認得**分節標題／教師維護的關鍵詞／詞庫專名**。若某個概念確實
+ * 出現在教材內文，但沒有被列入任何分節關鍵詞，推斷就會失敗，整條提問回落成
+ * 「教材沒有涵蓋」——Sprint 33 的真實模型評估中，學生問「什么是种族隔离？」、
+ * 英文比較美國與法國革命，都因此得到「教材找不到」的錯誤答覆（教材實際有 6 段及
+ * 24 段相關內容）。
+ *
+ * ── 為何不直接把這些詞寫進詞庫 ──────────────────────────────────────
+ * 寫死修正只能覆蓋已知個案。這裡改為**用教材內文反推課題**：以提問的長檢索詞
+ * （4 字 n-gram 及詞庫專名）掃描全部可發布段落，看哪一個課題的命中段落最多。
+ * 詞庫日後新增內容時，這條路徑自動生效。
+ *
+ * ── 保守條件（寧可回 C，也不要把無關教材當依據）────────────────────
+ * ① 只用 4 字以上的檢索詞（2–3 字片段在任何段落都出現，容許它們等於取消門檻）；
+ * ② 勝出課題至少要有 `FALLBACK_MIN_QUALIFYING_BLOCKS` 段命中；
+ * ③ 勝出課題的命中段落數必須是第二名的兩倍（單一課題獨佔），否則視為證據分散，
+ *    不推斷課題。
+ */
+const FALLBACK_MIN_TERM_LENGTH = 3;
+const FALLBACK_MIN_QUALIFYING_BLOCKS = 2;
+
+export function inferTopicFromMaterial(
+  message: string,
+  terms: readonly QueryTerm[],
+  extraTerms: readonly string[],
+  topics: { id: string; title: string }[],
+  blocks: readonly { topicId: string | null; text: string }[],
+): {
+  topicId: string;
+  topicTitle: string;
+  candidates: { topicId: string; qualifyingBlocks: number }[];
+  usedTerms: string[];
+} | null {
+  /**
+   * 只用「真正的名詞類詞」，不用 n-gram：
+   * `extractQueryTerms` 會產生「的不合作」這類跨功能字的 4 字片段，它在教材的
+   * 「較發達國家的**不合作**態度」中命中，於是把甘地的不合作運動誤配到環境協作
+   * 章節（Sprint 34 實測）。這裡改為：
+   *   ① `extractDistinctiveTerms` 抽出的名詞片段（3 字以上）；
+   *   ② 詞庫專名（權重 ≥ 5，即課程慣用寫法及同組寫法）；
+   *   ③ 語意改寫詞（本身已是教材用語）。
+   */
+  const fallbackTerms = new Set<string>();
+  for (const term of extractDistinctiveTerms(message)) {
+    if (term.length >= FALLBACK_MIN_TERM_LENGTH) fallbackTerms.add(term);
+  }
+  for (const { term, weight } of terms) {
+    if (weight >= 5 && term.length >= 2 && /[\u3400-\u9fff]/.test(term)) fallbackTerms.add(term);
+  }
+  for (const extra of extraTerms) {
+    const key = normalizeHistoryAnswer(extra);
+    if (key.length >= 2) fallbackTerms.add(key);
+  }
+  if (fallbackTerms.size === 0) return null;
+  const candidates = [...fallbackTerms];
+
+  const counts = new Map<string, number>();
+  for (const block of blocks) {
+    if (block.topicId === null) continue;
+    const text = normalizeHistoryAnswer(block.text);
+    if (text.length === 0) continue;
+    if (!candidates.some((term) => text.includes(term))) continue;
+    counts.set(block.topicId, (counts.get(block.topicId) ?? 0) + 1);
+  }
+  if (counts.size === 0) return null;
+
+  const ranked = [...counts.entries()]
+    .map(([topicId, qualifyingBlocks]) => ({ topicId, qualifyingBlocks }))
+    .sort((left, right) => right.qualifyingBlocks - left.qualifyingBlocks);
+  const winner = ranked[0];
+  if (winner === undefined || winner.qualifyingBlocks < FALLBACK_MIN_QUALIFYING_BLOCKS) {
+    return null;
+  }
+  const runnerUp = ranked[1]?.qualifyingBlocks ?? 0;
+  if (winner.qualifyingBlocks < runnerUp * 2) return null;
+  const topic = topics.find((entry) => entry.id === winner.topicId);
+  if (topic === undefined) return null;
+
+  return {
+    topicId: topic.id,
+    topicTitle: topic.title,
+    candidates: ranked.slice(0, 5),
+    usedTerms: candidates,
+  };
+}
+
+/**
  * 提問額外點名的課題（跨課題比較用）。
  *
  * 比較題（「美國革命與法國大革命有甚麼分別？」「比較明治維新與洋務運動」）橫跨兩個
@@ -991,16 +1219,29 @@ export function supportingTopicIds(
   message: string,
   primaryTopicId: string,
   curriculum: TutorCurriculumIndex,
+  context: string[] = [],
 ): string[] {
   const normalized = normalizeHistoryAnswer(message);
   if (normalized.length === 0) return [];
+  const isIndirectComparison =
+    /比較|異同|相同|相異|分別|差異|compare|contrast|similar|different|relationship|between/.test(
+      normalized,
+    ) && /兩者|兩件|兩個|這兩|那兩|上述|前述|both|thetwo|thesetwo|thosetwo|them|they/.test(normalized);
+  const lookupText = isIndirectComparison
+    ? normalizeHistoryAnswer([...context.slice(-2), message].join("\n"))
+    : normalized;
   const scored: { topicId: string; score: number }[] = [];
   for (const topic of curriculum.topics) {
     if (topic.id === primaryTopicId) continue;
     let score = 0;
     if (
       HISTORY_TERM_GROUPS.some(
-        (group) => group.topicId === topic.id && groupMatchesText(normalized, group),
+        (group) =>
+          (group.topicId === topic.id ||
+            (group.topicId === undefined &&
+              group.scope !== "高中" &&
+              group.scope === lexiconScopeForTopicId(topic.id))) &&
+          groupMatchesText(lookupText, group),
       )
     ) {
       score += 10;
@@ -1009,7 +1250,7 @@ export function supportingTopicIds(
       for (const value of [section.title, ...section.matchKeywords]) {
         const key = normalizeHistoryAnswer(stripPageReferences(value));
         if (key.length < 3 || isStopTerm(key)) continue;
-        if (normalized.includes(key)) {
+        if (lookupText.includes(key)) {
           score += 6;
           break;
         }
@@ -1280,7 +1521,45 @@ export function findTutorGrounding(
             sectionIds: (sectionsByTopic.get(preferredTopic.id) ?? []).map((section) => section.id),
           };
     const extraTerms = options.extraTerms ?? [];
-    const guess =
+    const distributable = listStudentDistributableDocumentIds();
+    const messageTerms = extractQueryTerms(message);
+    const terms = withExpandedTerms(
+      // 檢索詞以當前提問為主：只有提問本身幾乎沒有內容詞（例如「點解？」）時才借助
+      // 上一輪的提問，否則上一輪的詞會把不相關段落的排名推高。
+      messageTerms.length >= 3 ? messageTerms : extractQueryTerms(message, recentContext),
+      extraTerms,
+    );
+    /**
+     * 教材內文反推（Sprint 34）：純字詞掃描、零模型呼叫。只在課程用語沒有線索，
+     * 或推斷出的課題沒有可用片段時才執行。
+     */
+    const scanMaterialForTopic = (): ReturnType<typeof inferTopicFromMaterial> =>
+      inferTopicFromMaterial(
+        message,
+        terms,
+        extraTerms,
+        topics,
+        listTutorCandidateBlocks(topics.map((topic) => topic.id))
+          .filter((block) => distributable.has(block.documentId))
+          .map((block) => ({ topicId: block.topicId, text: block.text ?? "" })),
+      );
+    const applyMaterialFallback = (): TutorTopicGuess | null => {
+      const fallback = scanMaterialForTopic();
+      if (fallback === null) return null;
+      audit.topicInference = {
+        source: "material-fallback",
+        fallbackCandidates: fallback.candidates,
+        fallbackTerms: fallback.usedTerms,
+      };
+      return {
+        topicId: fallback.topicId,
+        topicTitle: fallback.topicTitle,
+        score: FALLBACK_MIN_QUALIFYING_BLOCKS,
+        sectionIds: [],
+      };
+    };
+
+    const contextGuess =
       currentGuess ??
       preferredGuess ??
       guessTutorTopic(
@@ -1288,80 +1567,149 @@ export function findTutorGrounding(
         topics,
         sectionsByTopic,
       );
-    if (guess === null) return { ...notCovered(null, null), selectionAudit: audit };
+    let guess = contextGuess ?? applyMaterialFallback();
+    if (guess === null) {
+      audit.topicInference = audit.topicInference ?? { source: "none" };
+      return { ...notCovered(null, null), selectionAudit: audit };
+    }
+    audit.topicInference = audit.topicInference ?? {
+      source:
+        currentGuess !== null
+          ? "curriculum"
+          : preferredGuess !== null
+            ? "preferred-topic"
+            : "context",
+    };
 
-    const distributable = listStudentDistributableDocumentIds();
-    // 跨課題比較：提問明確點名其他課題時，一併檢索（最多兩個），否則比較題只引用
-    // 其中一半的教材（2026-11-06）。
-    const supportingTopics = supportingTopicIds(message, guess.topicId, curriculum);
-    const searchedTopicIds = [guess.topicId, ...supportingTopics];
-    audit.searchedTopicIds = searchedTopicIds;
-    const blocks = listTutorCandidateBlocks(searchedTopicIds)
-      .filter((block) => distributable.has(block.documentId))
-      .map((block) => ({
-        id: block.id,
-        documentId: block.documentId,
-        documentFileName: block.documentFileName,
-        sectionId: block.sectionId,
-        type: block.type,
-        text: block.text,
-        table: block.table,
-        sourceLocation: block.sourceLocation,
-        extractionMethod: block.extractionMethod,
-      }));
+    const topicTitleById = new Map(topics.map((topic) => [topic.id, topic.title]));
+    const enumerate = ENUMERATE_PATTERN.test(normalizeHistoryAnswer(message));
 
-    // 檢索詞同樣以當前提問為主：只有提問本身幾乎沒有內容詞（例如「點解？」）時才借助
-    // 上一輪的提問，否則上一輪的詞會把不相關段落的排名推高。
-    const messageTerms = extractQueryTerms(message);
-    const terms = withExpandedTerms(
-      messageTerms.length >= 3 ? messageTerms : extractQueryTerms(message, recentContext),
-      extraTerms,
-    );
+    const retrieve = (
+      activeGuess: TutorTopicGuess,
+    ): {
+      passages: TutorPassage[];
+      distinctiveTerms: string[];
+      topicEvidence: TutorTopicEvidence[] | undefined;
+    } => {
+      // 跨課題比較：提問明確點名其他課題時，一併檢索（最多兩個），否則比較題只引用
+      // 其中一半的教材（2026-11-06）。
+      const supportingTopics = supportingTopicIds(
+        message,
+        activeGuess.topicId,
+        curriculum,
+        recentContext,
+      );
+      const searchedTopicIds = [activeGuess.topicId, ...supportingTopics];
+      audit.searchedTopicIds = searchedTopicIds;
+      const blocks = listTutorCandidateBlocks(searchedTopicIds)
+        .filter((block) => distributable.has(block.documentId))
+        .map((block) => ({
+          id: block.id,
+          documentId: block.documentId,
+          documentFileName: block.documentFileName,
+          topicId: block.topicId,
+          topicTitle: topicTitleById.get(block.topicId ?? "") ?? null,
+          sectionId: block.sectionId,
+          type: block.type,
+          text: block.text,
+          table: block.table,
+          sourceLocation: block.sourceLocation,
+          extractionMethod: block.extractionMethod,
+        }));
+
+      /**
+       * 提問的關鍵詞（名詞類）。先剔除「該課題本身就有」的詞（課題標題、分節標題及分節
+       * 關鍵詞）：那些詞出現與否只反映「有沒有命中課題」，不能說明答案是否涵蓋問題。
+       * 剩下的（例如問美國革命時的「法國」）才是需要用來加權及判斷缺口的訊號。
+       */
+      const topicScaffold = normalizeHistoryAnswer(
+        [
+          activeGuess.topicTitle,
+          ...(sectionsByTopic.get(activeGuess.topicId) ?? []).flatMap((section) => [
+            section.title,
+            ...(section.matchKeywords ?? []),
+          ]),
+        ].join("\n"),
+      );
+      const distinctiveTerms = extractDistinctiveTerms(message).filter(
+        (term) => !topicScaffold.includes(term),
+      );
+      /**
+       * 檢索加權只使用「稀有」關鍵詞（見 `EMPHASIS_MAX_DOCUMENT_SHARE`）：
+       * 常見詞（例如課題9 的「德國」）本身就會命中大量段落，加權只會擾亂排序。
+       */
+      const blockTexts = blocks.map((block) => normalizeHistoryAnswer(block.text));
+      const emphasisTerms =
+        blockTexts.length === 0
+          ? []
+          : distinctiveTerms.filter((term) => {
+              const share =
+                blockTexts.filter((text) => termCoveredBy(text, term)).length / blockTexts.length;
+              return share > 0 && share <= EMPHASIS_MAX_DOCUMENT_SHARE;
+            });
+      const passages = selectTutorPassages(blocks, terms, {
+        maxSources: options.maxSources,
+        preferredSectionIds: activeGuess.sectionIds,
+        enumerate,
+        emphasisTerms,
+        balancedTopicIds: supportingTopics.length > 0 ? searchedTopicIds : undefined,
+        audit,
+      });
+      const topicEvidence =
+        searchedTopicIds.length > 1
+          ? searchedTopicIds.map((topicId) => {
+              const allocation = audit.topicAllocation?.find(
+                (entry) => entry.topicId === topicId,
+              );
+              return {
+                topicId,
+                topicTitle: topicTitleById.get(topicId) ?? topicId,
+                qualifyingHits: allocation?.qualifyingHits ?? 0,
+                selectedPassages: allocation?.selectedPassages ?? 0,
+              };
+            })
+          : undefined;
+      return { passages, distinctiveTerms, topicEvidence };
+    };
+
+    let attempt = retrieve(guess);
     /**
-     * 提問的關鍵詞（名詞類）。先剔除「該課題本身就有」的詞（課題標題、分節標題及分節
-     * 關鍵詞）：那些詞出現與否只反映「有沒有命中課題」，不能說明答案是否涵蓋問題。
-     * 剩下的（例如問美國革命時的「法國」）才是需要用來加權及判斷缺口的訊號。
+     * 課程推斷指向的課題沒有可用片段時，改以教材內文反推課題再試一次（Sprint 34）。
+     * 實測個案：「珍珠港事件是甚麼？」被分節關鍵詞帶到課題7（美國的成立及發展），
+     * 但該課題沒有相關片段；教材內文反推指向課題9（兩次世界大戰）。
+     *
+     * 只在推斷來自**課程用語**時才重試：若課題是學生自己設定的溫習目標
+     * （`preferred-topic`），不可因為模型的改寫詞而把學生正在溫習的課題換掉——
+     * 否則「改寫詞不會令無關段落成為依據」這項保證會失守。
      */
-    const topicScaffold = normalizeHistoryAnswer(
-      [
-        guess.topicTitle,
-        ...(sectionsByTopic.get(guess.topicId) ?? []).flatMap((section) => [
-          section.title,
-          ...(section.matchKeywords ?? []),
-        ]),
-      ].join("\n"),
-    );
-    const distinctiveTerms = extractDistinctiveTerms(message).filter(
-      (term) => !topicScaffold.includes(term),
-    );
-    /**
-     * 檢索加權只使用「稀有」關鍵詞（見 `EMPHASIS_MAX_DOCUMENT_SHARE`）：
-     * 常見詞（例如課題9 的「德國」）本身就會命中大量段落，加權只會擾亂排序。
-     */
-    const blockTexts = blocks.map((block) => normalizeHistoryAnswer(block.text));
-    const emphasisTerms =
-      blockTexts.length === 0
-        ? []
-        : distinctiveTerms.filter((term) => {
-            const share =
-              blockTexts.filter((text) => termCoveredBy(text, term)).length / blockTexts.length;
-            return share > 0 && share <= EMPHASIS_MAX_DOCUMENT_SHARE;
-          });
-    const passages = selectTutorPassages(blocks, terms, {
-      maxSources: options.maxSources,
-      preferredSectionIds: guess.sectionIds,
-      enumerate: ENUMERATE_PATTERN.test(normalizeHistoryAnswer(message)),
-      emphasisTerms,
-      audit,
-    });
-    if (passages.length === 0) {
-      return { ...notCovered(guess.topicId, guess.topicTitle), selectionAudit: audit };
+    if (attempt.passages.length === 0 && audit.topicInference.source === "curriculum") {
+      const fallbackGuess = applyMaterialFallback();
+      if (fallbackGuess !== null && fallbackGuess.topicId !== guess.topicId) {
+        guess = fallbackGuess;
+        audit.searchedTopicIds = undefined;
+        audit.topicAllocation = undefined;
+        audit.candidateBlocks = 0;
+        audit.scoredHits = 0;
+        audit.belowThreshold = 0;
+        audit.selected = [];
+        audit.excluded = [];
+        attempt = retrieve(guess);
+      }
+    }
+    if (attempt.passages.length === 0) {
+      return {
+        ...notCovered(guess.topicId, guess.topicTitle),
+        topicEvidence: attempt.topicEvidence,
+        selectionAudit: audit,
+      };
     }
 
     // 關鍵詞缺口：確實引用了教材，但提問的關鍵詞在所選段落中完全找不到
     // （例如三段都只有「美國革命」的背景，沒有「法國」）。API 會據此仍然抓取外部參考。
-    const passageText = normalizeHistoryAnswer(passages.map((passage) => passage.promptText).join("\n"));
-    const uncoveredTerms = distinctiveTerms.filter(
+    const passageText = normalizeHistoryAnswer(
+      attempt.passages.map((passage) => passage.promptText).join("\n"),
+    );
+    const uncoveredTerms = attempt.distinctiveTerms.filter(
       (term) => !termCoveredBy(passageText, term),
     );
 
@@ -1369,14 +1717,15 @@ export function findTutorGrounding(
       status: "grounded",
       topicId: guess.topicId,
       topicTitle: guess.topicTitle,
+      topicEvidence: attempt.topicEvidence,
       uncoveredTerms,
-      sources: passages.map((passage) => ({
+      sources: attempt.passages.map((passage) => ({
         blockId: passage.anchorBlockId,
         documentLabel: passage.documentLabel,
         location: passage.location,
         excerpt: passage.excerpt,
       })),
-      passages,
+      passages: attempt.passages,
       selectionAudit: audit,
     };
   } catch {
@@ -1472,6 +1821,11 @@ export function buildTutorSystemPrompt(input: {
    * 即原有的四段精簡結構。
    */
   depth?: TutorReplyDepth;
+  /**
+   * 本回合的可答性狀態（見 services/tutor-answerability.ts）。用於在檢索失敗時
+   * 明確要求「仍然作答並標明一般歷史知識」，而不是拒絕或假裝有教材依據。
+   */
+  answerability?: TutorAnswerabilityDecision;
 }): string {
   const depth: TutorReplyDepth = input.depth ?? "standard";
   const sections: string[] = [TUTOR_BASE_SYSTEM_PROMPT];
@@ -1482,6 +1836,15 @@ export function buildTutorSystemPrompt(input: {
   // 只約束「歷史問題」的回覆；簡單確認或寒暄不強制套用，避免变成公式化廢話。
   sections.push(TUTOR_REPLY_STRUCTURES[depth]);
   if (depth !== "standard") sections.push(TUTOR_ANALYSIS_DIMENSIONS);
+  // 可答性政策（Sprint 29）：必須先於教材片段出現，令「教材找不到也要作答」的
+  // 指示不會被後面的片段規則蓋過。A 狀態不另加區塊（既有片段規則已足夠）。
+  const answerabilityBlock =
+    input.answerability === undefined
+      ? null
+      : describeTutorAnswerabilityForPrompt(input.answerability);
+  if (answerabilityBlock !== null && answerabilityBlock.length > 0) {
+    sections.push(answerabilityBlock);
+  }
   const goalTopicTitle = input.goalTopicTitle?.trim() ?? "";
   if (goalTopicTitle.length > 0) {
     sections.push(
@@ -1500,11 +1863,38 @@ export function buildTutorSystemPrompt(input: {
     sections.push(`【課本用語】本校教材使用以下寫法，回覆時必須沿用：${terms}。`);
   }
 
+  const topicEvidence = input.grounding.topicEvidence ?? [];
+  if (topicEvidence.length > 1) {
+    const allocation = topicEvidence
+      .map(
+        (topic) =>
+          `- ${topic.topicTitle}（${topic.topicId}）：${topic.selectedPassages} 段入選教材，${topic.qualifyingHits} 個段落命中門檻`,
+      )
+      .join("\n");
+    sections.push(
+      [
+        "【比較課題證據分配】本次問題涉及多個課題，入選教材按以下課題標示：",
+        allocation,
+        "只可用標示為該課題的教材片段支持該方；不得以另一課題的材料代替，亦不得補造缺失史實。",
+        "若某方是 0 段，必須明確說明該方的教材證據不足；若有片段但不足以支持所問比較面向，也必須披露限制。",
+        "比較時分清教材直接支持的史實與分析推論；不可把推論或一般知識說成教材內容。",
+      ].join("\n"),
+    );
+  }
+
   if (input.grounding.passages.length > 0) {
     const passages = input.grounding.passages
       .map(
-        (passage, index) =>
-          `<教材 編號="${index + 1}" 出處="${passage.documentLabel} ${passage.location}">\n${passage.promptText}\n</教材>`,
+        (passage, index) => {
+          const topicAttributes =
+            passage.topicId !== null &&
+            passage.topicId !== undefined &&
+            passage.topicTitle !== null &&
+            passage.topicTitle !== undefined
+              ? ` 課題="${passage.topicTitle}" 課題ID="${passage.topicId}"`
+              : "";
+          return `<教材 編號="${index + 1}"${topicAttributes} 出處="${passage.documentLabel} ${passage.location}">\n${passage.promptText}\n</教材>`;
+        },
       )
       .join("\n");
     sections.push(

@@ -26,6 +26,7 @@ interface BlockInput {
   order: number;
   text: string;
   documentId?: string;
+  topicId?: string | null;
   type?: string;
 }
 
@@ -33,6 +34,7 @@ function block(input: BlockInput) {
   return {
     id: input.id,
     documentId: input.documentId ?? "doc-meiji",
+    topicId: input.topicId ?? null,
     documentFileName: "課題6 歐洲國家的殖民擴張_筆記.docx",
     sectionId: null,
     type: input.type ?? "paragraph",
@@ -174,6 +176,48 @@ describe("長段落不可被靜默丟棄（規格 3.9）", () => {
       if (selected.truncated) expect(selected.windowStartSentence).not.toBeNull();
       else expect(selected.windowStartSentence).toBeNull();
     }
+  });
+});
+
+describe("跨課題選段須保留各課題的教材證據", () => {
+  it("高分主課題不能擠掉明確點名的第二課題", () => {
+    const blocks = [
+      ...Array.from({ length: 8 }, (_, index) =>
+        block({
+          id: `american-${index}`,
+          order: index,
+          documentId: `american-doc-${index}`,
+          topicId: "topic-7",
+          text: `美國革命的發展與十三個殖民地的自治要求有關，英國殖民政策引起衝突，教材證據 ${index}。`,
+        }),
+      ),
+      ...Array.from({ length: 8 }, (_, index) =>
+        block({
+          id: `french-${index}`,
+          order: index,
+          documentId: `french-doc-${index}`,
+          topicId: "topic-5",
+          text: `法國大革命於1789年爆發，革命者推翻舊制度，並提出人民主權等政治主張，教材證據 ${index}。`,
+        }),
+      ),
+    ];
+    const terms = grounding.extractQueryTerms("比較美國革命與法國大革命有甚麼異同？");
+
+    const passages = grounding.selectTutorPassages(blocks, terms, {
+      maxSources: 4,
+      balancedTopicIds: ["topic-7", "topic-5"],
+    });
+
+    expect(passages).toHaveLength(4);
+    expect(passages.some((passage) => passage.topicId === "topic-7")).toBe(true);
+    expect(passages.some((passage) => passage.topicId === "topic-5")).toBe(true);
+    const byTopic = new Map<string, number>();
+    for (const passage of passages) {
+      if (passage.topicId !== null && passage.topicId !== undefined) {
+        byTopic.set(passage.topicId, (byTopic.get(passage.topicId) ?? 0) + 1);
+      }
+    }
+    expect(Math.abs((byTopic.get("topic-7") ?? 0) - (byTopic.get("topic-5") ?? 0))).toBeLessThanOrEqual(1);
   });
 });
 

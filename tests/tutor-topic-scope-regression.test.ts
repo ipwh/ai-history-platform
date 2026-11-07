@@ -103,6 +103,27 @@ describe("跨課題比較會一併檢索被點名的課題（規格 3.17）", ()
     expect(supporting).not.toContain("hs-topic-1");
     expect(supporting).not.toContain("topic-12");
   });
+
+  it("比較兩個制度或政策時，同樣檢索兩方課題", () => {
+    const query = "比較雅典民主政治與極權主義的政治制度";
+    const primary = guess(query);
+    expect(["topic-2", "topic-9"]).toContain(primary?.topicId);
+    const supporting = supportingTopicIds(query, primary?.topicId ?? "", curriculum);
+    expect(supporting).toContain(primary?.topicId === "topic-2" ? "topic-9" : "topic-2");
+  });
+
+  it("比較題以代詞指回上文時，沿用上文明確提到的第二課題", () => {
+    const previousQuestion = "美國革命與法國大革命有哪些關係？";
+    expect(
+      supportingTopicIds("比較兩者的異同", "topic-7", curriculum, [previousQuestion]),
+    ).toContain("topic-5");
+  });
+
+  it("單課題後續提問不會只因上文提過另一課題而擴大檢索", () => {
+    expect(
+      supportingTopicIds("美國革命有甚麼影響？", "topic-7", curriculum, ["法國大革命"]),
+    ).toEqual([]);
+  });
 });
 
 describe("詞庫新增項目的契約（規格 3.5、3.10、3.15、3.16）", () => {

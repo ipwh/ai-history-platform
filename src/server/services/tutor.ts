@@ -5,23 +5,47 @@ import {
 } from "@/lib/history-lexicon";
 import { countAnsweredTutorQuestionsSince } from "../repositories/tutor";
 import type { TutorMessage } from "../repositories/tutor";
+import { hasHistoricalYearSignal } from "./tutor-query";
 
 export const TUTOR_DAILY_LIMIT = 15;
 export const TUTOR_OFF_TOPIC_REPLY =
   "我是你的歷史科自學學伴，只能討論歷史科相關話題喔！你可以告訴我你想探討哪一個歷史事件或課題嗎？";
 
 const HONG_KONG_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+/**
+ * 英文疑問詞本身不可當作歷史專名（Sprint 29，2026-11-07）。
+ *
+ * 詞庫收了「WHO」（世界衛生組織）等英文縮寫別名；正規化會去掉空格，於是任何
+ * 以 who／what／how 開首的英文句子都逐字包含該別名。實測：
+ * 「Who won the World Cup in 2022?」「who won the game」都會通過歷史科硬閘。
+ * 疑問詞沒有辨識價值，一律不參與專名比對。
+ */
+const ENGLISH_INTERROGATIVES: ReadonlySet<string> = new Set([
+  "who",
+  "whose",
+  "whom",
+  "what",
+  "when",
+  "where",
+  "which",
+  "why",
+  "how",
+]);
+
 const HISTORY_TERMS = HISTORY_TERM_GROUPS.flatMap((group) => [
   group.canonical,
   ...group.aliases,
 ])
   .filter((term) => term.trim().length >= 2)
+  .filter((term) => !ENGLISH_INTERROGATIVES.has(term.trim().toLowerCase()))
   // 必須用與提問相同的正規化（去空白、全半形、繁簡）。原本只用 toLowerCase，
   // 令帶空格的英文別名（"industrial revolution"、"japanese occupation"、
   // "treaty of versailles"…）永遠對不上已去空白的提問，"Industrial Revolution"
   // 因此被當成離題（2026-11-02 修正）。
   .map((term) => normalizeHistoryAnswer(term))
-  .filter((term) => term.length >= 2);
+  .filter((term) => term.length >= 2)
+  .filter((term) => !ENGLISH_INTERROGATIVES.has(term));
 
 const SHORT_FOLLOW_UP =
   /^(?:點解|為甚麼|為什麼|原因呢|邊一年|哪一年|何時|幾時|然後呢|結果呢|有什麼影響|有何影響|呢個呢|那麼呢|之後呢|咁跟住呢|咁跟住點|(?:跟住|之後|最後)點(?:呀|啊|呢)?|咁之後發生咩事|咁佢最後點|後來呢|有咩結果|咁結果係點|咁呢個有咩影響|仲有呢|再講多少少|可否再說|可以再講|再解釋|詳細一點|再舉例)$/;
@@ -136,9 +160,9 @@ export function isHistoryTopicPrompt(message: string): boolean {
   if (HISTORY_TERMS.some((term) => normalized.includes(term))) return true;
   // 錯一個字的專名（「凡爾塞條約」）仍屬歷史提問：逐字比對會把它當成離題。
   if (findLooseHistoryTerms(normalized).length > 0) return true;
-  return /(?:公元前|公元|西元)?\s*\d{1,4}\s*(?:年|世紀|年代)|\b(?:1[0-9]{3}|20[0-2][0-9])\b/.test(
-    normalized,
-  );
+  // Sprint 29：只接受歷史年代（1999 年或以前）的年份。原本任何四位數字都放行，
+  // 令「Who won the World Cup in 2022?」進入歷史學伴。
+  return hasHistoricalYearSignal(normalized);
 }
 
 export function isShortHistoryFollowUp(message: string): boolean {

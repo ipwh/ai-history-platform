@@ -60,8 +60,8 @@ function isOnTopicGate(query: string, hasValidHistoryContext: boolean): boolean 
 const byId = new Map(TUTOR_STUDENT_QUERY_MATRIX.map((entry) => [entry.id, entry]));
 
 describe("學生提問矩陣：資料集契約", () => {
-  it("涵蓋全部 12 個類別，且案例數足夠", () => {
-    expect(TUTOR_STUDENT_QUERY_MATRIX.length).toBeGreaterThanOrEqual(60);
+  it("涵蓋全部 12 個類別，並保留現有全部 83 條案例", () => {
+    expect(TUTOR_STUDENT_QUERY_MATRIX).toHaveLength(83);
     for (const category of TUTOR_QUERY_CATEGORIES) {
       const count = TUTOR_STUDENT_QUERY_MATRIX.filter((entry) => entry.category === category).length;
       expect(count, `類別 ${category} 沒有任何案例`).toBeGreaterThan(0);

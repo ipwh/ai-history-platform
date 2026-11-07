@@ -55,7 +55,6 @@ describe("中文因果及程度問題（規格 3.4）", () => {
     "茶稅是否直接引致美國革命？",
     "兩者有何因果關係？",
     "為什麼會出現美國革命？",
-    "經濟因素是主要原因嗎？",
   ];
 
   it("因果解釋使用進階深度", () => {
@@ -69,6 +68,21 @@ describe("中文因果及程度問題（規格 3.4）", () => {
     expect(resolveTutorReplyDepth("auto", "英國政策在多大程度上促成美國革命？")).toBe(
       "challenge",
     );
+  });
+
+  it("「是否主要原因」屬因果判斷，使用挑戰深度（Sprint 29 調整）", () => {
+    // 原本與其他因果題同列為 advanced；但「經濟因素是否主因」要求學生先定判斷準則，
+    // 屬評價而非單純解釋因果，因此改為 challenge（深層結構包含判斷準則及反駁）。
+    expect(resolveTutorReplyDepth("auto", "經濟因素是主要原因嗎？")).toBe("challenge");
+    expect(
+      resolveTutorReplyDepth("auto", "波士頓茶黨事件是美國革命的主要原因嗎？"),
+    ).toBe("challenge");
+    expect(
+      resolveTutorReplyDepth(
+        "auto",
+        "Was the Boston Tea Party the main cause of the American Revolution?",
+      ),
+    ).toBe("challenge");
   });
 
   it("單純事件描述不會被當成因果或評價題", () => {

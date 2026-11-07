@@ -186,9 +186,9 @@ export function hasWeakHistorySignal(raw: string): boolean {
     // 「課題8講咩？」「幫我溫習課題9」：用課程編號提問，屬歷史科，但沒有具體
     // 內容詞——應走澄清並以該課題的分節提供選項（2026-11-02）。
     /課題\s*\d+/.test(normalized) ||
-    /(?:公元前|公元|西元)?\d{1,4}(?:年|世紀|年代)|\b(?:1[0-9]{3}|20[0-2][0-9])\b/.test(
-      normalized,
-    ) ||
+    // 只有歷史年代的年份才算訊號：2022 年世界盃、2030 年規劃之類不應被當成歷史提問
+    // （Sprint 29；與詞庫判斷的歷史題材形態規則一致）。
+    hasHistoricalYearSignal(normalized) ||
     WEAK_HISTORY_SIGNALS.some((signal) => normalized.includes(normalizeTutorQuery(signal))) ||
     HISTORY_TERM_GROUPS.some((group) =>
       [group.canonical, ...group.aliases].some((term) => {
@@ -206,7 +206,8 @@ function hasSpecificHistoryAnchor(
   // 年份／世紀本身已是歷史錨點：與 `isHistoryTopicPrompt` 的判斷一致。
   // 若只在這裡不承認年份，「美國在 1942 年才正式參戰，對嗎？」會因為找不到
   // 詞庫專名而被當成含糊，要求學生重新選擇課題（2026-11-06 實測）。
-  if (/(?:公元前|公元|西元)?\d{1,4}(?:年|世紀|年代)|\b(?:1[0-9]{3}|20[0-2][0-9])\b/.test(normalized)) {
+  // Sprint 29：只承認歷史年代（1999 年或以前），否則 2022 年世界盃會被當成歷史錨點。
+  if (hasHistoricalYearSignal(normalized)) {
     return true;
   }
   const lexiconTerms = HISTORY_TERM_GROUPS.flatMap((group) => [
@@ -238,6 +239,44 @@ function hasSpecificHistoryAnchor(
   return false;
 }
 
+/**
+ * 明確含糊的講法（「嗰啲嘢」「那些」「好慘」）。
+ *
+ * 獨立成函式：Sprint 29 的可答性判斷也需要同一份名單，否則「個德國係咪好慘」會因為
+ * 句中有詞庫專名而被當成可作答。含糊是**語言**問題，不是教材涵蓋問題。
+ */
+const EXPLICIT_VAGUENESS =
+  /(?:嗰啲嘢|那些事情|那些東西|嗰堆|那些|好慘|很慘|慘不慘|好唔好|好不好)/;
+
+/**
+ * 「歷史年代」的最後一年（Sprint 29）。
+ *
+ * 課程內容到二十世紀末／二十一世紀初。只有「2000 年後」的年份而沒有歷史題材形態時，
+ * 不足以把提問當成歷史提問（體育、娛樂、科技新聞都會這樣寫）；同時也不應令這類
+ * 提問被要求澄清。判斷只在這一層，不影響詞庫或檢索。
+ */
+export const TUTOR_HISTORICAL_ERA_LAST_YEAR = 1999;
+
+/** 提問是否含有「歷史年代」的年份或世紀寫法（1999 年或以前） */
+export function hasHistoricalYearSignal(normalized: string): boolean {
+  // 正規化會去掉英文句子的空格（"who won in 2022" → "whowon2022"），
+  // 因此不可用 \b；改以「前後不是數字」界定。
+  for (const match of normalized.matchAll(/(?<!\d)(\d{2,4})\s*年/g)) {
+    if (Number(match[1]) <= TUTOR_HISTORICAL_ERA_LAST_YEAR) return true;
+  }
+  // 世紀／年代寫法本身就指明歷史時段（「十二世紀」「1930 年代」）。
+  if (/(?<!\d)\d{1,4}\s*(?:世紀|年代)/.test(normalized)) return true;
+  if (/(?:公元前|西元)\s*\d{1,4}/.test(normalized)) return true;
+  for (const match of normalized.matchAll(/(?<!\d)(1[0-9]{3}|20\d{2})(?!\d)/g)) {
+    if (Number(match[1]) <= TUTOR_HISTORICAL_ERA_LAST_YEAR) return true;
+  }
+  return false;
+}
+
+export function hasExplicitVagueness(raw: string): boolean {
+  return EXPLICIT_VAGUENESS.test(normalizeTutorQuery(raw));
+}
+
 export function isUnclearTutorQuery(
   raw: string,
   curriculum: TutorCurriculumIndex,
@@ -248,7 +287,7 @@ export function isUnclearTutorQuery(
   // 真正無法判斷的只有「明顯含糊」的講法（「嗰啲嘢」「那些」「好慘」）。「係點」「是怎樣」
   // 曾經列在這裡，但它們同樣是最常見的問法（「三年零八個月期間香港人生活係點？」）：
   // 只要句中有具體歷史錨點，就應照常作答，不可要求學生重新輸入（2026-11-02 修正）。
-  if (/(?:嗰啲嘢|那些事情|那些東西|嗰堆|那些|好慘|很慘|慘不慘|好唔好|好不好)/.test(normalized)) {
+  if (hasExplicitVagueness(raw)) {
     return true;
   }
   if (!hasSpecificHistoryAnchor(normalized, curriculum)) return true;

@@ -59,6 +59,8 @@
     "e2e": "node scripts/e2e-flow.mjs",
     "review:adjudication-packet": "tsx scripts/export-adjudication-packet.ts",
     "review:package": "tsx scripts/build-review-package.ts",
+    "tutor:export-review-packet": "tsx scripts/export-tutor-review-packet.ts",
+    "tutor:plan-live-eval": "tsx scripts/tutor-live-eval.ts",
     "review:calibration": "tsx scripts/build-calibration-report.ts",
     "verify:answers": "node scripts/verify-question-answers.mjs",
     "verify:answers:calibrate": "node scripts/verify-question-answers.mjs --calibrate --limit 20",

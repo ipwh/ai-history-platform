@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getServerConfig } from "@/server/config";
@@ -22,10 +22,13 @@ import {
 } from "@/server/repositories/tutor";
 import { describeAiLimit, reserveAiOperation } from "@/server/services/ai-limits";
 import {
+  openChatStream,
+  type OpenedChatStream,
+  type StreamChatMessage,
+} from "@/server/llm/stream-chat-completion";
+import {
   answeredTurnsOnly,
   hongKongTimestamp,
-  isHistoryTopicPrompt,
-  isShortHistoryFollowUp,
   TUTOR_DAILY_LIMIT,
   TUTOR_OFF_TOPIC_REPLY,
   tutorDailyUsage,
@@ -33,8 +36,6 @@ import {
 } from "@/server/services/tutor";
 import {
   buildClarifyCandidates,
-  hasWeakHistorySignal,
-  isClearlyNonHistoryTutorQuery,
   isUnclearTutorQuery,
   normalizeTutorQuery,
   tutorQueryWasRewritten,
@@ -47,8 +48,8 @@ import {
   detectTermMismatches,
   findTutorGrounding,
   loadTutorCurriculumIndex,
-  matchesCurriculumTerms,
 } from "@/server/services/tutor-grounding";
+import { classifyTutorAnswerability } from "@/server/services/tutor-answerability";
 import {
   collectTutorWebSupplement,
   type TutorWebSupplementResult,
@@ -131,20 +132,6 @@ const requireTutorAccess = requireTutorLearnerId;
 
 function buildDeepSeekEndpoint(baseUrl: string): string {
   return new URL("chat/completions", `${baseUrl.replace(/\/+$/, "")}/`).toString();
-}
-
-function extractDelta(data: string): string | null {
-  if (data === "[DONE]") return null;
-  const payload: unknown = JSON.parse(data);
-  if (typeof payload !== "object" || payload === null) return null;
-  const choices = (payload as { choices?: unknown }).choices;
-  if (!Array.isArray(choices) || typeof choices[0] !== "object" || choices[0] === null) {
-    return null;
-  }
-  const delta = (choices[0] as { delta?: unknown }).delta;
-  if (typeof delta !== "object" || delta === null) return null;
-  const content = (delta as { content?: unknown }).content;
-  return typeof content === "string" ? content : null;
 }
 
 function sseEvent(event: string, data: unknown): Uint8Array {
@@ -286,18 +273,6 @@ export async function POST(request: Request) {
       history.length > 0 &&
       sessionId !== null &&
       isTutorSessionLastTurnOnTopic(sessionId);
-    const explicitlyNonHistory = isClearlyNonHistoryTutorQuery(body.message);
-    const hasHistorySignal = hasWeakHistorySignal(normalizedMessage);
-    const isOnTopic =
-      !explicitlyNonHistory &&
-      (isHistoryTopicPrompt(normalizedMessage) ||
-        matchesCurriculumTerms(curriculum, normalizedMessage) ||
-        (history.length > 0 &&
-          sessionId !== null &&
-          hasValidHistoryContext &&
-          // 傳入原文：英文短追問（"Why?"／"Can you explain?"）需要空格才分得到詞，
-          // 中文部分函式內部會自行正規化（2026-11-06）。
-          isShortHistoryFollowUp(body.message)));
 
     // 傳入**原文**：`isUnclearTutorQuery` 內部會自行正規化，而英文疑問詞
     // （"Who was Hitler?"）需要原文的空格才判斷得到（正規化會把空格去掉，
@@ -359,11 +334,25 @@ export async function POST(request: Request) {
       });
     }
 
-    if (!explicitlyNonHistory && !isOnTopic && hasHistorySignal) {
-      const candidates: TutorQuestionCandidate[] = withTopicCardQuestions(
-        buildClarifyCandidates(body.message, groundingContext, curriculum, preferredTopicId),
-        preferredTopicId,
-      );
+    // ── 可答性與證據政策（Sprint 29）──────────────────────────────────
+    // 檢索成敗不再直接等於「是否回答」：先取教材依據，再按可答性狀態決定
+    // 澄清／離題引導／以教材回答／以一般歷史知識作答並標明（見
+    // services/tutor-answerability.ts）。這一步只是本地判斷，沒有額外模型請求。
+    let grounding = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
+      preferredTopicId,
+      maxSources: tutorMaxSourcesForDepth(replyDepth),
+    });
+    const answerability = classifyTutorAnswerability({
+      message: body.message,
+      curriculum,
+      grounding,
+      hasHistoryContext: hasValidHistoryContext,
+      unclear,
+    });
+
+    // 真正無法判斷（含只有代詞、沒有上文）→ 只問一條澄清問題並提供可選方向。
+    if (answerability.state === "D-needs-clarification") {
+      const clarifyTopicId = grounding.topicId ?? preferredTopicId;
       safeRecordTutorQueryEvent({
         eventType: "clarify",
         raw: body.message,
@@ -372,9 +361,17 @@ export async function POST(request: Request) {
       return jsonOk({
         clarify: true,
         reply: TUTOR_QUERY_CLARIFY_REPLY,
-        candidates,
+        candidates: withTopicCardQuestions(
+          buildClarifyCandidates(
+            body.message,
+            groundingContext,
+            curriculum,
+            clarifyTopicId,
+          ),
+          clarifyTopicId,
+        ),
         sessionId,
-        topicId: preferredTopicId,
+        topicId: clarifyTopicId,
         webSources: [],
         webSupplementStatus: webSupplementStatusWithoutFetch(),
         ...tutorDailyUsage(learnerId),
@@ -382,8 +379,8 @@ export async function POST(request: Request) {
       });
     }
 
-    // 在檢查 LLM 設定、每日額度及預留 AI 用量前先完成本地教材檢索，讓含混提問只會觸發澄清。
-    if (!isOnTopic) {
+    // 明確不是歷史提問 → 沿用固定引導句（不呼叫模型，不計額度）。
+    if (answerability.state === "out-of-scope") {
       // 離題也要留痕（決策 2）：學生重新載入後仍看到自己問過甚麼及平台的引導句。
       // assistant 訊息標記 `off-topic`，因此不計每日額度，亦不會成為下一輪的模型上文。
       const createdAt = hongKongTimestamp();
@@ -409,38 +406,6 @@ export async function POST(request: Request) {
         onTopic: false,
         reply: TUTOR_OFF_TOPIC_REPLY,
         sessionId,
-        webSources: [],
-        webSupplementStatus: webSupplementStatusWithoutFetch(),
-        ...tutorDailyUsage(learnerId),
-        dailyLimit: TUTOR_DAILY_LIMIT,
-      });
-    }
-
-    let grounding = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
-      preferredTopicId,
-      maxSources: tutorMaxSourcesForDepth(replyDepth),
-    });
-    if (unclear) {
-      const clarifyTopicId = grounding.topicId ?? preferredTopicId;
-      safeRecordTutorQueryEvent({
-        eventType: "clarify",
-        raw: body.message,
-        hadSession: sessionId !== null,
-      });
-      return jsonOk({
-        clarify: true,
-        reply: TUTOR_QUERY_CLARIFY_REPLY,
-        candidates: withTopicCardQuestions(
-          buildClarifyCandidates(
-            body.message,
-            groundingContext,
-            curriculum,
-            clarifyTopicId,
-          ),
-          clarifyTopicId,
-        ),
-        sessionId,
-        topicId: clarifyTopicId,
         webSources: [],
         webSupplementStatus: webSupplementStatusWithoutFetch(),
         ...tutorDailyUsage(learnerId),
@@ -550,7 +515,7 @@ export async function POST(request: Request) {
       [body.message, ...grounding.passages.map((passage) => passage.promptText)].join("\n"),
     );
 
-    const messages = [
+    const messages: StreamChatMessage[] = [
       {
         role: "system",
         content: buildTutorSystemPrompt({
@@ -563,6 +528,7 @@ export async function POST(request: Request) {
               : describeTutorPracticeContextForPrompt(effectivePracticeContext),
           goalTopicTitle: goalTopic?.published === true ? goalTopic.title : null,
           depth: replyDepth,
+          answerability,
         }),
       },
       ...promptHistory,
@@ -572,55 +538,60 @@ export async function POST(request: Request) {
     // 與 llm/chat-client.ts 一致的參數處理：思考模式不支援 temperature；DeepSeek 預設
     // 停用思考模式，若不傳送 thinking，API 會用預設值，思考用掉的 token 會佔盡
     // max_tokens，令回覆內容變成空白（TUTOR_LLM_EMPTY_RESPONSE）。
-    const completionBody: Record<string, unknown> = {
+    // 與 llm/chat-client.ts 一致的參數處理：思考模式不支援 temperature；DeepSeek 預設
+    // 停用思考模式，若不傳送 thinking，API 會用預設值，思考用掉的 token 會佔盡
+    // max_tokens，令回覆內容變成空白（TUTOR_LLM_EMPTY_RESPONSE）。
+    //
+    // Sprint 33：請求組裝、連線（含逾時）、SSE 解析及錯誤分類已抽到
+    // llm/stream-chat-completion.ts，令受控評估與正式 route 共用同一條呼叫路徑
+    // （不另寫 ad-hoc fetch）。每次嘗試仍然只發出**一個**請求。
+    const requestOptions = {
+      endpoint,
+      apiKey: llm.apiKey,
       model: llm.model,
       messages,
-      stream: true,
-      max_tokens: Math.min(
+      maxTokens: Math.min(
         llm.maxTokens ?? MAX_TOKENS_BY_DEPTH[replyDepth],
         MAX_TOKENS_BY_DEPTH[replyDepth],
       ),
-    };
-    if (llm.thinking !== "enabled") completionBody.temperature = 0.4;
-    if (llm.thinking !== null) {
-      completionBody.thinking = { type: llm.thinking };
-      if (llm.thinking === "enabled" && llm.reasoningEffort !== null) {
-        completionBody.reasoning_effort = llm.reasoningEffort;
-      }
-    }
+      thinking: llm.thinking,
+      reasoningEffort: llm.reasoningEffort,
+      temperature: 0.4,
+      timeoutMs: llm.requestTimeoutMs,
+    } as const;
 
-    const openUpstream = async (): Promise<Response> => {
-      try {
-        return await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            authorization: `Bearer ${llm.apiKey}`,
-            "content-type": "application/json",
-            accept: "text/event-stream",
-          },
-          body: JSON.stringify(completionBody),
-          signal: AbortSignal.timeout(llm.requestTimeoutMs),
-        });
-      } catch {
+    // 先開啟上游連線並檢查 HTTP 狀態：供應商 5xx／無法連線時，必須在**開始串流之前**
+    // 以 503 回報（既有行為，Sprint 33 回歸測試要求保留），不可先回 200 才送錯誤事件。
+    const openUpstream = async (): Promise<OpenedChatStream> => {
+      // 把 route 的 AbortController 一併傳入：學生關掉分頁時要真的中止上游請求
+      // （Sprint 34；否則伺服器會繼續讀完整個回應並繼續計費）。
+      const opened = await openChatStream({ ...requestOptions, signal: upstreamAbort.signal });
+      if (opened.kind === "error") {
+        if (opened.errorCode === "network" || opened.errorCode === "timeout" || opened.errorCode === "aborted") {
+          throw new ApiRouteError(
+            "DeepSeek 服務暫時無法連線，請稍後再試（TUTOR_LLM_UNAVAILABLE）",
+            503,
+          );
+        }
+        if (opened.errorCode === "missing-api-key") {
+          throw new ApiRouteError(
+            "DeepSeek 服務尚未完成設定，請聯絡平台管理員（TUTOR_LLM_NOT_CONFIGURED）",
+            503,
+          );
+        }
         throw new ApiRouteError(
-          "DeepSeek 服務暫時無法連線，請稍後再試（TUTOR_LLM_UNAVAILABLE）",
+          "DeepSeek 暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）",
           503,
         );
       }
+      return opened;
     };
 
-    let upstream = await openUpstream();
-
-    if (!upstream.ok || upstream.body === null) {
-      throw new ApiRouteError(
-        "DeepSeek 暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）",
-        503,
-      );
-    }
-
     const activeSessionId = sessionId;
-    let streamReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
     let cancelled = false;
+    // 客戶端斷線時中止上游請求（保留原本 streamReader.cancel() 的行為）
+    const upstreamAbort = new AbortController();
+    let upstream = await openUpstream();
     // 空白回應重試次數（沿用 LLM_EMPTY_RETRIES，與題目生成一致）
     const maxAttempts = 1 + Math.max(0, llm.emptyContentRetries ?? 0);
     const stream = new ReadableStream<Uint8Array>({
@@ -644,60 +615,34 @@ export async function POST(request: Request) {
         let sentAnyText = false;
         let failureMessage: string | null = null;
 
-        /** 讀取一次上游串流；回傳 null 代表串流中斷或格式不正確 */
-        const relay = async (response: Response): Promise<string | null> => {
-          const reader = response.body!.getReader();
-          streamReader = reader;
-          const decoder = new TextDecoder();
-          let pending = "";
-          let streamFailed = false;
-          let answer = "";
-
-          const handleLine = (line: string) => {
-            if (!line.startsWith("data:")) return;
-            const data = line.slice(5).trim();
-            if (data === "[DONE]") return;
-            try {
-              const delta = extractDelta(data);
-              if (delta === null) return;
-              answer += delta;
+        for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+          const result = await upstream.consume({
+            signal: upstreamAbort.signal,
+            onDelta: (delta: string) => {
               if (delta.trim().length > 0) sentAnyText = true;
               if (!cancelled) controller.enqueue(sseEvent("delta", { text: delta }));
-            } catch {
-              streamFailed = true;
-            }
-          };
+            },
+          });
 
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              pending += decoder.decode(value, { stream: true });
-              const lines = pending.split(/\r?\n/);
-              pending = lines.pop() ?? "";
-              for (const line of lines) handleLine(line);
-              if (streamFailed) throw new Error("Invalid DeepSeek stream event");
-            }
-            pending += decoder.decode();
-            if (pending.length > 0) handleLine(pending);
-            if (streamFailed) throw new Error("Invalid DeepSeek stream event");
-            return answer;
-          } catch {
-            return null;
-          } finally {
-            reader.releaseLock();
-            streamReader = null;
-          }
-        };
-
-        for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-          const answer = await relay(upstream);
-          if (answer === null) {
-            failureMessage = "DeepSeek 串流中斷或格式不正確，請稍後重試（TUTOR_LLM_STREAM_ERROR）";
+          if (result.ok) {
+            completeAnswer = result.text;
             break;
           }
-          completeAnswer = answer;
-          if (answer.trim().length > 0) break;
+
+          if (result.errorCode === "invalid-response" || result.errorCode === "aborted") {
+            failureMessage =
+              "DeepSeek 串流中斷或格式不正確，請稍後重試（TUTOR_LLM_STREAM_ERROR）";
+            break;
+          }
+          if (result.errorCode === "timeout" || result.errorCode === "network") {
+            failureMessage = "DeepSeek 服務暫時無法連線，請稍後再試（TUTOR_LLM_UNAVAILABLE）";
+            break;
+          }
+          if (result.errorCode === "rate-limited" || result.errorCode === "server-error") {
+            failureMessage =
+              "DeepSeek 暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）";
+            break;
+          }
 
           // 空白回應：只有在完全沒有送出任何文字時才可重試（否則客戶端已看到部分內容）
           if (sentAnyText || attempt >= maxAttempts || cancelled) {
@@ -705,15 +650,10 @@ export async function POST(request: Request) {
             break;
           }
           try {
-            const retry = await openUpstream();
-            if (!retry.ok || retry.body === null) {
-              failureMessage =
-                "DeepSeek 暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）";
-              break;
-            }
-            upstream = retry;
+            upstream = await openUpstream();
           } catch {
-            failureMessage = "DeepSeek 服務暫時無法連線，請稍後再試（TUTOR_LLM_UNAVAILABLE）";
+            failureMessage =
+              "DeepSeek 暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）";
             break;
           }
         }
@@ -765,7 +705,7 @@ export async function POST(request: Request) {
       },
       async cancel() {
         cancelled = true;
-        await streamReader?.cancel();
+        upstreamAbort.abort();
       },
     });
 

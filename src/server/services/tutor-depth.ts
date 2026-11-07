@@ -18,9 +18,16 @@ import { isShortHistoryFollowUp } from "./tutor";
  * `advanced`，因為名單只有「是否同意」「同不同意」，沒有學生實際會打的「你同意嗎」。
  * 同時只收「疑問形」（同意嗎／贊成嗎／你認為…嗎），避免把「英國為何不同意自治」
  * 這類因果提問當成評價題。
+ *
+ * 2026-11-07（Sprint 29）：加入「因果判斷」句式——問某件事**是否**主要原因／關鍵
+ * 因素，屬於評價而非單純解釋因果。「波士頓茶黨事件是美國革命的主要原因嗎？」原本
+ * 被判 `advanced`（只因「原因」命中分析類），與「為何發生」得到同一個結構。
  */
+const EVALUATIVE_CAUSAL_PATTERN =
+  /(?:是否|係咪|算唔算|算不算|堪稱|可唔可以視為|可否視為)[^？?]{0,12}(?:主要原因|主因|最重要|關鍵|決定性|根本原因)|(?:主要原因|主因|最重要|關鍵|決定性)[^？?]{0,8}(?:嗎|呢|對嗎)|(?:多大程度|幾大程度)/;
+
 const EVALUATIVE_PATTERN =
-  /評價|評估|評論|判斷|是否同意|同不同意|同唔同意|你同意|同意嗎|贊成嗎|反對嗎|多大程度|幾大程度|重要性|最重要|較重要|更重要|哪一?個[^？?]{0,6}較|哪一?項[^？?]{0,6}較|史觀|史學|爭議|成效|應否|應不應該|值不值得|公平嗎|合理嗎|恰當嗎|成功嗎|失敗嗎|你認為[^？?]{0,24}嗎|是否值得|是否重要|是否成功|是否公平|是否合理|是否恰當|是否應該|是否應視為|是否可視為|值得嗎|重要嗎|視為一場/;
+  /評價|評估|評論|判斷|是否同意|同不同意|同唔同意|你同意|同意嗎|贊成嗎|反對嗎|多大程度|幾大程度|重要性|最重要|較重要|更重要|哪一?個[^？?]{0,6}較|哪一?項[^？?]{0,6}較|最具(?:決定性|影響力|重要性)|最為關鍵|史觀|史學|爭議|成效|應否|應不應該|值不值得|公平嗎|合理嗎|恰當嗎|成功嗎|失敗嗎|算唔算|算不算|成唔成功|成不成功|失唔失敗|你認為[^？?]{0,24}嗎|是否值得|是否重要|是否成功|是否公平|是否合理|是否恰當|是否應該|是否應視為|是否可視為|值得嗎|重要嗎|視為一場/;
 
 /** 需要比較、解釋因果或整理關係的提問 → `advanced` */
 const ANALYTICAL_PATTERN =
@@ -49,6 +56,16 @@ const FACTUAL_ANYWHERE = /幾時|何時|邊一年|哪一年|幾多年|邊個|邊
  */
 const EVALUATIVE_PATTERN_EN =
   /\b(?:to what extent|to what degree|how far|how significant|how important|how successful|how effective|how justified|evaluate|assess|do you agree|do you think|discuss whether|judge whether|was it justified|was it mainly because|would you say)\b/i;
+
+/**
+ * 英文的因果判斷（Sprint 29）。
+ *
+ * "Was the Boston Tea Party the main cause of the American Revolution?" 只命中
+ * `causes? of` → `advanced`，但這題要求判斷「主因」，屬評價。只收帶評價語意的
+ * 主因／關鍵因素說法，普通 "What caused…?" 仍然是進階分析。
+ */
+const EVALUATIVE_CAUSAL_PATTERN_EN =
+  /\b(?:main|primary|principal|chief|key|decisive|most important|single most important)\s+(?:cause|reason|factor)|\b(?:main|primary|principal|chief|key|decisive)\s+factors?\b|\bhow\s+(?:important|significant|decisive)\b|\bwhich\s+(?:factor|event|cause|reason|development)\b[^?]{0,60}\b(?:most important|most significant|more important|decisive|greatest)\b|\bmost\s+important\s+(?:factor|event|cause|reason)\b|\bhistorians?\s+(?:disagree|differ|debate)\b|\bwas\s+[^?]{0,60}\b(?:a|an)\s+(?:failure|success)\b|\bsignificance\b/i;
 
 const ANALYTICAL_PATTERN_EN =
   /\b(?:why|how|compare|contrast|explain|in what ways?|relationship between|influence[sd]?|impact[s]?|effects? of|causes? of|what caused|what led to|caused by|reasons? (?:for|why)|consequences?)\b/i;
@@ -92,7 +109,14 @@ export function resolveTutorReplyDepth(
   const normalized = normalizeHistoryAnswer(message);
   const raw = message;
   if (isShortHistoryFollowUp(message)) return previousDepth ?? "standard";
-  if (EVALUATIVE_PATTERN.test(normalized) || EVALUATIVE_PATTERN_EN.test(raw)) return "challenge";
+  if (
+    EVALUATIVE_PATTERN.test(normalized) ||
+    EVALUATIVE_PATTERN_EN.test(raw) ||
+    EVALUATIVE_CAUSAL_PATTERN.test(normalized) ||
+    EVALUATIVE_CAUSAL_PATTERN_EN.test(raw)
+  ) {
+    return "challenge";
+  }
   if (ANALYTICAL_PATTERN.test(normalized) || ANALYTICAL_PATTERN_EN.test(raw)) return "advanced";
   if (
     FACTUAL_PATTERN.test(normalized) ||

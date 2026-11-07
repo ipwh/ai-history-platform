@@ -11,6 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { runReleaseGate } from "../src/server/quality/release-gate";
+import { writeReleaseGateEvidence } from "../src/server/quality/release-gate-output";
 
 function readArg(argv: string[], name: string): string | null {
   const index = argv.indexOf(name);
@@ -20,14 +21,16 @@ function readArg(argv: string[], name: string): string | null {
 function main(): number {
   const repo = process.cwd();
   const argv = process.argv.slice(2);
+  const generatedAt = new Date();
+  const outputSuffix = generatedAt.toISOString().replace(/[:.]/g, "-");
   const databasePath = path.resolve(
     readArg(argv, "--database") ?? path.join(repo, "data", "app.db"),
   );
   const outJson = path.resolve(
-    readArg(argv, "--out-json") ?? path.join(repo, "docs", "release-gate-2026-10-19.json"),
+    readArg(argv, "--out-json") ?? path.join(repo, "docs", `release-gate-${outputSuffix}.json`),
   );
   const outMd = path.resolve(
-    readArg(argv, "--out-md") ?? path.join(repo, "docs", "release-gate-2026-10-19.md"),
+    readArg(argv, "--out-md") ?? path.join(repo, "docs", `release-gate-${outputSuffix}.md`),
   );
   const failOnNotReady = argv.includes("--fail-on-not-ready");
 
@@ -37,7 +40,7 @@ function main(): number {
   const { report, audit, sources } = run;
 
   const payload = {
-    generatedAt: new Date().toISOString(),
+    generatedAt: generatedAt.toISOString(),
     notice:
       "唯讀發布閘門：沒有修改題目、覆核或發布狀態。未定義標準或沒有證據的項目不會當作通過。",
     verdict: report.verdict,
@@ -60,9 +63,6 @@ function main(): number {
     deltas: report.deltas,
   };
 
-  fs.mkdirSync(path.dirname(outJson), { recursive: true });
-  fs.writeFileSync(outJson, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-
   const statusLabel: Record<string, string> = {
     PASS: "✅ PASS",
     FAIL: "❌ FAIL",
@@ -72,7 +72,7 @@ function main(): number {
   };
 
   const lines: string[] = [];
-  lines.push("# 發布就緒閘門（2026-10-19）");
+  lines.push("# 發布就緒閘門");
   lines.push("");
   lines.push(`**結果：${report.verdict}**`);
   lines.push("");
@@ -114,8 +114,12 @@ function main(): number {
   }
   lines.push("");
 
-  fs.mkdirSync(path.dirname(outMd), { recursive: true });
-  fs.writeFileSync(outMd, `${lines.join("\n")}\n`, "utf8");
+  writeReleaseGateEvidence({
+    jsonPath: outJson,
+    jsonContent: `${JSON.stringify(payload, null, 2)}\n`,
+    markdownPath: outMd,
+    markdownContent: `${lines.join("\n")}\n`,
+  });
 
   console.log(`結果：${report.verdict}`);
   for (const gate of report.gates) {
