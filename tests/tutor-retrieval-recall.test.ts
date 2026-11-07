@@ -29,6 +29,13 @@ import { isUnclearTutorQuery, normalizeTutorQuery } from "@/server/services/tuto
 import { TUTOR_RECALL_CASES, type TutorRecallCase } from "./fixtures/tutor-recall-cases";
 
 const curriculum = loadTutorCurriculumIndex();
+/**
+ * 這一組案例的期望值取自**真實教材分佈**（`data/app.db`），因此只在有內容資料庫時執行。
+ * CI 的 `npm test` 沒有內容資料庫（`data/` 已被 `.gitignore` 排除），若強行執行只會
+ * 得到假失敗。CI 可驗證的等價行為由 `tests/tutor-retrieval-fallback-fixture.test.ts`
+ * 以合成資料庫覆蓋；這裡在缺資料庫時記為 **skipped**（不是 passed）。
+ */
+const hasContentDatabase = curriculum.topics.length > 0;
 
 interface Observed {
   answerCase: TutorRecallCase;
@@ -72,7 +79,7 @@ function rate(numerator: number, denominator: number): number {
   return denominator === 0 ? 1 : Number((numerator / denominator).toFixed(3));
 }
 
-describe("檢索召回：Sprint 33 的四條失敗個案", () => {
+describe.skipIf(!hasContentDatabase)("檢索召回：Sprint 33 的四條失敗個案", () => {
   it("種族隔離（原本說「教材找不到」，實際有 9 段）→ 命中課題11", () => {
     const entry = observed.find((item) => item.answerCase.id === "recall-live-11");
     expect(entry?.grounded).toBe(true);
@@ -100,7 +107,7 @@ describe("檢索召回：Sprint 33 的四條失敗個案", () => {
   });
 });
 
-describe("檢索召回：跨語言、別稱、干擾及反向對照", () => {
+describe.skipIf(!hasContentDatabase)("檢索召回：跨語言、別稱、干擾及反向對照", () => {
   for (const entry of observed) {
     it(`${entry.answerCase.id}：${entry.answerCase.query.slice(0, 28)}`, () => {
       if (entry.answerCase.expectTopic === null) {
@@ -114,7 +121,7 @@ describe("檢索召回：跨語言、別稱、干擾及反向對照", () => {
   }
 });
 
-describe("檢索召回指標", () => {
+describe.skipIf(!hasContentDatabase)("檢索召回指標", () => {
   it("Recall@3、課題推斷準確率、跨語言召回、False Evidence 及 False No-Material", () => {
     // 「教材有內容」＋「字詞層應該召回得到」才算召回分母；需要語意改寫的題目
     // （recall-live-12）單獨列出，不假裝召回失敗，也不假裝成功。

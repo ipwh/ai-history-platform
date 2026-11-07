@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 檢索召回缺口 — Sprint 33 發現、Sprint 34 修正後的行為契約。
  *
  * ── 歷史 ────────────────────────────────────────────────────────────
@@ -21,6 +21,8 @@ import { findTutorGrounding, loadTutorCurriculumIndex } from "@/server/services/
 import { normalizeTutorQuery } from "@/server/services/tutor-query";
 
 const curriculum = loadTutorCurriculumIndex();
+/** 需要真實教材內容（CI 的 `npm test` 沒有 `data/app.db`，見檔案頂部說明） */
+const hasContentDatabase = curriculum.topics.length > 0;
 
 function ground(query: string, options: Record<string, unknown> = {}) {
   return findTutorGrounding(normalizeTutorQuery(query), [], curriculum, {
@@ -29,7 +31,7 @@ function ground(query: string, options: Record<string, unknown> = {}) {
   } as never);
 }
 
-describe("檢索召回缺口修正（Sprint 34）", () => {
+describe.skipIf(!hasContentDatabase)("檢索召回缺口修正（Sprint 34）", () => {
   it("「什么是种族隔离？」改由詞庫＋教材內文召回（教材 9 段）", () => {
     const grounding = ground("什么是种族隔离？");
     expect(grounding.status).toBe("grounded");
