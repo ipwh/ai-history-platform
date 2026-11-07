@@ -18,7 +18,7 @@
 
 ## [未發布] — 2026-11-06（十二）：學伴 17 項回歸的獨立審核、學生提問矩陣及四項新缺陷
 
-**狀態**：已實作、已驗證（`vitest run` 157 檔 2,184 項通過、4 項略過；`tsc --noEmit`、`npm run lint`、`npm run build`、Playwright 22 項通過／9 項既有略過）；**未部署**。
+**狀態**：已實作、已驗證（`vitest run` 157 檔 2,184 項通過、4 項略過；`tsc --noEmit`、`npm run lint`、`npm run build`、Playwright 22 項通過／9 項既有略過；發佈閘門 `READY WITH LIMITATIONS`，兩個 WARN 均為既有項目）；**已部署**（commit `ea02529`，Cloud Build `a2b9a1fb-4878-4809-8321-e0f3b7c6f83d` SUCCESS，2026-11-07 12:17 HKT 起由新版本服務）。
 
 ### 背景
 
@@ -51,11 +51,30 @@
 
 課題推斷未按年級分流；英文連接詞會切斷專名（`American and French Revolutions`）；「學習技巧」提問仍走澄清（待產品決定）；跨課題比較只取被點名的課題；檢索稽核紀錄不保存。
 
+### 部署後驗證（2026-11-07 12:17 HKT，正式環境）
+
+可匿名核實的部分（全部實測，非推論）：
+
+| 檢查 | 結果 |
+| --- | --- |
+| Cloud Build `a2b9a1fb-4878-4809-8321-e0f3b7c6f83d`（`history-main-push`） | SUCCESS（04:09:02Z–04:17:26Z） |
+| GitHub Actions「Test, typecheck, lint, build」 | success |
+| GitHub Actions「Playwright browser tests（需內容資料庫）」 | skipped（既有設定，非本次改動） |
+| `GET /api/health` | 200；`database.status=ok`；教材 46 份／26,599 段／學生可見 22 份；`persistence.restore=restored` |
+| `GET /tutor`（未登入） | 307 → `/login?next=%2Ftutor`（登入閘生效） |
+| `GET /api/topics`、`POST /api/tutor/chat`（未登入） | 401（不呼叫模型） |
+| 新版前端資產 `/_next/static/chunks/1ux0w9lyd1n9x.js` | 200，內容含「回覆深度」「進階分析」「挑戰」→ 服務中的版本確為本次建置 |
+
+**未能自動驗證（不可當作已通過）**：
+
+- **Cloud Run revision 名稱及流量分配**：本機 `gcloud` 憑證需互動式重新登入（`gcloud auth login`），無法在非互動環境查詢；上述以建置 commit + 前端資產指紋作為版本證據。
+- **正式環境的學伴回答內容**：`AUTH_REQUIRE_SIGN_IN=true` 且學生登入走 Google OAuth，未持有學生工作階段；因此「中文／英文／短追問／錯誤前提／長段落命中」等**回答**層驗證只在正式環境以外的真實 DeepSeek 實測中完成（見上文各節），並由自動測試覆蓋系統行為。擁有者可在登入後以同一組提問覆核。
+
 ---
 
 ## [未發布] — 2026-11-06（十一）：學伴回覆深度分層（照顧能力較高的學生）
 
-**狀態**：已實作、已驗證（單元／路由／提示詞測試全綠；全套 `vitest run` 151 檔 2,092 項通過）；**未部署**。
+**狀態**：已實作、已驗證（單元／路由／提示詞測試全綠）；**已部署**（與（十二）同一 commit `ea02529`／Cloud Build `a2b9a1fb-4878-4809-8321-e0f3b7c6f83d`，2026-11-07）。
 
 ### 變更
 
