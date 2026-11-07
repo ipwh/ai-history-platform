@@ -75,6 +75,13 @@ Sprint 33 報告說「4 條誤稱教材未涵蓋」。Sprint 34 逐條查證後�
    （補在既有「明治維新」組，`topicId: hs-topic-3`）。
 3. **課題推斷層排除英文疑問詞**：`who` 是「世界衛生組織」的縮寫別名，原本會令
    「Who won the World Cup in 2022?」被推斷成課題11（主題硬閘早已排除，推斷層同步）。
+4. **課程慣用寫法改回教材用法**：詞庫把「戈巴契夫」設為 `canonical`（會經
+   `buildTutorGlossary` 進入提示詞），但本校教材 80 段、題庫 39 題**全部**用
+   「戈巴卓夫」，兩者用「戈巴契夫」的次數皆為 0。Sprint 33 的模型輸出正因如此寫成
+   「戈巴契夫」，學生對照課本時找不到。已把 `canonical` 改為「戈巴卓夫」，
+   「戈巴契夫／戈爾巴喬夫」保留為別名（答案比對仍等價），並加測試鎖定
+   （`tests/history-lexicon.test.ts`：canonical 為教材寫法、混用時 `detectTermMismatches`
+   會標示用語不一致）。
 
 ### C.4 修正前後比較
 
@@ -375,6 +382,19 @@ secrets 全部由 `--set-secrets` 注入。**staging 與 production 使用同一
 
 ---
 
+## 整合自我審核（Sprint 28–34 全交付）
+
+| 檢查項 | 結果 | 證據 |
+| --- | --- | --- |
+| 是否有重複的 provider／檢索實作 | **無** | 全部 provider 呼叫只在三處：`src/server/llm/stream-chat-completion.ts`（串流，正式 route 與評估共用）、`src/server/llm/chat-client.ts`（JSON completion）、`tutor-web-supplement.ts`（外網抓取）。評估工具 `scripts/lib/tutor-live-transport.ts` 只透過前者，沒有自寫 fetch |
+| 是否有 dead code | **無新增** | 評估用便利函數（`streamChatCompletion` 等）由 `scripts/lib/tutor-live-transport.ts` 使用；Sprint 34 移除了 route 內因重構而失效的 `extractDelta`（lint 警告已清） |
+| 是否有不再使用的 feature flag | **無** | `TUTOR_*` 旗標全部在 `src`／`scripts` 有讀取點 |
+| 是否有過時或矛盾的文件 | **已修 3 處** | ① `README` 的 Sprint 33 條目（4 條誤稱→更正為 3 條）；② `docs/sprint-33-report-2026-11-07.md` 加註更正（保留原報告作歷史證據）；③ 本報告 R9（`.env.example` 其實已完整記錄 29 個鍵） |
+| 是否有不安全 fallback | **無** | 檢索／外網／改寫失敗全部降級為「未找到教材依據」或明確失敗狀態，不會靜默放寬 |
+| 是否有不一致的 type contract | **已修** | `selectionAudit.topicInference` 新增為可選欄位（向後相容）；合成測試的 audit 已標註型別 |
+| 是否有測試與正式行為不一致 | **已修（CI 發現）** | 召回套件依賴真實教材分佈，CI 沒有內容資料庫 → 改為 content-aware skip ＋ 合成資料庫套件 |
+| 是否有本機與 CI 環境差異 | **已記錄** | 本機有 `data/app.db`（召回套件執行）；CI 沒有（記為 skipped）；CI 的 Playwright job 依設計需要內容資料庫 |
+| 是否有環境設定令本機與部署不同 | **已記錄** | 部署用 `APP_DATABASE_PATH=/tmp/data/app.db` ＋ 啟動時 backup 還原；本機用 `data/app.db` |
 ## 未解除風險
 
 | # | 風險 | 嚴重度 | 說明 |
@@ -383,11 +403,11 @@ secrets 全部由 `--set-secrets` 注入。**staging 與 production 使用同一
 | R2 | 歷史科教師覆核 0 條 | 高 | 83＋91＋12 條全部 `pending-human-review` |
 | R3 | 定義型提問的 A 判定偏樂觀 | 中 | 單段只提及該詞時仍可能判 A；曾嘗試加規則但令 4 項充分教材題降級，已回退 |
 | R4 | 教材內文反推要求證據集中（2 倍） | 低 | 概念橫跨多課題時會保守回 C（可由語意改寫補救） |
-| R5 | 「戈巴卓夫／戈巴契夫」用語不一致 | 低 | 影響課本對照，不影響史實正確性 |
+| R5 | 「戈巴卓夫／戈巴契夫」用語不一致 | 低（**已修**） | 根因是詞庫 canonical 用了非教材寫法，已改回「戈巴卓夫」並加測試；第二輪 live 輸出需確認模型現在用教材寫法 |
 | R6 | Release gate 2 項 WARN | 中 | 技能空白 1917 題、教師逐題裁決 0 |
 | R7 | 無獨立 staging 環境 | 高 | `cloudbuild.yaml` 直接部署到單一 service，無法「先 staging 後 production」；本環境 `gcloud` 憑證需互動式重新登入，客觀上無法完成 staging 驗證 |
 | R8 | `gcloud run deploy` 無 `--no-traffic` | 中 | 部署即切流量 |
-| R9 | `.env.example` 無任何 assignment | 低 | 新環境無法由範本推導設定 |
+| R9 | ~~`.env.example` 無任何 assignment~~ **（本輪更正：不是缺口）** | — | 先前以「行首 `KEY=`」判斷，因而漏看註解式範本。實際抽樣核對：`.env.local` 的 **29 個鍵全部**在 `.env.example` 有說明（含註解舉例）。 |
 | R10 | DNS rebinding TOCTOU | 低 | 既有文件化限制 |
 
 ---

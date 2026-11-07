@@ -1307,9 +1307,17 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     scope: "課題10",
   },
   {
-    canonical: "戈巴契夫",
-    // 「戈巴卓夫」是香港教科書常見譯名（2026-11-06 英文實測時補上）。
-    aliases: ["戈爾巴喬夫", "戈巴喬夫", "戈巴卓夫", "mikhail gorbachev", "gorbachev"],
+    canonical: "戈巴卓夫",
+    /**
+     * 「戈巴卓夫」是本校教材及題庫使用的寫法（教材 80 段、題目 39 題），
+     * 「戈巴契夫」是內地／台灣常見譯名，教材與題庫都是 0 次。
+     *
+     * Sprint 34：`canonical` 必須是**課程慣用寫法**（本檔開頭的定義），否則學伴提示詞
+     * 會把「戈巴契夫」當成標準用語教給學生——Sprint 33 的真實模型輸出正是如此
+     * （模型寫「戈巴契夫」，學生對照課本找不到）。這裡把 canonical 改回教材寫法，
+     * 其餘寫法保留為 alias，答案比對仍然等價。
+     */
+    aliases: ["戈巴契夫", "戈爾巴喬夫", "戈巴喬夫", "mikhail gorbachev", "gorbachev"],
     category: "person",
     scope: "課題10",
   },

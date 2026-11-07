@@ -17,6 +17,7 @@ import {
   historyTermAliases,
   normalizeHistoryAnswer,
 } from "@/lib/history-lexicon";
+import { detectTermMismatches } from "@/server/services/tutor-grounding";
 
 describe("歷史答案標準化", () => {
   it("移除前後空白及標點", () => {
@@ -226,5 +227,26 @@ describe("詞庫一致性", () => {
         expect(normalizeHistoryAnswer(term).length, `${group.canonical}: ${term}`).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+describe("課程慣用寫法必須與教材一致（Sprint 34）", () => {
+  /**
+   * 背景：`canonical` 會經 `buildTutorGlossary` 進入學伴提示詞，模型因此會用「課程
+   * 慣用寫法」作答。Sprint 33 的真實輸出把「戈巴卓夫」寫成「戈巴契夫」——因為詞庫把
+   * 後者當成 canonical，而教材 80 段、題庫 39 題全部用前者。學生對照課本時找不到。
+   */
+  it("戈巴卓夫的 canonical 是教材寫法，另一譯名仍是別名（答案比對等價）", () => {
+    expect(canonicalHistoryTerm("戈巴契夫")).toBe("戈巴卓夫");
+    expect(canonicalHistoryTerm("戈巴卓夫")).toBe("戈巴卓夫");
+    expect(canonicalHistoryTerm("戈爾巴喬夫")).toBe("戈巴卓夫");
+    expect(historyAnswersMatch("戈巴契夫", "戈巴卓夫")).toBe(true);
+    expect(historyAnswersMatch("戈巴卓夫", "戈巴卓夫")).toBe(true);
+  });
+
+  it("使用非教材寫法時會被標示為用語不一致（提示學生對照課本）", () => {
+    const notes = detectTermMismatches("戈巴契夫推行經濟重組與政治開放。");
+    expect(notes.map((note) => note.canonical)).toContain("戈巴卓夫");
+    expect(notes.find((note) => note.canonical === "戈巴卓夫")?.used).toBe("戈巴契夫");
   });
 });

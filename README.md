@@ -1,4 +1,4 @@
-# 歷史科自學網站（香港教育局歷史科課程：中一至中六）
+﻿# 歷史科自學網站（香港教育局歷史科課程：中一至中六）
 
 供香港中學生使用的歷史科自學平台。學生以**學校 Google Workspace 帳戶**登入後，可揀選課題及課題內的多個**主題（可多選）**，由 **AI 即時生成多項選擇題**（亦可改用教師題庫），完成練習後查看答案、解釋、知識點及**教材來源位置**；教師可上載 DOCX／PDF 教材、檢視及修正系統擷取的內容（包括**圖片 OCR 文字辨識**）、生成並查核題目。平台不提供學生閱讀教材全文的頁面（2026-10-20 移除），教材只用作 AI 出題依據及題目來源節錄。
 
@@ -385,7 +385,7 @@ materials/
 - **Live transport 已打通**：[stream-chat-completion.ts](src/server/llm/stream-chat-completion.ts) 把原本內嵌在 [route.ts](src/app/api/tutor/chat/route.ts) 的上游串流邏輯抽成正式 route 與評估共用的 adapter（`openChatStream` 在串流前檢查狀態碼，保留「上游 5xx → 503」行為；`consume` 讀 SSE 並抽取 usage）。`includeUsage` 預設 `false`，學生請求 body 不變。
 - **已執行 12 次真實模型評估**（owner 於 Sprint 33 明示授權 ≤US$0.10）：12/12 成功、0 重試、**US$0.012599**、輸入 20,778／輸出 5,044 tokens、`data/app.db` SHA-256 不變。判定：`LIVE EVALUATION VERIFIED`。
 - **答案質素**：歷史準確性平均 **3.92／4**（無捏造史實、無虛構引文或年份）；C3 拒絕引用《凡爾賽條約》第 231 條原文並要求以原文為準，屬正確；C2 以立場光譜陳述爭議；錯誤前提（「美國 1942 年才參戰」）被更正；粵語追問能保留上文並主動更正上一則回覆的證據層級。
-- **已發現未修正缺陷**：12 條中有 4 條（live-03、08、11、12）模型宣稱「教材找不到」，但教材實際有相關段落（種族隔離 9 段、珍珠港 7 段、第二次世界大戰 97 段、美國革命 44 段、法國大革命 59 段）——缺口在**問題→課題推斷與跨語言詞彙對應**，不在教材亦不在模型。現狀已用 [tutor-retrieval-recall-gap.test.ts](tests/tutor-retrieval-recall-gap.test.ts)（6 項特徵測試）固定，修正時必須同步更新。判定：`QUALITY REQUIRES FIXES`。
+- **已發現缺陷（Sprint 34 已修）**：Sprint 33 當時認為 4 條（live-03、08、11、12）誤稱「教材找不到」。Sprint 34 逐段查證後，live-03（甘地的不合作運動）其實是**模型正確**——教材那 4 段「不合作」講的是環保協作；其餘 3 條確認為**問題→課題推斷與跨語言詞彙對應**的缺口，已於 Sprint 34 修正（見下）。
 - **正式環境仍有未評估階段**：`expandTutorQuery`（語意改寫重試檢索）與 `collectTutorWebSupplement`（`not-covered-only`）不在 12 次樣本內；D／out-of-scope 案例的回覆亦不代表產品行為（正式 route 不呼叫模型）。詳見 [Sprint 33 報告](docs/sprint-33-report-2026-11-07.md)。
 
 **Sprint 34 追加（2026-11-07）**：

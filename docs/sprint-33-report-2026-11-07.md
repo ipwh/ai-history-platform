@@ -1,4 +1,11 @@
-# Sprint 33 — Tutor Live Evaluation, Staging Verification & Release Readiness
+﻿# Sprint 33 — Tutor Live Evaluation, Staging Verification & Release Readiness
+
+> **Sprint 34 更正（2026-11-07）**：本報告 §14 把「甘地提倡的不合作運動」列為
+> 「模型誤稱教材未涵蓋」是**錯誤的**。Sprint 34 逐段查證後確認：教材那 4 段「不合作」
+> 指的是「已發展國家在國際環保協作上的不合作態度」，與甘地無關，模型當時的回覆正確。
+> 其餘三條（種族隔離、英文比較美法革命、珍珠港／二戰）確認為檢索召回缺口，已於
+> Sprint 34 修正；詳見 [Sprint 34 報告](sprint-34-report-2026-11-07.md) §C。
+> 本報告其餘內容（授權、成本、tokens、逐題評分）保持原樣，屬第一輪歷史證據。
 
 **日期**：2026-11-07
 **基線**：`main` @ `7d05cb7`（工作目錄含 Sprint 28–33 未提交工作，共 13 個修改、31 個新增）
