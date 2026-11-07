@@ -379,7 +379,17 @@ interface TutorCandidateRow {
   extraction_method: string | null;
 }
 
-export function listTutorCandidateBlocks(topicId: string): TutorCandidateBlock[] {
+/**
+ * 學伴檢索用的教材區塊。
+ *
+ * 傳入**陣列**即可跨課題檢索（2026-11-06）：比較題（「美國革命與法國大革命有甚麼分別？」
+ * 「比較明治維新與洋務運動」）橫跨兩個課題，原本只取單一課題的教材，令答案只講得一半。
+ * 呼叫方（`findTutorGrounding`）只會加入「提問明確點名」的課題，不會無差別放大範圍。
+ */
+export function listTutorCandidateBlocks(topicId: string | string[]): TutorCandidateBlock[] {
+  const topicIds = Array.isArray(topicId) ? topicId : [topicId];
+  if (topicIds.length === 0) return [];
+  const placeholders = topicIds.map(() => "?").join(", ");
   const rows = getDb()
     .prepare(
       `SELECT blocks.id, blocks.document_id, documents.file_name, blocks.topic_id,
@@ -387,12 +397,12 @@ export function listTutorCandidateBlocks(topicId: string): TutorCandidateBlock[]
               blocks.table_json, blocks.source_location, blocks.extraction_method
          FROM material_blocks AS blocks
          INNER JOIN material_documents AS documents ON documents.id = blocks.document_id
-        WHERE blocks.topic_id = ?
+        WHERE blocks.topic_id IN (${placeholders})
           AND documents.kind <> 'question-bank'
           AND documents.student_distribution = 1
         ORDER BY blocks.document_id ASC, blocks.sort_order ASC`,
     )
-    .all(topicId) as unknown as TutorCandidateRow[];
+    .all(...topicIds) as unknown as TutorCandidateRow[];
   return rows.map((row) => {
     let table: TableCell[][] | null = null;
     if (row.table_json) {

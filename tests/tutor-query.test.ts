@@ -291,6 +291,65 @@ describe("學伴提問：香港中學常見問法不會誤觸澄清（2026-11-02
     expect(isUnclearTutorQuery("凡爾塞條約對德國有咩影響？", index, false)).toBe(false);
   });
 
+  /**
+   * 實測（2026-11-06）：低程度學生用英文問「What was the Boston Tea Party?」
+   * 「When did the American Revolution begin?」時，因為詞庫沒有相應英文別名／中文用語，
+   * 整條提問被當成離題而拒答（回「只能討論歷史科」）。以下鎖定這批教材用語。
+   */
+  it("教材用語（波士頓傾茶事件、不可容忍的法案、大陸會議、列克星頓）屬歷史提問", () => {
+    for (const raw of [
+      "波士頓傾茶事件係咩事？",
+      "What was the Boston Tea Party?",
+      "When did the American Revolution begin?",
+      "How did Britain respond to the American Revolution?",
+      "To what extent was the American Revolution caused by economic factors?",
+      "《不可容忍的法案》係咩？",
+      "第一次大陸會議做咗乜？",
+      "列克星頓戰事幾時發生？",
+    ]) {
+      expect(isHistoryTopicPrompt(normalizeTutorQuery(raw)), raw).toBe(true);
+    }
+  });
+
+  /**
+   * 2026-11-06：批量補英文專名別名後的迴歸鎖定。
+   * 每條都是學生真的會打的英文問法；任何一條被當成離題，代表該課題的英文別名又缺了。
+   */
+  it.each([
+    "What was the Shang dynasty?",
+    "What was the Silk Road?",
+    "What was the printing press?",
+    "What was the Stamp Act?",
+    "What was the American Civil War?",
+    "What was the Declaration of Independence?",
+    "What was the Treaty of Nanking?",
+    "What was the Cultural Revolution?",
+    "What was the Meiji Restoration?",
+    "What was the 1967 riots in Hong Kong?",
+    "Who was Deng Xiaoping?",
+    "What was the Marshall Plan?",
+  ])("英文專名提問屬歷史科：%s", (raw) => {
+    expect(isHistoryTopicPrompt(normalizeTutorQuery(raw))).toBe(true);
+  });
+
+  /**
+   * 2026-11-06 實測：「美國革命係1776年開始，對唔對？」屬**核對前提**的高價值提問
+   * （學生帶着錯誤年份來確認），卻因為「對唔對」不在疑問詞名單而被要求重新選擇課題。
+   */
+  it("核對前提的問法（對唔對／是否正確）不會誤觸澄清", () => {
+    expect(isUnclearTutorQuery("美國革命係1776年開始，對唔對？", index, false)).toBe(false);
+    expect(isUnclearTutorQuery("美國革命在1776年開始，對不對？", index, false)).toBe(false);
+    expect(isUnclearTutorQuery("凡爾賽條約 German 賠款金額是否正確？", index, false)).toBe(false);
+  });
+
+  it("「導致／多大程度」等評價問法不再誤觸澄清（2026-11-06 實測）", () => {
+    expect(isUnclearTutorQuery("凡爾賽條約在多大程度上導致第二次世界大戰？", index, false)).toBe(
+      false,
+    );
+    expect(isUnclearTutorQuery("美國革命對拉丁美洲獨立運動有何影響？", index, false)).toBe(false);
+    expect(isUnclearTutorQuery("鴉片戰爭造成咗咩後果？", index, false)).toBe(false);
+  });
+
   it("只有課題編號、沒有具體內容時會澄清（並以該課題的分節提供選項）", () => {
     expect(isUnclearTutorQuery("課題12有咩內容？", index, false)).toBe(true);
     expect(isUnclearTutorQuery("明天考歷史，幫我溫習課題9。", index, false)).toBe(true);

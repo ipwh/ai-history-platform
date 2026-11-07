@@ -38,6 +38,14 @@ export interface HistoryTermGroup {
   category: HistoryTermCategory;
   /** 所屬學習範疇，只作整理及除錯用途 */
   scope: string;
+  /**
+   * 指定課題（2026-11-06）。
+   *
+   * `scope` 有時太寬（「高中」橫跨五個課題），亦可能與教材實際位置不符
+   * （「文化大革命」在高中「中國的現代化與蛻變」，而初中課題10 沒有相關段落）。
+   * 設定此欄後，檢索只會提升該課題，不會令同範疇所有課題同分。
+   */
+  topicId?: string;
 }
 
 /**
@@ -211,6 +219,13 @@ export function normalizeHistoryAnswer(value: string): string {
 export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   /* 課題1 人類的需要（古與今） */
   {
+    // 2026-11-06 英文實測：「What was the Shang dynasty?」原本被當成離題。
+    canonical: "商朝",
+    aliases: ["殷商", "商代", "shang dynasty", "shang"],
+    category: "event",
+    scope: "課題1",
+  },
+  {
     canonical: "史前時期",
     aliases: ["史前時代", "prehistoric period"],
     category: "event",
@@ -248,7 +263,7 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "黃河流域文明",
-    aliases: ["古中國文明", "華夏文明"],
+    aliases: ["古中國文明", "華夏文明", "yellow river civilization", "yellow river valley civilization"],
     category: "institution",
     scope: "課題1",
   },
@@ -349,6 +364,13 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
 
   /* 課題3 伊斯蘭文明的興起 */
   {
+    // 2026-11-06 英文實測：教材有 12 段提到絲綢之路，但詞庫原本沒有，英文提問被拒答。
+    canonical: "絲綢之路",
+    aliases: ["絲路", "silk road", "silk route", "silk roads"],
+    category: "event",
+    scope: "課題3",
+  },
+  {
     canonical: "伊斯蘭教",
     aliases: ["回教", "伊斯蘭", "islam"],
     category: "institution",
@@ -423,7 +445,7 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   {
     canonical: "新界五大族",
     // 2026-11-02：教材分節寫「新界五大姓族」，學生亦慣用此寫法。
-    aliases: ["五大族", "新界五大氏族", "新界五大姓族", "五大姓族"],
+    aliases: ["五大族", "新界五大氏族", "新界五大姓族", "五大姓族", "five major clans", "five clans of the new territories"],
     category: "institution",
     scope: "課題4",
   },
@@ -441,13 +463,13 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "遷界令",
-    aliases: ["遷海令", "遷界", "遷海"],
+    aliases: ["遷海令", "遷界", "遷海", "great clearance", "barrier order", "coastal evacuation"],
     category: "reform",
     scope: "課題4",
   },
   {
     canonical: "新安縣",
-    aliases: ["新安", "寶安縣"],
+    aliases: ["新安", "寶安縣", "xin'an county", "xin an county", "bao'an county"],
     category: "institution",
     scope: "課題4",
   },
@@ -459,12 +481,19 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "屏山鄧氏",
-    aliases: ["鄧氏宗族", "屏山鄧族"],
+    aliases: ["鄧氏宗族", "屏山鄧族", "ping shan tang clan", "tang clan"],
     category: "institution",
     scope: "課題4",
   },
 
   /* 課題5 近代歐洲的興起 */
+  {
+    // 2026-11-06 英文實測：「What was the printing press?」原本被當成離題。
+    canonical: "活字印刷術",
+    aliases: ["活字印刷", "印刷術", "printing press", "movable type", "gutenberg", "古騰堡"],
+    category: "reform",
+    scope: "課題5",
+  },
   {
     canonical: "文藝復興",
     aliases: ["文藝復興運動", "文艺复兴", "文艺复兴运动", "renaissance"],
@@ -694,6 +723,9 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     aliases: ["江寧條約", "南京条约", "江宁条约", "treaty of nanking", "treaty of nanjing"],
     category: "treaty",
     scope: "課題6",
+    // 2026-11-06 實測：教材有 13 段在「香港直至19世紀末的成長與發展」(課題8)，
+    // 課題6 只有 2 段且屬教師版目錄，英文提問因此回「找不到」。
+    topicId: "topic-8",
   },
   {
     canonical: "虎門條約",
@@ -788,8 +820,59 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
       "美國獨立戰爭",
       "美國獨立革命",
       "獨立戰爭",
+      "american revolution",
       "american revolutionary war",
       "american war of independence",
+    ],
+    category: "event",
+    scope: "課題7",
+  },
+  {
+    // 2026-11-06：教材有 8 段提及，但詞庫原本沒有收錄，令「波士頓傾茶事件係咩事？」
+    // 這類直接問教材用語的提問被當成離題而拒答（實測發現）。
+    canonical: "波士頓傾茶事件",
+    aliases: ["波士頓茶葉事件", "傾茶事件", "boston tea party"],
+    category: "event",
+    scope: "課題7",
+  },
+  {
+    // 2026-11-06 英文實測：教材有 3 段提及《印花稅法》，原本不在詞庫。
+    canonical: "印花稅法",
+    aliases: ["印花稅", "印花税", "stamp act", "stamp duty"],
+    category: "treaty",
+    scope: "課題7",
+  },
+  {
+    // 教材未收錄（0 段），但屬課題7 的常見事件；收進詞庫後，英文提問會「如實說找不到」
+    // 而不是被當成離題拒答。
+    canonical: "波士頓慘案",
+    aliases: ["波士頓大屠殺", "boston massacre"],
+    category: "event",
+    scope: "課題7",
+  },
+  {
+    // 同上：教材與課本都用《不可容忍的法案》，原本不在詞庫。
+    canonical: "不可容忍的法案",
+    aliases: ["不可容忍法", "強制法案", "intolerable acts", "coercive acts"],
+    category: "treaty",
+    scope: "課題7",
+  },
+  {
+    canonical: "第一次大陸會議",
+    aliases: ["大陸會議", "first continental congress", "continental congress"],
+    category: "event",
+    scope: "課題7",
+  },
+  {
+    canonical: "列克星頓及康科特戰事",
+    aliases: [
+      "列克星頓戰事",
+      "列克星頓",
+      "列克星敦",
+      "康科特",
+      "lexington and concord",
+      "lexington",
+      "concord",
     ],
     category: "event",
     scope: "課題7",
@@ -814,7 +897,8 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "美國南北戰爭",
-    aliases: ["南北戰爭", "美國內戰", "american civil war", "civil war"],
+    // 教材用「南北內戰」（52 段），學生亦會說「南北戰爭」「美國內戰」（2026-11-06 實測補上）。
+    aliases: ["南北內戰", "南北戰爭", "美國內戰", "american civil war", "civil war"],
     category: "event",
     scope: "課題7",
   },
@@ -886,6 +970,9 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
       "佔領香港",
       "佔據香港",
       "opening of the port",
+      "british occupation of hong kong",
+      "occupy hong kong",
+      "britain occupied hong kong",
     ],
     category: "event",
     scope: "課題8",
@@ -1221,7 +1308,8 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "戈巴契夫",
-    aliases: ["戈爾巴喬夫", "戈巴喬夫", "mikhail gorbachev", "gorbachev"],
+    // 「戈巴卓夫」是香港教科書常見譯名（2026-11-06 英文實測時補上）。
+    aliases: ["戈爾巴喬夫", "戈巴喬夫", "戈巴卓夫", "mikhail gorbachev", "gorbachev"],
     category: "person",
     scope: "課題10",
   },
@@ -1230,6 +1318,9 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     aliases: ["文革", "無產階級文化大革命", "cultural revolution"],
     category: "event",
     scope: "課題10",
+    // 2026-11-06 實測：教材實際放在高中「中國的現代化與蛻變」（課題10 沒有相關段落），
+    // 英文提問原本因此回「找不到教材」。
+    topicId: "hs-topic-2",
   },
   {
     canonical: "改革開放",
@@ -1387,7 +1478,7 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   {
     // 2026-11-02：教材在高中課題1（香港的現代化與蛻變，3 段）；學生亦會問「六七暴動」。
     canonical: "六七暴動",
-    aliases: ["1967年暴動", "六七事件"],
+    aliases: ["1967年暴動", "六七事件", "1967 riots", "1967 disturbances", "1967 leftist riots"],
     category: "event",
     scope: "高中",
   },
@@ -1604,6 +1695,18 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     aliases: ["明治變法", "明治改革", "meiji restoration", "meiji reform"],
     category: "reform",
     scope: "高中",
+    // 「高中」範疇橫跨五個課題，`scope` 只會令它們同分（平手時取第一個，即香港現代化）。
+    // 教材實際有 6 段在「日本的現代化與蛻變」，故明確指定課題（2026-11-06 實測）。
+    topicId: "hs-topic-3",
+  },
+  {
+    // 2026-11-06 實測：「明治天皇推動了哪些改革？」原本完全定位不到課題（回「找不到
+    // 教材依據」），因為詞庫只有「明治維新」，而教材該段是以「明治天皇重掌權力」開頭。
+    // 教材 1 段提及，屬課題6（歐洲國家的殖民擴張）的明治維新小節。
+    canonical: "明治天皇",
+    aliases: ["睦仁", "emperor meiji", "meiji emperor"],
+    category: "person",
+    scope: "課題6",
   },
   {
     canonical: "甲午戰爭",
@@ -1758,6 +1861,8 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     aliases: ["鄧公", "deng xiaoping"],
     category: "person",
     scope: "高中",
+    // 「高中」範疇同分問題（2026-11-06）：教材 15 段在「中國的現代化與蛻變」。
+    topicId: "hs-topic-2",
   },
   {
     canonical: "秦始皇",
@@ -1810,8 +1915,21 @@ export function canonicalHistoryTerm(value: string): string | null {
   return canonicalIndex.get(key) ?? null;
 }
 
-/** 錯別字比對容許的最少字數（2 字詞太容易誤配，例如「英國／美國」） */
-const LOOSE_MIN_LENGTH = 3;
+/**
+ * 錯別字比對的最少字數。
+ *
+ * 2026-11-06 實測：原本 3 字便可容許一字之差，令大量普通用語被當成錯別字專名——
+ * 「開始」≈「開埠」、「改革」≈「文革」、「改革是」≈「改革宗」。後果不只是多餘的
+ * 檢索詞：`findLooseHistoryTerms` 的結果會令課題推斷加分，於是「明治天皇在 1912 年
+ * 才開始改革，是否正確？」被帶到課題5（加爾文宗），引用完全無關的教材。
+ *
+ * 現在：4 字以上才容許一字之差（1/4 相似度）；3 字只限**人物姓名**且相差在最後一字
+ * （「希特立」→「希特勒」），因為那是最常見的錯別字寫法，而 3 字詞中一字之差
+ * 已達 1/3 相似度，對一般概念詞風險太高。
+ */
+const LOOSE_MIN_LENGTH = 4;
+/** 3 字人物姓名容許最後一字打錯（其餘 3 字詞一律不做模糊比對） */
+const LOOSE_SHORT_PERSON_LENGTH = 3;
 /** 只對短句做錯別字比對（長段落多數不是打錯字，亦避免不必要的運算） */
 const LOOSE_MAX_TEXT_LENGTH = 160;
 /** 不可互相替換的字：數字一改就變成另一件事（一戰／二戰、第一次／第二次） */
@@ -1842,17 +1960,20 @@ const ENTITY_CHARS: ReadonlySet<string> = new Set(
  *   4. 句子太長（>160 字）不做比對。
  */
 export function findLooseHistoryTerms(normalizedText: string): string[] {
-  if (normalizedText.length < LOOSE_MIN_LENGTH) return [];
+  if (normalizedText.length < LOOSE_SHORT_PERSON_LENGTH) return [];
   if (normalizedText.length > LOOSE_MAX_TEXT_LENGTH) return [];
 
   const hits = new Set<string>();
   for (const group of HISTORY_TERM_GROUPS) {
     for (const value of [group.canonical, ...group.aliases]) {
       const term = normalizeHistoryAnswer(value);
-      if (term.length < LOOSE_MIN_LENGTH) continue;
+      if (term.length < LOOSE_SHORT_PERSON_LENGTH) continue;
       if (!/^[\u3400-\u9fff]+$/.test(term)) continue;
       // 已逐字命中：交由既有邏輯處理，不必再模糊比對
       if (normalizedText.includes(term)) continue;
+      const shortPersonAllowed =
+        term.length === LOOSE_SHORT_PERSON_LENGTH && group.category === "person";
+      if (term.length < LOOSE_MIN_LENGTH && !shortPersonAllowed) continue;
 
       for (let start = 0; start + term.length <= normalizedText.length; start += 1) {
         const window = normalizedText.slice(start, start + term.length);
@@ -1866,6 +1987,8 @@ export function findLooseHistoryTerms(normalizedText: string): string[] {
           if (differences > 1) break;
         }
         if (differences !== 1) continue;
+        // 3 字人物只接受最後一字之差（「希特立」）；其他位置一改就可能是另一個字詞。
+        if (shortPersonAllowed && firstDifference !== term.length - 1) continue;
         const expected = term[firstDifference] ?? "";
         const actual = window[firstDifference] ?? "";
         if (NUMERAL_CHARS.has(expected) || NUMERAL_CHARS.has(actual)) continue;

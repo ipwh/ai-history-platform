@@ -56,6 +56,20 @@ describe("學伴回覆結構（固定短結構）", () => {
     expect(prompt).toContain("避免長篇議論");
   });
 
+  it("要求先更正學生的錯誤前提，不可順着錯誤前題作答（2026-11-06 實測）", () => {
+    const prompt = buildTutorSystemPrompt({ grounding: EMPTY_GROUNDING });
+    expect(prompt).toContain("前提與教材片段不符");
+    expect(prompt).toContain("必須先直接指出並更正");
+  });
+
+  it("要求以繁體書面語回覆，不可用粵語口語書寫（2026-11-06 實測）", () => {
+    const prompt = buildTutorSystemPrompt({ grounding: EMPTY_GROUNDING });
+    expect(prompt).toContain("繁體**書面語**");
+    expect(prompt).toContain("不可用粵語口語書寫");
+    // 仍然要理解粵語提問，只是不以口語作答
+    expect(prompt).toContain("香港粵語");
+  });
+
   it("不會削弱既有的禁代抄及禁背全文要求", () => {
     const prompt = buildTutorSystemPrompt({ grounding: groundingWithPassage() });
     expect(prompt).toContain("不直接代做功課");
@@ -92,6 +106,41 @@ describe("學伴回覆結構（固定短結構）", () => {
     expect(prompt).toContain("【學習目標】");
     expect(prompt).toContain("課題5：近代歐洲的興起");
     expect(prompt).toContain("以學生當前的問題為準");
+  });
+});
+
+describe("回覆深度（2026-11-06）", () => {
+  it("進階深度改用分析框架結構，並保留禁代抄底線", () => {
+    const prompt = buildTutorSystemPrompt({ grounding: EMPTY_GROUNDING, depth: "advanced" });
+    expect(prompt).toContain("【回覆結構：進階分析】");
+    expect(prompt).toContain("分析框架");
+    expect(prompt).toContain("張力與反駁");
+    expect(prompt).toContain("【分析角度】");
+    expect(prompt).toContain("不可提供可直接提交的完整作業答案");
+    expect(prompt).toContain("不可直接提交為作業");
+  });
+
+  it("進階／挑戰深度要求短追問先按上文作答，而不是只給選項", () => {
+    for (const depth of ["advanced", "challenge"] as const) {
+      const prompt = buildTutorSystemPrompt({ grounding: EMPTY_GROUNDING, depth });
+      expect(prompt).toContain("先按上文最核心的一點作答");
+    }
+  });
+
+  it("挑戰深度加入立場光譜、判斷準則及反駁任務", () => {
+    const prompt = buildTutorSystemPrompt({ grounding: EMPTY_GROUNDING, depth: "challenge" });
+    expect(prompt).toContain("【回覆結構：挑戰・史觀】");
+    expect(prompt).toContain("立場光譜");
+    expect(prompt).toContain("判斷準則");
+    expect(prompt).toContain("挑戰任務");
+    expect(prompt).toContain("不可虛構史實");
+  });
+
+  it("預設深度保持原本的四段精簡結構", () => {
+    const prompt = buildTutorSystemPrompt({ grounding: EMPTY_GROUNDING });
+    expect(prompt).not.toContain("【回覆結構：進階分析】");
+    expect(prompt).not.toContain("【回覆結構：挑戰・史觀】");
+    expect(prompt).not.toContain("【分析角度】");
   });
 });
 

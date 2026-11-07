@@ -655,4 +655,96 @@ describe("AI 歷史自學學伴 API", () => {
     const status = await getChat(requestFor("GET", STUDENT_A));
     expect(await status.json()).toMatchObject({ remaining: 15, dailyLimit: 15 });
   });
+
+  /**
+   * 回覆深度（2026-11-06）：使用者回報「回覆太簡單，未能照顧高能力學生」。
+   * 這裡鎖定三件事：① 分析性提問自動加深；② 學生可自行指定深度並寫入對話紀錄；
+   * ③ 無效值不會令請求失敗（前端舊版本或不正常請求仍可正常提問）。
+   */
+  describe("回覆深度", () => {
+    it("auto：分析性提問自動使用進階結構，回覆長度上限亦提高", async () => {
+      const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer());
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await postChat(
+        requestFor("POST", STUDENT_A, { message: "美國革命與法國大革命有哪些關係？" }),
+      );
+      expect(response.status).toBe(200);
+
+      const requestBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
+        messages: Array<{ role: string; content: string }>;
+        max_tokens: number;
+      };
+      expect(requestBody.messages[0]?.content).toContain("【回覆結構：進階分析】");
+      expect(requestBody.max_tokens).toBeGreaterThan(1000);
+
+      const streamed = await response.text();
+      expect(streamed).toContain('"depth":"advanced"');
+    });
+
+    it("學生指定 challenge 時改用挑戰結構，深度會保存到對話紀錄", async () => {
+      const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer());
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await postChat(
+        requestFor("POST", STUDENT_A, {
+          message: "凡爾賽條約是否公平？",
+          depth: "challenge",
+        }),
+      );
+      expect(response.status).toBe(200);
+
+      const requestBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
+        messages: Array<{ role: string; content: string }>;
+      };
+      expect(requestBody.messages[0]?.content).toContain("【回覆結構：挑戰・史觀】");
+
+      const sessionId = response.headers.get("x-tutor-session-id");
+      await response.text();
+      const reply = getTutorMessages(sessionId ?? "").find(
+        (message) => message.role === "assistant",
+      );
+      expect(reply?.replyDepth).toBe("challenge");
+    });
+
+    it("短追問沿用上一輪深度，不會由進階掉回精簡", async () => {
+      const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer());
+      vi.stubGlobal("fetch", fetchMock);
+
+      const first = await postChat(
+        requestFor("POST", STUDENT_A, { message: "美國革命與法國大革命有哪些關係？" }),
+      );
+      await first.text();
+      const sessionId = first.headers.get("x-tutor-session-id");
+      expect(sessionId).toBeTruthy();
+
+      const second = await postChat(
+        requestFor("POST", STUDENT_A, { message: "點解？", sessionId }),
+      );
+      expect(second.status).toBe(200);
+      const requestBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body)) as {
+        messages: Array<{ role: string; content: string }>;
+      };
+      expect(requestBody.messages[0]?.content).toContain("【回覆結構：進階分析】");
+      await second.text();
+    });
+
+    it("無效的 depth 值當作 auto，不會令請求失敗", async () => {
+      const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer());
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await postChat(
+        requestFor("POST", STUDENT_A, { message: "什麼是文藝復興？", depth: "deeper" }),
+      );
+      expect(response.status).toBe(200);
+
+      const requestBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
+        messages: Array<{ role: string; content: string }>;
+      };
+      // 辨識型提問按 auto 判斷為精簡
+      expect(requestBody.messages[0]?.content).toContain("【回覆結構】");
+      expect(requestBody.messages[0]?.content).not.toContain("【回覆結構：進階分析】");
+      await response.text();
+    });
+  });
 });

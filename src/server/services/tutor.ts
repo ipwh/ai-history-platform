@@ -26,6 +26,102 @@ const HISTORY_TERMS = HISTORY_TERM_GROUPS.flatMap((group) => [
 const SHORT_FOLLOW_UP =
   /^(?:點解|為甚麼|為什麼|原因呢|邊一年|哪一年|何時|幾時|然後呢|結果呢|有什麼影響|有何影響|呢個呢|那麼呢|之後呢|咁跟住呢|咁跟住點|(?:跟住|之後|最後)點(?:呀|啊|呢)?|咁之後發生咩事|咁佢最後點|後來呢|有咩結果|咁結果係點|咁呢個有咩影響|仲有呢|再講多少少|可否再說|可以再講|再解釋|詳細一點|再舉例)$/;
 
+/**
+ * 短追問的完整寫法（2026-11-06 實測補強）。
+ *
+ * 正則只覆蓋以「點解」「為甚麼」等**開首**的追問；學生實際會打「即係點解？」
+ * 「咁又係點解？」「你講的第二點點解？」「第二點呢？」，這些全部被當成離題而
+ * 收到「只能討論歷史科」。這裡改為逐句比對（已正規化，即去空白及標點），
+ * 只接受完整的追問句式，避免把含這些字樣的長提問當成追問。
+ */
+const SHORT_FOLLOW_UP_PHRASES: ReadonlySet<string> = new Set([
+  "即係點解",
+  "咁即係點解",
+  "咁又係點解",
+  "咁點解",
+  "即係為甚麼",
+  "咁係咩意思",
+  "係咩意思",
+  "點樣",
+  "咁點樣",
+  "咁即係點",
+  "係咪咁",
+  "對唔對",
+  "啱唔啱",
+  "有冇記錯",
+  "有沒記錯",
+  "我理解得啱唔啱",
+  "我理解啱唔啱",
+  "我理解得對唔對",
+  "第二點",
+  "第二點呢",
+  "第二點點解",
+  "你講的第二點",
+  "你講的第二點點解",
+  "第一點呢",
+  "第三點呢",
+  "可否再解釋",
+  "可以再解釋",
+  "可否舉例",
+  "舉個例",
+  "再深入一點",
+  "深入一點",
+  "用簡單方法解釋",
+  "有甚麼證據",
+  "有咩證據",
+  "這是否最重要原因",
+  "是否最重要原因",
+  "咁呢",
+  "仲有咩",
+  "仲有咩例子",
+]);
+
+/**
+ * 英文短追問。
+ *
+ * 須在**原文**比對（`normalizeHistoryAnswer` 會去掉空格，`why` 與
+ * `whatdoyoumean` 無法再分詞）。同樣只接受完整短句，長提問不會因此放行。
+ */
+const SHORT_FOLLOW_UP_EN: ReadonlySet<string> = new Set([
+  "why",
+  "why so",
+  "why is that",
+  "why did that happen",
+  "how so",
+  "how come",
+  "how exactly",
+  "in what way",
+  "what do you mean",
+  "what does that mean",
+  "can you explain",
+  "can you explain more",
+  "explain more",
+  "explain further",
+  "tell me more",
+  "go deeper",
+  "more detail",
+  "more details",
+  "and then",
+  "what happened next",
+  "is that correct",
+  "am i right",
+  "did i get this right",
+  "did i get that right",
+  "what else",
+  "anything else",
+  "for example",
+  "give an example",
+]);
+
+function isShortEnglishFollowUp(message: string): boolean {
+  const key = message
+    .toLowerCase()
+    .replace(/[^a-z\s']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return SHORT_FOLLOW_UP_EN.has(key);
+}
+
 export function hongKongTimestamp(now = new Date()): string {
   return `${new Date(now.getTime() + HONG_KONG_OFFSET_MS).toISOString().slice(0, -1)}+08:00`;
 }
@@ -47,7 +143,9 @@ export function isHistoryTopicPrompt(message: string): boolean {
 
 export function isShortHistoryFollowUp(message: string): boolean {
   const normalized = normalizeHistoryAnswer(message);
-  return normalized.length <= 24 && SHORT_FOLLOW_UP.test(normalized);
+  if (normalized.length > 24) return false;
+  if (SHORT_FOLLOW_UP.test(normalized)) return true;
+  return SHORT_FOLLOW_UP_PHRASES.has(normalized) || isShortEnglishFollowUp(message);
 }
 
 export interface TutorChatTurn {

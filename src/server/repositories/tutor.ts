@@ -4,10 +4,12 @@ import {
   tutorPracticeContextSchema,
   tutorSourceSchema,
   tutorTermNoteSchema,
+  tutorReplyDepthSchema,
   tutorWebSourceSchema,
   tutorWebSupplementStatusSchema,
   type TutorGroundingStatus,
   type TutorPracticeContext,
+  type TutorReplyDepth,
   type TutorSource,
   type TutorTermNote,
   type TutorWebSource,
@@ -44,6 +46,8 @@ export interface TutorMessage {
   webSources: TutorWebSource[];
   /** 外部參考狀態（只用於教師端聚合統計，不影響顯示） */
   webSupplementStatus: TutorMessageWebStatus;
+  /** 回覆深度（介面據此標示「進階分析」「挑戰・史觀」）；學生提問固定為 `standard` */
+  replyDepth: TutorReplyDepth;
 }
 
 /** 寫入訊息時可一併保存的教材依據資料（學生提問不需要） */
@@ -53,6 +57,7 @@ export interface TutorMessageMetadata {
   termNotes?: TutorTermNote[];
   webSources?: TutorWebSource[];
   webSupplementStatus?: TutorWebSupplementStatus;
+  replyDepth?: TutorReplyDepth;
 }
 
 interface TutorMessageRow {
@@ -67,6 +72,7 @@ interface TutorMessageRow {
   termNotesJson: string | null;
   webSourcesJson: string | null;
   webSupplementStatus: string | null;
+  replyDepth: string | null;
 }
 
 /**
@@ -108,6 +114,7 @@ export function parseTutorJsonObject<T>(
 function mapMessage(row: TutorMessageRow): TutorMessage {
   const status = tutorGroundingStatusSchema.safeParse(row.groundingStatus);
   const webStatus = tutorWebSupplementStatusSchema.safeParse(row.webSupplementStatus);
+  const depth = tutorReplyDepthSchema.safeParse(row.replyDepth);
   return {
     id: row.id,
     sessionId: row.sessionId,
@@ -120,6 +127,7 @@ function mapMessage(row: TutorMessageRow): TutorMessage {
     termNotes: parseJsonArray<TutorTermNote>(row.termNotesJson, tutorTermNoteSchema),
     webSources: parseJsonArray<TutorWebSource>(row.webSourcesJson, tutorWebSourceSchema),
     webSupplementStatus: webStatus.success ? webStatus.data : "none",
+    replyDepth: depth.success ? depth.data : "standard",
   };
 }
 
@@ -222,7 +230,8 @@ export function getTutorMessages(sessionId: string, limit = TUTOR_MESSAGE_WINDOW
   const rows = getDb()
     .prepare(
       `SELECT id, sessionId, role, content, tokensUsed, createdAt,
-              sourcesJson, groundingStatus, termNotesJson, webSourcesJson, webSupplementStatus
+              sourcesJson, groundingStatus, termNotesJson, webSourcesJson, webSupplementStatus,
+              replyDepth
        FROM tutor_messages WHERE sessionId = ?
        ORDER BY createdAt DESC, rowid DESC LIMIT ?`,
     )
@@ -242,8 +251,9 @@ export function saveTutorMessage(
     .prepare(
       `INSERT INTO tutor_messages
          (id, sessionId, role, content, tokensUsed, createdAt,
-          sourcesJson, groundingStatus, termNotesJson, webSourcesJson, webSupplementStatus)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          sourcesJson, groundingStatus, termNotesJson, webSourcesJson, webSupplementStatus,
+          replyDepth)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       newId("tmsg"),
@@ -257,6 +267,7 @@ export function saveTutorMessage(
       JSON.stringify(metadata.termNotes ?? []),
       JSON.stringify(metadata.webSources ?? []),
       metadata.webSupplementStatus ?? "none",
+      metadata.replyDepth ?? "standard",
     );
 }
 

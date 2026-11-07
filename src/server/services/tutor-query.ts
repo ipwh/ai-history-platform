@@ -203,6 +203,12 @@ function hasSpecificHistoryAnchor(
   normalized: string,
   curriculum: TutorCurriculumIndex,
 ): boolean {
+  // 年份／世紀本身已是歷史錨點：與 `isHistoryTopicPrompt` 的判斷一致。
+  // 若只在這裡不承認年份，「美國在 1942 年才正式參戰，對嗎？」會因為找不到
+  // 詞庫專名而被當成含糊，要求學生重新選擇課題（2026-11-06 實測）。
+  if (/(?:公元前|公元|西元)?\d{1,4}(?:年|世紀|年代)|\b(?:1[0-9]{3}|20[0-2][0-9])\b/.test(normalized)) {
+    return true;
+  }
   const lexiconTerms = HISTORY_TERM_GROUPS.flatMap((group) => [
     group.canonical,
     ...group.aliases,
@@ -249,13 +255,17 @@ export function isUnclearTutorQuery(
   // 學生只打了一個課程專名（例如「五功？」「凡爾賽條約」）：提問對象已經明確，
   // 不應再要求澄清（2026-11-02）。
   if (normalized.length <= 8 && canonicalHistoryTerm(normalized) !== null) return false;
-  const hasQuestionWord = /(?:為什麼|為何|如何|怎樣|成因|起因|原因|背景|影響|特色|特點|內容|分別|比較|誰|哪些|哪個|哪一|何時|幾時|哪裡|邊度|順序|次序|時序|排列|配對|填充|完成|下表|表格|改變|爆發|佔領|解釋|說明|方法|計算|甚麼|什麼|是否|一樣|做了|做過|做咩|做乜|乜|割|列出|整理|提示|抄|例子|舉例|例如|評論|評價|分析|角色|立場|看法|意見|背|記住|記憶|溫習|讀|成功|失敗|會唔會|咩|邊(?:個|幾|一|二|三|四|五|六|七|八|九|十|多|樣|年|月|日)|幾多|幾耐|關係|係點|是怎樣)/.test(
+  const hasQuestionWord = /(?:為什麼|為何|如何|怎樣|成因|起因|原因|背景|影響|特色|特點|內容|分別|比較|誰|哪些|哪個|哪一|何時|幾時|哪裡|邊度|順序|次序|時序|排列|配對|填充|完成|下表|表格|改變|爆發|佔領|解釋|說明|方法|計算|甚麼|什麼|是否|一樣|做了|做過|做咩|做乜|乜|割|列出|整理|提示|抄|例子|舉例|例如|評論|評價|分析|角色|立場|看法|意見|背|記住|記憶|溫習|讀|成功|失敗|會唔會|咩|邊(?:個|幾|一|二|三|四|五|六|七|八|九|十|多|樣|年|月|日)|幾多|幾耐|關係|係點|是怎樣|導致|造成|引致|多大程度|幾大程度|重要性|關鍵|同意嗎|贊成嗎|應否|對唔對|對不對|是否正確|正確嗎|啱唔啱|有冇|有沒有|對嗎|係咪|啱嗎|記錯)/.test(
     normalized,
   );
   // 純英文提問（"Who was Hitler?"）：正規化已去掉空格，因此不可用 \b 邊界，
   // 改為直接在原文（未去空格）中找英文疑問詞。
+  //
+  // 2026-11-06：加入核對式問法（"Is that correct?"／"Am I right?"／
+  // "Did I get this right?"）。這類提問是學生最常用來核對自己理解的寫法，
+  // 原本不在名單內而會被當成含糊、要求重新選擇課題。
   const hasEnglishQuestionWord =
-    /(?:^|[^a-z])(?:who|what|why|how|when|which|where|explain|describe|compare|discuss|evaluate)(?:[^a-z]|$)/i.test(
+    /(?:^|[^a-z])(?:who|what|why|how|when|which|where|explain|describe|compare|discuss|evaluate|is that correct|am i right|did i get (?:this|that) right|is this correct|correct\?)(?:[^a-z]|$)/i.test(
       raw,
     );
   return normalized.length < 24 && !hasQuestionWord && !hasEnglishQuestionWord;

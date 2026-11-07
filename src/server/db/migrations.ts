@@ -1579,6 +1579,18 @@ export const MIGRATIONS: Migration[] = [
          ON tutor_query_events(createdAt DESC)`,
     ],
   },
+  {
+    id: "0035-tutor-reply-depth",
+    statements: [
+      // 每則學伴回覆所用的深度（standard／advanced／challenge）。
+      //
+      // 為甚麼要存：介面會在回覆上方標示「進階分析」「挑戰・史觀」，讓學生知道自己
+      // 正在看哪一層的分析；若只在前端即時顯示，重新載入對話後標示便會消失，學生
+      // 會以為同一則回覆的深度改變了。舊資料一律為 'standard'（即原本的四段結構），
+      // 與當時的實際行為一致，屬非破壞性改動。
+      `ALTER TABLE tutor_messages ADD COLUMN replyDepth TEXT NOT NULL DEFAULT 'standard'`,
+    ],
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

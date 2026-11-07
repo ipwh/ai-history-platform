@@ -208,6 +208,50 @@ describe("學伴教材依據：查詢詞抽取", () => {
     expect(weights.get("日治時期")).toBeGreaterThanOrEqual(5);
   });
 
+  /**
+   * 2026-11-06 實測（人物／專名類提問）：
+   * ① 「Who was George Washington?」把 `who` 當成世界衛生組織（WHO）的別名，
+   *    檢索詞最高分變成「世界衛生組織」；
+   * ② 英文問法只靠別名「華盛頓」（權重 5）命中，折算長度後低於命中門檻，
+   *    整條提問變成「找不到教材依據」，而中文問法卻找得到。
+   */
+  it("英文疑問詞不會被當成專名別名（who 不等於世界衛生組織）", () => {
+    const weights = new Map(
+      groundingModule
+        .extractQueryTerms("Who was George Washington?")
+        .map((term) => [term.term, term.weight]),
+    );
+    expect(weights.has("世界衛生組織")).toBe(false);
+    expect(weights.has("世衛")).toBe(false);
+    expect(weights.get("喬治華盛頓")).toBeGreaterThanOrEqual(8);
+  });
+
+  it("人物類的中文別名以課程慣用寫法同權（姓名本身就是唯一線索）", () => {
+    const weights = new Map(
+      groundingModule
+        .extractQueryTerms("Who was George Washington?")
+        .map((term) => [term.term, term.weight]),
+    );
+    expect(weights.get("華盛頓")).toBeGreaterThanOrEqual(8);
+    // 英文命中時，中文寫法是唯一的檢索橋樑，一律用語意改寫級（12）權重；
+    // 中文提問時非人物類仍維持 5 分，避免「順帶提過」的段落被推前。
+    const englishWeights = new Map(
+      groundingModule
+        .extractQueryTerms("Japanese occupation 期間香港發生咩事？")
+        .map((term) => [term.term, term.weight]),
+    );
+    expect(englishWeights.get("日佔時期")).toBe(12);
+
+    const chineseWeights = new Map(
+      groundingModule
+        .extractQueryTerms("日佔時期香港發生咩事？")
+        .map((term) => [term.term, term.weight]),
+    );
+    // 中文提問時：課程慣用寫法 8 分，其餘中文別名 5 分（維持原有排序行為）
+    expect(chineseWeights.get("三年零八個月")).toBe(8);
+    expect(chineseWeights.get("日治時期")).toBe(5);
+  });
+
   it("「香港開埠的過程」可以召回教材只寫「割讓」「自由港」的段落", () => {
     // 課題8 的溫習筆記全篇沒有「開埠」二字：寫的是「英國侵佔香港」及
     // 「割讓香港島／九龍半島」；若沒有類別詞展開，這段問題會一段都召回不到，
@@ -282,6 +326,36 @@ describe("學伴教材依據：段落評分與段落組合併", () => {
     );
     // 來源位置精簡為「第N段」，學生不需要看到整條檔名及匯入標記
     expect(passages[0]?.location).toMatch(/^第\d+段$/);
+  });
+
+  /**
+   * 2026-11-06 實測：命中的段落是 323 字的清單（教材「明治天皇重掌權力……」那一段）。
+   * 舊邏輯在 offset 0 便因長度上限 break，段落組只剩前面的鄰段——命中的句子完全沒有
+   * 送去模型，`uncoveredTerms` 因此把「明治天皇」判成教材未涵蓋，回覆變成「教材找不到」。
+   */
+  it("命中段落本身超過長度上限時，仍會保留含檢索詞的句子", () => {
+    const longBlock = [
+      "1868年：德川幕府被推翻，明治天皇重掌權力，史稱「王政復古」。",
+      "新政府隨即展開「明治維新」（1868-1912年），推行全面現代化改革，期望增強國力",
+      "政治現代化：廢除封建制度，實行中央集權；建立君主立憲體制。",
+      "經濟現代化：改革貨幣制度，引進西方技術及機器，發展工商業與鐵路。",
+      "軍事現代化：實行徵兵制，建立現代化軍隊，並聘用外國教官訓練。",
+      "社會現代化：廢除身分等級，推行普及教育，派遣留學生到歐美學習。",
+    ].join("\n");
+
+    const passages = groundingModule.selectTutorPassages(
+      [
+        block({ id: "m1", order: 0, text: longBlock }),
+        block({ id: "m2", order: 1, text: "日本其後在甲午戰爭中擊敗中國。" }),
+      ],
+      groundingModule.extractQueryTerms("明治天皇推動了哪些改革？"),
+    );
+
+    expect(passages.length).toBeGreaterThan(0);
+    expect(passages[0]?.promptText).toContain("明治天皇");
+    expect(passages[0]?.promptText.length).toBeLessThanOrEqual(
+      groundingModule.TUTOR_MODEL_PASSAGE_MAX_CHARS,
+    );
   });
 
   it("練習題目及評分參考不會成為教材依據", () => {
@@ -594,10 +668,31 @@ describe("學伴教材依據：回答自行說明未涵蓋", () => {
       groundingModule.answerDeclaresNotCovered("我在教材中找不到這部分的內容，以下屬補充。"),
     ).toBe(true);
     expect(groundingModule.answerDeclaresNotCovered("教材片段中未見相關內容。")).toBe(true);
+    // 常見的等義寫法（「提到」「並沒有提到」）仍要偵測得到
+    expect(groundingModule.answerDeclaresNotCovered("課本沒有提到這條條款。")).toBe(true);
+    expect(groundingModule.answerDeclaresNotCovered("教材並沒有提到這件事。")).toBe(true);
+    expect(groundingModule.answerDeclaresNotCovered("筆記中並無相關說明。")).toBe(true);
   });
 
   it("一般回答不會被誤判", () => {
     expect(groundingModule.answerDeclaresNotCovered("課本提到條約限制德國軍備。")).toBe(false);
+  });
+
+  /**
+   * 2026-11-06 實測：更正錯誤前提的開場（「教材片段並沒有把革命寫成…」）被舊規則
+   * 當成「找不到教材」，令本來有四段教材依據的回覆降級並隱藏出處。
+   */
+  it("更正學生錯誤前提的開場，不算「找不到教材」", () => {
+    expect(
+      groundingModule.answerDeclaresNotCovered(
+        "你的說法需要先更正：教材片段並沒有把美國革命寫成「英國加稅後立即爆發」。",
+      ),
+    ).toBe(false);
+    expect(
+      groundingModule.answerDeclaresNotCovered(
+        "教材片段把它定於1775年，並沒有說是1776年開始。",
+      ),
+    ).toBe(false);
   });
 
   it("句中途才提及不算「未涵蓋」", () => {

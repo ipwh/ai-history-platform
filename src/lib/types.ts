@@ -1544,6 +1544,32 @@ export const tutorGroundingStatusSchema = z.enum([
 ]);
 export type TutorGroundingStatus = z.infer<typeof tutorGroundingStatusSchema>;
 
+/**
+ * 學伴回覆深度（實際用於組裝提示詞的層級）。
+ *
+ * - `standard`：精簡四段（定位 → 線索 → 依據 → 下一步），適合單一史實或短追問；
+ * - `advanced`：分析結構（概念定位 → 分析框架 → 張力與反駁 → 依據 → 挑戰問題），
+ *   適合需要比較、解釋因果或整理關係的提問；
+ * - `challenge`：評價／史觀結構（問題拆解 → 立場光譜 → 依據與缺口 → 判斷準則 →
+ *   有條件判斷 → 挑戰任務），適合要求評價或處理爭議的提問。
+ */
+export const tutorReplyDepthSchema = z.enum(["standard", "advanced", "challenge"]);
+export type TutorReplyDepth = z.infer<typeof tutorReplyDepthSchema>;
+
+/**
+ * 學生可選的深度設定。
+ *
+ * `auto` 由平台按提問的認知要求判斷（見 `services/tutor-depth.ts`）；
+ * 其餘三個值直接指定深度，方便能力較高的學生自行要求更深入的分析。
+ */
+export const tutorDepthPreferenceSchema = z.enum([
+  "auto",
+  "standard",
+  "advanced",
+  "challenge",
+]);
+export type TutorDepthPreference = z.infer<typeof tutorDepthPreferenceSchema>;
+
 /** 學生可見的教材出處（節錄上限由 services/tutor-grounding.ts 控制，不存原文全文） */
 export const tutorSourceSchema = z.object({
   blockId: z.string().min(1),

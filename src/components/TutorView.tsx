@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import type {
   TopicOverview,
+  TutorDepthPreference,
   TutorGroundingStatus,
   TutorPracticeContext,
+  TutorReplyDepth,
   TutorSource,
   TutorTermNote,
   TutorWebSource,
@@ -27,6 +29,8 @@ interface TutorMessage {
   /** 🌐 白名單網站的外部參考（非課本・非考試標準），與教材出處分開顯示 */
   webSources?: TutorWebSource[];
   candidates?: TutorQuestionCandidate[];
+  /** 該則回覆的深度（非 `standard` 時在氣泡上方標示） */
+  depth?: TutorReplyDepth;
 }
 
 interface TutorState {
@@ -56,6 +60,7 @@ interface TutorWireMessage {
   groundingStatus?: TutorGroundingStatus;
   termNotes?: TutorTermNote[];
   webSources?: TutorWebSource[];
+  replyDepth?: TutorReplyDepth;
 }
 
 function toTutorMessage(message: TutorWireMessage): TutorMessage {
@@ -66,10 +71,26 @@ function toTutorMessage(message: TutorWireMessage): TutorMessage {
     grounding: message.groundingStatus ?? "none",
     termNotes: message.termNotes ?? [],
     webSources: message.webSources ?? [],
+    depth: message.replyDepth ?? "standard",
   };
 }
 
 const SESSION_STORAGE_KEY = "history-tutor-session";
+/** 回覆深度偏好（本機保存：屬顯示偏好，不需要伺服器端設定） */
+const DEPTH_STORAGE_KEY = "history-tutor-depth";
+
+const DEPTH_OPTIONS: { value: TutorDepthPreference; label: string; hint: string }[] = [
+  { value: "auto", label: "自動（按提問判斷）", hint: "平台會按提問要求自動選擇深度" },
+  { value: "standard", label: "精簡", hint: "四段短結構：定位、線索、依據、下一步" },
+  { value: "advanced", label: "進階分析", hint: "分析框架、張力與反駁、挑戰問題" },
+  { value: "challenge", label: "挑戰・史觀", hint: "問題拆解、立場光譜、判斷準則、挑戰任務" },
+];
+
+/** 回覆氣泡上方顯示的深度標籤（`standard` 不顯示，避免每則回覆都多一個標籤） */
+function depthLabel(depth: TutorReplyDepth | undefined): string | null {
+  if (depth === undefined || depth === "standard") return null;
+  return DEPTH_OPTIONS.find((option) => option.value === depth)?.label ?? null;
+}
 const DISCLAIMER =
   "⚠️ 內容由 AI 輔助生成，僅供課後複習參考。標示「已對照課本教材」的回覆會列出教材節錄及出處可供核對；標示「未找到教材依據」的部分屬補充，不是課本說法；標示「外部參考」的是白名單網站的短摘錄，不是課本亦不是考試標準。正式史實與作答標準請以課本及科任老師教授為準。";
 
@@ -79,6 +100,38 @@ function readStoredSessionId(): string | null {
     return window.localStorage.getItem(SESSION_STORAGE_KEY);
   } catch {
     return null;
+  }
+}
+
+function readStoredDepth(): TutorDepthPreference {
+  try {
+    const stored = window.localStorage.getItem(DEPTH_STORAGE_KEY);
+    return DEPTH_OPTIONS.some((option) => option.value === stored)
+      ? (stored as TutorDepthPreference)
+      : "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+/** 同一頁面內改動 localStorage 不會觸發 storage 事件，因此自行派發通知 */
+const DEPTH_STORAGE_EVENT = "hk-history-tutor-depth";
+
+function subscribeDepth(onChange: () => void): () => void {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(DEPTH_STORAGE_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(DEPTH_STORAGE_EVENT, onChange);
+  };
+}
+
+function writeStoredDepth(value: TutorDepthPreference): void {
+  try {
+    window.localStorage.setItem(DEPTH_STORAGE_KEY, value);
+    window.dispatchEvent(new Event(DEPTH_STORAGE_EVENT));
+  } catch {
+    // 未能保存時只是下次回到「自動」，不影響本次提問
   }
 }
 
@@ -269,6 +322,15 @@ export function TutorView({
   /** 學習目標課題（M4）：soft prior，只用於檢索及澄清排序 */
   const [goalTopicId, setGoalTopicId] = useState<string>("");
   const [goalTopics, setGoalTopics] = useState<{ id: string; title: string }[]>([]);
+  /**
+   * 回覆深度偏好（2026-11-06）：以 `useSyncExternalStore` 讀取瀏覽器設定，
+   * 伺服器快照一律為 `auto`，避免 hydration 不一致（與 HomeView 的做法一致）。
+   */
+  const depth = useSyncExternalStore<TutorDepthPreference>(
+    subscribeDepth,
+    readStoredDepth,
+    () => "auto",
+  );
   /** 練習關聯（只作關聯用；伺服器會重新組裝安全上下文） */
   const practiceLink = useRef<{ questionId: string; sessionId: string | null } | null>(null);
   /** 最近一次回覆的技能提示（M3） */
@@ -450,6 +512,7 @@ export function TutorView({
           message,
           ...(sessionId ? { sessionId } : {}),
           ...(goalTopicId.length > 0 ? { goalTopicId } : {}),
+          ...(depth !== "auto" ? { depth } : {}),
           // 只帶關聯 ID；伺服器會自行重組安全上下文，前端不會傳任何答案欄位。
           ...(practiceLink.current
             ? {
@@ -574,6 +637,7 @@ export function TutorView({
           webSources?: TutorWebSource[];
           webSupplementStatus?: string;
           skillHint?: string | null;
+          depth?: TutorReplyDepth;
         };
         if (event === "delta" && typeof data.text === "string") {
           updateAssistant({}, data.text);
@@ -583,6 +647,7 @@ export function TutorView({
             topicTitle: typeof data.topicTitle === "string" ? data.topicTitle : null,
             sources: Array.isArray(data.sources) ? data.sources : [],
             ...(Array.isArray(data.webSources) ? { webSources: data.webSources } : {}),
+            ...(data.depth !== undefined ? { depth: data.depth } : {}),
           });
           if (typeof data.skillHint === "string") setSkillHint(data.skillHint);
         } else if (event === "done") {
@@ -599,6 +664,7 @@ export function TutorView({
             ...(Array.isArray(data.sources) ? { sources: data.sources } : {}),
             ...(Array.isArray(data.webSources) ? { webSources: data.webSources } : {}),
             ...(data.topicTitle !== undefined ? { topicTitle: data.topicTitle } : {}),
+            ...(data.depth !== undefined ? { depth: data.depth } : {}),
           });
         } else if (event === "error") {
           throw new Error(data.error ?? "DeepSeek 串流發生錯誤，請稍後再試。");
@@ -690,10 +756,39 @@ export function TutorView({
             ))}
           </select>
           <span className="text-xs text-gray-600">
-            設定後，「咁之後呢？」這類短問題會優先留在這個課題；你明確問另一個課題時仍以你的問題為準。
+            設定後，「之後怎樣？」這類短問題會優先留在這個課題；你明確問另一個課題時仍以你的問題為準。
           </span>
         </div>
       ) : null}
+
+      {/*
+        回覆深度（2026-11-06）：能力較高的學生可自行要求更深入的分析，
+        而不必受限於「自動」按提問字面所作的判斷。
+      */}
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <label htmlFor="tutor-depth" className="font-semibold">
+          回覆深度
+        </label>
+        <select
+          id="tutor-depth"
+          className="rounded-lg border bg-white px-2 py-1"
+          style={{ borderColor: "var(--border-strong)" }}
+          value={depth}
+          disabled={sending}
+          onChange={(event) =>
+            writeStoredDepth(event.target.value as TutorDepthPreference)
+          }
+        >
+          {DEPTH_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs text-gray-600">
+          {DEPTH_OPTIONS.find((option) => option.value === depth)?.hint ?? ""}
+        </span>
+      </div>
 
       <p
         className="rounded-xl border px-4 py-3 text-sm font-medium"
@@ -803,8 +898,11 @@ export function TutorView({
                 background: message.role === "user" ? "var(--accent-soft)" : "#f4f5f8",
               }}
             >
-              <p className="mb-1 text-xs font-semibold text-gray-500">
-                {message.role === "user" ? "你" : "歷史自學學伴"}
+              <p className="mb-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-500">
+                <span>{message.role === "user" ? "你" : "歷史自學學伴"}</span>
+                {message.role === "assistant" && depthLabel(message.depth) !== null ? (
+                  <span className="badge badge-accent">{depthLabel(message.depth)}</span>
+                ) : null}
               </p>
               {parsed.content.length > 0 ? <TutorMarkdown content={parsed.content} /> : null}
               {parsed.suggestions.length > 0 ? (

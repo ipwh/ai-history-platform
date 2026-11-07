@@ -62,7 +62,16 @@ import { recordTutorQueryEvent } from "@/server/repositories/tutor-events";
 import { getTopic } from "@/server/repositories/topics";
 import { getTutorTopicCard } from "@/server/services/tutor-topic-cards";
 import { requireTutorLearnerId } from "@/server/services/tutor-request-access";
-import type { TutorPracticeContext, TutorWebSupplementStatus } from "@/lib/types";
+import {
+  resolveTutorReplyDepth,
+  tutorMaxSourcesForDepth,
+} from "@/server/services/tutor-depth";
+import {
+  tutorDepthPreferenceSchema,
+  type TutorPracticeContext,
+  type TutorReplyDepth,
+  type TutorWebSupplementStatus,
+} from "@/lib/types";
 import { ApiRouteError, handleRoute, jsonOk, parseJsonBody, privateResponseHeaders } from "@/server/http";
 
 export const runtime = "nodejs";
@@ -88,7 +97,26 @@ const chatRequestSchema = z.object({
   practiceQuestionId: z.string().trim().min(1).max(128).optional(),
   practiceSessionId: z.string().trim().min(1).max(128).optional(),
   goalTopicId: z.string().trim().min(1).max(128).nullable().optional(),
+  /**
+   * 學生自選的回覆深度（`auto` = 由平台按提問判斷）。
+   *
+   * 只影響提示詞結構及 token 上限，不影響教材依據、額度或安全規則；
+   * 前端傳送無效值時一律當作 `auto`（舊版頁面或不正常請求不應因此無法提問）。
+   */
+  depth: tutorDepthPreferenceSchema.optional().catch("auto"),
 });
+
+/**
+ * 各深度的回應長度上限。
+ *
+ * 精簡沿用原本的 1,000；進階／挑戰需要多段分析，若仍封頂在 1,000 會被中途截斷。
+ * 仍然以 `LLM_MAX_TOKENS`（環境設定）為上限，避免超出服務商或成本設定。
+ */
+const MAX_TOKENS_BY_DEPTH: Record<TutorReplyDepth, number> = {
+  standard: 1_000,
+  advanced: 1_500,
+  challenge: 2_000,
+};
 
 /**
  * 學伴存取守衛（已移至 `services/tutor-request-access.ts`，供所有學伴路由共用）。
@@ -267,7 +295,9 @@ export async function POST(request: Request) {
         (history.length > 0 &&
           sessionId !== null &&
           hasValidHistoryContext &&
-          isShortHistoryFollowUp(normalizedMessage)));
+          // 傳入原文：英文短追問（"Why?"／"Can you explain?"）需要空格才分得到詞，
+          // 中文部分函式內部會自行正規化（2026-11-06）。
+          isShortHistoryFollowUp(body.message)));
 
     // 傳入**原文**：`isUnclearTutorQuery` 內部會自行正規化，而英文疑問詞
     // （"Who was Hitler?"）需要原文的空格才判斷得到（正規化會把空格去掉，
@@ -281,6 +311,16 @@ export async function POST(request: Request) {
     const groundingContext = promptHistory
       .filter((message) => message.role === "user")
       .map((message) => normalizeTutorQuery(message.content));
+
+    // 回覆深度（2026-11-06）：`auto` 按提問的認知要求判斷，短追問則沿用上一輪深度，
+    // 免得學生剛開始的深入討論因為一句「點解？」而掉回精簡結構。
+    const previousReplyDepth =
+      [...history].reverse().find((message) => message.role === "assistant")?.replyDepth ?? null;
+    const replyDepth = resolveTutorReplyDepth(
+      body.depth ?? "auto",
+      body.message,
+      previousReplyDepth,
+    );
 
     // ── 學習目標、練習上下文（M4／P0）──────────────────────────────────
     // 學習目標課題只接受**已發布**課題；不存在或未發布一律當作沒有設定。
@@ -378,6 +418,7 @@ export async function POST(request: Request) {
 
     let grounding = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
       preferredTopicId,
+      maxSources: tutorMaxSourcesForDepth(replyDepth),
     });
     if (unclear) {
       const clarifyTopicId = grounding.topicId ?? preferredTopicId;
@@ -472,6 +513,7 @@ export async function POST(request: Request) {
         const expanded = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
           preferredTopicId,
           extraTerms: expansion.terms,
+          maxSources: tutorMaxSourcesForDepth(replyDepth),
         });
         if (expanded.status === "grounded") grounding = expanded;
       }
@@ -520,6 +562,7 @@ export async function POST(request: Request) {
               ? null
               : describeTutorPracticeContextForPrompt(effectivePracticeContext),
           goalTopicTitle: goalTopic?.published === true ? goalTopic.title : null,
+          depth: replyDepth,
         }),
       },
       ...promptHistory,
@@ -533,7 +576,10 @@ export async function POST(request: Request) {
       model: llm.model,
       messages,
       stream: true,
-      max_tokens: Math.min(llm.maxTokens ?? 800, 1000),
+      max_tokens: Math.min(
+        llm.maxTokens ?? MAX_TOKENS_BY_DEPTH[replyDepth],
+        MAX_TOKENS_BY_DEPTH[replyDepth],
+      ),
     };
     if (llm.thinking !== "enabled") completionBody.temperature = 0.4;
     if (llm.thinking !== null) {
@@ -589,6 +635,7 @@ export async function POST(request: Request) {
               webSources: webSupplement.sources,
               webSupplementStatus: webSupplement.status,
               skillHint: practiceSkillHint(effectivePracticeContext),
+              depth: replyDepth,
             }),
           );
         }
@@ -689,6 +736,7 @@ export async function POST(request: Request) {
             termNotes,
             webSources: webSupplement.sources,
             webSupplementStatus: webSupplement.status,
+            replyDepth,
           });
           if (!cancelled) {
             controller.enqueue(
@@ -705,6 +753,8 @@ export async function POST(request: Request) {
                 webSupplementStatus: webSupplement.status,
                 // 技能提示（M3）：只在有練習上下文且題目有技能標籤時出現
                 skillHint: practiceSkillHint(effectivePracticeContext),
+                // 回覆深度：介面據此標示「進階分析」「挑戰・史觀」
+                depth: replyDepth,
                 practiceQuestionId: effectivePracticeContext?.questionId ?? null,
               }),
             );
