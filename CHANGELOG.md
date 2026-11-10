@@ -18,7 +18,7 @@
 
 ## [未發布] — 2026-11-10（十四）：學生模擬——伴讀在「未命中課題詞彙」時的回應、語意層驗證及文件清理
 
-**狀態**：已實作、已驗證（`vitest run` 172 檔 2,633 項通過、4 項略過；`tsc --noEmit`、`npm run lint` 0 error、`npm run build`）；**未部署**。
+**狀態**：已實作、已驗證（`vitest run` 172 檔 2,633 項通過、4 項略過；`tsc --noEmit`、`npm run lint` 0 error、`npm run build`）；**已部署**（evidence 見本節末「部署證據」）。
 
 ### 背景
 
@@ -142,12 +142,25 @@
 3. 提問雖可作答，但教材是否真的涵蓋答案仍需教師覆核；C 狀態已要求模型明確標明「教材未涵蓋」。
 4. 仍有一類提問（完全沒有課題脈絡、又完全不用教材詞彙）會維持拒答；要根治需在硬閘前加入語意分類／改寫，會為每次提問增加一次模型請求（成本及延遲），須由擁有者決定。
 
+### 部署證據（2026-11-10 21:54 HKT）
+
+| 項目 | 內容 |
+| --- | --- |
+| Commit | `bd31045`（`feat(ui,tutor): refresh student UI and fix tutor keyword-miss refusals`，28 個檔案，+2,696／−422） |
+| GitHub Actions CI | run [42827427207](https://github.com/ipwh/ai-history-platform/actions/runs/42827427207) **success**（2 分 39 秒，push 至 `main`） |
+| Cloud Build | 由正式環境的 GitHub 觸發程序 `history-main-push` 自動觸發（推送即部署；`cloudbuild.yaml` 先跑 `npm run lint` 及 `npm test`） |
+| 版本指紋 | 前端樣式資產由 `428odtqm59-su.css`（31,260 bytes）改為 **`2sc_o1y3kogrv.css`（41,738 bytes）**，內含本次新增的 `--tutor-accent`、`--review-accent`、`--tap-min`、`--font-serif`（舊版完全沒有這些 token） |
+| 煙霧測試 | `/login` **200**；`GET /tutor` 未登入 **307**（轉往登入）；`POST /api/tutor/chat` 未登入 **401** |
+| 資料 | `/api/health`：`ok=true`、`database=sqlite/ok`、`demoMode=false`、`llmConfigured=true`、教材 **46 份／26,599 段**（可向學生發布 **22** 份）、備份 `restored`——與部署前一致，沒有因重新部署而改變 |
+| 發布閘門 | `npm run release:gate` → **READY WITH LIMITATIONS**（既有兩項 WARN：metadata 技能空白、逐題教師裁決），證據檔 [docs/release-gate-2026-11-10T13-46-29-997Z.md](docs/release-gate-2026-11-10T13-46-29-997Z.md) |
+| 未能取得的資料 | Cloud Run revision 名稱及流量分配：本機 `gcloud` 憑證需互動式重新登入（`gcloud auth login`），非互動環境無法查詢；因此以 commit ＋ 前端資產指紋作版本證據（與 2026-11-07 的做法一致） |
+
 ---
 
 
 ## [未發布] — 2026-11-10（十三）：學生自學介面重新整理（只改版面及樣式，不改功能）
 
-**狀態**：已實作、已驗證（`vitest run` 171 檔 2,576 項通過、4 項略過；`tsc --noEmit`、`npm run lint` 0 error、`npm run build`、Playwright 22 項通過／9 項既有略過，含 iPad 810×1080 觸控測試）；**未部署**。
+**狀態**：已實作、已驗證（`vitest run` 171 檔 2,576 項通過、4 項略過；`tsc --noEmit`、`npm run lint` 0 error、`npm run build`、Playwright 22 項通過／9 項既有略過，含 iPad 810×1080 觸控測試）；**已部署**（隨 2026-11-10（十四）一併上線，見上節「部署證據」）。
 
 ### 背景
 
