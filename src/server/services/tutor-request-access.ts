@@ -14,7 +14,9 @@
  * 學習者身分**只**由已簽署的工作階段推導，永不接受前端傳來的 learnerId。
  */
 import { ApiRouteError } from "../http";
-import { requireStudentOrTeacher } from "../auth/guards";
+import { getRequestUser, requireStudentOrTeacher } from "../auth/guards";
+import { levelFromClassName } from "../../lib/student-level";
+import type { CurriculumLevel } from "../../lib/types";
 
 export async function requireTutorLearnerId(request: Request): Promise<string> {
   const actor = await requireStudentOrTeacher(request);
@@ -29,4 +31,16 @@ export async function requireTutorLearnerId(request: Request): Promise<string> {
     throw new ApiRouteError("登入工作階段缺少有效的學生身分", 401);
   }
   return actor.learnerId;
+}
+
+/**
+ * 學生所屬程度（供應課題推斷「同程度優先」使用）。
+ *
+ * 只讀已簽署工作階段的班別；教師／管理員、班別格式無法辨認或名冊未提供班別時
+ * 回傳 `null`，即維持原有行為（不做程度偏好），而不是猜一個程度。
+ */
+export async function tutorStudentLevel(request: Request): Promise<CurriculumLevel | null> {
+  const user = await getRequestUser(request);
+  if (user === null || user.role !== "student") return null;
+  return levelFromClassName(user.className);
 }

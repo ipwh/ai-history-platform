@@ -65,6 +65,14 @@ export const TUTOR_MAX_TERM_NOTES = 3;
 
 /** 段落被視為命中所需的最低分數（見 scoreBlockText 的權重說明） */
 const MIN_HIT_SCORE = 6;
+/**
+ * 推斷結果要達到這個分數，才可以蓋過「學生已知的課題脈絡」或「學生所屬程度」。
+ *
+ * 16 = 詞庫以 `topicId` 指定課題的專名命中（「明治維新」→高中課題3）。只靠分節
+ * 關鍵詞或範疇累積（6–12 分）時，不足以斷定學生要轉換課題或轉換程度
+ * （2026-11-10 學生模擬）。
+ */
+const EXPLICIT_TOPIC_OVERRIDE_SCORE = 16;
 /** 查詢詞上限：避免長問題（2,000 字）產生上萬個 n-gram */
 const MAX_QUERY_TERMS = 120;
 /** 參與合併的命中段落上限（只需足夠排序，不必全部） */
@@ -1008,8 +1016,9 @@ export interface TutorTopicGuess {
  */
 export function guessTutorTopic(
   message: string,
-  topics: { id: string; title: string }[],
+  topics: { id: string; title: string; level?: number }[],
   sectionsByTopic: Map<string, { id?: string; title: string; matchKeywords: string[] }[]>,
+  options: { studentLevel?: number | null } = {},
 ): TutorTopicGuess | null {
   const normalizedText = normalizeHistoryAnswer(message);
   if (normalizedText.length === 0) return null;
@@ -1020,8 +1029,16 @@ export function guessTutorTopic(
     [...normalizedText.matchAll(/課題\s*(\d+)/g)].map((match) => `topic-${match[1]}`),
   );
   const looseTerms = new Set(findLooseHistoryTerms(normalizedText));
+  const studentLevel = options.studentLevel ?? null;
+
+  const isBetter = (candidate: TutorTopicGuess, current: TutorTopicGuess | null): boolean =>
+    current === null ||
+    candidate.score > current.score ||
+    (candidate.score === current.score && candidate.sectionIds.length > current.sectionIds.length);
 
   let best: TutorTopicGuess | null = null;
+  /** 學生所屬程度中分數最高的課題（同程度優先，見函數末端） */
+  let bestAtStudentLevel: TutorTopicGuess | null = null;
   for (const topic of topics) {
     let score = 0;
     const sectionIds: string[] = [];
@@ -1105,15 +1122,46 @@ export function guessTutorTopic(
     // 例：「香港如何由轉口港發展成國際金融中心？」同時命中課題8（詞庫「轉口港」）
     // 及高中課題1（分節「國際金融中心」）各 10 分，而「國際金融中心」只在高中教材
     // 出現，取分節命中可避免引用完全沒有該內容的課題（2026-11-02）。
-    if (
-      !best ||
-      score > best.score ||
-      (score === best.score && sectionIds.length > best.sectionIds.length)
-    ) {
-      best = { topicId: topic.id, topicTitle: topic.title, score, sectionIds };
+    const candidate: TutorTopicGuess = {
+      topicId: topic.id,
+      topicTitle: topic.title,
+      score,
+      sectionIds,
+    };
+    if (isBetter(candidate, best)) best = candidate;
+    if (studentLevel !== null && topic.level === studentLevel && isBetter(candidate, bestAtStudentLevel)) {
+      bestAtStudentLevel = candidate;
     }
   }
-  return best !== null && best.score >= MIN_HIT_SCORE ? best : null;
+
+  const overall = best !== null && best.score >= MIN_HIT_SCORE ? best : null;
+  const sameLevel =
+    bestAtStudentLevel !== null && bestAtStudentLevel.score >= MIN_HIT_SCORE
+      ? bestAtStudentLevel
+      : null;
+
+  /**
+   * 同程度優先（2026-11-10 學生模擬）。
+   *
+   * 初中與高中各有一個處理同一史事的課題（課題9「兩次世界大戰」／高中課題4
+   * 「主要衝突與和平的訴求」）。學生問「1914 年歐洲點解會打成一團？」時，
+   * 純文字比對會選中高中課題4（12 分），於是初中生拿到高中教材。
+   *
+   * 條件：學生所屬程度內有課題達到最低門檻，而且分數至少是最高分課題的一半。
+   *   - 「1914…」：高中課題4 = 12、初中課題9 = 10 → 保留初中課題9 ✓
+   *   - 「凡爾賽條約…」：高中課題4 = 18、初中課題9 = 12 → 保留初中課題9 ✓
+   *   - 「明治維新改咗啲咩？」（初中生）：初中課題沒有相關分節（低於門檻）→ 用高中課題3 ✓
+   *   - 高中生問冷戰：初中課題10 = 16、高中沒有足夠證據 → 用初中課題10 ✓
+   */
+  if (
+    overall !== null &&
+    sameLevel !== null &&
+    overall.topicId !== sameLevel.topicId &&
+    sameLevel.score * 2 >= overall.score
+  ) {
+    return sameLevel;
+  }
+  return overall;
 }
 
 /**
@@ -1203,6 +1251,107 @@ export function inferTopicFromMaterial(
     candidates: ranked.slice(0, 5),
     usedTerms: candidates,
   };
+}
+
+/**
+ * 提問是否使用某課題教材內出現的詞彙。
+ *
+ * ── 為甚麼需要（2026-11-10 學生模擬）─────────────────────────────────
+ * 主題硬閘（`isHistoricalTutorQuestion`）只認詞庫專名、分節關鍵詞及少量類別詞。
+ * 學生用日常說法提問時（「點解啲人開始唔再信教會講嘅嘢？」「柏林嗰道牆幾時拆？」），
+ * 即使正在練習該課題、教材亦確實有內容，提問仍會因「沒有歷史訊號」而被拒答。
+ *
+ * 這裡改以**教材本身**做詞彙來源：只要提問有 2 字以上的中文詞彙出現在該課題至少
+ * `minBlocks` 段教材，就視為課程內提問。詞庫日後補內容時，這條路徑自動生效，
+ * 不需要逐個個案寫死。
+ *
+ * 保守條件：只用於「已有課題脈絡」（練習題、學習目標或對話課題）而字詞檢索失敗的
+ * 情況，且要求多段命中，避免單段偶然重疊就放行。
+ */
+export function messageUsesTopicVocabulary(
+  message: string,
+  topicId: string,
+  minBlocks = 2,
+): boolean {
+  const terms = extractQueryTerms(message)
+    .filter(({ term }) => term.length >= 2 && /[\u3400-\u9fff]/.test(term))
+    .map(({ term }) => term);
+  if (terms.length === 0) return false;
+
+  return blocksCoverTerms(listTutorCandidateBlocks(topicId), terms, minBlocks);
+}
+
+function blocksCoverTerms(
+  blocks: readonly { text: string | null }[],
+  terms: readonly string[],
+  minBlocks: number,
+): boolean {
+  let matched = 0;
+  for (const block of blocks) {
+    const text = normalizeHistoryAnswer(block.text ?? "");
+    if (text.length === 0) continue;
+    if (!terms.some((term) => text.includes(term))) continue;
+    matched += 1;
+    if (matched >= minBlocks) return true;
+  }
+  return false;
+}
+
+/**
+ * 提問是否使用**任何**已發布課題教材內的詞彙（沒有課題脈絡時使用）。
+ *
+ * 與 `messageUsesTopicVocabulary` 的分別：這裡不知道學生在讀哪一課，因此掃描全部
+ * 可發布段落，並回傳命中段數最多的課題（最多三個）作為澄清方向。用途與風險取捨：
+ *   - 命中 → 只可澄清（列出可能方向），不可拒答，亦不可引用未確認的教材；
+ *   - 完全不命中 → 維持拒答（例如「點樣整芝士蛋糕？」）。
+ * route 只在「沒有課題脈絡、字詞檢索失敗、確實是提問句」時才呼叫，一般提問零成本。
+ */
+export function messageUsesAnyCourseVocabulary(
+  message: string,
+  minBlocks = 2,
+): { matched: boolean; topicIds: string[] } {
+  const terms = extractQueryTerms(message)
+    .filter(({ term }) => term.length >= 2 && /[\u3400-\u9fff]/.test(term))
+    .map(({ term }) => term);
+  if (terms.length === 0) return { matched: false, topicIds: [] };
+
+  const topics = loadTutorCurriculumIndex().topics.map((topic) => topic.id);
+  if (topics.length === 0) return { matched: false, topicIds: [] };
+
+  const totals = new Map<string, number>();
+  const matched = new Map<string, { blocks: number; terms: Set<string> }>();
+  for (const block of listTutorCandidateBlocks(topics)) {
+    const topicId = block.topicId;
+    if (!topicId) continue;
+    totals.set(topicId, (totals.get(topicId) ?? 0) + 1);
+    const text = normalizeHistoryAnswer(block.text ?? "");
+    if (text.length === 0) continue;
+    const hits = terms.filter((term) => text.includes(term));
+    if (hits.length === 0) continue;
+    const entry = matched.get(topicId) ?? { blocks: 0, terms: new Set<string>() };
+    entry.blocks += 1;
+    for (const term of hits) entry.terms.add(term);
+    matched.set(topicId, entry);
+  }
+
+  /**
+   * 排序：命中詞種數優先，其次命中段落佔該課題的比例。
+   *
+   * 只按命中段數排序會偏向教材量大的課題（課題10 有 5,321 段，「美國」在任何課題
+   * 都命中最多）——問「美國點解要同英國分手？」會得到冷戰的澄清方向。改用比例後，
+   * 「美國」在課題7 的佔比（美國的成立及發展）明顯高於冷戰課題。
+   */
+  const topicIds = [...matched.entries()]
+    .filter(([, entry]) => entry.blocks >= minBlocks)
+    .map(([topicId, entry]) => ({
+      topicId,
+      termCount: entry.terms.size,
+      share: entry.blocks / Math.max(1, totals.get(topicId) ?? 1),
+    }))
+    .sort((left, right) => right.termCount - left.termCount || right.share - left.share)
+    .slice(0, 3)
+    .map((entry) => entry.topicId);
+  return { matched: topicIds.length > 0, topicIds };
 }
 
 /**
@@ -1368,7 +1517,11 @@ export function answerDeclaresNotCovered(answer: string): boolean {
 }
 
 export interface TutorCurriculumIndex {
-  topics: { id: string; title: string }[];
+  /**
+   * 已發布課題。`level` 用於「同程度優先」：初中（1–3）與高中（4）各有同名課題，
+   * 只靠文字比對容易把初中提問帶到高中的同一史事（2026-11-10）。
+   */
+  topics: { id: string; title: string; level?: number }[];
   sectionsByTopic: Map<string, { id: string; title: string; matchKeywords: string[] }[]>;
 }
 
@@ -1482,6 +1635,12 @@ export function findTutorGrounding(
   options: {
     preferredTopicId?: string | null;
     extraTerms?: readonly string[];
+    /**
+     * 學生所屬程度（1–3 初中，4 高中）。用於同名課題的「同程度優先」：
+     * 初中與高中各有一個處理同一史事的課題，純文字比對容易把初中提問帶到高中
+     * （見 `guessTutorTopic`）。`null`／省略 = 不知道，維持原有行為。
+     */
+    studentLevel?: number | null;
     /** 本回合最多引用幾段教材（由回覆深度決定，見 services/tutor-depth.ts） */
     maxSources?: number;
     /** 收集檢索至選段的處理紀錄（省略時仍會建立，隨結果回傳） */
@@ -1507,7 +1666,8 @@ export function findTutorGrounding(
     // 次序：① 當前提問明確指出的課題 → ② 學生設定的學習目標（soft prior）
     //      → ③ 對話歷史。學習目標只在提問本身沒有課題線索時才生效。
     const preferredTopicId = options.preferredTopicId ?? null;
-    const currentGuess = guessTutorTopic(message, topics, sectionsByTopic);
+    const studentLevel = options.studentLevel ?? null;
+    const currentGuess = guessTutorTopic(message, topics, sectionsByTopic, { studentLevel });
     const preferredTopic =
       preferredTopicId === null ? null : (topics.find((topic) => topic.id === preferredTopicId) ?? null);
     const preferredGuess: TutorTopicGuess | null =
@@ -1551,9 +1711,32 @@ export function findTutorGrounding(
         fallbackCandidates: fallback.candidates,
         fallbackTerms: fallback.usedTerms,
       };
+      /**
+       * 教材反推本身不考慮年級：初中生問「香港島點解會變成英國地方？」時，
+       * 高中課題1（香港的現代化與蛻變）的相關段落較多，會被選中。這裡在候選之中
+       * 找回**學生所屬程度**的課題：命中段數達到最低要求、而且不少於原本勝出者一半，
+       * 就以它為準（2026-11-10 學生模擬）。
+       */
+      let chosen = fallback.topicId;
+      if (studentLevel !== null) {
+        const winner = fallback.candidates.find((entry) => entry.topicId === fallback.topicId);
+        const sameLevelCandidate = fallback.candidates.find(
+          (entry) =>
+            entry.qualifyingBlocks >= FALLBACK_MIN_QUALIFYING_BLOCKS &&
+            topics.find((topic) => topic.id === entry.topicId)?.level === studentLevel,
+        );
+        if (
+          sameLevelCandidate !== undefined &&
+          winner !== undefined &&
+          sameLevelCandidate.qualifyingBlocks * 2 >= winner.qualifyingBlocks
+        ) {
+          chosen = sameLevelCandidate.topicId;
+        }
+      }
+      const chosenTopic = topics.find((topic) => topic.id === chosen);
       return {
-        topicId: fallback.topicId,
-        topicTitle: fallback.topicTitle,
+        topicId: chosen,
+        topicTitle: chosenTopic?.title ?? fallback.topicTitle,
         score: FALLBACK_MIN_QUALIFYING_BLOCKS,
         sectionIds: [],
       };
@@ -1566,6 +1749,7 @@ export function findTutorGrounding(
         [...recentContext, message, ...extraTerms].join("\n"),
         topics,
         sectionsByTopic,
+        { studentLevel },
       );
     let guess = contextGuess ?? applyMaterialFallback();
     if (guess === null) {
@@ -1586,6 +1770,7 @@ export function findTutorGrounding(
 
     const retrieve = (
       activeGuess: TutorTopicGuess,
+      targetAudit: TutorPassageSelectionAudit = audit,
     ): {
       passages: TutorPassage[];
       distinctiveTerms: string[];
@@ -1600,7 +1785,7 @@ export function findTutorGrounding(
         recentContext,
       );
       const searchedTopicIds = [activeGuess.topicId, ...supportingTopics];
-      audit.searchedTopicIds = searchedTopicIds;
+      targetAudit.searchedTopicIds = searchedTopicIds;
       const blocks = listTutorCandidateBlocks(searchedTopicIds)
         .filter((block) => distributable.has(block.documentId))
         .map((block) => ({
@@ -1653,12 +1838,12 @@ export function findTutorGrounding(
         enumerate,
         emphasisTerms,
         balancedTopicIds: supportingTopics.length > 0 ? searchedTopicIds : undefined,
-        audit,
+        audit: targetAudit,
       });
       const topicEvidence =
         searchedTopicIds.length > 1
           ? searchedTopicIds.map((topicId) => {
-              const allocation = audit.topicAllocation?.find(
+              const allocation = targetAudit.topicAllocation?.find(
                 (entry) => entry.topicId === topicId,
               );
               return {
@@ -1673,6 +1858,46 @@ export function findTutorGrounding(
     };
 
     let attempt = retrieve(guess);
+
+    /**
+     * 課題切換要有足夠證據（2026-11-10 模擬）。
+     *
+     * 學生在課題10（冷戰）練習時問「二戰之後有兩個大國互相針對但冇真正開戰，其實係
+     * 咩事？」，課題推斷只看到「二戰」二字（分數 10），於是把提問帶到課題9；
+     * 在課題9 問「凡爾賽條約」亦會因為另一個課題的分節關鍵詞而被帶走。
+     *
+     * 規則：推斷結果與學生所在課題不同，而且推斷分數**低於**明確門檻
+     * （`ANCHOR_PREFERENCE_OVERRIDE_SCORE`，即只靠分節或範疇累積、沒有詞庫指定課題
+     * 的專名）時，先用學生所在課題檢索；該課題確實有片段就保留學生所在課題。
+     * 真正轉換課題（「明治維新改咗啲咩？」分數 24、「冷戰嘅起因」分數 16）或學生
+     * 所在課題沒有片段時，仍然使用推斷結果。
+     */
+    if (
+      preferredGuess !== null &&
+      preferredGuess.topicId !== guess.topicId &&
+      guess.score < EXPLICIT_TOPIC_OVERRIDE_SCORE
+    ) {
+      const scratchAudit: TutorPassageSelectionAudit = {
+        candidateBlocks: 0,
+        scoredHits: 0,
+        belowThreshold: 0,
+        selected: [],
+        excluded: [],
+      };
+      const anchoredAttempt = retrieve(preferredGuess, scratchAudit);
+      if (anchoredAttempt.passages.length > 0) {
+        guess = preferredGuess;
+        audit.topicInference = { source: "preferred-topic" };
+        audit.searchedTopicIds = undefined;
+        audit.topicAllocation = undefined;
+        audit.candidateBlocks = 0;
+        audit.scoredHits = 0;
+        audit.belowThreshold = 0;
+        audit.selected = [];
+        audit.excluded = [];
+        attempt = retrieve(guess);
+      }
+    }
     /**
      * 課程推斷指向的課題沒有可用片段時，改以教材內文反推課題再試一次（Sprint 34）。
      * 實測個案：「珍珠港事件是甚麼？」被分節關鍵詞帶到課題7（美國的成立及發展），

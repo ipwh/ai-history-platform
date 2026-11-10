@@ -83,48 +83,97 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const showAdminNav = demoMode || isAdmin;
   const onStaffPage = pathname.startsWith("/teacher") || pathname.startsWith("/admin");
 
-  const navItems = [
-    { href: "/", label: isStaff || demoMode ? "學生端測試" : "課題首頁", exact: true },
-    { href: "/review", label: "重溫", exact: false },
+  /**
+   * 學生主導覽與教職員導覽分開渲染：
+   * - 手機（≤767px）把學生主導覽收進底部 tab bar，拇指可及；
+   * - 教職員入口留在頂部，避免教師在手機找不到後台。
+   */
+  type NavItem = {
+    href: string;
+    label: string;
+    exact: boolean;
+    icon?: string;
+    short?: string;
+    /** 手機上隱藏（例如「我的帳戶」：手機已有登出按鈕及底部導覽） */
+    optional?: boolean;
+  };
+
+  const studentNavItems: NavItem[] = [
+    {
+      href: "/",
+      label: isStaff || demoMode ? "學生端測試" : "課題首頁",
+      exact: true,
+      icon: "🏠",
+      short: "首頁",
+    },
+    { href: "/review", label: "重溫", exact: false, icon: "🔁", short: "重溫" },
     // 歷史自學學伴：學生及教職員都可進入（教師供科組測試，2026-10-27 起）。
     ...(role === "student" || role === "teacher" || role === "admin"
-      ? [{ href: "/tutor", label: "歷史學伴", exact: false }]
+      ? [{ href: "/tutor", label: "歷史學伴", exact: false, icon: "🏛️", short: "學伴" }]
       : []),
     // 我的練習記錄：按教師端「學生練習記錄」的同一份內容，只顯示自己的記錄並可匯出
-    ...(authEnabled || demoMode ? [{ href: "/records", label: "我的記錄", exact: false }] : []),
-    ...(authEnabled ? [{ href: "/account", label: "我的帳戶", exact: false }] : []),
+    ...(authEnabled || demoMode
+      ? [{ href: "/records", label: "我的記錄", exact: false, icon: "📈", short: "記錄" }]
+      : []),
+  ];
+
+  const staffNavItems: NavItem[] = [
+    ...(authEnabled
+      ? [{ href: "/account", label: "我的帳戶", exact: false, optional: true }]
+      : []),
     ...(showAdminNav ? ADMIN_NAV_ITEMS : []),
     ...(showTeacherNav ? TEACHER_NAV_ITEMS : []),
   ];
 
+  const isActive = (item: NavItem): boolean =>
+    item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+  /**
+   * 練習進行中不顯示底部導覽：避免與作答頁的底部操作列重疊，
+   * 亦減少分心（離開練習仍可透過操作列的「離開」）。
+   */
+  const onPracticeRoute = pathname === "/practice" || pathname.startsWith("/practice/");
+
   return (
-    <div className="min-h-full flex flex-col">
+    <div
+      className="app-shell min-h-full flex flex-col"
+      data-on-practice={onPracticeRoute ? "true" : "false"}
+    >
       <header className="bg-white border-b" style={{ borderColor: "var(--border)" }}>
         <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <Link href="/" aria-label="返回課題首頁">
             <SchoolBrand showSiteName />
           </Link>
-          <nav className="flex flex-wrap items-center gap-1 text-sm">
-            {navItems.map((item) => {
-              const active = item.exact
-                ? pathname === item.href
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
-              return (
+          <nav className="nav-links nav-links--student flex-wrap items-center gap-1 text-sm">
+            {studentNavItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="nav-link"
+                data-active={isActive(item) ? "true" : "false"}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          {staffNavItems.length > 0 ? (
+            <nav className="flex flex-wrap items-center gap-1 text-sm">
+              {staffNavItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="nav-link"
-                  data-active={active ? "true" : "false"}
+                  className={`nav-link${item.optional ? " nav-link--optional" : ""}`}
+                  data-active={isActive(item) ? "true" : "false"}
                 >
                   {item.label}
                 </Link>
-              );
-            })}
-          </nav>
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+              ))}
+            </nav>
+          ) : null}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2 app-identity">
             {health ? (
               <span
-                className={`badge ${health.demoMode ? "badge-warning" : "badge-success"}`}
+                className={`badge hide-sm ${health.demoMode ? "badge-warning" : "badge-success"}`}
                 title={
                   health.demoMode
                     ? "現時使用本地示範模式，不需要 API key"
@@ -145,7 +194,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {SIGN_IN_ROLE_LABELS[auth.user.role]}｜{auth.user.email}
                 </span>
                 {auth.user.role === "student" ? (
-                  <span className="badge" title="來自學生名冊（班別 班號）">
+                  <span className="badge hide-sm" title="來自學生名冊（班別 班號）">
                     {[auth.user.className, auth.user.studentNumber].filter(Boolean).join(" ") ||
                       (auth.user.rosterVerified ? "名冊已核對" : "名冊未核對")}
                   </span>
@@ -181,9 +230,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-5">{children}</main>
 
+      {/* 手機底部導覽：四個學生最常用的入口，拇指可及 */}
+      {onPracticeRoute ? null : (
+        <nav className="bottom-nav" aria-label="主要導覽">
+          {studentNavItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="bottom-nav__item"
+              data-active={isActive(item) ? "true" : "false"}
+              aria-current={isActive(item) ? "page" : undefined}
+            >
+              <span className="bottom-nav__icon" aria-hidden="true">
+                {item.icon}
+              </span>
+              {item.short ?? item.label}
+            </Link>
+          ))}
+        </nav>
+      )}
+
       {auth?.enabled ? (
         <footer className="border-t bg-white" style={{ borderColor: "var(--border)" }}>
-          <div className="max-w-5xl mx-auto px-4 py-4 text-xs text-gray-500 leading-relaxed">
+          <div className="max-w-5xl mx-auto px-4 py-4 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
             <p>練習記錄會儲存在你的學校 Google 帳戶之下，並供歷史科教師查閱及下載。</p>
             {isStaff ? (
               <p className="mt-1">

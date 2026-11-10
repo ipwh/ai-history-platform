@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Notice } from "@/components/ui";
+import { EmptyState, Notice } from "@/components/ui";
 import { getRequestUser, guardStudentPage, isAuthEnabled } from "@/server/auth/guards";
 import { getReviewQueue, listProgressTopics, sectionTitles } from "@/server/services/learning-loop";
 
@@ -50,12 +50,11 @@ export default async function ReviewPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-xl font-bold">重溫題目</h1>
-        <p className="text-sm text-gray-600">
-          依你的作答記錄，以下題目已到重溫時間。重溫有助把知識留在長期記憶。
-        </p>
+    <div className="flex flex-col gap-5" data-section="review">
+      <header className="page-head">
+        <p className="eyebrow">重溫</p>
+        <h1 className="page-title">重溫題目</h1>
+        <p className="page-sub">依你的作答記錄，以下題目已到重溫時間。重溫有助把知識留在長期記憶。</p>
       </header>
 
       {queue.dataIssues > 0 ? (
@@ -65,28 +64,30 @@ export default async function ReviewPage() {
       ) : null}
 
       {queue.dueCount === 0 ? (
-        <section className="card flex flex-col gap-2">
-          <h2 className="font-bold">暫時沒有需要重溫的題目</h2>
-          <p className="text-sm text-gray-700">
-            這代表你最近作答的題目都還未到重溫時間。你可以繼續練習新的課題，之後再回來重溫。
-          </p>
-          <p className="text-sm">
-            <Link href="/" className="btn">
+        <EmptyState
+          icon="✅"
+          title="暫時沒有需要重溫的題目"
+          action={
+            <Link href="/" className="btn btn-primary">
               返回課題列表
             </Link>
-          </p>
-        </section>
+          }
+        >
+          這代表你最近作答的題目都還未到重溫時間。你可以繼續練習新的課題，之後再回來重溫。
+        </EmptyState>
       ) : (
         <>
-          <section className="card flex flex-col gap-2">
-            <h2 className="font-bold">共 {queue.dueCount} 條題目到期</h2>
+          <section className="card card--accent flex flex-col gap-2">
+            <div className="card__heading">
+              <h2 className="card__title">共 {queue.dueCount} 條題目到期</h2>
+            </div>
             <ul className="flex flex-col gap-2 text-sm">
               {[...grouped.entries()].map(([topicId, count]) => (
                 <li key={topicId} className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{topics.get(topicId) ?? topicId}</span>
-                  <span className="text-gray-600">{count} 條</span>
-                  <Link href={`/practice/new?topic=${topicId}`} className="btn">
-                    重做這個課題的錯題
+                  <span className="badge badge-warning">{count} 條</span>
+                  <Link href={`/practice/new?topic=${topicId}`} className="btn ml-auto">
+                    練習這個課題
                   </Link>
                 </li>
               ))}
@@ -94,27 +95,15 @@ export default async function ReviewPage() {
           </section>
 
           <section className="card flex flex-col gap-2">
-            <h2 className="font-semibold">為甚麼有些題目較早需要重溫？</h2>
-            <ul className="list-disc pl-5 text-sm text-gray-700 flex flex-col gap-1">
-              <li>之前答錯或答案未能確定的題目：1 天後重溫。</li>
-              <li>曾答錯、最近答對的題目：3 天後重溫。</li>
-              <li>一直答對的題目：7 天後重溫。</li>
-            </ul>
-            <p className="text-xs text-gray-500">
-              這些間隔是為避免「一試定生死」而設的簡單規則，並非經實證驗證的最佳複習時間表。
-            </p>
-          </section>
-
-          <section className="card flex flex-col gap-2">
-            <h2 className="font-semibold">到期題目一覽</h2>
+            <h2 className="card__title">到期題目一覽</h2>
             <ul className="flex flex-col gap-1 text-sm">
               {queue.dueItems.slice(0, 20).map((item) => (
-                <li key={item.questionId} className="flex flex-wrap gap-2 text-gray-700">
-                  <span>{topics.get(item.topicId) ?? ""}</span>
-                  <span className="text-gray-500">
+                <li key={item.questionId} className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium">{topics.get(item.topicId) ?? ""}</span>
+                  <span className="text-meta">
                     {sectionTitles(item.topicId).get(item.sectionId) ?? ""}
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className="badge">
                     {item.reason === "incorrect" || item.reason === "uncertain"
                       ? `上次未答對，已過 ${item.daysSince} 天`
                       : `已過 ${item.daysSince} 天`}
@@ -123,13 +112,27 @@ export default async function ReviewPage() {
               ))}
             </ul>
             {queue.dueItems.length > 20 ? (
-              <p className="text-xs text-gray-500">其餘 {queue.dueItems.length - 20} 條未在此顯示。</p>
+              <p className="text-meta">其餘 {queue.dueItems.length - 20} 條未在此顯示。</p>
             ) : null}
           </section>
+
+          <details className="settings-group">
+            <summary>為甚麼有些題目較早需要重溫？</summary>
+            <div className="settings-group__body">
+              <ul className="list-disc pl-5 text-sm flex flex-col gap-1">
+                <li>之前答錯或答案未能確定的題目：1 天後重溫。</li>
+                <li>曾答錯、最近答對的題目：3 天後重溫。</li>
+                <li>一直答對的題目：7 天後重溫。</li>
+              </ul>
+              <p className="text-meta">
+                這些間隔是為避免「一試定生死」而設的簡單規則，並非經實證驗證的最佳複習時間表。
+              </p>
+            </div>
+          </details>
         </>
       )}
 
-      <p className="text-xs text-gray-500">
+      <p className="text-meta">
         系統不會因為你查看這個頁面而把題目標記為已重溫；只有再次作答並成功提交才會有新記錄。
       </p>
     </div>

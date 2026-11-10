@@ -712,9 +712,9 @@ export function TutorView({
   const inputBlocked = quotaExhausted || windowLimitReached;
 
   return (
-    <section className="space-y-5">
+    <section className="space-y-5" data-section="tutor">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">🏛️ 歷史科自學學伴 (Beta)</h1>
+        <h1 className="page-title">🏛️ 歷史科自學學伴 (Beta)</h1>
         <div className="flex flex-wrap items-center gap-2">
           <p className="badge badge-accent" aria-live="polite">
             今日剩餘提問次數：{quota.remaining} / {quota.dailyLimit}

@@ -11,7 +11,7 @@ import {
   type AuthStatus,
   type PracticeResult,
 } from "@/lib/types";
-import { ErrorNotice, Loading, Notice, StatBox } from "@/components/ui";
+import { ErrorNotice, Loading, Notice } from "@/components/ui";
 
 export function ResultView({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -89,24 +89,62 @@ export function ResultView({ sessionId }: { sessionId: string }) {
   if (!result) return <Loading label="正在載入成績…" />;
 
   const needsReview = result.feedback.filter((item) => item.isCorrect === false);
+  const accuracyPct =
+    result.accuracy === null ? 0 : Math.round(result.accuracy * 100);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-bold">練習結果</h1>
-        <p className="text-sm text-gray-600">
+    <div className="flex flex-col gap-4" data-section="practice">
+      <header className="page-head">
+        <p className="eyebrow">練習結果</p>
+        <h1 className="page-title">練習完成</h1>
+        <p className="page-sub">
           共 {result.totalQuestions} 題，已作答 {result.answeredCount} 題。
         </p>
-      </div>
+      </header>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatBox label="完成題數" value={`${result.answeredCount} / ${result.totalQuestions}`} />
-        <StatBox label="可自動評分題目" value={`${result.gradedCount}`} />
-        <StatBox label="答對題數" value={`${result.correctCount}`} />
-        <StatBox
-          label="正確率（只計選擇及填充題）"
-          value={result.accuracy === null ? "—" : `${Math.round(result.accuracy * 100)}%`}
-        />
+      {/* 正確率是主角，其餘數字退為次級，學生一眼看到成果再決定下一步 */}
+      <section className="score-hero">
+        <div
+          className="score-ring"
+          style={{ "--value": accuracyPct } as React.CSSProperties}
+          role="img"
+          aria-label={
+            result.accuracy === null ? "這次沒有可自動評分的題目" : `正確率 ${accuracyPct}%`
+          }
+        >
+          <div className="score-ring__inner">
+            <span className="score-ring__value">
+              {result.accuracy === null ? "—" : `${accuracyPct}%`}
+            </span>
+            <span className="score-ring__label">正確率</span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 min-w-0">
+          <p className="card__title" style={{ fontSize: "1.1rem" }}>
+            {result.accuracy === null
+              ? "這次練習沒有可自動評分的題目"
+              : accuracyPct >= 80
+                ? "表現不錯，可以試試較難的題目"
+                : accuracyPct >= 50
+                  ? "已有基礎，重溫錯題會更鞏固"
+                  : "先重溫錯題，再練一次同類題目"}
+          </p>
+          <div className="score-figures">
+            <div>
+              <div className="score-figure__value">
+                {result.correctCount} / {result.gradedCount}
+              </div>
+              <div className="score-figure__label">答對題數（可自動評分題目）</div>
+            </div>
+            <div>
+              <div className="score-figure__value">
+                {result.answeredCount} / {result.totalQuestions}
+              </div>
+              <div className="score-figure__label">完成題數</div>
+            </div>
+          </div>
+          <p className="text-meta">正確率只計算選擇題及填充題；未作答的題目不會計入。</p>
+        </div>
       </section>
 
       {result.accuracy === null ? (
@@ -114,30 +152,35 @@ export function ResultView({ sessionId }: { sessionId: string }) {
       ) : null}
 
       <section className="card flex flex-col gap-2">
-        <h2 className="font-semibold">需要重溫的知識點</h2>
+        <h2 className="card__title">需要重溫的知識點</h2>
         {result.knowledgePointsToReview.length === 0 ? (
           result.answeredCount < result.totalQuestions ? (
-            <p className="text-sm text-gray-600">
+            <p className="text-body">
               仍有 {result.totalQuestions - result.answeredCount} 題未作答，完成所有題目後才可更準確了解需要重溫的內容。
             </p>
           ) : (
-            <p className="text-sm text-gray-600">沒有需要特別重溫的知識點。</p>
+            <p className="text-body">沒有需要特別重溫的知識點。</p>
           )
         ) : (
-          <ul className="list-disc pl-5 text-sm">
+          <div className="flex flex-wrap gap-2">
             {result.knowledgePointsToReview.map((item) => (
-              <li key={item.knowledgePoint}>
-                <span className="font-medium">{item.knowledgePoint}</span>
-                <span className="text-gray-500">
-                  （{item.sectionTitle}，{item.questionIds.length} 題）
+              <span key={item.knowledgePoint} className="badge badge-warning">
+                {item.knowledgePoint}
+                <span className="font-normal" style={{ color: "var(--text-muted)" }}>
+                  （
+                  {item.sectionTitle && item.sectionTitle !== item.knowledgePoint
+                    ? `${item.sectionTitle}，`
+                    : ""}
+                  {item.questionIds.length} 題）
                 </span>
-              </li>
+              </span>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
-      <div className="flex flex-wrap gap-2">
+      {/* 一頁只有一個主要行動：針對錯題再練習 */}
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           className="btn btn-primary"
@@ -146,11 +189,14 @@ export function ResultView({ sessionId }: { sessionId: string }) {
         >
           {retrying ? "正在準備…" : `針對錯題再練習（${needsReview.length} 題）`}
         </button>
+        <Link
+          href={`/practice/new?topic=${result.session.topicId}`}
+          className="btn"
+        >
+          再練習一次
+        </Link>
         <Link href="/" className="btn">
           返回課題首頁
-        </Link>
-        <Link href={`/practice/new?topic=${result.session.topicId}`} className="btn">
-          再練習一次
         </Link>
         {staffHome ? (
           <Link href={staffHome.href} className="btn">
@@ -161,28 +207,32 @@ export function ResultView({ sessionId }: { sessionId: string }) {
       {retryError ? <ErrorNotice error={retryError} /> : null}
 
       <section className="flex flex-col gap-3">
-        <h2 className="font-semibold">逐題回顧</h2>
+        <h2 className="card__title">逐題回顧</h2>
         {result.feedback.map((feedback, index) => {
           const attempted = feedback.answer.trim().length > 0;
           const aiVerdict = feedback.aiGrading?.verdict ?? null;
           const verdict = !attempted
-            ? { text: "未作答", className: "badge badge-warning" }
+            ? { text: "未作答", icon: "〜", className: "verdict verdict--warn" }
             : feedback.isCorrect
               ? {
                   text: aiVerdict === "correct" ? "答對（AI 語意批改）" : "答對",
-                  className: "badge badge-success",
+                  icon: "✓",
+                  className: "verdict verdict--ok",
                 }
-              : { text: "答錯", className: "badge badge-danger" };
+              : { text: "答錯", icon: "✗", className: "verdict verdict--bad" };
 
           return (
             <article key={feedback.questionId} className="card flex flex-col gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">第 {index + 1} 題</span>
-                <span className={verdict.className}>{verdict.text}</span>
+                <span className={verdict.className}>
+                  <span className="verdict__icon" aria-hidden="true">
+                    {verdict.icon}
+                  </span>
+                  {verdict.text}
+                </span>
               </div>
-              <p className="text-sm text-gray-600">
-                你的答案：{feedback.answer || "（未有作答）"}
-              </p>
+              <p className="text-body">你的答案：{feedback.answer || "（未有作答）"}</p>
               {feedback.aiGrading ? (
                 <div
                   className="rounded-xl p-3 text-sm flex flex-col gap-1"
@@ -190,7 +240,9 @@ export function ResultView({ sessionId }: { sessionId: string }) {
                 >
                   <p className="font-semibold">
                     AI 語意批改：{AI_VERDICT_LABELS[feedback.aiGrading.verdict]}
-                    <span className="font-normal text-gray-600">（非正式 HKDSE 評分）</span>
+                    <span className="font-normal" style={{ color: "var(--text-muted)" }}>
+                      （非正式 HKDSE 評分）
+                    </span>
                   </p>
                   {feedback.aiGrading.feedback ? <p>{feedback.aiGrading.feedback}</p> : null}
                   {feedback.aiGrading.missingPoints.length > 0 ? (

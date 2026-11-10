@@ -4,12 +4,78 @@ import { describeApiFailure } from "@/lib/api-errors";
 
 export function Loading({ label = "載入中…" }: { label?: string }) {
   return (
-    <div className="flex items-center gap-2 text-sm text-gray-600 py-6" role="status">
+    <div className="flex items-center gap-2 text-sm py-6" style={{ color: "var(--text)" }} role="status" aria-live="polite">
       <span
         className="inline-block h-4 w-4 rounded-full border-2 border-t-transparent animate-spin"
         style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }}
       />
       {label}
+    </div>
+  );
+}
+
+/** 內容骨架：AI 出題或載入時先顯示版面，減少「畫面空白」的等待感 */
+export function Skeleton({
+  className = "skeleton-line",
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return <div className={`skeleton ${className}`} style={style} aria-hidden="true" />;
+}
+
+/**
+ * 作答頁的載入骨架。
+ *
+ * 仍保留 `label` 文字（測試及輔助技術依賴「正在載入題目…」這句話），
+ * 只是同時顯示題目、選項的骨架，令學生知道即將出現甚麼。
+ */
+export function QuestionSkeleton({ label = "正在載入題目…" }: { label?: string }) {
+  return (
+    <div className="flex flex-col gap-4" role="status" aria-live="polite" aria-busy="true">
+      <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
+        <span
+          className="inline-block h-4 w-4 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }}
+        />
+        {label}
+      </div>
+      <Skeleton className="skeleton-line" style={{ width: "40%" }} />
+      <div className="card flex flex-col gap-3">
+        <Skeleton className="skeleton-line skeleton-line--lg" style={{ width: "85%" }} />
+        <Skeleton className="skeleton-line skeleton-line--lg" style={{ width: "60%" }} />
+        <div className="flex flex-col gap-2">
+          <Skeleton className="skeleton-block" />
+          <Skeleton className="skeleton-block" />
+          <Skeleton className="skeleton-block" />
+          <Skeleton className="skeleton-block" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** 空狀態：圖示 + 一句解釋 + 一個可行動的下一步 */
+export function EmptyState({
+  icon = "🗂️",
+  title,
+  children,
+  action,
+}: {
+  icon?: string;
+  title: string;
+  children?: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="empty-state">
+      <span className="empty-state__icon" aria-hidden="true">
+        {icon}
+      </span>
+      <p className="empty-state__title">{title}</p>
+      {children ? <p className="empty-state__body">{children}</p> : null}
+      {action ? <div className="flex flex-wrap justify-center gap-2">{action}</div> : null}
     </div>
   );
 }

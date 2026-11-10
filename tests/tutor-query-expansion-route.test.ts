@@ -169,6 +169,9 @@ describe("學伴語意改寫：路由接線", () => {
     const answerBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body)) as FetchBody;
     expect(answerBody.stream).toBe(true);
     expect(answerBody.messages?.[0]?.content).toContain(PASSAGE);
+    // 改寫成功後，提示詞不可仍然叫模型說「教材未涵蓋」：否則模型會以「教材找不到」
+    // 開首，介面再按模型說話把標示降級成 not-covered，改寫找回的教材反而被隱藏。
+    expect(answerBody.messages?.[0]?.content ?? "").not.toContain("校本教材未涵蓋");
 
     // ③ 介面標示：由 not-covered 改為 grounded，並附上課題8 的出處
     const meta = events.find((entry) => entry.event === "meta")?.data as {
@@ -178,6 +181,56 @@ describe("學伴語意改寫：路由接線", () => {
     expect(meta.grounding).toBe("grounded");
     expect(meta.sources.length).toBeGreaterThan(0);
     expect(meta.sources[0]?.documentLabel).toContain("課題8");
+  });
+
+  it("有教材詞彙但未能定課題：先改寫再作答，不會直接澄清（2026-11-10）", async () => {
+    const db = getDb();
+    const now = "2026-11-02T00:00:00.000+08:00";
+    db.prepare(
+      `INSERT INTO material_blocks
+         (id, document_id, topic_id, section_id, sort_order, type, text, source_location, created_at, extraction_method)
+       VALUES ('block-hk-2', 'doc-hk', 'topic-8', NULL, 1, 'paragraph', ?, ?, ?, 'native')`,
+    ).run(
+      "1841 年後，英國商人可在香港自由進出，自由貿易港口帶動轉口貿易。",
+      "課題8 香港直至十九世紀末的成長與發展_筆記.docx · 第 2 段（段落）",
+      now,
+    );
+
+    const fetchMock = mockLlm();
+    vi.stubGlobal("fetch", fetchMock);
+
+    // 這條提問沒有詞庫專名（主題硬閘判為未能確定），但用了教材出現過的詞彙
+    const response = await postChat(requestFor({ message: "點解商人可以自由進出？" }));
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    // 不可直接澄清
+    expect(body).not.toMatch(/"clarify"\s*:\s*true/);
+
+    const events = sseEvents(body);
+    const meta = events.find((entry) => entry.event === "meta")?.data as
+      | { grounding: string }
+      | undefined;
+    expect(meta?.grounding).toBe("grounded");
+    // 一次改寫 + 一次回答
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // 同一次提問只預留一次 AI 操作（不重複扣）
+    const operations = db.prepare("SELECT COUNT(*) AS n FROM ai_operations").get() as { n: number };
+    expect(operations.n).toBe(1);
+  });
+
+  it("沒有教材詞彙的非歷史提問：直接拒答，零模型呼叫、零 AI 操作", async () => {
+    const fetchMock = mockLlm();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(requestFor({ message: "點樣整芝士蛋糕？" }));
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).toMatch(/"onTopic"\s*:\s*false/);
+    expect(fetchMock).not.toHaveBeenCalled();
+    const operations = getDb()
+      .prepare("SELECT COUNT(*) AS n FROM ai_operations")
+      .get() as { n: number };
+    expect(operations.n).toBe(0);
   });
 
   it("改寫失敗時安靜降級，維持原本的「未找到教材依據」", async () => {

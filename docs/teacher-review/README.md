@@ -435,7 +435,7 @@
 
 擁有者已於 2026-10-19 確認版權，紀錄見
 [copyright-owner-attestation-2026-10-19.md](./copyright-owner-attestation-2026-10-19.md)。
-此紀錄是擁有者聲明，不是逐份出版社授權；`material_documents` 的逐份權利紀錄仍為 12／36，
+此紀錄是擁有者聲明，不是逐份授權；`material_documents` 的逐份權利紀錄仍為 12／36，
 未有批次回填。版權許可與來源可追溯性、歷史準確性必須分開判斷。
 
 ## 10. 可作答性、審核來源與 Golden 基準（Sprint 10，2026-10-19）

@@ -19,7 +19,7 @@ import {
   type QuestionReportReason,
   type StudentQuestion,
 } from "@/lib/types";
-import { ErrorNotice, Loading, Notice, ProgressBar } from "@/components/ui";
+import { ErrorNotice, Notice, ProgressBar, QuestionSkeleton } from "@/components/ui";
 
 interface PracticeViewData {
   session: PracticeSession;
@@ -191,50 +191,35 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
       />
     );
   }
-  if (!data || !current) return <Loading label="正在載入題目…" />;
+  if (!data || !current) return <QuestionSkeleton />;
 
   const isLast = currentIndex === questions.length - 1;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-sm text-gray-600">
-          第 {currentIndex + 1} / {questions.length} 題 ・ 已作答 {answeredCount} 題
+    <div className="flex flex-col gap-4" data-section="practice">
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-meta">
+            第 {currentIndex + 1} / {questions.length} 題 ・ 已作答 {answeredCount} 題
+          </p>
+          <div className="meta-row">
+            <span className="badge">{QUESTION_TYPE_LABELS[current.questionType]}</span>
+            {/* 填充題不設難度（練習設定不提供），因此不顯示難度標籤，避免顯示一個學生沒有選過的難度。 */}
+            {current.questionType === "mc" ? (
+              <span className="badge">{DIFFICULTY_LABELS[current.difficulty]}</span>
+            ) : null}
+            <span className="badge badge-accent">{QUESTION_ORIGIN_LABELS[current.origin]}</span>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <span className="badge">{QUESTION_TYPE_LABELS[current.questionType]}</span>
-          {/* 填充題不設難度（練習設定不提供），因此不顯示難度標籤，避免顯示一個學生沒有選過的難度。 */}
-          {current.questionType === "mc" ? (
-            <span className="badge">{DIFFICULTY_LABELS[current.difficulty]}</span>
-          ) : null}
-          <span className="badge badge-accent">{QUESTION_ORIGIN_LABELS[current.origin]}</span>
-        </div>
-      </div>
 
-      <ProgressBar value={progress} />
+        <ProgressBar value={progress} />
+      </div>
 
       {data.notice ? <Notice>{data.notice}</Notice> : null}
 
-      <article className="card flex flex-col gap-3">
-        <h1 className="text-lg font-semibold leading-relaxed">{current.question}</h1>
-
-        {/*
-          練習 → 學伴的入口。只帶 questionId 及 sessionId：學伴 API 會用自己的
-          伺服器端資料重新組裝「學生安全」上下文（題幹摘要、課題、技能標籤），
-          不會經網址傳遞答案、選項對錯或解釋。
-        */}
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <Link
-            className="btn"
-            href={`/tutor?from=practice&questionId=${encodeURIComponent(current.id)}&sessionId=${encodeURIComponent(sessionId)}`}
-            title="以這條練習的概念與學伴討論（學伴不會提供標準答案）"
-          >
-            🏛️ 問學伴這題的概念
-          </Link>
-          <span className="text-xs text-gray-600">
-            學伴會協助你理解概念與思路，不會給出這題的標準答案。
-          </span>
-        </div>
+      {/* 題目是主角：字級最大、沒有其他按鈕與它爭奪注意力 */}
+      <article className="card flex flex-col gap-4" style={{ padding: "1.2rem 1.25rem" }}>
+        <h1 className="question-stem">{current.question}</h1>
 
         {current.questionType === "mc" ? (
           <div className="flex flex-col gap-2">
@@ -257,10 +242,10 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
                     setDrafts((prev) => ({ ...prev, [current.id]: option }))
                   }
                 >
-                  <span className="font-semibold" style={{ color: "var(--accent)" }}>
+                  <span className="option-key" aria-hidden="true">
                     {String.fromCharCode(65 + index)}
                   </span>
-                  <span>{option}</span>
+                  <span className="option-row__text">{option}</span>
                 </button>
               );
             })}
@@ -292,31 +277,18 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
         {currentFeedback ? (
           <FeedbackPanel feedback={currentFeedback} sessionId={sessionId} />
         ) : (
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => void handleSubmit()}
-              disabled={submitting}
-            >
-              {submitting
-                ? aiGradingAvailable && current.questionType !== "mc"
-                  ? "AI 批改中…"
-                  : "提交中…"
-                : "提交答案"}
-            </button>
-            <span className="text-xs text-gray-500 self-center">
-              {current.questionType === "mc"
-                ? "提交前不會顯示答案，請先自行作答。"
-                : aiGradingAvailable
-                  ? "提交後會由 AI 按語意批改，用字不同不會直接判錯。"
-                  : "提交前不會顯示答案，請先自行作答。"}
-            </span>
-          </div>
+          <p className="text-meta">
+            {current.questionType === "mc"
+              ? "提交前不會顯示答案，請先自行作答。"
+              : aiGradingAvailable
+                ? "提交後會由 AI 按語意批改，用字不同不會直接判錯。"
+                : "提交前不會顯示答案，請先自行作答。"}
+          </p>
         )}
       </article>
 
-      <div className="flex flex-wrap items-center gap-2">
+      {/* 手機：提交與翻頁固定在拇指可及的底部 */}
+      <div className="action-bar">
         <button
           type="button"
           className="btn"
@@ -333,18 +305,32 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
         >
           下一題
         </button>
-        <div className="ml-auto flex items-center gap-2">
-          <Link href="/" className="btn">
-            離開
-          </Link>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {currentFeedback ? null : (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => void handleSubmit()}
+              disabled={submitting}
+            >
+              {submitting
+                ? aiGradingAvailable && current.questionType !== "mc"
+                  ? "AI 批改中…"
+                  : "提交中…"
+                : "提交答案"}
+            </button>
+          )}
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn"
             onClick={() => void handleComplete()}
             disabled={completing}
           >
             {completing ? "正在計算成績…" : "完成練習並查看結果"}
           </button>
+          <Link href="/" className="btn">
+            離開
+          </Link>
         </div>
       </div>
     </div>
@@ -362,15 +348,52 @@ function FeedbackPanel({
   const verdict = feedback.isCorrect
     ? {
         text: aiVerdict === "correct" ? "答對了（AI 語意批改）" : "答對了",
-        className: "badge badge-success",
+        icon: "✓",
+        className: "verdict verdict--ok",
       }
-    : { text: "答錯了", className: "badge badge-danger" };
+    : {
+        text: feedback.answer.trim().length === 0 ? "未作答" : "答錯了",
+        icon: feedback.answer.trim().length === 0 ? "〜" : "✗",
+        className:
+          feedback.answer.trim().length === 0 ? "verdict verdict--warn" : "verdict verdict--bad",
+      };
 
   return (
     <section className="flex flex-col gap-3 rounded-xl p-3" style={{ background: "#fafbff" }}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className={verdict.className}>{verdict.text}</span>
-        <span className="text-sm text-gray-600">你的答案：{feedback.answer || "（未有作答）"}</span>
+        <span className={verdict.className}>
+          <span className="verdict__icon" aria-hidden="true">
+            {verdict.icon}
+          </span>
+          {verdict.text}
+        </span>
+        <Link
+          className="btn"
+          href={`/tutor?from=practice&questionId=${encodeURIComponent(feedback.questionId)}&sessionId=${encodeURIComponent(sessionId)}`}
+          title="以這條練習的概念與學伴討論（學伴不會提供標準答案）"
+        >
+          🏛️ 問學伴這題的概念
+        </Link>
+        <span className="text-meta">學伴會協助理解概念與思路，不會給出這一題的標準答案。</span>
+      </div>
+
+      {/* 你的答案與參考答案並排對照，比逐行文字更容易比較 */}
+      <div className="answer-compare">
+        <div
+          className={`answer-compare__box ${
+            feedback.isCorrect ? "answer-compare__box--ok" : "answer-compare__box--bad"
+          }`}
+        >
+          <p className="answer-compare__label">你的答案</p>
+          <p className="answer-compare__value">{feedback.answer || "（未有作答）"}</p>
+        </div>
+        <div className="answer-compare__box answer-compare__box--ok">
+          <p className="answer-compare__label">參考答案</p>
+          <p className="answer-compare__value">{feedback.correctAnswer}</p>
+          {feedback.acceptedAnswers.length > 0 ? (
+            <p className="text-meta">也可接受：{feedback.acceptedAnswers.join("、")}</p>
+          ) : null}
+        </div>
       </div>
 
       {feedback.aiGrading ? (
@@ -380,7 +403,7 @@ function FeedbackPanel({
         >
           <p className="font-semibold">
             AI 語意批改：{AI_VERDICT_LABELS[feedback.aiGrading.verdict]}
-            <span className="font-normal text-gray-600">
+            <span className="font-normal" style={{ color: "var(--text-muted)" }}>
               （以意思判斷，用字不同不會直接判錯；這不是正式 HKDSE 評分）
             </span>
           </p>
@@ -419,23 +442,17 @@ function FeedbackPanel({
         </div>
       ) : null}
 
-      <div className="text-sm">
-        <span className="font-semibold">參考答案：</span>
-        <span>{feedback.correctAnswer}</span>
-        {feedback.acceptedAnswers.length > 0 ? (
-          <span className="text-gray-500">
-            （也可接受：{feedback.acceptedAnswers.join("、")}）
-          </span>
-        ) : null}
-      </div>
-
-      <div className="text-sm">
-        <span className="font-semibold">解釋：</span>
+      <div className="text-sm" style={{ color: "var(--text)" }}>
+        <span className="font-semibold" style={{ color: "var(--text-strong)" }}>
+          解釋：
+        </span>
         <span>{feedback.explanation}</span>
       </div>
 
-      <div className="text-sm">
-        <span className="font-semibold">知識點：</span>
+      <div className="text-sm" style={{ color: "var(--text)" }}>
+        <span className="font-semibold" style={{ color: "var(--text-strong)" }}>
+          知識點：
+        </span>
         <span>{feedback.knowledgePoint}</span>
       </div>
 
@@ -477,7 +494,7 @@ function FeedbackPanel({
       ) : null}
 
       <div className="source-box">
-        <div className="text-xs text-gray-600 mb-1">
+        <div className="text-meta mb-1">
           教材來源：
           {feedback.sourceWithheld
             ? "未確認可向學生發布"

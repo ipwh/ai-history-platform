@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { api, getLearnerId } from "@/lib/api-client";
@@ -10,7 +11,7 @@ import type {
   PracticeRecordTopicOption,
   StudentRecordsPayload,
 } from "@/lib/types";
-import { ErrorNotice, Loading, Notice, StatBox } from "@/components/ui";
+import { EmptyState, ErrorNotice, Loading, Notice, StatBox } from "@/components/ui";
 import { PracticeRecordCard } from "@/components/PracticeRecordCard";
 
 interface Filters {
@@ -66,6 +67,8 @@ export function StudentRecords() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string[]>([]);
   const [wrongOnly, setWrongOnly] = useState(false);
+  /** 篩選表單預設收起：大部分學生只想看記錄，不需要每次都見到七個輸入框 */
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const fetchRecords = useCallback(async (filters: Filters): Promise<StudentRecordsPayload> => {
     const params = new URLSearchParams(queryString(filters));
@@ -121,6 +124,7 @@ export function StudentRecords() {
   const topicLabelById = new Map(topics.map((topic) => [topic.id, practiceTopicLabel(topic)]));
   const accuracy = summary.graded > 0 ? Math.round((summary.correct / summary.graded) * 100) : null;
   const filtersPending = queryString(draft) !== queryString(applied);
+  const draftFilterCount = Object.values(draft).filter((value) => value.trim().length > 0).length;
   const allExpanded = records.length > 0 && records.every((record) => expanded.includes(record.sessionId));
 
   const exportHref = (format: "xlsx" | "docx" | "pdf" | "csv"): string => {
@@ -131,21 +135,40 @@ export function StudentRecords() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-xl font-bold">我的練習記錄</h1>
-        <span className="text-sm text-gray-600">
+    <div className="flex flex-col gap-4" data-section="practice">
+      <header className="page-head">
+        <p className="eyebrow">我的學習</p>
+        <h1 className="page-title">我的練習記錄</h1>
+        <p className="page-sub">
+          這裡顯示你自己的練習記錄（作答日期、課題、答對及答錯的題目），可隨時重看並下載。
+          歷史科教師亦可在教師端查閱同一批記錄。
+        </p>
+        <p className="text-meta">
           {summary.sessions > 0 ? `共 ${summary.sessions} 次練習` : "尚未有練習記錄"}
-        </span>
-      </div>
-      <p className="text-sm text-gray-600">
-        這裡顯示你自己的練習記錄（作答日期、課題、答對及答錯的題目），可隨時重看並下載。
-        歷史科教師亦可在教師端查閱同一批記錄。
-      </p>
+        </p>
+      </header>
 
       <section className="card flex flex-col gap-3">
-        <h2 className="font-semibold">篩選</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="card__heading">
+          <h2 className="card__title">篩選記錄</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            {draftFilterCount > 0 ? (
+              <span className="badge badge-accent">已設定 {draftFilterCount} 項</span>
+            ) : null}
+            <button
+              type="button"
+              className="btn"
+              aria-expanded={filtersOpen}
+              aria-controls="record-filters"
+              onClick={() => setFiltersOpen((open) => !open)}
+            >
+              {filtersOpen ? "收起篩選" : "展開篩選"}
+            </button>
+          </div>
+        </div>
+        {filtersOpen ? (
+        <>
+        <div id="record-filters" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm">
             課題
             <select
@@ -265,11 +288,13 @@ export function StudentRecords() {
             你已更改篩選，但下方清單仍是上一次查詢的結果。按「查詢記錄」可更新畫面；直接按匯出會先套用新的篩選再下載。
           </Notice>
         ) : null}
+        </>
+        ) : null}
       </section>
 
       <section className="card flex flex-col gap-2">
         <span className="text-sm font-semibold">本次查詢統計</span>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           <StatBox label="練習次數" value={`${summary.sessions}`} />
           <StatBox label="答對題數" value={`${summary.correct}`} />
           <StatBox label="答錯題數" value={`${summary.wrong}`} />
@@ -321,9 +346,17 @@ export function StudentRecords() {
 
         {loading ? <Loading label="正在載入練習記錄…" /> : null}
         {!loading && records.length === 0 ? (
-          <p className="text-sm text-gray-600">
-            目前沒有符合條件的練習記錄。完成一次練習並提交答案後，記錄會顯示在這裡。
-          </p>
+          <EmptyState
+            icon="🗂️"
+            title="暫時沒有符合條件的練習記錄"
+            action={
+              <Link href="/" className="btn btn-primary">
+                去練習
+              </Link>
+            }
+          >
+            完成一次練習並提交答案後，記錄會顯示在這裡。
+          </EmptyState>
         ) : null}
 
         {records.map((record) => (

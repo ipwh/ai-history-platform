@@ -48,8 +48,13 @@ import {
   detectTermMismatches,
   findTutorGrounding,
   loadTutorCurriculumIndex,
+  messageUsesAnyCourseVocabulary,
+  messageUsesTopicVocabulary,
 } from "@/server/services/tutor-grounding";
-import { classifyTutorAnswerability } from "@/server/services/tutor-answerability";
+import {
+  classifyTutorAnswerability,
+  hasQuestionShape,
+} from "@/server/services/tutor-answerability";
 import {
   collectTutorWebSupplement,
   type TutorWebSupplementResult,
@@ -62,7 +67,7 @@ import {
 import { recordTutorQueryEvent } from "@/server/repositories/tutor-events";
 import { getTopic } from "@/server/repositories/topics";
 import { getTutorTopicCard } from "@/server/services/tutor-topic-cards";
-import { requireTutorLearnerId } from "@/server/services/tutor-request-access";
+import { requireTutorLearnerId, tutorStudentLevel } from "@/server/services/tutor-request-access";
 import {
   resolveTutorReplyDepth,
   tutorMaxSourcesForDepth,
@@ -255,6 +260,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   return handleRoute(async () => {
     const learnerId = await requireTutorAccess(request);
+    /** 學生所屬程度：用作課題推斷的「同程度優先」（見 guessTutorTopic） */
+    const studentLevel = await tutorStudentLevel(request);
     const body = await parseJsonBody(request, chatRequestSchema);
     let sessionId = body.sessionId ?? null;
     let history: ReturnType<typeof getTutorMessages> = [];
@@ -340,18 +347,118 @@ export async function POST(request: Request) {
     // services/tutor-answerability.ts）。這一步只是本地判斷，沒有額外模型請求。
     let grounding = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
       preferredTopicId,
+      studentLevel,
       maxSources: tutorMaxSourcesForDepth(replyDepth),
     });
-    const answerability = classifyTutorAnswerability({
+    /**
+     * 沒有課題脈絡時的教材詞彙檢查（2026-11-10）：字詞檢索失敗，但提問用了任何已發布
+     * 教材的詞彙 → 不可當離題，改為澄清；命中課題用作澄清方向。
+     */
+    const courseVocabulary =
+      preferredTopicId === null &&
+      grounding.status === "not-covered" &&
+      hasQuestionShape(body.message)
+        ? messageUsesAnyCourseVocabulary(normalizedMessage)
+        : { matched: false, topicIds: [] as string[] };
+
+    /**
+     * 可答性判斷（本回合的教材狀態 + 提問形態）。
+     *
+     * 以 `let` 宣告：語意改寫成功後檢索會重新命中，狀態必須一併重算（見下方），
+     * 否則提示詞仍會要求模型說「教材找不到」，令找回來的教材被隱藏。
+     */
+    let answerability = classifyTutorAnswerability({
       message: body.message,
       curriculum,
       grounding,
       hasHistoryContext: hasValidHistoryContext,
       unclear,
+      // 主題硬閘的最後防線（2026-11-10）：學生已在某課題脈絡下發問、字詞檢索失敗，
+      // 但該課題教材確實用過提問的詞彙 → 以 C（一般歷史知識 + 標明教材未涵蓋）作答，
+      // 不要只因為「寫法與教科書不同」而拒答。
+      materialVocabularyMatched:
+        preferredTopicId !== null &&
+        grounding.status === "not-covered" &&
+        messageUsesTopicVocabulary(normalizedMessage, preferredTopicId),
+      courseVocabularyMatched: courseVocabulary.matched,
     });
+
+    /**
+     * 澄清前先試語意改寫（2026-11-10 擁有者指示）。
+     *
+     * 只限「有教材詞彙、但未能定課題」這一類（例如「美國點解要同英國分手？」）：
+     * 這類提問本身是課程內容，只是學生的說法與教材用語不重疊，值得先花一次模型
+     * 呼叫把說法改寫成教材用語再重試檢索；改寫成功就當正常提問作答，失敗才澄清。
+     * 判斷用 `courseVocabulary.matched`（而不是某一個澄清原因）：含糊與「未能定課題」
+     * 都可能同時成立，只要用過教材詞彙就值得試一次改寫。
+     *
+     * 其他含糊提問（只有代詞、句子含混、沒有教材詞彙）維持「零模型呼叫」的澄清。
+     *
+     * 額度：這裡會先預留一次 AI 操作（防濫用窗口），因此**有機會呼叫模型**的澄清
+     * 也算一次操作；但每日提問上限只計「已回答」的提問（`tutorDailyUsage`），
+     * 改寫失敗而最終澄清時不會扣減每日 15 次。
+     */
+    let reservedBeforeClarify = false;
+    if (answerability.state === "D-needs-clarification" && courseVocabulary.matched) {
+      const expansionLlm = getServerConfig().llm;
+      const expansionConfig = getServerConfig().tutorQueryExpansion;
+      if (
+        expansionConfig.enabled &&
+        expansionLlm.provider === "deepseek" &&
+        expansionLlm.apiKey !== null &&
+        expansionLlm.baseUrl !== null &&
+        expansionLlm.model !== null &&
+        tutorDailyUsage(learnerId).remaining > 0
+      ) {
+        try {
+          reserveAiOperation(learnerId, TUTOR_OPERATION_KIND);
+          reservedBeforeClarify = true;
+        } catch {
+          // 用量窗口已滿：不呼叫模型，照常澄清（不向學生拋 429）
+        }
+        if (reservedBeforeClarify) {
+          const expansion = await expandTutorQuery({
+            message: normalizedMessage,
+            // 尚未確定課題：只帶提問本身，不假設任何課題
+            topicTitle: null,
+            topicId: null,
+            config: expansionConfig,
+            llm: {
+              provider: expansionLlm.provider,
+              apiKey: expansionLlm.apiKey,
+              baseUrl: expansionLlm.baseUrl,
+              model: expansionLlm.model,
+            },
+          });
+          if (expansion.terms.length > 0) {
+            const expanded = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
+              preferredTopicId,
+              studentLevel,
+              extraTerms: expansion.terms,
+              maxSources: tutorMaxSourcesForDepth(replyDepth),
+            });
+            if (expanded.status === "grounded") {
+              grounding = expanded;
+              answerability = classifyTutorAnswerability({
+                message: body.message,
+                curriculum,
+                grounding,
+                hasHistoryContext: hasValidHistoryContext,
+                unclear,
+              });
+            }
+          }
+        }
+      }
+    }
 
     // 真正無法判斷（含只有代詞、沒有上文）→ 只問一條澄清問題並提供可選方向。
     if (answerability.state === "D-needs-clarification") {
+      /**
+       * 澄清方向只用「已知課題」（檢索命中或學生設定的課題）。
+       * 不使用教材詞彙比對所得的課題：那只是詞頻統計，實測會把「美國點解要同英國
+       * 分手？」指向冷戰課題，顯示誤導的選項比沒有選項更差（2026-11-10）。
+       */
       const clarifyTopicId = grounding.topicId ?? preferredTopicId;
       safeRecordTutorQueryEvent({
         eventType: "clarify",
@@ -441,13 +548,15 @@ export async function POST(request: Request) {
       throw new ApiRouteError("你今日已達到歷史自學學伴提問上限（15 次），請於明日再試。", 429);
     }
 
-    try {
-      reserveAiOperation(learnerId, TUTOR_OPERATION_KIND);
-    } catch (error) {
-      if (sessionId !== null && error instanceof ApiRouteError && error.status === 429) {
-        setTutorSessionLastTurnOnTopic(sessionId, false);
+    if (!reservedBeforeClarify) {
+      try {
+        reserveAiOperation(learnerId, TUTOR_OPERATION_KIND);
+      } catch (error) {
+        if (sessionId !== null && error instanceof ApiRouteError && error.status === 429) {
+          setTutorSessionLastTurnOnTopic(sessionId, false);
+        }
+        throw error;
       }
-      throw error;
     }
     const createdAt = hongKongTimestamp();
     if (sessionId === null) {
@@ -477,10 +586,27 @@ export async function POST(request: Request) {
       if (expansion.terms.length > 0) {
         const expanded = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
           preferredTopicId,
+          studentLevel,
           extraTerms: expansion.terms,
           maxSources: tutorMaxSourcesForDepth(replyDepth),
         });
-        if (expanded.status === "grounded") grounding = expanded;
+        if (expanded.status === "grounded") {
+          grounding = expanded;
+          /**
+           * 可答性必須一併重算（2026-11-10 實測）：改寫令檢索重新命中後，若仍沿用
+           * 改寫前的 C 狀態，提示詞會繼續要求模型「開首說明教材找不到」，模型照做，
+           * 介面再按模型說話把標示降級成 not-covered，改寫找回的教材反而被隱藏。
+           */
+          answerability = classifyTutorAnswerability({
+            message: body.message,
+            curriculum,
+            grounding,
+            hasHistoryContext: hasValidHistoryContext,
+            unclear,
+            materialVocabularyMatched: false,
+            courseVocabularyMatched: false,
+          });
+        }
       }
     }
 

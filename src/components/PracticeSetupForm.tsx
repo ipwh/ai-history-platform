@@ -27,8 +27,9 @@ import { ErrorNotice, Loading, Notice } from "@/components/ui";
  *
  * 只保留 5 題及 10 題：部分課題的教材段落不多，要求太多題目時 AI 只能重複出題或
  * 補題失敗，學生反而會見到「題數不足」的提示（2026-10-20 擁有者指示刪去 15 題）。
+ * 預設 10 題（2026-11 擁有者指示）：一次練習覆蓋較多知識點，減少重複開新練習。
  */
-const QUESTION_COUNTS = [5, 10];
+const QUESTION_COUNTS = [10, 5];
 
 interface StartAttempt {
   mode: "standard" | "wrong-only";
@@ -153,7 +154,7 @@ export function PracticeSetupForm() {
   // 一次只練一種題型：選擇題可按難度調節；填充題以課本關鍵詞作答，不設難度。
   const [questionType, setQuestionType] = useState<QuestionType>("mc");
   const [difficulty, setDifficulty] = useState<Difficulty>("basic");
-  const [questionCount, setQuestionCount] = useState(5);
+  const [questionCount, setQuestionCount] = useState(10);
   const [mode, setMode] = useState<"standard" | "wrong-only">("standard");
   const [questionSource, setQuestionSource] = useState<PracticeQuestionSource>("bank");
   const [demoMode, setDemoMode] = useState<boolean | null>(null);
@@ -163,6 +164,8 @@ export function PracticeSetupForm() {
 
   const [reloadToken, setReloadToken] = useState(0);
   const [sourceChangeNotice, setSourceChangeNotice] = useState<string | null>(null);
+  const [customOpen, setCustomOpen] = useState(false);
+  const customSettingsRef = useRef<HTMLDetailsElement | null>(null);
   const initialSelectionApplied = useRef(false);
 
   useEffect(() => {
@@ -335,19 +338,80 @@ export function PracticeSetupForm() {
   if (!topic) return <Loading label="正在載入練習設定…" />;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
+    <div className="flex flex-col gap-4" data-section="practice">
+      <header className="page-head">
         <Link href="/" className="text-sm" style={{ color: "var(--accent)" }}>
           ← 返回課題首頁
         </Link>
-        <h1 className="text-xl font-bold mt-1">練習設定</h1>
-        <p className="text-sm text-gray-600">{topic.title}</p>
-      </div>
+        <p className="eyebrow">練習 · {topic.title}</p>
+        <h1 className="page-title">練習設定</h1>
+        <p className="page-sub">先選擇主題，然後按「開始練習」。其餘設定已為你選好，需要時才展開。</p>
+      </header>
 
-      <section className="card flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold">1. 選擇主題（可多選）</h2>
-          <span className="text-xs text-gray-600">
+      <section className="quick-start">
+        <div>
+          <p className="quick-start__title">可以開始了</p>
+          <p className="quick-start__hint">
+            {totalSelectedThemes === 0
+              ? "請先在下方選擇至少一個主題。"
+              : `已選 ${totalSelectedThemes} 個主題，將按以下設定出題。`}
+          </p>
+        </div>
+        <div className="preset-row" aria-label="目前練習設定">
+          <span className="preset-pill">{questionCount} 題</span>
+          <span className="preset-pill">{QUESTION_TYPE_LABELS[questionType]}</span>
+          {questionType === "mc" ? (
+            <span className="preset-pill">{DIFFICULTY_LABELS[difficulty]}</span>
+          ) : (
+            <span className="preset-pill">以關鍵詞作答</span>
+          )}
+          <span className="preset-pill">{PRACTICE_QUESTION_SOURCE_LABELS[questionSource]}</span>
+          <span className="preset-pill">
+            {mode === "wrong-only" ? "重溫錯題" : "完整練習"}
+          </span>
+        </div>
+        <div className="quick-start__actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => void handleStart()}
+            disabled={starting}
+          >
+            {starting
+              ? questionSource === "ai" && mode === "standard"
+                ? "AI 正在按你揀選的主題生成題目…"
+                : "正在準備題目…"
+              : "開始練習"}
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              if (!customSettingsRef.current) return;
+              customSettingsRef.current.open = true;
+              setCustomOpen(true);
+              customSettingsRef.current.scrollIntoView({ block: "start", behavior: "smooth" });
+            }}
+          >
+            自訂設定
+          </button>
+          <span className="text-meta">
+            {questionSource === "ai" && mode === "standard"
+              ? "AI 生成需時（約 10 至 60 秒），請勿關閉頁面。"
+              : "題目不足時，系統會按教材即時生成，並自動核對教材依據。"}
+          </span>
+        </div>
+      </section>
+
+      <section className="card card--accent flex flex-col gap-3">
+        <div className="card__heading">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="step-no" aria-hidden="true">
+              1
+            </span>
+            <h2 className="card__title">選擇主題（可多選）</h2>
+          </div>
+          <span className="text-meta">
             已選 {totalSelectedThemes} 個主題
             {totalSelectedThemes > 0 ? (
               <button
@@ -361,7 +425,7 @@ export function PracticeSetupForm() {
             ) : null}
           </span>
         </div>
-        <p className="text-xs text-gray-500">
+        <p className="text-meta">
           系統會按你所選的主題出題；課題下的每個主題都會直接列出，可多選。
           反白的主題目前未能出題（未有教材，或教材仍未開放給學生），可改用其他主題或題庫題目。
         </p>
@@ -392,24 +456,26 @@ export function PracticeSetupForm() {
         ) : null}
 
         {themes.length === 0 ? (
-          <p className="text-sm text-gray-500">此課題暫未設定主題，請聯絡歷史科教師。</p>
+          <p className="text-body">此課題暫未設定主題，請聯絡歷史科教師。</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <div className="choice-grid">
             {themes.map((theme) => {
               const available = isSectionPractisable(theme, questionSource);
+              const selected = selectedSections.includes(theme.id);
               return (
                 <button
                   key={theme.id}
                   type="button"
                   className="chip"
-                  data-selected={selectedSections.includes(theme.id)}
+                  data-selected={selected}
+                  aria-pressed={selected}
                   disabled={!available}
                   title={available ? undefined : unavailableReason(theme, questionSource)}
                   onClick={() => toggleTheme(theme.id)}
                 >
                   {theme.title}
                   {available ? null : (
-                    <span className="text-xs ml-1 opacity-70">
+                    <span className="text-xs opacity-70">
                       （{unavailableLabel(theme, questionSource)}）
                     </span>
                   )}
@@ -420,128 +486,168 @@ export function PracticeSetupForm() {
         )}
       </section>
 
-      <section className="card flex flex-col gap-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold">2. 選擇題型（一次一種）</h2>
-          <span className="text-xs text-gray-600">已選：{QUESTION_TYPE_LABELS[questionType]}</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {QUESTION_TYPES.map((type) => (
-            <button
-              key={type}
-              type="button"
-              className="chip"
-              data-selected={questionType === type}
-              onClick={() => selectType(type)}
-            >
-              {QUESTION_TYPE_LABELS[type]}
-            </button>
-          ))}
-        </div>
-        <p className="text-xs text-gray-500">
-          一次只練一種題型。選擇題可調節難度；填充題以課本關鍵詞作答，不設難度。
-          填充題提交後會由 AI 按意思批改，用字不同不會直接判錯。
-        </p>
-      </section>
+      <details
+        className="settings-group"
+        ref={customSettingsRef}
+        open={customOpen}
+        onToggle={(event) => setCustomOpen(event.currentTarget.open)}
+      >
+        <summary>自訂設定（題型、難度、題數、出題方式、練習模式）</summary>
+        <div className="settings-group__body">
 
-      {questionType === "mc" ? (
-        <section className="card flex flex-col gap-2">
-          <h2 className="font-semibold">3. 選擇難度</h2>
-          <div className="flex flex-wrap gap-2">
-            {DIFFICULTIES.map((item) => (
+        <div className="settings-step">
+          <div className="settings-step__head">
+            <span className="step-no" aria-hidden="true">
+              2
+            </span>
+            <span className="step-label">選擇題型（一次一種）</span>
+            <span className="text-meta">已選：{QUESTION_TYPE_LABELS[questionType]}</span>
+          </div>
+          <div className="choice-grid">
+            {QUESTION_TYPES.map((type) => (
               <button
-                key={item}
+                key={type}
                 type="button"
                 className="chip"
-                data-selected={difficulty === item}
-                onClick={() => setDifficulty(item)}
+                data-selected={questionType === type}
+                aria-pressed={questionType === type}
+                onClick={() => selectType(type)}
               >
-                {DIFFICULTY_LABELS[item]}
+                {QUESTION_TYPE_LABELS[type]}
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-500">
-            所選難度會用於出題；題庫該難度不足時，系統會按所選難度即時生成，不會直接改用其他難度。
+          <p className="text-meta">
+            一次只練一種題型。選擇題可調節難度；填充題以課本關鍵詞作答，不設難度。
+            填充題提交後會由 AI 按意思批改，用字不同不會直接判錯。
           </p>
-        </section>
-      ) : null}
+        </div>
 
-      <section className="card flex flex-col gap-2">
-        <h2 className="font-semibold">{questionType === "mc" ? 4 : 3}. 題目數量</h2>
-        <div className="flex flex-wrap gap-2">
-          {QUESTION_COUNTS.map((count) => (
+        <div className="settings-step">
+          <div className="settings-step__head">
+            <span className="step-no" aria-hidden="true">
+              3
+            </span>
+            <span className="step-label">選擇難度</span>
+          </div>
+          {questionType === "mc" ? (
+            <>
+              <div className="choice-grid">
+                {DIFFICULTIES.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className="chip"
+                    data-selected={difficulty === item}
+                    aria-pressed={difficulty === item}
+                    onClick={() => setDifficulty(item)}
+                  >
+                    {DIFFICULTY_LABELS[item]}
+                  </button>
+                ))}
+              </div>
+              <p className="text-meta">
+                所選難度會用於出題；題庫該難度不足時，系統會按所選難度即時生成，不會直接改用其他難度。
+              </p>
+            </>
+          ) : (
+            <p className="text-meta">填充題不設難度，系統會按教材的關鍵詞出題。</p>
+          )}
+        </div>
+
+        <div className="settings-step">
+          <div className="settings-step__head">
+            <span className="step-no" aria-hidden="true">
+              4
+            </span>
+            <span className="step-label">題目數量</span>
+          </div>
+          <div className="choice-grid">
+            {QUESTION_COUNTS.map((count) => (
+              <button
+                key={count}
+                type="button"
+                className="chip"
+                data-selected={questionCount === count}
+                aria-pressed={questionCount === count}
+                onClick={() => setQuestionCount(count)}
+              >
+                {count} 題
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="settings-step">
+          <div className="settings-step__head">
+            <span className="step-no" aria-hidden="true">
+              5
+            </span>
+            <span className="step-label">出題方式</span>
+          </div>
+          <div className="choice-grid">
+            {(["ai", "bank"] as const).map((source) => (
+              <button
+                key={source}
+                type="button"
+                className="chip"
+                data-selected={questionSource === source}
+                aria-pressed={questionSource === source}
+                onClick={() => handleQuestionSourceChange(source)}
+                disabled={mode === "wrong-only"}
+              >
+                {PRACTICE_QUESTION_SOURCE_LABELS[source]}
+              </button>
+            ))}
+          </div>
+          {mode === "wrong-only" ? (
+            <p className="text-meta">重溫錯題會直接使用你之前的題目。</p>
+          ) : questionSource === "ai" ? (
+            <p className="text-meta">
+              AI 會按你揀選的主題即時出題（每題都會核對教材依據），需時約 10 至 60 秒。
+              AI 只會使用已確認可向學生發布的教材，因此教材未開放的主題不能選；
+              如需在那些主題練習，請改用「使用題庫題目」。
+              {demoMode === true ? " 現時為示範模式，會使用本地示範生成（未使用 AI）。" : null}
+            </p>
+          ) : (
+            <p className="text-meta">
+              使用題庫中已發布的題目；所選難度（選擇題）的題目不足時，系統會按該難度即時生成補足
+              （需時約 10 至 60 秒），仍然不足才加入其他難度並如實說明。
+            </p>
+          )}
+        </div>
+
+        <div className="settings-step">
+          <div className="settings-step__head">
+            <span className="step-no" aria-hidden="true">
+              6
+            </span>
+            <span className="step-label">練習模式</span>
+          </div>
+          <div className="choice-grid">
             <button
-              key={count}
               type="button"
               className="chip"
-              data-selected={questionCount === count}
-              onClick={() => setQuestionCount(count)}
+              data-selected={mode === "standard"}
+              aria-pressed={mode === "standard"}
+              onClick={() => setMode("standard")}
             >
-              {count} 題
+              完整練習
             </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="card flex flex-col gap-2">
-        <h2 className="font-semibold">{questionType === "mc" ? 5 : 4}. 出題方式</h2>
-        <div className="flex flex-wrap gap-2">
-          {(["ai", "bank"] as const).map((source) => (
             <button
-              key={source}
               type="button"
               className="chip"
-              data-selected={questionSource === source}
-              onClick={() => handleQuestionSourceChange(source)}
-              disabled={mode === "wrong-only"}
+              data-selected={mode === "wrong-only"}
+              aria-pressed={mode === "wrong-only"}
+              onClick={() => setMode("wrong-only")}
             >
-              {PRACTICE_QUESTION_SOURCE_LABELS[source]}
+              重溫錯題
             </button>
-          ))}
+          </div>
+          {mode === "wrong-only" ? <Notice>只會抽取你之前答錯的題目。</Notice> : null}
         </div>
-        {mode === "wrong-only" ? (
-          <p className="text-xs text-gray-500">重溫錯題會直接使用你之前的題目。</p>
-        ) : questionSource === "ai" ? (
-          <p className="text-xs text-gray-500">
-            AI 會按你揀選的主題即時出題（每題都會核對教材依據），需時約 10 至 60 秒。
-            AI 只會使用已確認可向學生發布的教材，因此教材未開放的主題不能選；
-            如需在那些主題練習，請改用「使用題庫題目」。
-            {demoMode === true ? " 現時為示範模式，會使用本地示範生成（未使用 AI）。" : null}
-          </p>
-        ) : (
-          <p className="text-xs text-gray-500">
-            使用題庫中已發布的題目；所選難度（選擇題）的題目不足時，系統會按該難度即時生成補足
-            （需時約 10 至 60 秒），仍然不足才加入其他難度並如實說明。
-          </p>
-        )}
-      </section>
-
-      <section className="card flex flex-col gap-2">
-        <h2 className="font-semibold">{questionType === "mc" ? 6 : 5}. 練習模式</h2>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="chip"
-            data-selected={mode === "standard"}
-            onClick={() => setMode("standard")}
-          >
-            完整練習
-          </button>
-          <button
-            type="button"
-            className="chip"
-            data-selected={mode === "wrong-only"}
-            onClick={() => setMode("wrong-only")}
-          >
-            重溫錯題
-          </button>
         </div>
-        {mode === "wrong-only" ? (
-          <Notice>
-            只會抽取你之前答錯的題目。
-          </Notice>
-        ) : null}
-      </section>
+      </details>
 
       {startError ? (
         guidance ? (
@@ -594,7 +700,7 @@ export function PracticeSetupForm() {
         )
       ) : null}
 
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="action-bar action-bar--mobile-only">
         <button
           type="button"
           className="btn btn-primary"
@@ -603,14 +709,12 @@ export function PracticeSetupForm() {
         >
           {starting
             ? questionSource === "ai" && mode === "standard"
-              ? "AI 正在按你揀選的主題生成題目…"
+              ? "AI 正在出題…"
               : "正在準備題目…"
-            : "開始練習"}
+            : `開始練習（${questionCount} 題）`}
         </button>
-        <span className="text-xs text-gray-500">
-          {questionSource === "ai" && mode === "standard"
-            ? "AI 生成需時，請勿關閉頁面。"
-            : "題目不足時，系統會按教材內容即時生成，並自動核對教材依據。"}
+        <span className="action-bar__note">
+          {totalSelectedThemes === 0 ? "請先選擇主題" : `${totalSelectedThemes} 個主題`}
         </span>
       </div>
     </div>

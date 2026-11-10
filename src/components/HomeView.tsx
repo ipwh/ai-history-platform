@@ -21,6 +21,7 @@ import {
   countPracticeThemes,
 } from "@/lib/types";
 import { practiceAccuracy, topicBadge } from "@/lib/practice-summary";
+import { levelFromClassName } from "@/lib/student-level";
 import { api, getLearnerId } from "@/lib/api-client";
 import { ErrorNotice, Loading, Notice, ProgressBar } from "@/components/ui";
 
@@ -81,11 +82,9 @@ function toTheme(raw: string): CurriculumTheme | null {
 
 /** 依班別判斷學習階段：中四至中六為高中，其餘為初中 */
 function stageFromClassName(className: string | null | undefined): Stage | null {
-  const prefix = className?.trim().charAt(0) ?? "";
-  if (prefix === "") return null;
-  if (prefix === "4" || prefix === "5" || prefix === "6") return "senior";
-  if (prefix === "1" || prefix === "2" || prefix === "3") return "junior";
-  return null;
+  const level = levelFromClassName(className);
+  if (level === null) return null;
+  return level === SENIOR_SECONDARY_LEVEL ? "senior" : "junior";
 }
 
 /**
@@ -313,15 +312,6 @@ export function HomeView() {
         </div>
       </section>
 
-      {progress && progress.review.dueCount > 0 ? (
-        <Notice>
-          你有 <strong>{progress.review.dueCount}</strong> 條題目已到重溫時間；重溫同一題不會重複計算進度。
-          <Link href="/review" className="underline ml-1">
-            前往重溫 ›
-          </Link>
-        </Notice>
-      ) : null}
-
       {topics.length === 0 ? (
         <Notice tone="warning">
           目前沒有已發布的課題。管理員可到「教材管理」匯入課程教材，或執行{" "}
@@ -430,10 +420,13 @@ export function HomeView() {
                 </span>
                 <span className="topic-tile__progress">
                   <ProgressBar value={eligible > 0 ? answered / eligible : 0} />
-                  <span className="topic-tile__progressText">
+                  <span
+                    className="topic-tile__progressText"
+                    title={`題庫進度 ${answered}／${eligible} 條；練習累計答題 ${topic.progress.answeredQuestions} 題`}
+                  >
                     {eligible > 0
-                      ? `題庫進度 ${answered}／${eligible} 條 ・ 練習累計答題 ${topic.progress.answeredQuestions} 題`
-                      : `尚未有可作答題目 ・ 練習累計答題 ${topic.progress.answeredQuestions} 題`}
+                      ? `已作答 ${answered}／${eligible} 條`
+                      : "暫未有可作答題目"}
                   </span>
                 </span>
                 <span className="topic-tile__footer">

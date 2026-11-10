@@ -18,6 +18,32 @@
   --warning-soft: #fff5e0;
   --font-sans: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Heiti TC",
     "Segoe UI", system-ui, sans-serif;
+  /* 標題用系統中文襯線字（不連線下載字型），帶出歷史科氣質；正文仍用黑體 */
+  --font-serif: "Noto Serif TC", "Songti TC", "Source Han Serif TC", "PMingLiU",
+    "MingLiU", Georgia, serif;
+
+  /* 文字層級：收斂以往散落的 5 套近似灰 */
+  --text-strong: #161c28;
+  --text: #333b4d;
+  --text-muted: #5b6478;
+
+  /* 圓角及陰影統一等級 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow-card: 0 1px 2px rgba(28, 34, 48, 0.05), 0 1px 3px rgba(28, 34, 48, 0.04);
+  --shadow-raised: 0 10px 26px rgba(28, 34, 48, 0.1);
+  --shadow-cta: 0 2px 10px rgba(47, 91, 215, 0.22);
+
+  /* 分區色：練習（藍）／重溫（琥珀）／學伴（青綠），令學生一眼分辨身處哪個環節 */
+  --review-accent: #b45309;
+  --review-tint: #fff6e6;
+  --tutor-accent: #0f766e;
+  --tutor-tint: #e7f6f2;
+
+  /* 觸控目標下限（Apple HIG 建議 44px） */
+  --tap-min: 2.75rem;
 }
 
 @theme inline {
@@ -56,18 +82,93 @@ html {
 
 body {
   background: var(--background);
-  color: var(--foreground);
+  color: var(--text);
   font-family: var(--font-sans);
-  line-height: 1.7;
+  line-height: 1.75;
+}
+
+/*
+ * 說明文字的統一級別。以往各處手寫 text-xs text-gray-500，令同一頁出現多種灰；
+ * 現在改用語意類別，並保證最細字級仍有足夠對比。
+ */
+.text-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.text-body {
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+/* 頁首（標題、說明、分區眉標） */
+.page-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.page-title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  color: var(--text-strong);
+}
+
+.page-sub {
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--section-accent, var(--accent));
+}
+
+/* 分區：設定 --section-accent 後，卡片的色條、眉標及重點色會自動跟隨 */
+[data-section="practice"] {
+  --section-accent: var(--accent);
+  --section-tint: var(--accent-soft);
+}
+
+[data-section="review"] {
+  --section-accent: var(--review-accent);
+  --section-tint: var(--review-tint);
+}
+
+[data-section="tutor"] {
+  --section-accent: var(--tutor-accent);
+  --section-tint: var(--tutor-tint);
+}
+
+.card--accent {
+  border-left: 4px solid var(--section-accent, var(--accent));
 }
 
 /* 共用元件樣式：以純 CSS 撰寫，方便新手直接閱讀及修改 */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 1rem 1.15rem;
-  box-shadow: 0 1px 2px rgba(28, 34, 48, 0.04);
+  box-shadow: var(--shadow-card);
+}
+
+.card__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.card__title {
+  font-weight: 800;
+  color: var(--text-strong);
 }
 
 .btn {
@@ -170,49 +271,103 @@ body {
 
 .option-row {
   display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
+  align-items: center;
+  gap: 0.7rem;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0.7rem 0.85rem;
+  /* 左側 4px 色條：選中／答對／答錯不用只靠底色辨認 */
+  border-left: 4px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.85rem;
+  min-height: 3.25rem;
   background: var(--surface);
+  color: var(--text-strong);
   cursor: pointer;
   text-align: left;
   width: 100%;
+  font-size: 1rem;
+  line-height: 1.65;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .option-row:hover {
   border-color: var(--accent);
+  border-left-color: var(--accent);
   background: var(--accent-soft);
 }
 
 .option-row[data-selected="true"] {
   border-color: var(--accent);
+  border-left-color: var(--accent);
   background: var(--accent-soft);
 }
 
 .option-row[data-state="correct"] {
   border-color: var(--success);
+  border-left-color: var(--success);
   background: var(--success-soft);
 }
 
 .option-row[data-state="wrong"] {
   border-color: var(--danger);
+  border-left-color: var(--danger);
   background: var(--danger-soft);
 }
 
-.chip {
-  border: 1px solid var(--border);
+/* 選項字母（A／B／C／D）：圓形標記比純文字更易掃讀 */
+.option-key {
+  flex: none;
+  width: 1.85rem;
+  height: 1.85rem;
   border-radius: 999px;
-  padding: 0.35rem 0.8rem;
-  background: var(--surface);
-  cursor: pointer;
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid #c6d6ff;
 }
 
-.chip[data-selected="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
+.option-row[data-state="correct"] .option-key {
+  background: #d9f2e3;
+  border-color: #bfe6d1;
+  color: var(--success);
+}
+
+.option-row[data-state="wrong"] .option-key {
+  background: #fbdcd9;
+  border-color: #f0c6c2;
+  color: var(--danger);
+}
+
+.option-row__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  min-height: var(--tap-min);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.chip[data-selected="true"],
+.chip[aria-pressed="true"] {
+  background: var(--section-accent, var(--accent));
+  border-color: var(--section-accent, var(--accent));
   color: #fff;
 }
 
@@ -388,9 +543,20 @@ body {
   border-radius: 999px;
   background: #e8edf8;
   border: 1px solid var(--border);
+  /* 窄螢幕時五個分頁放不下：容許橫向捲動，而不是把「主題甲」拆成兩行 */
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.level-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .level-tab {
+  flex: none;
+  white-space: nowrap;
   min-height: 2.4rem;
   min-width: 4.2rem;
   padding: 0.35rem 1rem;
@@ -817,4 +983,572 @@ table.material-table th {
   border: 1px solid var(--border);
   padding: 0.4rem 0.5rem;
   vertical-align: top;
+}
+
+/* ==================================================================== */
+/* 學生自學介面：2026-11 版面整理                                        */
+/*                                                                      */
+/* 目標：練習、重溫、學伴三個環節一眼可辨；作答頁以題目為主角；            */
+/* 手機（大部分學生）單手可完成提交與下一題。                            */
+/* ==================================================================== */
+
+/* ── 練習設定：快速開始 + 自訂設定分組 ───────────────────────────── */
+
+.quick-start {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.15rem 1.2rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--section-accent, var(--accent)) 28%, #ffffff);
+  background: linear-gradient(
+    135deg,
+    var(--section-tint, var(--accent-soft)) 0%,
+    #ffffff 72%
+  );
+  box-shadow: var(--shadow-card);
+}
+
+.quick-start__title {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.quick-start__hint {
+  font-size: 0.86rem;
+  color: var(--text);
+}
+
+.quick-start__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* 目前的設定摘要：學生一眼確認「這次練習是甚麼」 */
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.preset-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid #c6d6ff;
+  background: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.settings-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.settings-group > summary {
+  cursor: pointer;
+  padding: 0.9rem 1.05rem;
+  font-weight: 800;
+  color: var(--text-strong);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  list-style: none;
+  min-height: var(--tap-min);
+}
+
+.settings-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-group > summary::after {
+  content: "展開 ▾";
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex: none;
+}
+
+.settings-group[open] > summary::after {
+  content: "收起 ▴";
+}
+
+.settings-group > summary:hover {
+  background: var(--section-tint, var(--accent-soft));
+}
+
+.settings-group__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0 1.05rem 1.15rem;
+}
+
+.settings-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-step__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.step-no {
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: var(--section-tint, var(--accent-soft));
+  color: var(--section-accent, var(--accent));
+  font-size: 0.78rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-label {
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+/* 選項格：手機兩欄，桌面自動填滿，比單純 flex-wrap 整齊 */
+.choice-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+}
+
+/* 格內的標籤多為兩行中文主題名：用圓角矩形比膠囊形易讀 */
+.choice-grid .chip {
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.85rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ── 作答頁：題目為主角 ─────────────────────────────────────────── */
+
+.question-stem {
+  font-size: 1.12rem;
+  line-height: 1.85;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+@media (min-width: 768px) {
+  .question-stem {
+    font-size: 1.32rem;
+  }
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* 手機固定底部操作列：提交／下一題在拇指範圍內 */
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 -1rem -1.25rem;
+  padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, 0.96);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -6px 16px rgba(28, 34, 48, 0.07);
+}
+
+.action-bar__note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* 設定頁只在手機顯示底部摘要列，桌面已有主要按鈕，無需重複 */
+.action-bar--mobile-only {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .action-bar--mobile-only {
+    display: flex;
+  }
+}
+
+/* ── 回饋：判決、答案對照 ──────────────────────────────────────── */
+
+.verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.verdict__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.verdict--ok {
+  color: var(--success);
+  background: var(--success-soft);
+  border-color: #bfe6d1;
+}
+
+.verdict--bad {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: #f0c6c2;
+}
+
+.verdict--warn {
+  color: var(--warning);
+  background: var(--warning-soft);
+  border-color: #f2ddb0;
+}
+
+.answer-compare {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 640px) {
+  .answer-compare {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.answer-compare__box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  padding: 0.6rem 0.8rem;
+  min-width: 0;
+}
+
+.answer-compare__box--bad {
+  border-color: #f0c6c2;
+  background: var(--danger-soft);
+}
+
+.answer-compare__box--ok {
+  border-color: #bfe6d1;
+  background: var(--success-soft);
+}
+
+.answer-compare__label {
+  font-size: 0.73rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.answer-compare__value {
+  font-size: 0.96rem;
+  color: var(--text-strong);
+  word-break: break-word;
+}
+
+/* ── 結果頁：正確率為主角 ──────────────────────────────────────── */
+
+.score-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.1rem 1.5rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, #ffffff);
+  background: linear-gradient(135deg, var(--accent-soft) 0%, #ffffff 70%);
+  box-shadow: var(--shadow-card);
+}
+
+.score-ring {
+  --value: 0;
+  flex: none;
+  width: 8.25rem;
+  height: 8.25rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: conic-gradient(
+    var(--accent) calc(var(--value) * 1%),
+    #dfe5f1 0
+  );
+}
+
+.score-ring__inner {
+  width: 6.5rem;
+  height: 6.5rem;
+  border-radius: 999px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.score-ring__value {
+  font-size: 1.65rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text-strong);
+}
+
+.score-ring__label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.score-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  min-width: 0;
+}
+
+.score-figure__value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-strong);
+  line-height: 1.3;
+}
+
+.score-figure__label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ── 空狀態與載入骨架 ──────────────────────────────────────────── */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  text-align: center;
+  padding: 1.6rem 1rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: #fbfcff;
+}
+
+.empty-state__icon {
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.empty-state__title {
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.empty-state__body {
+  font-size: 0.88rem;
+  color: var(--text);
+  max-width: 34rem;
+}
+
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, #eaeef6 25%, #f6f8fc 37%, #eaeef6 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+
+.skeleton-line {
+  height: 0.95rem;
+}
+
+.skeleton-line--lg {
+  height: 1.5rem;
+}
+
+.skeleton-block {
+  height: 3.25rem;
+  border-radius: var(--radius-md);
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+
+  .topic-tile,
+  .btn,
+  .chip,
+  .option-row {
+    transition: none;
+  }
+}
+
+/* ── 首頁課題卡：狀態色條 ──────────────────────────────────────── */
+
+.topic-tile {
+  position: relative;
+  padding-left: 1.2rem;
+}
+
+.topic-tile::before {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  top: 0.85rem;
+  bottom: 0.85rem;
+  width: 4px;
+  border-radius: 999px;
+  background: #dfe5f1;
+}
+
+.topic-tile[data-state="in-progress"]::before {
+  background: var(--level-accent, var(--accent));
+}
+
+.topic-tile[data-state="needs-review"]::before {
+  background: var(--warning);
+}
+
+.topic-tile[data-state="repeatedly-demonstrated"]::before {
+  background: var(--success);
+}
+
+/* ── 手機底部導覽（學生） ──────────────────────────────────────── */
+
+.bottom-nav {
+  display: none;
+}
+
+.nav-links--student {
+  display: flex;
+}
+
+@media (max-width: 767px) {
+  .nav-links--student {
+    display: none;
+  }
+
+  /* 為固定底部導覽預留空間；練習進行中不顯示導覽，因此不需要留白 */
+  .app-shell {
+    padding-bottom: calc(3.4rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-shell[data-on-practice="true"] {
+    padding-bottom: 0;
+  }
+
+  .bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    background: #ffffff;
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -2px 12px rgba(28, 34, 48, 0.06);
+  }
+
+  .bottom-nav__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    min-height: 3.4rem;
+    padding: 0.35rem 0.15rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  .bottom-nav__item[data-active="true"] {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .bottom-nav__icon {
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  /* 手機：設定摘要列貼齊底部導覽，避免被遮住 */
+  .action-bar {
+    margin: 0 -1rem -1rem;
+  }
+
+  /* 手機：五個分頁要在一行內放得下，減少左右內距 */
+  .level-tab {
+    min-width: 3.4rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.86rem;
+  }
+
+  /* 手機頂部保留最少資訊：品牌、登出及必要的角色標籤，其餘收窄或隱藏 */
+  .hide-sm {
+    display: none !important;
+  }
+
+  .nav-link--optional {
+    display: none;
+  }
+
+  .app-identity {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .app-identity .badge {
+    max-width: 11rem;
+  }
 }

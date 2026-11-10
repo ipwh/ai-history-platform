@@ -870,7 +870,7 @@ P3 只代表覆核次序較後，不是已核准。
 
 ### 10.3 版權批准（**部分完成**）
 
-- [x] 擁有者確認版權（2026-10-19，[紀錄](teacher-review/copyright-owner-attestation-2026-10-19.md)）——這是擁有者聲明，不是逐份出版社授權
+- [x] 擁有者確認版權（2026-10-19，[紀錄](teacher-review/copyright-owner-attestation-2026-10-19.md)）——這是擁有者聲明，不是逐份授權
 - [ ] 逐份書面授權證據（`material_documents.rights_confirmed_at` 仍為 12／36；沒有批次回填）
 - [ ] 校內試題（1,003 題）的再使用授權逐份證據（如需要）
 

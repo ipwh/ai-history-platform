@@ -204,6 +204,73 @@ const HISTORICAL_CONCEPT_TERMS: readonly string[] = [
 ];
 
 /**
+ * 特定歷史專名：朝代、事件、地標、器物、國際組織。
+ *
+ * 為甚麼需要（2026-11-10 模擬）：學生很少寫出教科書的 headword（「宗教改革」
+ * 「工業革命」），但很自然會寫「教會」「蒸汽機」「柏林圍牆」。原本的詞表只有
+ * **類別詞**（戰爭、條約、革命…）及 headword，於是「日本點解要偷襲美國嗰個海軍
+ * 基地？」「柏林嗰道牆幾時拆？」這類正常提問全部被當成離題拒答。
+ *
+ * 收錄條件（兩項都要符合）：
+ *   ① 在課程教材確實出現（2026-11-10 以唯讀查詢核對 `data/app.db` 的段數）；
+ *   ② 日常用法幾乎不離歷史語境（故不收「學校」「比賽」「遊戲」等）。
+ */
+const HISTORICAL_PROPER_TERMS: readonly string[] = [
+  // 朝代／政權
+  "清朝",
+  "明朝",
+  "宋朝",
+  "唐朝",
+  "漢朝",
+  "秦朝",
+  "民國",
+  "蘇聯",
+  "日本帝國",
+  // 事件、地標、器物、文獻（教材段數：珍珠港 7、柏林圍牆 13、文化大革命 14、
+  // 明治維新 15、獨立宣言 14、蒸汽機 12、古巴 64、新界 75、清朝 17、歐盟 41、聯合國 291）
+  "珍珠港",
+  "柏林圍牆",
+  "文化大革命",
+  "明治維新",
+  "獨立宣言",
+  "蒸汽機",
+  "大屠殺",
+  "古巴",
+  "新界",
+  "香港島",
+  "租借",
+  "開埠",
+  "轉口港",
+  "一國兩制",
+  "日心說",
+  "地心說",
+  "哥白尼",
+  // 國際組織
+  "聯合國",
+  "歐盟",
+  "北約",
+  "國際聯盟",
+];
+
+/**
+ * 日常歷史詞彙：本身也是常用詞，只在**確實是提問句**時才計入歷史訊號，
+ * 避免「工廠大廈幾點關門」這類生活問題被當成歷史題。
+ */
+const HISTORICAL_EVERYDAY_TERMS: readonly string[] = [
+  "教會",
+  "教皇",
+  "修道院",
+  "工廠",
+  "煤礦",
+  "農業",
+  "村民",
+  "運河",
+  "鐵路",
+  "非洲",
+  "偷襲",
+];
+
+/**
  * 英文歷史題材（同樣是類別形態）。
  *
  * 必須在**原文**比對：`normalizeTutorQuery` 會去掉空格，英文句子黏成一串，
@@ -266,6 +333,7 @@ export function hasHistoricalSubjectShape(raw: string): boolean {
     ...HISTORICAL_EVENT_TERMS,
     ...HISTORICAL_POLITY_TERMS,
     ...HISTORICAL_CONCEPT_TERMS,
+    ...HISTORICAL_PROPER_TERMS,
   ];
   if (zhTerms.some((term) => normalized.includes(normalizeHistoryAnswer(term)))) return true;
   if (HISTORICAL_TERMS_EN.test(raw)) return true;
@@ -285,8 +353,9 @@ export interface TutorHistoricalQuestionInput {
 /**
  * 是否一個歷史提問（與教材是否涵蓋無關）。
  *
- * 判斷次序：明確非歷史 → 詞庫／課程用語 → 歷史題材形態 → 有上文時的追問 →
- * 1999 年或以前的年份。任何一項成立即屬歷史提問。
+ * 判斷次序：明確非歷史 → 詞庫／課程用語 → 歷史題材形態（含教材常見專名）
+ * → 日常歷史詞彙（需同時是提問句）→ 有上文時的追問 → 1999 年或以前的年份。
+ * 任何一項成立即屬歷史提問。
  */
 export function isHistoricalTutorQuestion(input: TutorHistoricalQuestionInput): boolean {
   const raw = input.message;
@@ -299,6 +368,16 @@ export function isHistoricalTutorQuestion(input: TutorHistoricalQuestionInput): 
   if (findLooseHistoryTerms(withoutYears).length > 0) return true;
   if (matchesCurriculumTerms(input.curriculum, withoutYears)) return true;
   if (hasHistoricalSubjectShape(raw)) return true;
+  // 日常歷史詞彙（教會、工廠、農業…）只在這句確實是提問時才計入，
+  // 詳見 HISTORICAL_EVERYDAY_TERMS 的說明。
+  if (
+    hasQuestionShape(raw) &&
+    HISTORICAL_EVERYDAY_TERMS.some((term) =>
+      normalized.includes(normalizeHistoryAnswer(term)),
+    )
+  ) {
+    return true;
+  }
 
   if (input.hasHistoryContext) {
     if (isShortHistoryFollowUp(raw)) return true;
@@ -317,6 +396,22 @@ export interface TutorAnswerabilityInput extends TutorHistoricalQuestionInput {
   grounding: TutorGrounding;
   /** `isUnclearTutorQuery` 的原有判斷（見 services/tutor-query.ts） */
   unclear: boolean;
+  /**
+   * 學生已在某課題脈絡下發問，而該課題教材確實包含提問用到的詞彙
+   * （見 `tutor-grounding.messageUsesTopicVocabulary`）。
+   *
+   * 用途：字詞檢索失敗、又沒有命中詞庫時，仍可依「教材用過這些詞」判定為課程內
+   * 提問，以 C（一般歷史知識 + 明確標示教材未涵蓋）作答，而不是拒答。
+   */
+  materialVocabularyMatched?: boolean;
+  /**
+   * 沒有課題脈絡，但提問使用了任何已發布教材內的詞彙
+   * （見 `tutor-grounding.messageUsesAnyCourseVocabulary`）。
+   *
+   * 用途：不足以斷定屬於哪一課題、亦不可引用未確認的教材，因此只可澄清；
+   * route 會在澄清前先試一次語意改寫，改寫後仍找不到教材才真正澄清。
+   */
+  courseVocabularyMatched?: boolean;
 }
 
 function hasDanglingReferenceWithoutContext(raw: string, hasHistoryContext: boolean): boolean {
@@ -493,6 +588,18 @@ export function classifyTutorAnswerability(
 
   const historicalQuestion = isHistoricalTutorQuestion(input);
 
+  /**
+   * 教材已有支持段落 → 這條提問屬於課程範圍，不可判為離題。
+   *
+   * 2026-11-10 模擬發現：學生在練習課題5 時問「點解啲人開始唔再信教會講嘅嘢？」，
+   * 檢索已命中 topic-5 教材（`grounded`），但因為句子沒有詞庫專名而被拒答。
+   * 「平台自己找到教材」與「這不是歷史問題」互相矛盾，因此以教材證據為準。
+   * 只有完全找不到教材（`not-covered`）時，才可能因缺乏歷史訊號而離題。
+   */
+  const materialBacked =
+    input.materialVocabularyMatched === true ||
+    (input.grounding.status !== "not-covered" && input.grounding.topicId !== null);
+
   // 含糊是語言問題：即使句中沒有詞庫專名，只要寫法本身無法確定對象，就只可澄清。
   if (
     hasExplicitVagueness(raw) ||
@@ -502,12 +609,25 @@ export function classifyTutorAnswerability(
       ...base,
       state: "D-needs-clarification",
       scope: "history",
-      historicalQuestion,
-      reason: historicalQuestion ? "ambiguous-wording" : "ambiguous-history-signal",
+      historicalQuestion: historicalQuestion || materialBacked,
+      reason: historicalQuestion || materialBacked ? "ambiguous-wording" : "ambiguous-history-signal",
     };
   }
 
-  if (!historicalQuestion) {
+  if (!historicalQuestion && !materialBacked) {
+    /**
+     * 沒有課題脈絡，但提問用了教材內的詞彙（「美國點解要同英國分手？」）：
+     * 學生確實在問課程會處理的題材，不可當成離題；但既不能斷定課題、也不可引用
+     * 未確認的教材，因此只可澄清並列出可能方向（2026-11-10 模擬）。
+     */
+    if (input.courseVocabularyMatched === true && hasQuestionShape(raw)) {
+      return {
+        ...base,
+        state: "D-needs-clarification",
+        scope: "history",
+        reason: "course-vocabulary-without-topic",
+      };
+    }
     return { ...base, state: "out-of-scope", reason: "no-history-signal" };
   }
 
@@ -522,7 +642,7 @@ export function classifyTutorAnswerability(
       ...base,
       state: "D-needs-clarification",
       scope: "history",
-      historicalQuestion,
+      historicalQuestion: true,
       reason: "needs-clarification",
     };
   }
