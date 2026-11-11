@@ -46,7 +46,7 @@ export const SEED_TUTOR_TOPIC_CARDS: readonly TutorTopicCard[] = [
     confusionPoints: [
       "「導火線」與「根本成因」是兩種不同的問題",
       "「條約內容」與「條約帶來的影響」要分開處理",
-      "「極權主義」與「法西斯主義」在課本中是相關但不同的概念",
+      "「極權主義」與「法西斯主義」是相關但不同的概念",
     ],
   },
   {

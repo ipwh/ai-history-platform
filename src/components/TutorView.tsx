@@ -93,7 +93,7 @@ function depthLabel(depth: TutorReplyDepth | undefined): string | null {
   return DEPTH_OPTIONS.find((option) => option.value === depth)?.label ?? null;
 }
 const DISCLAIMER =
-  "⚠️ 內容由 AI 輔助生成，僅供課後複習參考。標示「已對照課本教材」的回覆會列出教材節錄及出處可供核對；標示「未找到教材依據」的部分屬補充，不是課本說法；標示「外部參考」的是白名單網站的短摘錄，不是課本亦不是考試標準。正式史實與作答標準請以課本及科任老師教授為準。";
+  "⚠️ 內容由 AI 輔助生成，僅供課後複習參考。標示「已對照教材」的回覆會列出教材節錄及出處可供核對；標示「未找到教材依據」的部分屬補充，不代表教材說法；標示「外部參考」的是白名單網站的短摘錄，並非教材或考試標準。正式史實與作答標準請以教材及科任老師教授為準。";
 
 function readStoredSessionId(): string | null {
   if (typeof window === "undefined") return null;
@@ -220,10 +220,10 @@ function TutorEvidence({ message }: { message: TutorMessage }) {
     >
       <div className="flex flex-wrap items-center gap-2">
         {grounded ? (
-          <span className="badge badge-success">✅ 已對照課本教材（{sources.length} 段）</span>
+          <span className="badge badge-success">✅ 已對照教材（{sources.length} 段）</span>
         ) : null}
         {notCovered ? (
-          <span className="badge badge-warning">➕ 未找到教材依據（屬補充，非課本說法）</span>
+          <span className="badge badge-warning">➕ 未找到教材依據（屬補充，非教材說法）</span>
         ) : null}
         {message.topicTitle ? (
           <span className="text-xs text-gray-500">{message.topicTitle}</span>
@@ -260,7 +260,7 @@ function TutorEvidence({ message }: { message: TutorMessage }) {
         <ul className="space-y-1 text-xs text-gray-600">
           {termNotes.map((note) => (
             <li key={note.canonical}>
-              📖 課本用語：<strong>{note.canonical}</strong>（回覆用了「{note.used}」）
+              📖 教材用語：<strong>{note.canonical}</strong>（回覆用了「{note.used}」）
             </li>
           ))}
         </ul>
@@ -269,9 +269,9 @@ function TutorEvidence({ message }: { message: TutorMessage }) {
         <div
           className="rounded-lg px-3 py-2 text-sm"
           style={{ background: "var(--accent-soft)", border: "1px solid #c6d6ff" }}
-          aria-label="外部參考（非課本・非考試標準）"
+          aria-label="外部參考（非教材・非考試標準）"
         >
-          <p className="text-xs font-semibold">🌐 外部參考（非課本・非考試標準）</p>
+          <p className="text-xs font-semibold">🌐 外部參考（非教材・非考試標準）</p>
           <ul className="mt-2 space-y-2">
             {webSources.map((source, index) => (
               <li key={`${source.url}-${index}`}>
@@ -293,7 +293,7 @@ function TutorEvidence({ message }: { message: TutorMessage }) {
             ))}
           </ul>
           <p className="mt-2 text-xs text-gray-600">
-            外部網站內容僅供課後擴充，可能與課本表述不同；不可當作考試或評分標準。
+            外部網站內容僅供課後擴充，可能與教材表述不同；不可當作考試或評分標準。
           </p>
         </div>
       ) : null}
@@ -700,7 +700,7 @@ export function TutorView({
             ...(data.depth !== undefined ? { depth: data.depth } : {}),
           });
         } else if (event === "error") {
-          throw new Error(data.error ?? "DeepSeek 串流發生錯誤，請稍後再試。");
+          throw new Error(data.error ?? "AI 生成回應時發生錯誤，請稍後再試。");
         }
         event = "";
       };

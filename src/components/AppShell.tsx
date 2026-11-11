@@ -177,10 +177,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 title={
                   health.demoMode
                     ? "現時使用本地示範模式，不需要 API key"
-                    : health.llmProviderLabel
+                    : "AI 生成功能正常"
                 }
               >
-                {health.demoMode ? "示範模式（無需 API key）" : health.llmProviderLabel}
+                {health.demoMode ? "示範模式（無需 API key）" : "AI 生成功能正常"}
               </span>
             ) : null}
             {auth?.enabled && auth.user ? (

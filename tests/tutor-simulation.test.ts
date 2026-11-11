@@ -556,7 +556,7 @@ describe("C. 教材依據（grounding）", () => {
     };
     const systemPrompt = body.messages[0]?.content ?? "";
     expect(systemPrompt).toContain("我在教材中找不到這部分的內容");
-    expect(systemPrompt).toContain("不可斷言課本「沒有提及」");
+    expect(systemPrompt).toContain("不可斷言教材「沒有提及」");
   });
 });
 
@@ -754,7 +754,7 @@ describe("F. 模型參數、錯誤處理與提示詞約束", () => {
     expect(systemPrompt).toContain("不可夾雜簡體字");
     expect(systemPrompt).toContain("希特拉");
     expect(systemPrompt).toContain("不直接代做功課");
-    expect(systemPrompt).toContain("不重現任何課本原文");
+    expect(systemPrompt).toContain("不重現任何教材原文");
     // 平台「不提供」題庫／標準答案：提示詞是以禁止語氣出現，而不是把內容注入
     expect(systemPrompt).toContain("平台沒有提供題庫、標準答案或評分參考");
     expect(systemPrompt).not.toMatch(/標準答案[:：]/);

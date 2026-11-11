@@ -523,43 +523,65 @@ describe("AI 歷史自學學伴 API", () => {
    * 依據查詢（2026-11-11 學生模擬）：學生追問「有冇課本根據？」時，
    * 應列出上一則回覆的來源，而不是重新推斷課題（實測曾引用完全無關的日本教材）。
    */
-  it("追問「有冇課本根據？」會列出上一則回覆的來源，且不呼叫模型", async () => {
+  it.each(["你憑咩話係咁？有冇課本根據？", "有甚麼證據？"])(
+    "追問「%s」會列出上一則回覆的來源，且不呼叫模型",
+    async (message) => {
+      const sessionId = createTutorSession(STUDENT_A, hongKongTimestamp());
+      saveTutorMessage(sessionId, "user", "新界係幾時租俾英國？", hongKongTimestamp());
+      saveTutorMessage(sessionId, "assistant", "新界在1898年租借。", hongKongTimestamp(), 0, {
+        groundingStatus: "grounded",
+        sources: [
+          {
+            blockId: "blk_test_1",
+            documentLabel: "課題8 筆記.docx",
+            location: "第 42 段",
+            excerpt: "1898年，英國強迫清政府簽訂《展拓香港界址專條》，租借新界。",
+          },
+        ],
+      });
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await postChat(
+        requestFor("POST", STUDENT_A, { message, sessionId }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toContain("application/json");
+      const payload = (await response.json()) as {
+        reply: string;
+        evidenceCheck?: boolean;
+        sources?: { excerpt: string }[];
+      };
+      expect(payload.evidenceCheck).toBe(true);
+      expect(payload.reply).toContain("《展拓香港界址專條》");
+      expect(payload.reply).toContain("第 42 段");
+      expect(payload.sources?.[0]?.excerpt).toContain("租借新界");
+      // 不重新推斷課題、不呼叫模型、不額外扣額度（種子對話本身已計 1 次）
+      expect(fetchMock).toHaveBeenCalledTimes(0);
+      expect(tutorDailyUsage(STUDENT_A).used).toBe(1);
+      // 對話紀錄不被這則平台說明改寫
+      expect(getTutorMessages(sessionId)).toHaveLength(2);
+    },
+  );
+
+  it("沒有教材依據時如實告知，不另找無關段落", async () => {
     const sessionId = createTutorSession(STUDENT_A, hongKongTimestamp());
     saveTutorMessage(sessionId, "user", "新界係幾時租俾英國？", hongKongTimestamp());
-    saveTutorMessage(sessionId, "assistant", "新界在1898年租借。", hongKongTimestamp(), 0, {
-      groundingStatus: "grounded",
-      sources: [
-        {
-          blockId: "blk_test_1",
-          documentLabel: "課題8 筆記.docx",
-          location: "第 42 段",
-          excerpt: "1898年，英國強迫清政府簽訂《展拓香港界址專條》，租借新界。",
-        },
-      ],
+    saveTutorMessage(sessionId, "assistant", "這是一般歷史知識。", hongKongTimestamp(), 0, {
+      groundingStatus: "not-covered",
+      sources: [],
     });
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await postChat(
-      requestFor("POST", STUDENT_A, { message: "你憑咩話係咁？有冇課本根據？", sessionId }),
-    );
-
+    const response = await postChat(requestFor("POST", STUDENT_A, { message: "有咩證據？", sessionId }));
     expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toContain("application/json");
-    const payload = (await response.json()) as {
-      reply: string;
-      evidenceCheck?: boolean;
-      sources?: { excerpt: string }[];
-    };
+    const payload = (await response.json()) as { reply: string; evidenceCheck?: boolean; sources?: unknown[] };
     expect(payload.evidenceCheck).toBe(true);
-    expect(payload.reply).toContain("《展拓香港界址專條》");
-    expect(payload.reply).toContain("第 42 段");
-    expect(payload.sources?.[0]?.excerpt).toContain("租借新界");
-    // 不重新推斷課題、不呼叫模型、不額外扣額度（種子對話本身已計 1 次）
-    expect(fetchMock).toHaveBeenCalledTimes(0);
-    expect(tutorDailyUsage(STUDENT_A).used).toBe(1);
-    // 對話紀錄不被這則平台說明改寫
-    expect(getTutorMessages(sessionId)).toHaveLength(2);
+    expect(payload.sources).toEqual([]);
+    expect(payload.reply).toContain("未能指出教材哪一段支持它");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("學伴提問共用 ai_operations 的 generation 全域時間窗上限", async () => {

@@ -167,7 +167,7 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
   if (units.length === 0) {
     throw new QuestionServiceError(
       audience === "student"
-        ? "這個分節的教材尚未開放學生使用，因此未能即時生成題目。平台不會在未確認使用授權的情況下把教材內容（或其衍生的題目）提供給學生；請改用題庫題目，或聯絡歷史科教師／管理員確認教材。"
+        ? "這個分節的教材尚未開放學生使用，因此未能即時生成題目。平台不會在未確認發布條件的情況下把教材內容（或其衍生的題目）提供給學生；請改用題庫題目，或聯絡歷史科教師／管理員確認教材。"
         : "此分節尚未匯入教材內容，無法生成有教材依據的題目。請先上載教材，或改用內建示範題庫。",
       409,
     );

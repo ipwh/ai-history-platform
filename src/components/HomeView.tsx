@@ -272,7 +272,7 @@ export function HomeView() {
           <p className="home-hero__eyebrow">{stageLabel} ・ 歷史科自學</p>
           <h1 className="home-hero__title">你好，{greetingName}</h1>
           <p className="home-hero__subtitle">
-            先選擇你的年級或課程主題，再揀課題就可以開始練習；每個課題都已按課本主題整理。
+            先選擇你的年級或課程主題，再揀課題就可以開始練習；每個課題都已按課程主題整理。
           </p>
           <div className="home-hero__stats">
             <div className="home-stat">

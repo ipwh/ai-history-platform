@@ -19,13 +19,13 @@ const SESSION_COOKIE = "hk-history-session";
 
 const QUEUE_TABS = {
   servability: "未能作答的題目",
-  provenance: "需核對課本依據的題目",
+  provenance: "需核對教材依據的題目",
   golden: "評分示例題目",
 } as const;
 
 const ITEM_LIST = 'ol[aria-label="題目清單"]';
 const SUBMIT = "確認提交";
-const CHIP_NO_EVIDENCE = "缺少原卷或課本證據";
+const CHIP_NO_EVIDENCE = "缺少原卷或教材證據";
 
 async function signIn(page: Page, role: keyof typeof UI_TEST_IDENTITIES) {
   await page.context().addCookies([

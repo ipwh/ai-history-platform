@@ -21,11 +21,7 @@ export function createOpenAiCompatibleProvider(options: OpenAiCompatibleOptions)
   const name = options.name ?? "openai-compatible";
   return {
     name,
-    label:
-      options.label ??
-      (name === "deepseek"
-        ? `DeepSeek API（${options.model}）`
-        : `OpenAI 相容 API（${options.model}）`),
+    label: options.label ?? "AI 生成功能",
     async generateQuestions(input: QuestionGenerationInput): Promise<GenerateQuestionsOutcome> {
       const completion = await requestJsonCompletion(
         options,

@@ -893,7 +893,7 @@ function GoldenPanel({
             <span className="badge badge-success">正確答案</span> {correctAnswer || "（沒有）"}
           </p>
         )}
-        <p className="text-sm text-gray-600">課本原文：{detail.evidence?.sourceExcerpt || "（沒有）"}</p>
+        <p className="text-sm text-gray-600">教材原文：{detail.evidence?.sourceExcerpt || "（沒有）"}</p>
       </article>
 
       <div className="card flex flex-col gap-3" role="group" aria-labelledby="golden-decision-title">
@@ -1109,7 +1109,7 @@ const REPAIR_CATEGORY_TEXT: Record<string, string> = {
   stem_or_option_meaning_changed: "題幹或選項的意思與原卷不同，需要對照原卷核實。",
   answer_changed: "考核答案與原卷不同，需要對照原卷核實（這一類可能影響評分）。",
   format_only: "只是格式或標點不同，內容與原卷相同，核對即可。",
-  source_missing: "找不到對應的課本段落，需要補回依據。",
+  source_missing: "找不到對應的教材段落，需要補回依據。",
   unknown: "未能自動分類，需要直接審閱題目及來源。",
 };
 
@@ -1157,7 +1157,7 @@ function ProvenancePanel({ item }: { item: QueueItem }) {
   return (
     <div className="flex flex-col gap-3">
       <Notice tone="info">
-        這一類題目需要人手核對課本依據。核對後請到「題目管理」修改題目或補回依據；
+        這一類題目需要人手核對教材依據。核對後請到「題目管理」修改題目或補回依據；
         此清單不會代替覆核，亦沒有「一按完成」的按鈕。
       </Notice>
 

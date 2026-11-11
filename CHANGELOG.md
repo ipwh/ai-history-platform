@@ -16,6 +16,36 @@
 
 ---
 
+## [未發布] — 2026-11-11（十八）：介面不再顯示 AI 供應商及模型名稱；文件與實作對齊
+
+**狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run` 172 檔 2,650 項通過／4 略過）；部署狀態見本節末。
+
+### 背景
+
+擁有者指示（2026-11-11）：把頁面上顯示的 AI 供應商及模型名稱（例如「DeepSeek API（deepseek-flash）」）移除，改為中性描述（例如「AI 生成功能正常」），然後對齊系統文件並核對文件描述的功能是否已實作或已過時。
+
+### 變更
+
+- **介面顯示**：學伴頁首狀態、管理員儀表板及 `/admin/settings` 系統狀態不再顯示 provider／模型名稱，統一顯示「AI 生成功能：正常」或「示範模式（未連接外部 AI）」。管理員儀表板「最近的 LLM 請求」清單亦不再列出 provider／模型（仍保留時間、請求類型、成功與否、錯誤類別及耗時）。
+- **提示詞及介面文字**：學伴上游錯誤訊息由「DeepSeek 服務…」改為「AI 生成服務…」；`TutorView` 的串流錯誤改為「AI 生成回應時發生錯誤」。題目生成結果的「來源」由 `AI 生成功能` 表示。
+- **技術識別碼保留**：`LLM_PROVIDER`、`LLM_MODEL`、`llm_usage_logs` 的 provider／model 欄位及 `GET /api/health` 的機器可讀欄位不變，供維運、成本及錯誤診斷；這些值不會渲染到頁面。
+- **文件修正**（核對後發現與實作不符）：
+  - README 的 AI 用量段落原寫「教師可在管理員儀表板（`/teacher`）」，實際統計在管理員儀表板 `/admin`（`AdminDashboard`）及 `GET /api/admin/system/overview`。
+  - README 兩處把系統狀態頁寫成 `/admin/system`，實際路徑是 `/admin/settings`。
+  - README 的 AI 用量問答補充「介面只顯示中性狀態，provider／模型只保留在底層記錄」。
+
+### 測試
+
+- `tests/auth.test.ts`：DeepSeek provider 設定測試改為斷言中性標籤「AI 生成功能」，仍保留端點、模型、思考模式及 token 上限的斷言。
+- `tests/tutor-web-supplement.test.ts`：外部參考提示詞斷言同步改為「不可把摘錄寫成教材或筆記的說法」。
+
+### 已知未處理（需擁有者決定）
+
+- 文件內的日期化證據（`docs/deployment-evidence-*.json`、`docs/quality/*`、`docs/sprint-*-report-*.md`）保留當時的 provider／模型名稱，因為它們是歷史紀錄；改寫會令證據與當時部署不符。
+- `docs/teacher-review/README.md` 的補題紀錄仍寫出當時使用的模型，屬可核實的歷史資料。
+
+---
+
 ## [未發布] — 2026-11-11（十七）：學生模擬（練習 94 次＋學伴 16 輪真實對答）發現並修正四個缺口；文件用語全面整理
 
 **狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run` 172 檔 2,642 項通過／4 略過、`playwright test` 25 項通過／9 略過）；**已部署**（commit `c01360b`、revision `history-self-study-00102-q94`，證據見 [deployment-evidence-2026-11-11.json](docs/deployment-evidence-2026-11-11.json)）。

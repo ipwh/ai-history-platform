@@ -94,7 +94,7 @@ function describeStartFailure(
     return {
       heading: "所選主題的教材仍未開放給學生使用",
       lines: [
-        "教師仍在確認教材的使用授權及內容，因此系統不會用這些教材出題。",
+        "教師仍在確認教材的發布條件及內容，因此系統不會用這些教材出題。",
         "你可以：改用「使用題庫題目」（內建示範題目及教師已核可的題目）、改選其他主題，或請歷史科教師開放教材。",
       ],
       canSwitchToBank: attempt.questionSource === "ai",
@@ -518,7 +518,7 @@ export function PracticeSetupForm() {
             ))}
           </div>
           <p className="text-meta">
-            一次只練一種題型。選擇題可調節難度；填充題以課本關鍵詞作答，不設難度。
+            一次只練一種題型。選擇題可調節難度；填充題以教材關鍵詞作答，不設難度。
             填充題提交後會由 AI 按意思批改，用字不同不會直接判錯。
           </p>
         </div>
@@ -720,5 +720,4 @@ export function PracticeSetupForm() {
     </div>
   );
 }
-
 

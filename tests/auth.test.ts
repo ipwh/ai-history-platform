@@ -272,7 +272,8 @@ describe("LLM provider 設定", () => {
       const resolved = llm.resolveProvider();
       expect(resolved.provider.name).toBe("deepseek");
       expect(resolved.demoMode).toBe(false);
-      expect(resolved.provider.label).toContain("DeepSeek");
+      // 介面只顯示中性的「AI 生成功能」，不可把供應商或模型名稱帶到頁面
+      expect(resolved.provider.label).toBe("AI 生成功能");
     } finally {
       delete process.env.LLM_PROVIDER;
       delete process.env.DEEPSEEK_API_KEY;

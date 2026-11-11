@@ -210,18 +210,7 @@ function hasSpecificHistoryAnchor(
   if (hasHistoricalYearSignal(normalized)) {
     return true;
   }
-  const lexiconTerms = HISTORY_TERM_GROUPS.flatMap((group) => [
-    group.canonical,
-    ...group.aliases,
-  ]);
-  if (
-    lexiconTerms.some((term) => {
-      const key = normalizeTutorQuery(term);
-      return key.length >= 2 && normalized.includes(key);
-    })
-  ) {
-    return true;
-  }
+  if (containsHistoryLexiconTerm(normalized)) return true;
   // 錯一個字的專名（「凡爾塞條約」「希特立」）仍算有具體歷史錨點，
   // 否則會先被判定為「含混」而要求澄清（2026-11-02）。
   if (findLooseHistoryTerms(normalized).length > 0) return true;
@@ -237,6 +226,15 @@ function hasSpecificHistoryAnchor(
     }
   }
   return false;
+}
+
+function containsHistoryLexiconTerm(normalized: string): boolean {
+  return HISTORY_TERM_GROUPS.some((group) =>
+    [group.canonical, ...group.aliases].some((term) => {
+      const key = normalizeTutorQuery(term);
+      return key.length >= 2 && normalized.includes(key);
+    }),
+  );
 }
 
 /**
@@ -290,6 +288,7 @@ export function hasExplicitVagueness(raw: string): boolean {
  */
 const EVIDENCE_QUESTION_PATTERNS: RegExp[] = [
   /有(?:冇|沒有|無)(?:課本|教材|根據|依據|出處|來源|證據)/,
+  /(?:是否有|有沒有|有無|有甚麼|有什麼|有咩|有乜)(?:資料|教材|課本)?(?:根據|依據|出處|來源|證據)/,
   /(?:課本|教材|根據|依據|出處|來源|證據)(?:係|是)?(?:咩|什麼|甚麼|邊|哪)/,
   /(?:邊|哪)(?:一)?(?:段|頁|篇|句)(?:教材|課本|課文)/,
   /你(?:憑|根據)(?:咩|什麼|甚麼|乜)/,
@@ -303,7 +302,7 @@ export function isTutorEvidenceQuestion(raw: string): boolean {
   if (!EVIDENCE_QUESTION_PATTERNS.some((pattern) => pattern.test(normalized))) return false;
   // 句中另有具體歷史內容（人名、事件、年份）時，視為新的歷史提問。
   if (hasHistoricalYearSignal(normalized)) return false;
-  if (canonicalHistoryTerm(normalized) !== null) return false;
+  if (containsHistoryLexiconTerm(normalized)) return false;
   return true;
 }
 

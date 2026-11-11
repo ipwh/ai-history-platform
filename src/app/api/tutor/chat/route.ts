@@ -216,8 +216,8 @@ function buildEvidenceReply(previous: TutorMessage): string {
   if (previous.sources.length === 0) {
     return [
       "上一則回覆沒有引用校本教材段落，屬一般歷史知識（回覆中已標明「未找到教材依據」）。",
-      "因此我未能指出課本哪一段支持它，也不會臨時引用其他課題的教材來充數。",
-      "如需核實，請以課本及科任老師所教為準；你也可以把課本相關段落貼出來，我再據此討論。",
+      "因此我未能指出教材哪一段支持它，也不會臨時引用其他課題的教材來充數。",
+      "如需核實，請以教材及科任老師所教為準；你也可以提供相關內容，我再據此討論。",
     ].join("\n\n");
   }
   const lines = previous.sources.map(
@@ -585,7 +585,7 @@ export async function POST(request: Request) {
       llm.model === null
     ) {
       throw new ApiRouteError(
-        "DeepSeek 服務尚未完成設定，請聯絡平台管理員（TUTOR_LLM_NOT_CONFIGURED）",
+        "AI 生成服務尚未完成設定，請聯絡平台管理員（TUTOR_LLM_NOT_CONFIGURED）",
         503,
       );
     }
@@ -594,7 +594,7 @@ export async function POST(request: Request) {
       endpoint = buildDeepSeekEndpoint(llm.baseUrl);
     } catch {
       throw new ApiRouteError(
-        "DeepSeek 服務設定不完整，請聯絡平台管理員（TUTOR_LLM_NOT_CONFIGURED）",
+        "AI 生成服務設定不完整，請聯絡平台管理員（TUTOR_LLM_NOT_CONFIGURED）",
         503,
       );
     }
@@ -753,18 +753,18 @@ export async function POST(request: Request) {
       if (opened.kind === "error") {
         if (opened.errorCode === "network" || opened.errorCode === "timeout" || opened.errorCode === "aborted") {
           throw new ApiRouteError(
-            "DeepSeek 服務暫時無法連線，請稍後再試（TUTOR_LLM_UNAVAILABLE）",
+            "AI 生成服務暫時無法連線，請稍後再試（TUTOR_LLM_UNAVAILABLE）",
             503,
           );
         }
         if (opened.errorCode === "missing-api-key") {
           throw new ApiRouteError(
-            "DeepSeek 服務尚未完成設定，請聯絡平台管理員（TUTOR_LLM_NOT_CONFIGURED）",
+            "AI 生成服務尚未完成設定，請聯絡平台管理員（TUTOR_LLM_NOT_CONFIGURED）",
             503,
           );
         }
         throw new ApiRouteError(
-          "DeepSeek 暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）",
+          "AI 生成服務暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）",
           503,
         );
       }
@@ -815,29 +815,29 @@ export async function POST(request: Request) {
 
           if (result.errorCode === "invalid-response" || result.errorCode === "aborted") {
             failureMessage =
-              "DeepSeek 串流中斷或格式不正確，請稍後重試（TUTOR_LLM_STREAM_ERROR）";
+              "AI 生成服務串流中斷或格式不正確，請稍後重試（TUTOR_LLM_STREAM_ERROR）";
             break;
           }
           if (result.errorCode === "timeout" || result.errorCode === "network") {
-            failureMessage = "DeepSeek 服務暫時無法連線，請稍後再試（TUTOR_LLM_UNAVAILABLE）";
+            failureMessage = "AI 生成服務暫時無法連線，請稍後再試（TUTOR_LLM_UNAVAILABLE）";
             break;
           }
           if (result.errorCode === "rate-limited" || result.errorCode === "server-error") {
             failureMessage =
-              "DeepSeek 暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）";
+              "AI 生成服務暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）";
             break;
           }
 
           // 空白回應：只有在完全沒有送出任何文字時才可重試（否則客戶端已看到部分內容）
           if (sentAnyText || attempt >= maxAttempts || cancelled) {
-            failureMessage = "DeepSeek 回傳了空白回應，請稍後重試（TUTOR_LLM_EMPTY_RESPONSE）";
+            failureMessage = "AI 生成服務回傳了空白回應，請稍後重試（TUTOR_LLM_EMPTY_RESPONSE）";
             break;
           }
           try {
             upstream = await openUpstream();
           } catch {
             failureMessage =
-              "DeepSeek 暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）";
+              "AI 生成服務暫時未能處理你的問題，請稍後再試（TUTOR_LLM_UPSTREAM_ERROR）";
             break;
           }
         }

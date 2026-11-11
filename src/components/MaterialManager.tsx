@@ -850,7 +850,7 @@ function DistributionPanel({
       className="flex flex-col gap-2 rounded-lg p-3 text-sm"
       style={{ background: "var(--accent-soft)" }}
     >
-      <h3 className="font-semibold">教材教材授權閘門：學生閱讀權限</h3>
+      <h3 className="font-semibold">教材發布確認：學生閱讀權限</h3>
 
       {isQuestionBank ? (
         <p className="text-gray-700">
@@ -1095,4 +1095,3 @@ function BlockPreview({
     </div>
   );
 }
-

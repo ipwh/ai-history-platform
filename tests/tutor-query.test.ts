@@ -4,6 +4,7 @@ import {
   buildClarifyCandidates,
   hasWeakHistorySignal,
   isClearlyNonHistoryTutorQuery,
+  isTutorEvidenceQuestion,
   isUnclearTutorQuery,
   normalizeTutorQuery,
 } from "@/server/services/tutor-query";
@@ -63,6 +64,20 @@ const curriculum: TutorCurriculumIndex = {
 };
 
 describe("學伴提問正規化與澄清候選", () => {
+  it.each(["有甚麼證據？", "有咩證據？", "有什麼依據？", "有沒有資料根據？"])(
+    "辨識上一則回覆的依據追問：%s",
+    (query) => {
+      expect(isTutorEvidenceQuestion(query)).toBe(true);
+    },
+  );
+
+  it.each(["凡爾賽條約有甚麼證據？", "1898年有甚麼證據？"])(
+    "含具體歷史錨點的問題不當作單純依據追問：%s",
+    (query) => {
+      expect(isTutorEvidenceQuestion(query)).toBe(false);
+    },
+  );
+
   it("模擬語料 fixture 至少涵蓋 25 條，並有明確分類", () => {
     expect(TUTOR_COLLOQUIAL_UTTERANCES.length).toBeGreaterThanOrEqual(25);
     expect(new Set(TUTOR_COLLOQUIAL_UTTERANCES.map((utterance) => utterance.category))).toEqual(

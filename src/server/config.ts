@@ -873,9 +873,9 @@ export function isUnsafeDemoModeAllowed(): boolean {
 
 export const LLM_PROVIDER_LABELS: Record<LlmProviderName, string> = {
   mock: "本地示範生成（不需要 API key）",
-  "openai-compatible": "OpenAI 相容 API",
-  deepseek: "DeepSeek API",
-  gemini: "Google Gemini API",
+  "openai-compatible": "AI 生成功能",
+  deepseek: "AI 生成功能",
+  gemini: "AI 生成功能",
 };
 
 export const OCR_PROVIDER_LABELS: Record<OcrProviderName, string> = {

@@ -121,8 +121,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail?: string | null }) {
             資料庫：{status.database.driver}（{status.database.status === "ok" ? "連線正常" : "無法連線"}）
           </li>
           <li>
-            LLM：{status.llm.providerLabel}
-            {status.llm.model ? `｜模型 ${status.llm.model}` : ""}
+            AI 生成功能：{status.llm.configured ? "正常" : "示範模式（未連接外部 AI）"}
           </li>
           <li>AI 語意批改：{status.llm.aiGrading ? "已啟用" : "未啟用（會回退字詞比對／自我檢查）"}</li>
           <li>OCR：{status.ocr.enabled ? status.ocr.providerLabel : "已停用"}</li>
@@ -252,8 +251,8 @@ export function AdminDashboard({ adminEmail }: { adminEmail?: string | null }) {
             <ul className="mt-1 flex flex-col gap-1 text-gray-600">
               {observability.recentLlm.map((log) => (
                 <li key={log.id}>
-                  {formatDateTime(log.createdAt)}｜{LLM_REQUEST_TYPE_LABELS[log.requestType]}｜{log.provider}
-                  {log.model ? `（${log.model}）` : ""}｜{log.success ? "成功" : `失敗（${log.errorType ?? "未知"}）`}
+                  {formatDateTime(log.createdAt)}｜{LLM_REQUEST_TYPE_LABELS[log.requestType]}｜AI 生成功能
+                  ｜{log.success ? "成功" : `失敗（${log.errorType ?? "未知"}）`}
                   ｜{log.durationMs} ms
                 </li>
               ))}

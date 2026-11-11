@@ -125,8 +125,7 @@ export function resolveGrader(): AnswerGrader | null {
   return createChatGrader({
     ...shared,
     providerName: provider,
-    label:
-      provider === "deepseek" ? `DeepSeek API（${model}）` : `OpenAI 相容 API（${model}）`,
+    label: "AI 語意批改",
   });
 }
 

@@ -19,8 +19,8 @@ export const QUEUE_META: Record<WorkbenchQueue, QueueMeta> = {
     hint: "題目本身有結構問題（例如沒有記錄正確答案、選項重複），學生即使理解內容也無法作答。請審閱後選擇處理方式。",
   },
   provenance: {
-    label: "需核對課本依據的題目",
-    hint: "這些題目的課本依據需要人手核對。點選題目後會顯示題目內容及來源資料，並可直接前往題目管理修改或補回依據。",
+    label: "需核對教材依據的題目",
+    hint: "這些題目的教材依據需要人手核對。點選題目後會顯示題目內容及來源資料，並可直接前往題目管理修改或補回依據。",
   },
   golden: {
     label: "評分示例題目",
@@ -68,7 +68,7 @@ export const SERVABILITY_DECISIONS: DecisionMeta[] = [
   {
     value: "request_more_evidence",
     label: "要求補充證據",
-    effect: "題目退回草稿，待補回原卷或課本證據後再處理；期間學生不會看到此題。",
+    effect: "題目退回草稿，待補回原卷或教材證據後再處理；期間學生不會看到此題。",
   },
   {
     value: "return_to_draft",
@@ -114,10 +114,10 @@ export function decisionMeta(value: string): DecisionMeta | null {
  * 老師即使完全不打字，選一句就可以提交（按鈕會顯示實際會記錄的文字）。
  */
 export const REASON_CHIPS: string[] = [
-  "缺少原卷或課本證據",
+  "缺少原卷或教材證據",
   "題幹資料不完整",
   "答案有爭議，需歷史科教師再議",
-  "已對照課本修正題目",
+  "已對照教材修正題目",
   "此題不需保留",
   "系統判斷有誤，題目並無問題",
 ];

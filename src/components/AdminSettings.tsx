@@ -130,8 +130,9 @@ export function AdminSettings() {
             資料庫：{status.database.driver}（
             {status.database.status === "ok" ? "連線正常" : "無法連線"}）
           </li>
-          <li>LLM provider：{status.llm.providerLabel}</li>
-          <li>LLM 模型：{status.llm.model ?? "（本地示範生成）"}</li>
+          <li>
+            AI 生成功能：{status.llm.configured ? "正常" : "示範模式（未連接外部 AI）"}
+          </li>
           <li>AI 語意批改：{status.llm.aiGrading ? "已啟用" : "未啟用"}</li>
           <li>OCR：{status.ocr.enabled ? `${status.ocr.providerLabel}（${status.ocr.languages}）` : "已停用"}</li>
           <li>

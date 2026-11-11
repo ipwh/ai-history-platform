@@ -739,7 +739,7 @@ describe("學伴教材依據：提示詞", () => {
   it("沒有教材片段時要求模型明說找不到，並禁止斷言課本沒有提及", () => {
     const prompt = groundingModule.buildTutorSystemPrompt({ grounding: empty });
     expect(prompt).toContain("我在教材中找不到這部分的內容");
-    expect(prompt).toContain("不可斷言課本「沒有提及」");
+    expect(prompt).toContain("不可斷言教材「沒有提及」");
     expect(prompt).not.toContain("【教材片段】以下是從本校教材檢索到的相關片段");
   });
 

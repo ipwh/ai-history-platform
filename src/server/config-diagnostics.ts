@@ -493,7 +493,7 @@ export function describeConfigIssues(): ConfigIssue[] {
         code: "tutor-web-search-fallback-incomplete",
         message:
           `已設定後備搜尋來源（${fallback.provider}）但缺少 API key：主要來源失效時不會有後備。` +
-          "（DeepSeek 會沿用 DEEPSEEK_API_KEY／LLM_API_KEY。）",
+          "（後備來源會沿用 AI 服務已設定的 API key。）",
       });
     }
     if (config.webSupplement.searchEndpoint === null && !providerReady && !fallbackReady) {
@@ -539,8 +539,8 @@ export function describeConfigIssues(): ConfigIssue[] {
       level: "info",
       code: "tutor-web-supplement-active",
       message:
-        "已開啟學伴外部參考：只會抓取白名單網站的短摘錄，介面以「🌐 外部參考（非課本・非考試標準）」與教材分開標示。" +
-        "外部網站的史觀及用詞可能與課本不同，不屬評卷標準；校本教材仍是唯一課本依據。",
+        "已開啟學伴外部參考：只會抓取白名單網站的短摘錄，介面以「🌐 外部參考（非教材・非考試標準）」與教材分開標示。" +
+        "外部網站的史觀及用詞可能與教材不同，不屬評卷標準；校本教材仍是主要學習依據。",
     });
   }
 
