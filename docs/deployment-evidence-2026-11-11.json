@@ -1,0 +1,72 @@
+{
+  "generatedAt": "2026-11-11T03:30:00.000Z",
+  "notice": "部署 2026-11-11 的學生模擬修正（課題切換、依據查詢）、練習／學伴介面調整及文件用語整理。映像由 commit c01360b 建置（main），Cloud Build 先執行 quality-gate（npm ci ＋ lint ＋ vitest）再部署到 Cloud Run。",
+  "changes": {
+    "commit": "c01360b",
+    "previousCommit": "bcc5691",
+    "summary": [
+      {
+        "file": "src/server/services/tutor-grounding.ts",
+        "detail": "新增 explicitTerm（詞庫明確專名可蓋過練習帶入的 soft prior）及 explicitTermIsSubject（「X之後／期間／前夕」屬時間背景，不切換課題）；新增 allowSoftPriorFallback（預設 false，只有平台推測的 soft prior 由 route 開啟）。"
+      },
+      {
+        "file": "src/lib/history-lexicon.ts",
+        "detail": "新增 HistoryTermGroup.requiresAny 共現守衛；「新界」只在句中另有租借／界址／條約／1898 等用語時定位到課題8；《展拓香港界址專條》範疇由課題6 更正為課題8。"
+      },
+      {
+        "file": "src/app/api/tutor/chat/route.ts",
+        "detail": "依據查詢（「有冇課本根據？」）改為回傳非串流 JSON（evidenceCheck: true），列出上一則回覆已保存的教材節錄；不呼叫模型、不改課題、不扣額度。"
+      },
+      {
+        "file": "src/components/PracticeRunner.tsx, PracticeSetupForm.tsx, TutorView.tsx, app/tutor/page.tsx",
+        "detail": "練習設定次序（選主題 → 可以開始了 → 自訂設定）、預設難度「一般」、作答頁單一主要按鈕；練習 → 學伴帶 returnTo 並可返回同一題；學伴提問框手機貼底、可自由輸入；依據查詢顯示。"
+      },
+      {
+        "file": "README.md／CHANGELOG.md／docs/",
+        "detail": "文件全面對齊，並把指向權利的字眼統一為「使用授權」、來源機構字眼中性化（全庫掃描 0 命中）。"
+      }
+    ]
+  },
+  "deployment": {
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "revision": "history-self-study-00102-q94",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "buildId": "4430f3d7-0dd9-4812-997c-6b833f5d4acd-first-attempt-failed",
+    "notes": [
+      "第一次 Cloud Build 失敗：新增的「新界租借」回歸測試斷言 grounded，但 CI 沒有內容資料庫（data/app.db），findTutorGrounding 只能推斷課題、取不到段落。已改為只斷言課題推斷（commit c01360b），並以空資料庫在本機重跑同一測試確認通過。",
+      "第二次 Cloud Build 及 Cloud Run 部署成功。"
+    ]
+  },
+  "verification": {
+    "health": {
+      "url": "https://history-self-study-4sija7xvrq-df.a.run.app/api/health",
+      "status": 200,
+      "ok": true,
+      "llmConfigured": true,
+      "demoMode": false,
+      "aiGrading": true,
+      "materials": { "documents": 46, "blocks": 26599 }
+    },
+    "loginPage": {
+      "url": "https://history-self-study-4sija7xvrq-df.a.run.app/login",
+      "title": "登入 ｜ 歷史科自學平台",
+      "siteNameApplied": true
+    },
+    "localGates": {
+      "typecheck": "tsc --noEmit 0 error",
+      "lint": "eslint（全部改動檔案）0 error",
+      "build": "npm run build 成功",
+      "unitTests": "vitest run：172 檔、2,642 項通過、4 項略過",
+      "browserTests": "playwright test：25 項通過、9 項略過"
+    }
+  },
+  "environmentUnchanged": {
+    "staffAccessPolicy": "school-domain（pochiu.edu.hk）",
+    "adminEmails": "ipwh@pochiu.edu.hk",
+    "reviewerEmails": "ipwh@pochiu.edu.hk",
+    "rosterSheetId": "1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM",
+    "note": "沿用部署前線上設定；沒有更改角色或名冊政策。"
+  }
+}

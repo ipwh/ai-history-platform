@@ -18,7 +18,7 @@
 
 ## [未發布] — 2026-11-11（十七）：學生模擬（練習 94 次＋學伴 16 輪真實對答）發現並修正四個缺口；文件用語全面整理
 
-**狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run` 172 檔 2,642 項通過／4 略過、`playwright test` 25 項通過／9 略過）；已 commit／push／部署（見本節末）。
+**狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run` 172 檔 2,642 項通過／4 略過、`playwright test` 25 項通過／9 略過）；**已部署**（commit `c01360b`、revision `history-self-study-00102-q94`，證據見 [deployment-evidence-2026-11-11.json](docs/deployment-evidence-2026-11-11.json)）。
 
 ### 背景
 
@@ -86,7 +86,7 @@
 
 ## [未發布] — 2026-11-11（十六）：練習 → 學伴可返回該題、可自行輸入問題；Gemini Notebook（NotebookLM）引用分析
 
-**狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run` tutor／auth 相關 40 項通過、`playwright test`（全部 UI 測試）25 項通過／9 項略過）；**未部署**。
+**狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run` tutor／auth 相關 40 項通過、`playwright test`（全部 UI 測試）25 項通過／9 項略過）；**已部署**（連同第十七節）。
 
 ### 背景
 
@@ -132,7 +132,7 @@
 
 ## [未發布] — 2026-11-11（十五）：平台改名「歷史科自學平台」、難度用語改為「一般」、練習設定次序及作答頁按鈕引導
 
-**狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run tests/practice-difficulty.test.ts tests/question-bank-difficulty.test.ts tests/prompt.test.ts tests/practice-flow.test.ts tests/tutor-prompt-structure.test.ts` 59 項通過、`playwright test tests/ui/student-practice.spec.ts tests/ui/ipad-layout.spec.ts` 14 項通過）；**未部署**。
+**狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run tests/practice-difficulty.test.ts tests/question-bank-difficulty.test.ts tests/prompt.test.ts tests/practice-flow.test.ts tests/tutor-prompt-structure.test.ts` 59 項通過、`playwright test tests/ui/student-practice.spec.ts tests/ui/ipad-layout.spec.ts` 14 項通過）；**已部署**（連同第十七節）。
 
 ### 背景
 
