@@ -16,7 +16,7 @@
 | --- | --- |
 | 史實正確性 | 兩題 P1：1 題**已確認部分錯誤**（太平洋戰爭年份），1 題**成立**但教材依據不足 |
 | 教材來源追溯 | 1,384 題無段落 ID；42 題中 17 題所引段落已失效（`NOT VERIFIED`→已定位問題） |
-| 版權與發布權利 | 24／46 份教材**未核實**，而 1,372 題衍生自其中 → `VERIFIED OPEN` |
+| 使用授權與發布權利 | 24／46 份教材**未核實**，而 1,372 題衍生自其中 → `VERIFIED OPEN` |
 | 教師覆核 | 517 題現行版本已覆核；1,372 題只有舊版批准（**內容已改動**）；66 題無任何證據 |
 | 程式及權限 | 權限邊界**符合文件政策**（見 §7）；已補 2 個唯讀稽核工具；無新缺陷 |
 | Release gates | 2 FAIL、3 POLICY_PENDING、1 WARN、1 INSUFFICIENT_EVIDENCE（見 §8） |
@@ -34,7 +34,7 @@
 | 兩題 P1 | 讀取 `questions` 全文、`question_reviews`、`question_mutations`、所引 `material_blocks` 原文 | 本機快照 ＋ 同日正式備份 |
 | 42 題待確認 | 逐題讀取題幹／選項／答案／解釋／所引 block／警告，並以規則標籤 | 同上 |
 | 1,438 題缺口 | `questionFingerprint` 比對覆核指紋；交叉核對 `question_content_flags` | 新工具 `audit-approval-drift` |
-| 教材版權 | `material_documents` 的 `student_distribution`／`rights_confirmed_*`／`content_reviewed_*` | 同上 |
+| 教材使用授權 | `material_documents` 的 `student_distribution`／`rights_confirmed_*`／`content_reviewed_*` | 同上 |
 | 史實（外部） | 美國國家檔案館、HISTORY.com、中國外交部、Wikipedia（兩來源交叉） | 連結見 P1 報告 |
 
 ---
@@ -242,7 +242,7 @@
 
 1. 先做第 1–3 項（題目層面、可控），令 `question-isolation` 有實質進展；
 2. 第 4 項政策簽署前，不要動 1,372 題；
-3. 第 7 項版權證據是部署的硬性前提；
+3. 第 7 項使用授權證據是部署的硬性前提；
 4. 部署前必須：commit → push → 遠端 CI 綠燈 → 建立回滾備份 → 才可執行。
 
 ---
@@ -254,6 +254,6 @@
 | 本文件 | Sprint 27 總結報告 |
 | [sprint-27-p1-fact-check-2026-10-23.md](./teacher-review/sprint-27-p1-fact-check-2026-10-23.md) | 兩題 P1 逐項史實核查 |
 | [sprint-27-held-42-2026-10-23.md](./teacher-review/sprint-27-held-42-2026-10-23.md) | 42 題逐題標籤與原因 |
-| [sprint-27-evidence-gaps-2026-10-23.md](./teacher-review/sprint-27-evidence-gaps-2026-10-23.md) | 1,438 題重新分類 ＋ 46 份教材版權 |
+| [sprint-27-evidence-gaps-2026-10-23.md](./teacher-review/sprint-27-evidence-gaps-2026-10-23.md) | 1,438 題重新分類 ＋ 46 份教材使用授權 |
 | [sprint-27-batch-approval-policy-draft.md](./teacher-review/sprint-27-batch-approval-policy-draft.md) | 批次覆核政策草案（待簽署） |
 | `npm run audit:governance-evidence` / `npm run audit:approval-drift` | 可重現的唯讀稽核工具 |

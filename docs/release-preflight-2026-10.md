@@ -21,7 +21,7 @@
 | 2 | **本機資料庫完整性** | 本機資料庫可用、結構已升級、沒有未套用的 migration | ✅ **已完成**（見第 3 節） | `PRAGMA integrity_check`、`schema_migrations`（20 個 migration，最後 `0020`） |
 | 3 | **正式資料庫快照** | 正式環境實際的資料內容（題目、教材、覆核） | ✅ **已驗證（2026-10-17）** — 已下載並核對 SHA-256，並按擁有者指示以本機快照取代（見第 10 節） | 第 10.1／10.2 節 |
 | 4 | **教材版本一致** | 正式環境是否已用 2026-10-16 的新版 12 課教材 | ✅ **已同步（2026-10-17）** — 新映像檔包含 2026-10 教材，資料庫亦已由本機快照取代 | 第 10 節 |
-| 5 | **版權／擁有者授權** | 是否有權向學生發布這些教材 | ✅ **已決定**（2026-10-15，2026-10-16 沿用）— 12 份課本文件逐份開放 | [owner-material-openings.json](teacher-review/owner-material-openings.json) |
+| 5 | **使用授權／擁有者授權** | 是否有權向學生發布這些教材 | ✅ **已決定**（2026-10-15，2026-10-16 沿用）— 12 份課本文件逐份開放 | [owner-material-openings.json](teacher-review/owner-material-openings.json) |
 | 6 | **歷史科教師覆核** | 題目的史實、答案、選項及解釋是否適合學生 | ⚠️ **部分完成** — 2026-10-17 12:11–12:16（HKT）擁有者 `ipwh@pochiu.edu.hk` 已在平台記錄 **17 筆覆核通過**（各題 rev 3，經登入工作階段驗證）；`golden-questions.v1.json` 仍為 `pending-review`、0 條，8 題覆核套件仍全部待覆核 | [generated-question-sample-2026-10.json](teacher-review/generated-question-sample-2026-10.json)（8 題套件，全部待覆核） |
 | 7 | **部署及部署後驗證** | 正式服務是否真的按預期運作 | ✅ **已執行（2026-10-17）** — revision `history-self-study-00026-yik`，100% 流量；`/api/health` 回報 `ok:true`、`restore:"restored"`、備份啟用且無錯誤 | 第 10.2 節 |
 
@@ -158,7 +158,7 @@ node scripts/e2e-flow.mjs --start            # 端對端（HTTP）：以**隔離
 
 - [ ] 擁有者書面批准：教材開放範圍、題目內容改動（如 36 條處理及 7 條段號修正）。
 - [ ] 歷史科教師覆核：至少一批真實題目的覆核紀錄（目前 0 條），並在平台內留下具名紀錄。
-- [ ] 版權／授權確認：12 份課本向學生發布的授權仍然有效（見 `owner-material-openings.json`）。
+- [ ] 使用授權／授權確認：12 份課本向學生發布的授權仍然有效（見 `owner-material-openings.json`）。
 
 ### 8.8 回滾與部署後驗證
 
@@ -190,7 +190,7 @@ node scripts/e2e-flow.mjs --start            # 端對端（HTTP）：以**隔離
 | E7 | 覆核工作流程驗證 | 以未登入瀏覽器 `POST /api/teacher/questions/{id}/review` 的 **HTTP 403** 回應；資料庫內沒有新增示範身分紀錄；以教師帳戶提交一次覆核時介面帶同版本（`expectedRevision`），若題目已被修改則顯示 409 | 獲授權操作員 | **空白**（本機測試已覆蓋，正式未驗證） |
 | E8 | 已發布題目風險的處理 | `q_058eda0378394d0f` 的最終狀態（`disabled`／已改寫並重新覆核／維持 published 並附理由）及作出決定的具名者與時間 | 歷史科教師／擁有者 | **未決定**（風險報告：[published-question-containment-2026-10.json](teacher-review/published-question-containment-2026-10.json)） |
 | E9 | 歷史科教師覆核證據 | 平台內具名覆核紀錄（覆核者、日期、版本、決定、理由）；離線套件的 `reviewerDecision`／`reviewer`／`reviewedAt` 必須與平台紀錄一致 | 歷史科教師 | **17 筆**（[human-vs-machine-calibration-2026-10.json](teacher-review/human-vs-machine-calibration-2026-10.json) 的 `calibrationStatus = unmeasured`） |
-| E10 | 批准文件 | 擁有者對教材開放範圍及題目改動的書面批准；版權／授權確認；7 條段號修正與 36 條隊列動作是否包含在批准範圍之內 | 擁有者／科主任 | **未取得**（清單內全部 `applied:false`、`authorisation.obtained:false`） |
+| E10 | 批准文件 | 擁有者對教材開放範圍及題目改動的書面批准；使用授權／授權確認；7 條段號修正與 36 條隊列動作是否包含在批准範圍之內 | 擁有者／科主任 | **未取得**（清單內全部 `applied:false`、`authorisation.obtained:false`） |
 | E11 | 備份與部署次序 | 快照上載時間戳、部署 revision 名稱及時間戳（部署必須晚於上載），以及覆蓋同一備份物件的風險確認 | 獲授權操作員（第二人核對） | **空白**（未執行） |
 | E12 | 回滾與部署後驗證 | 回滾位置（bucket 物件名稱、上一個 revision）、部署後教師／學生／管理員三類帳戶的抽查結果、5xx 檢查結果 | 獲授權操作員 | **空白**（未執行） |
 
@@ -253,4 +253,4 @@ node scripts/e2e-flow.mjs --start            # 端對端（HTTP）：以**隔離
 
 - **歷史科教師覆核**：平台上只有 27 筆覆核紀錄（17 筆具名），相對 471 條已發布題目仍屬小樣本；8 題（現為 5 題）覆核套件全部待覆核，校準仍為 `unmeasured`。
 - **瀏覽器自動化**：專案仍沒有支援的瀏覽器測試框架，未執行。
-- **E1–E12 的正式環境細節**：本次已取得快照身分／完整性（E1、E2）、結構版本（E4）及部署次序（E11、E12）的實際輸出；其餘（教師名冊實際登入、版權批准文件等）仍待擁有者／科主任完成。
+- **E1–E12 的正式環境細節**：本次已取得快照身分／完整性（E1、E2）、結構版本（E4）及部署次序（E11、E12）的實際輸出；其餘（教師名冊實際登入、使用授權批准文件等）仍待擁有者／科主任完成。

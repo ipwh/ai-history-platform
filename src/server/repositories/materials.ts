@@ -348,7 +348,7 @@ export function getBlocksByIds(blockIds: string[]): MaterialBlock[] {
  *   - **不**剖析整份 `MaterialBlock`（`table_json` 的 zod 驗證對上萬段教材而言是多餘開銷），
  *     只回傳比對及顯示所需的欄位。
  *
- * 版權確認、教師版內容覆核等其餘可見性規則由呼叫端以
+ * 使用授權確認、教師版內容覆核等其餘可見性規則由呼叫端以
  * `listStudentDistributableDocumentIds()` 再篩一次（見 services/tutor-grounding.ts）。
  */
 export interface TutorCandidateBlock {
@@ -606,7 +606,7 @@ export function setDocumentTopic(documentId: string, topicId: string | null): vo
 /**
  * 設定學生可否在平台內閱讀這份教材的內容。
  *
- * 預設為不可（見 migration 0011）：教材可能受版權限制，而本專案沒有授權紀錄，
+ * 預設為不可（見 migration 0011）：教材可能受使用授權限制，而本專案沒有授權紀錄，
  * 因此必須由管理員明確確認後才開啟。關閉時立即生效（下次讀取即不再顯示）。
  */
 export function setDocumentStudentDistribution(documentId: string, allowed: boolean): void {
@@ -618,7 +618,7 @@ export function setDocumentStudentDistribution(documentId: string, allowed: bool
 /**
  * 記錄教材發布所需的兩項確認（Sprint 5）。
  *
- * `rights`（版權／發行權）與 `contentSafety`（內容安全覆核）是**不同**的問題，
+ * `rights`（使用授權／發行權）與 `contentSafety`（內容安全覆核）是**不同**的問題，
  * 必須分開記錄：有發行權不等於內容安全（教師版文件兩者兼有），內容安全亦不等於
  * 有發行權。兩者都保存「誰在何時確認」，令「這份文件為何可以給學生看」可以逐項
  * 回答，而不是只看一個布林值。
@@ -776,7 +776,7 @@ interface StudentVisibilityFields {
  * 四個條件缺一不可：
  *   1. 不是校內試題文件（`kind = 'question-bank'`：題目與答案，永不列為學生讀物）；
  *   2. 管理員已把 `student_distribution` 設為 1（想開放）；
- *   3. 留有版權／發行權確認（`rights_confirmed_at`，遷移 0017）；
+ *   3. 留有使用授權／發行權確認（`rights_confirmed_at`，遷移 0017）；
  *   4. 教師版文件（檔名標示）另需內容安全覆核（`content_reviewed_at`）。
  *
  * 第 3、4 項在**讀取時**同樣檢查，因此 0017 之前已開啟、或繞過 API 直接寫入、
@@ -806,7 +806,7 @@ export function documentIsStudentVisible(document: MaterialDocument): boolean {
  *
  * 用途是診斷「為甚麼學生端顯示沒有教材」：`documents`／`blocks` 為 0 即代表此資料庫
  * 從未匯入教材；`studentVisibleDocuments` 為 0 則代表已匯入但未開放給學生
- * （未確認版權，或教師版文件未完成內容覆核）。不含檔名、內容或任何使用者資料。
+ * （未確認使用授權，或教師版文件未完成內容覆核）。不含檔名、內容或任何使用者資料。
  */
 export function materialLibrarySummary(): {
   documents: number;
@@ -830,7 +830,7 @@ export function materialLibrarySummary(): {
 /**
  * 可向學生顯示的文件 ID（學生端唯一的來源判斷）。
  *
- * 只設定 `student_distribution = 1` 而**沒有**留下版權確認（教師版文件另需內容覆核）
+ * 只設定 `student_distribution = 1` 而**沒有**留下使用授權確認（教師版文件另需內容覆核）
  * 的文件不會列入；見 documentIsStudentVisible 的說明。
  */
 export function listStudentDistributableDocumentIds(): Set<string> {
@@ -893,11 +893,11 @@ function tableCellTexts(tableJson: string | null): string[] {
  * 每個分節「學生實際可用來出題」的教材段落數。
  *
  * 與 [buildMaterialUnits](../services/material-units.ts) 的 `audience: "student"` 使用同一套條件：
- * 文件須符合 `isStudentVisible`（已開放、已確認版權，教師版另需內容覆核）、非標題、
+ * 文件須符合 `isStudentVisible`（已開放、已確認使用授權，教師版另需內容覆核）、非標題、
  * 圖片須有 OCR 文字、段落不含教師專用字樣，亦不可屬非課文內容（練習題目、評分參考、
  * 圖片佔位標記、零散數字，見 [content-policy](../materials/content-policy.ts)）。
  *
- * 學生選了沒有任何可用段落的主題時，即時出題**必定**被版權閘門擋下（409）。因此學生端
+ * 學生選了沒有任何可用段落的主題時，即時出題**必定**被教材授權閘門擋下（409）。因此學生端
  * 介面必須用這個數字判斷「可不可以選」，而**不是** `materialBlockCount`——後者包含校內
  * 試題檔（`kind = 'question-bank'`，永不作為學生讀物或用作出題依據）及尚未開放的教材。
  */

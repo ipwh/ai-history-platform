@@ -46,6 +46,14 @@ export interface HistoryTermGroup {
    * 設定此欄後，檢索只會提升該課題，不會令同範疇所有課題同分。
    */
   topicId?: string;
+  /**
+   * 必須同時出現的用語（2026-11-11 學生模擬）。
+   *
+   * 有些簡稱本身橫跨多個課題（「新界」見於課題4 的圍村、課題8 的租借及課題12 的
+   * 新市鎮），單獨出現不足以定位。設定此欄後，只有當句中另有其中一個用語時，
+   * 這一組才算命中，避免「新界五大族」被當成「新界租借」。
+   */
+  requiresAny?: string[];
 }
 
 /**
@@ -765,9 +773,21 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "展拓香港界址專條",
-    aliases: ["展拓香港界址專條及香港新界租約", "租借新界", "convention for the extension of hong kong territory"],
+    // 2026-11-11 學生模擬：「新界係幾時租俾英國？」推斷不到課題，教材內文反推把
+    // 提問帶到課題6（歐洲殖民擴張），引用與問題無關的段落。教材實際把租借新界
+    // 放在課題8（直至二十世紀初香港的成長與發展），因此指定課題，並要求句中另見
+    // 租借用語才命中——「新界」本身亦見於課題4（新界五大族）及課題12（新市鎮）。
+    aliases: [
+      "展拓香港界址專條及香港新界租約",
+      "租借新界",
+      "新界租約",
+      "新界",
+      "convention for the extension of hong kong territory",
+    ],
+    requiresAny: ["租", "界址", "條約", "1898", "九十九年", "99年"],
     category: "treaty",
-    scope: "課題6",
+    scope: "課題8",
+    topicId: "topic-8",
   },
   {
     canonical: "五口通商",

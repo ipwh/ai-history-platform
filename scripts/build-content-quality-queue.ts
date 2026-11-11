@@ -1,7 +1,7 @@
 /**
  * 內容質量待辦佇列（唯讀、可重複執行）。
  *
- * 把不同性質的未解決問題**分開**列出，避免把版權許可、史實準確度、題目結構有效性
+ * 把不同性質的未解決問題**分開**列出，避免把使用授權、史實準確度、題目結構有效性
  * 與發布批准混為一談：
  *
  *   1. 附錄 B 的歷史／答案鍵疑點（需歷史科教師裁決，本腳本不作裁決）
@@ -9,7 +9,7 @@
  *   3. 知識點與分節不對應、或知識點是排版殘留
  *   4. 技能標籤全部為空、難度全部 basic（元數據覆蓋率）
  *   5. 第 2 版以後但沒有可追溯修復紀錄的題目
- *   6. 教材發行權／版權許可狀態（與史實及結構無關）
+ *   6. 教材發行權／使用授權狀態（與史實及結構無關）
  *
  * 用法：
  *   npx tsx scripts/build-content-quality-queue.ts
@@ -351,9 +351,9 @@ async function main() {
       {
         id: "copyright-and-distribution",
         priority: "P1",
-        owner: "擁有者／版權負責人",
+        owner: "擁有者／使用授權負責人",
         description:
-          "教材發行權與版權許可。與史實準確度、題目結構及發布批准無關，不可互相替代。",
+          "教材發行權與使用授權。與史實準確度、題目結構及發布批准無關，不可互相替代。",
         totals: {
           documents: documents.length,
           studentDistributionOn: documents.filter((document) => document.student_distribution === 1)
@@ -392,7 +392,7 @@ async function main() {
   lines.push(`- 考慮題目：${payload.scope.questionsConsidered} 題（不含已停用）`);
   lines.push("");
   lines.push(
-    "> 本文件把**不同性質**的問題分開列出。版權許可 ≠ 史實準確 ≠ 結構有效 ≠ 發布批准；任何一項完成都不代表其餘各項已完成。",
+    "> 本文件把**不同性質**的問題分開列出。使用授權 ≠ 史實準確 ≠ 結構有效 ≠ 發布批准；任何一項完成都不代表其餘各項已完成。",
   );
   lines.push("");
   lines.push("| 分類 | 優先 | 負責 | 數量 |");
@@ -443,10 +443,10 @@ async function main() {
     }
     if (category.id === "copyright-and-distribution" && category.totals) {
       lines.push(
-        `教材 ${category.totals.documents} 份：可向學生發布 ${category.totals.studentDistributionOn} 份、不可 ${category.totals.studentDistributionOff} 份、未記錄版權確認 ${category.totals.rightsNotRecorded} 份。`,
+        `教材 ${category.totals.documents} 份：可向學生發布 ${category.totals.studentDistributionOn} 份、不可 ${category.totals.studentDistributionOff} 份、未記錄使用授權確認 ${category.totals.rightsNotRecorded} 份。`,
       );
       lines.push("");
-      lines.push("| 教材 | 狀態 | 版權確認 | 引用它的題目 |");
+      lines.push("| 教材 | 狀態 | 使用授權確認 | 引用它的題目 |");
       lines.push("| --- | --- | --- | --- |");
       for (const document of category.documentsWithoutStudentDistribution ?? []) {
         lines.push(

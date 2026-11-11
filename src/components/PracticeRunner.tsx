@@ -1,8 +1,8 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api, getLearnerId } from "@/lib/api-client";
 import { ApiError } from "@/lib/api-errors";
@@ -47,6 +47,13 @@ function draftMap(view: PracticeViewData): Record<string, string> {
 
 export function PracticeRunner({ sessionId }: { sessionId: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  /**
+   * 由學伴「返回這題」回來時，網址會帶 `?question=`：
+   * 學生不必再自己找回剛才那一題（答案與回饋已存在伺服器，會一併顯示）。
+   */
+  const returnQuestionId = searchParams.get("question");
+  const appliedReturnQuestion = useRef(false);
   const [data, setData] = useState<PracticeViewData | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -89,6 +96,14 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
         setFeedback(feedbackMap(view));
         setDrafts(draftMap(view));
         setError(null);
+        // 由學伴返回：只跳一次，之後學生自由翻頁不會被拉回
+        if (!appliedReturnQuestion.current) {
+          appliedReturnQuestion.current = true;
+          const index = returnQuestionId
+            ? view.questions.findIndex((question) => question.id === returnQuestionId)
+            : -1;
+          if (index >= 0) setCurrentIndex(index);
+        }
       })
       .catch((caught: unknown) => {
         if (!cancelled) setError(caught);
@@ -97,7 +112,7 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [sessionId, reloadToken]);
+  }, [sessionId, reloadToken, returnQuestionId]);
 
   const questions = data?.questions ?? [];
   const current = questions[currentIndex];
@@ -161,6 +176,15 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
   }
 
   async function handleComplete() {
+    const unanswered = questions.length - answeredCount;
+    if (
+      unanswered > 0 &&
+      !window.confirm(
+        `仍有 ${unanswered} 題未作答，未作答的題目不會計分。確定要結束這次練習嗎？`,
+      )
+    ) {
+      return;
+    }
     setCompleting(true);
     try {
       await api.post(
@@ -194,6 +218,18 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
   if (!data || !current) return <QuestionSkeleton />;
 
   const isLast = currentIndex === questions.length - 1;
+  const hasAnswer = (drafts[current.id] ?? "").trim().length > 0;
+  const allAnswered = answeredCount >= questions.length;
+  /** 每一刻只顯示「現在應該按哪一個」：引導學生由選答案 → 提交 → 下一題。 */
+  const stepHint = currentFeedback
+    ? isLast
+      ? "已提交，請按「完成練習並查看結果」。"
+      : "已提交，請按「下一題」繼續。"
+    : hasAnswer
+      ? "已填寫答案，請按「提交答案」查看結果。"
+      : current.questionType === "mc"
+        ? "第 1 步：點選一個答案方格。"
+        : "第 1 步：輸入答案。";
 
   return (
     <div className="flex flex-col gap-4" data-section="practice">
@@ -275,11 +311,15 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
         {submitError ? <ErrorNotice error={submitError} /> : null}
 
         {currentFeedback ? (
-          <FeedbackPanel feedback={currentFeedback} sessionId={sessionId} />
+          <FeedbackPanel
+            feedback={currentFeedback}
+            sessionId={sessionId}
+            returnHref={`/practice/${sessionId}?question=${encodeURIComponent(current.id)}`}
+          />
         ) : (
           <p className="text-meta">
             {current.questionType === "mc"
-              ? "提交前不會顯示答案，請先自行作答。"
+              ? "先點選一個答案方格；提交前不會顯示答案。"
               : aiGradingAvailable
                 ? "提交後會由 AI 按語意批改，用字不同不會直接判錯。"
                 : "提交前不會顯示答案，請先自行作答。"}
@@ -287,31 +327,42 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
         )}
       </article>
 
-      {/* 手機：提交與翻頁固定在拇指可及的底部 */}
+      {/* 每次只保留一個主要動作：先「提交答案」，提交後同一個位置才變成「下一題」。
+          學生不需要在幾個並排按鈕之間選擇，也就不會誤按下一步或提早結束。 */}
       <div className="action-bar">
-        <button
-          type="button"
-          className="btn"
-          onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
-          disabled={currentIndex === 0}
-        >
-          上一題
-        </button>
-        <button
-          type="button"
-          className="btn"
-          onClick={() => setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))}
-          disabled={isLast}
-        >
-          下一題
-        </button>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {currentFeedback ? null : (
+        <p className="practice-step" aria-live="polite">
+          {stepHint}
+        </p>
+
+        <div className="action-bar__main">
+          {currentFeedback ? (
+            isLast ? (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => void handleComplete()}
+                disabled={completing}
+              >
+                {completing ? "正在計算成績…" : "完成練習並查看結果"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() =>
+                  setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))
+                }
+              >
+                下一題
+              </button>
+            )
+          ) : (
             <button
               type="button"
               className="btn btn-primary"
               onClick={() => void handleSubmit()}
-              disabled={submitting}
+              disabled={submitting || !hasAnswer}
+              title={hasAnswer ? undefined : "請先選擇或輸入答案"}
             >
               {submitting
                 ? aiGradingAvailable && current.questionType !== "mc"
@@ -320,14 +371,52 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
                 : "提交答案"}
             </button>
           )}
-          <button
-            type="button"
-            className="btn"
-            onClick={() => void handleComplete()}
-            disabled={completing}
-          >
-            {completing ? "正在計算成績…" : "完成練習並查看結果"}
-          </button>
+        </div>
+
+        <div className="action-bar__links">
+          {currentFeedback || currentIndex > 0 ? (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
+              disabled={currentIndex === 0}
+            >
+              上一題
+            </button>
+          ) : null}
+          {currentFeedback ? null : (
+            <button
+              type="button"
+              className="btn"
+              onClick={() =>
+                setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))
+              }
+              disabled={isLast}
+            >
+              下一題
+            </button>
+          )}
+          {allAnswered ? (
+            isLast ? null : (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => void handleComplete()}
+                disabled={completing}
+              >
+                {completing ? "正在計算成績…" : "完成練習並查看結果"}
+              </button>
+            )
+          ) : currentFeedback && isLast ? null : (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => void handleComplete()}
+              disabled={completing}
+            >
+              {completing ? "正在計算成績…" : "提早結束練習"}
+            </button>
+          )}
           <Link href="/" className="btn">
             離開
           </Link>
@@ -340,9 +429,12 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
 function FeedbackPanel({
   feedback,
   sessionId,
+  returnHref,
 }: {
   feedback: QuestionFeedback;
   sessionId: string;
+  /** 由學伴返回時要回到哪一題（含 `?question=`，見 PracticeRunner） */
+  returnHref: string;
 }) {
   const aiVerdict = feedback.aiGrading?.verdict ?? null;
   const verdict = feedback.isCorrect
@@ -369,12 +461,15 @@ function FeedbackPanel({
         </span>
         <Link
           className="btn"
-          href={`/tutor?from=practice&questionId=${encodeURIComponent(feedback.questionId)}&sessionId=${encodeURIComponent(sessionId)}`}
+          href={`/tutor?from=practice&questionId=${encodeURIComponent(feedback.questionId)}&sessionId=${encodeURIComponent(sessionId)}&returnTo=${encodeURIComponent(returnHref)}`}
           title="以這條練習的概念與學伴討論（學伴不會提供標準答案）"
         >
           🏛️ 問學伴這題的概念
         </Link>
-        <span className="text-meta">學伴會協助理解概念與思路，不會給出這一題的標準答案。</span>
+        <span className="text-meta">
+          學伴會協助理解概念與思路，不會給出這一題的標準答案。學伴頁頂部有「返回這題」，
+          你的作答及回饋已儲存，返回後會回到同一題。
+        </span>
       </div>
 
       {/* 你的答案與參考答案並排對照，比逐行文字更容易比較 */}

@@ -1,8 +1,8 @@
 /**
- * 測試用的「試點教材」合成 DOCX（不依賴受版權保護的 materials/）。
+ * 測試用的「試點教材」合成 DOCX（不依賴受使用授權限制的 materials/）。
  *
  * ── 為甚麼需要 ────────────────────────────────────────────────────────
- * `materials/` 依版權政策不納入版本控制（只有 README 例外），因此乾淨 checkout 的 CI
+ * `materials/` 依使用授權政策不納入版本控制（只有 README 例外），因此乾淨 checkout 的 CI
  * 沒有任何課題5 教材檔案。以往 15 個測試檔直接呼叫
  * `materialService.importPilotMaterialFromDisk()`，在 CI 一律於 beforeAll 拋出
  * 「找不到課題5的教材檔案」，整個 suite 失敗（GitHub Actions run 39885612625）。
@@ -226,7 +226,7 @@ export function removeTestMaterialsDir(dir: string | null = materialsDir): void 
  *
  * `excerptsFromTopic`：把該課題既有題目（通常是在教材匯入前建立的示範題庫）的原文節錄
  * 加入合成教材，令「匯入教材後重新定位教材依據」的路徑有可逐字比對的段落。這些節錄
- * 本來就隨示範題庫提交在版本控制內，不涉及額外的受版權內容。
+ * 本來就隨示範題庫提交在版本控制內，不涉及額外的受授權內容。
  *
  * 任何一步失敗都拋出錯誤（fail-closed），令依賴教材的測試不會靜默變成空轉。
  */

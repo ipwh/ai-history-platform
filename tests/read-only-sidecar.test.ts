@@ -144,7 +144,7 @@ function makeMigratedDatabase(withQuestion: boolean): string {
 beforeAll(async () => {
   connection = await import("@/server/db/connection");
   expect(fs.existsSync(TSX_CLI), "tsx CLI 存在").toBe(true);
-  // 候選清單是依版權政策不入庫的產生檔；以合成清單令 CLI／稽核腳本可完成唯讀路徑
+  // 候選清單是依使用授權政策不入庫的產生檔；以合成清單令 CLI／稽核腳本可完成唯讀路徑
   writeGoldenCandidatesFile(syntheticCandidates(1));
 });
 

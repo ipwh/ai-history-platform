@@ -132,7 +132,7 @@ export const GOLDEN_CANDIDATES_PATH = "docs/teacher-review/golden-candidates-202
 /**
  * 候選清單的實際路徑。
  *
- * 預設是倉庫內的產生檔（依版權政策不納入版本控制）。`GOLDEN_CANDIDATES_FILE` 可指向
+ * 預設是倉庫內的產生檔（依使用授權政策不納入版本控制）。`GOLDEN_CANDIDATES_FILE` 可指向
  * 其他檔案：**測試**用它指向暫存目錄內的合成清單，令 CI（乾淨 checkout、沒有產生檔）
  * 可以驗證同一套契約；正式環境不應設定此變數。
  */

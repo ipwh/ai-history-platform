@@ -50,7 +50,7 @@ beforeAll(async () => {
   seed = await import("@/server/seed");
   types = await import("@/lib/types");
   seed.ensureBootstrap();
-  // 生成流程需要教材內容作依據；使用合成教材，不依賴受版權保護的 materials/
+  // 生成流程需要教材內容作依據；使用合成教材，不依賴受使用授權限制的 materials/
   await importTestPilotMaterial();
 });
 

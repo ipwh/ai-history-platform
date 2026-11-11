@@ -11,7 +11,7 @@ import { HISTORY_SKILLS } from "@/lib/types";
  *
  * 這裡直接呼叫 `validateLlmQuestions`（`generateQuestions` 對每一輪 provider 回應
  * 都會呼叫它，包括重寫、重試及 mock／fallback 路徑），因此同一段程式碼就是三條
- * 路徑共用的閘門。內容全部是合成的佔位文字，不含任何史實或版權內容。
+ * 路徑共用的閘門。內容全部是合成的佔位文字，不含任何史實或授權內容。
  */
 const LONG_STATEMENT =
   "這是一段刻意寫得較長的說明文字，用來模擬 AI 生成題目中過度詳細的正確選項";

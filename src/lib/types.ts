@@ -24,7 +24,7 @@ export type Difficulty = z.infer<typeof difficultySchema>;
 
 export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
   basic: "基礎",
-  advanced: "進階",
+  advanced: "一般",
   challenge: "挑戰",
 };
 
@@ -379,7 +379,7 @@ export const sectionWithCountSchema = sectionSchema.extend({
    * 此分節（含子分節）中「學生實際可用來出題」的教材段落數。
    *
    * 只有已確認可向學生發布、且非教師專用內容的段落才計入（見
-   * `studentMaterialBlockCounts`）。0 表示學生即時出題**必定**被版權閘門擋下，
+   * `studentMaterialBlockCounts`）。0 表示學生即時出題**必定**被教材授權閘門擋下，
    * 因此介面不可讓學生選取這樣的主題（見 `isSectionPractisable`）。
    */
   studentMaterialBlockCount: z.number().int().default(0),
@@ -388,7 +388,7 @@ export type SectionWithCount = z.infer<typeof sectionWithCountSchema>;
 
 /**
  * 這個分節對學生是否真的可以出題。出題方式不同，條件亦不同：
- *   ai：必須有「學生可用」的教材段落，否則即時出題會被版權閘門擋下（409）。
+ *   ai：必須有「學生可用」的教材段落，否則即時出題會被教材授權閘門擋下（409）。
  *   bank：題庫已有已發布題目即可；題目不足時系統會以同一批可用教材補足，
  *         生成失敗亦會回退題庫，因此不會令學生無法開始練習。
  *
@@ -500,13 +500,13 @@ export const materialDocumentSchema = z.object({
   /**
    * 學生可否在平台內閱讀這份教材的內容（預設 false = 不可）。
    *
-   * `/learn/[topicId]` 會原文顯示教材，等同在平台內發布該內容；教材可能受版權限制，
+   * `/learn/[topicId]` 會原文顯示教材，等同在平台內發布該內容；教材可能受使用授權限制，
    * 而本專案沒有任何授權紀錄，因此必須由管理員逐份文件明確確認後才會顯示。
    * 未確認的文件對學生完全不顯示（fail-closed）。
    */
   studentDistribution: z.boolean().default(false),
   /**
-   * 版權／發行權確認時間（遷移 0017）。`studentDistribution` 為 true 但這個欄位為 null 時，
+   * 使用授權／發行權確認時間（遷移 0017）。`studentDistribution` 為 true 但這個欄位為 null 時，
    * 文件**不會**向學生顯示（見 `documentIsStudentVisible`）。
    */
   rightsConfirmedAt: z.string().nullable().default(null),
@@ -789,7 +789,7 @@ export const questionReviewStatusSchema = z.object({
   latestReview: questionReviewSchema.nullable(),
   approvedReview: questionReviewSchema.nullable(),
   /**
-   * 學生是否看得到本題的教材節錄。`false` 代表版權／教材閘門略去了節錄
+   * 學生是否看得到本題的教材節錄。`false` 代表授權／教材閘門略去了節錄
    * （原因見 `sourceExcerptHiddenReason`），教師可在這裡發現需要處理的題目，
    * 而不是以為學生已經看到節錄。
    */

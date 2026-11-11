@@ -110,8 +110,8 @@ Sprint 10 的 34 項未提交工作（`src/server/quality/*`、`scripts/audit-*.
 
 | 概念 | 來源 | 不可混淆之處 |
 | --- | --- | --- |
-| 來源可追溯 | `source_location`、`source_block_ids`、`material_documents` | 不等於版權許可，也不等於歷史正確 |
-| 版權 | `material_documents.rights_confirmed_at` ＋ 擁有者聲明 | 不等於內容正確 |
+| 來源可追溯 | `source_location`、`source_block_ids`、`material_documents` | 不等於使用授權，也不等於歷史正確 |
+| 使用授權 | `material_documents.rights_confirmed_at` ＋ 擁有者聲明 | 不等於內容正確 |
 | 可作答性 | `checkQuestionServable()`（單一真相） | 核准不能繞過 |
 | 發布核准 | `question_reviews`（版本＋指紋） | 自動化紀錄不可冒充教師 |
 | 結構裁決 | `question_reviews` 理由前綴 `結構裁決（ISSUE_CODE）：…` | 與一般覆核同表，但可辨識 |

@@ -1,4 +1,4 @@
-# Sprint 9 報告：題目來源、解釋品質與發布閘門（2026-10-19）
+﻿# Sprint 9 報告：題目來源、解釋品質與發布閘門（2026-10-19）
 
 ## A. Baseline
 
@@ -11,13 +11,13 @@
 | 規範／CI | `AGENTS.md` 只有 Next.js 規則區塊；無 `CLAUDE.md`；無 `.github/` CI |
 | 資料庫 | 本機 `data/app.db`（唯讀）；**沒有**接觸正式資料庫 |
 
-**本次新增與既有修改的區分**：本次新增 `src/server/quality/*`、`scripts/audit-content-quality.ts`、`scripts/release-gate.ts`、`tests/content-quality.test.ts`、`tests/content-audit.test.ts`、`tests/release-gate.test.ts`、`docs/quality/*`、`docs/release-gate-2026-10-19.*`、`docs/release-evidence-2026-10-19.json`、`docs/teacher-review/copyright-owner-attestation-2026-10-19.md`、本報告；另外只修改 `package.json`（兩個 script）、`README.md`、`docs/teacher-review/README.md`、`docs/audit-2026-10-18-platform-audit.md`、`docs/teacher-review/content-quality-queue-2026-10-19.md` 的對應段落。沒有重做 18 題裁決。
+**本次新增與既有修改的區分**：本次新增 `src/server/quality/*`、`scripts/audit-content-quality.ts`、`scripts/release-gate.ts`、`tests/content-quality.test.ts`、`tests/content-audit.test.ts`、`tests/release-gate.test.ts`、`docs/quality/*`、`docs/release-gate-2026-10-19.*`、`docs/release-evidence-2026-10-19.json`、`docs/teacher-review/source-use-attestation-2026-10-19.md`、本報告；另外只修改 `package.json`（兩個 script）、`README.md`、`docs/teacher-review/README.md`、`docs/audit-2026-10-18-platform-audit.md`、`docs/teacher-review/content-quality-queue-2026-10-19.md` 的對應段落。沒有重做 18 題裁決。
 
 ## B. 實作
 
 | 檔案 | 用途 | 解決的問題 |
 | --- | --- | --- |
-| `src/server/quality/source-traceability.ts` | 來源狀態純函式（`traceable`／`partial`／`unknown`／`pending_verification`） | 把「可定位程度」與史實、版權分開；不虛構文件、頁碼或核實紀錄 |
+| `src/server/quality/source-traceability.ts` | 來源狀態純函式（`traceable`／`partial`／`unknown`／`pending_verification`） | 把「可定位程度」與史實、使用授權分開；不虛構文件、頁碼或核實紀錄 |
 | `src/server/quality/explanation-quality.ts` | 解釋分類（`placeholder`／`answer_only`／`insufficient`／`potentially_inconsistent`／`not_assessed`）＋人工覆核疊加 | 集中管理佔位模板；短解釋不因長度單獨判錯；矛盾只進入覆核 |
 | `src/server/quality/metadata-quality.ts` | 知識點／難度／技能規則 | 排版殘留、通用標籤、分節對不上、無效關聯（阻擋級） |
 | `src/server/quality/question-policy.ts` | `hard_block`／`teacher_review`／`warning`／`policy_pending` | 不同性質問題分開處理；`canServe` 只依硬性規則，保持現行派發行為 |
@@ -96,7 +96,7 @@
 | tests | **PASS** | 見 `docs/release-evidence-2026-10-19.json` |
 | deployment | **INSUFFICIENT_EVIDENCE** | 未部署 |
 
-**結果：NOT READY。** 已修正／建立的風險：來源、解釋、元數據及政策有可重複量度；未定義標準不再被當成通過；版權與史實分開。
+**結果：NOT READY。** 已修正／建立的風險：來源、解釋、元數據及政策有可重複量度；未定義標準不再被當成通過；使用授權與史實分開。
 仍存在的風險：內容（97 題不可作答、1,334＋546 解釋）、來源文件紀錄、元數據、Golden dataset、部署驗證。
 
 **需要負責人決定的政策（decision list）**：
@@ -104,7 +104,7 @@
 1. 佔位／只列答案的解釋是否暫緩派發（影響可用題目數）。
 2. 1,003 題校內試題是否必須建立文件紀錄（檔名、題號、SHA-256）及匯入批次才可發布。
 3. 技能標籤是否為發布必要條件（現為 WARN）。
-4. 版權：接受擁有者聲明，或要求逐份授權證據（現為 WARN）。
+4. 使用授權：接受擁有者聲明，或要求逐份授權證據（現為 WARN）。
 5. 97 題已發布但不可作答：修正或改回草稿。
 6. Golden dataset 的負責人、樣本數及完成日期。
 

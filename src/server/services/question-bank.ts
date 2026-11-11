@@ -4,7 +4,7 @@
  * 為每個課程課題的分節生成練習題目（使用設定的 LLM provider，預設為本地示範生成）。
  * 生成結果會經過 schema 驗證及教材依據核對；沒有依據的題目不會儲存。
  *
- * 難度分配：每個分節的目標題數會平均分配到基礎／進階／挑戰三個難度，
+ * 難度分配：每個分節的目標題數會平均分配到基礎／一般／挑戰三個難度，
  * 令學生選擇任何難度時都有題庫題目可用（本地示範生成亦會按難度採用不同出題規則）。
  *
  * 發布策略（Sprint 7.8）：
@@ -32,7 +32,7 @@ const BANK_DIFFICULTIES: Difficulty[] = ["basic", "advanced", "challenge"];
 export interface QuestionBankOptions {
   /** 只處理指定課題 */
   topicId?: string | null;
-  /** 每個分節的目標題數（會平均分配到基礎／進階／挑戰三個難度） */
+  /** 每個分節的目標題數（會平均分配到基礎／一般／挑戰三個難度） */
   perSection?: number;
   /**
    * 要補齊的題型（預設選擇題及填充題）。
@@ -76,8 +76,8 @@ export interface QuestionBankReport {
 
 /**
  * 把每個分節的目標題數平均分配到三個難度。
- * 例如 perSection = 5 → 基礎 2 題、進階 2 題、挑戰 1 題；
- * perSection = 3 → 基礎／進階／挑戰各 1 題。
+ * 例如 perSection = 5 → 基礎 2 題、一般 2 題、挑戰 1 題；
+ * perSection = 3 → 基礎／一般／挑戰各 1 題。
  */
 export function allocateByDifficulty(total: number): Map<Difficulty, number> {
   const allocation = new Map<Difficulty, number>();
@@ -148,7 +148,7 @@ export async function generateQuestionBank(
     const targets = childSections.length > 0 ? childSections : listSections(topic.id);
 
     for (const section of targets) {
-      // 逐個難度補足目標題數，確保題庫同時有基礎、進階及挑戰的題目
+      // 逐個難度補足目標題數，確保題庫同時有基礎、一般及挑戰的題目
       for (const [difficulty, target] of allocateByDifficulty(perSection)) {
         const existing = listQuestions({
           topicId: topic.id,

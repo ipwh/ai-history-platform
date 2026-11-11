@@ -182,7 +182,7 @@ interface RawBlock {
   endIndex: number;
 }
 
-/** 難度星號換算：★→基礎、★★→進階、★★★→挑戰 */
+/** 難度星號換算：★→基礎、★★→一般、★★★→挑戰 */
 function difficultyFromText(text: string): Difficulty | null {
   const match = /難度[：:]\s*([★☆]+)/.exec(text);
   if (!match) return null;

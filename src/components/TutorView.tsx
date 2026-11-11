@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
+import { safeInternalPath } from "@/lib/safe-internal-path";
 import type {
   TopicOverview,
   TutorDepthPreference,
@@ -133,6 +134,17 @@ function writeStoredDepth(value: TutorDepthPreference): void {
   } catch {
     // 未能保存時只是下次回到「自動」，不影響本次提問
   }
+}
+
+/** 由練習進入時的返回路徑（`?returnTo=`）；伺服器端一律 `null`，避免 hydration 不一致 */
+function readReturnHref(): string | null {
+  if (typeof window === "undefined") return null;
+  return safeInternalPath(new URLSearchParams(window.location.search).get("returnTo"));
+}
+
+/** 網址在本頁內不會改變返回路徑，因此沒有需要訂閱的事件 */
+function subscribeNever(): () => void {
+  return () => {};
 }
 
 function inlineMarkdown(text: string) {
@@ -333,10 +345,25 @@ export function TutorView({
   );
   /** 練習關聯（只作關聯用；伺服器會重新組裝安全上下文） */
   const practiceLink = useRef<{ questionId: string; sessionId: string | null } | null>(null);
+  /**
+   * 由練習進入時的返回路徑（`?returnTo=`）。
+   *
+   * 學生原本一按「問學伴這題的概念」就會離開作答頁，而學伴頁沒有任何回到該題的
+   * 入口，只能靠瀏覽器上一頁；作業中斷後亦不確定自己答到哪一題。這裡把路徑帶回來，
+   * 並在頁首顯示明顯的「返回這題」。
+   */
+  const returnHref = useSyncExternalStore<string | null>(
+    subscribeNever,
+    readReturnHref,
+    () => null,
+  );
   /** 最近一次回覆的技能提示（M3） */
   const [skillHint, setSkillHint] = useState<string | null>(null);
   /** 最近一次回覆的外部參考狀態（用於如實顯示「本回合未取得外部參考」） */
   const [webStatus, setWebStatus] = useState<string | null>(null);
+  /** 每次送出後遞增：用來把最新一則回覆捲入畫面（提問框在手機貼齊底部） */
+  const [sendTick, setSendTick] = useState(0);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   /**
    * 練習 → 學伴：讀取網址上的 questionId／sessionId，向伺服器換取安全上下文。
@@ -377,6 +404,12 @@ export function TutorView({
       }
     })();
   }, []);
+
+  /** 送出後把最新一則回覆帶入畫面（提問框在手機貼齊底部，否則回覆會藏在它後面） */
+  useEffect(() => {
+    if (sendTick === 0) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [sendTick]);
 
   /** 學習目標課題清單（只用已發布課題） */
   useEffect(() => {
@@ -694,6 +727,8 @@ export function TutorView({
       setError(cause instanceof Error ? cause.message : "傳送失敗，請稍後再試。");
     } finally {
       setSending(false);
+      // 只在學生自己送出後捲動：進入頁面時不捲走練習開場引導
+      setSendTick((tick) => tick + 1);
     }
   }
 
@@ -702,10 +737,15 @@ export function TutorView({
     await submitMessage(input.trim());
   }
 
-  function chooseQuestionSuggestion(question: string) {
-    setInput(question);
+  /** 把游標放到提問框：學生由練習進來時，最常做的是直接問自己的問題 */
+  function focusComposer() {
     inputRef.current?.focus();
     inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function chooseQuestionSuggestion(question: string) {
+    setInput(question);
+    focusComposer();
   }
 
   const quotaExhausted = quota.remaining <= 0;
@@ -713,6 +753,16 @@ export function TutorView({
 
   return (
     <section className="space-y-5" data-section="tutor">
+      {returnHref !== null ? (
+        <div className="practice-return" role="navigation" aria-label="返回練習">
+          <Link className="btn btn-primary" href={returnHref}>
+            ← 返回這題繼續作答
+          </Link>
+          <span className="practice-return__hint">
+            你的作答及回饋已儲存，返回後會回到同一題。
+          </span>
+        </div>
+      ) : null}
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="page-title">🏛️ 歷史科自學學伴 (Beta)</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -852,7 +902,9 @@ export function TutorView({
             ) : null}
             {opening.suggestions.length > 0 ? (
               <div className="mt-3 space-y-2" aria-label="建議提問方向">
-                <p className="text-sm text-gray-600">可以從這些方向開始（點選後會放入輸入框）：</p>
+                <p className="text-sm text-gray-600">
+                  以下只是建議方向（點選後會放入下方的問題框，可自行改寫）：
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {opening.suggestions.map((suggestion) => (
                     <button
@@ -868,6 +920,19 @@ export function TutorView({
                 </div>
               </div>
             ) : null}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="btn text-sm"
+                disabled={sending || inputBlocked || loading}
+                onClick={focusComposer}
+              >
+                ✏️ 自己輸入問題
+              </button>
+              <span className="text-xs text-gray-600">
+                不必限於上面的建議，可以直接問任何與這一題有關的內容。
+              </span>
+            </div>
           </div>
         ) : null}
         {!loading && messages.length === 0 && opening === null ? (
@@ -953,6 +1018,7 @@ export function TutorView({
             </article>
           );
         })}
+        <div ref={messagesEndRef} />
         {error ? (
           <div role="alert" className="rounded-lg px-3 py-2 text-sm" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>
             {error} {error.includes("登入") ? <Link className="underline" href="/login">前往登入</Link> : null}
@@ -985,16 +1051,16 @@ export function TutorView({
         ) : null}
       </div>
 
-      <form onSubmit={sendMessage} className="card space-y-3">
+      <form onSubmit={sendMessage} className="card tutor-composer space-y-3">
         <label htmlFor="tutor-message" className="block text-sm font-semibold">
-          你的歷史問題
+          你的歷史問題（可自行輸入）
         </label>
         <textarea
           id="tutor-message"
           ref={inputRef}
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          rows={3}
+          rows={2}
           maxLength={2000}
           placeholder="可用口語、錯字或簡體字提問，例如：二戰點解會打？"
           disabled={loading || sending || inputBlocked}
@@ -1003,9 +1069,9 @@ export function TutorView({
           style={{ borderColor: "var(--border-strong)" }}
         />
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-gray-500">
-            問題可以不太完整；若學伴未能確定你的意思，會列出可能方向供你選擇，或自行改寫。學伴只會引用已開放教材節錄，不會取得題庫、標準答案或評分參考；若學校已開啟外部參考，亦只會引用事先核准的白名單網站短摘錄，並以「🌐 外部參考」另行標示。
-          </p>
+          <span className="text-xs text-gray-500">
+            不必限於上面的建議。問題可以不太完整；學伴未能確定你的意思時，會列出可能方向供你選擇。
+          </span>
           <button
             type="submit"
             className="btn btn-primary"
@@ -1015,6 +1081,11 @@ export function TutorView({
           </button>
         </div>
       </form>
+
+      {/* 說明放在提問框之外：手機上提問框貼齊底部，這段長文字若在框內會佔去半個畫面 */}
+      <p className="text-xs text-gray-500">
+        學伴只會引用已開放教材節錄，不會取得題庫、標準答案或評分參考；若學校已開啟外部參考，亦只會引用事先核准的白名單網站短摘錄，並以「🌐 外部參考」另行標示。
+      </p>
     </section>
   );
 }

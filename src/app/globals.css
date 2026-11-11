@@ -1196,6 +1196,104 @@ table.material-table th {
   color: var(--text-muted);
 }
 
+/* 學生一次只會看到一個主要動作：提交 → 下一題 → 完成。
+   其餘操作（上一題、跳過、提早結束、離開）收在下方的小按鈕列，
+   避免「提交答案」與「下一題」並排而誤按。 */
+.practice-step {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--radius-md);
+  background: var(--section-tint, var(--accent-soft));
+  border: 1px solid color-mix(in srgb, var(--section-accent, var(--accent)) 28%, #ffffff);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.practice-step::before {
+  content: "👉";
+  flex: none;
+}
+
+.action-bar__main {
+  flex: 1 1 100%;
+  display: flex;
+}
+
+.action-bar__main .btn {
+  flex: 1 1 auto;
+}
+
+.action-bar__links {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.action-bar__links .btn {
+  min-height: var(--tap-min, 44px);
+  padding: 0.45rem 0.8rem;
+  font-size: 0.82rem;
+}
+
+@media (min-width: 768px) {
+  .action-bar__main {
+    justify-content: flex-end;
+  }
+
+  .action-bar__main .btn {
+    flex: 0 0 auto;
+    min-width: 11rem;
+  }
+}
+
+/* ── 學伴：由練習進入時的返回鍵、提問框 ─────────────────────────── */
+
+/*
+ * 「返回這題」：學生由練習按「問學伴這題的概念」後，必須一眼看到如何回到
+ * 剛才那一題（以往只能靠瀏覽器上一頁，學生以為練習已中斷）。
+ * 固定在頂部，往下讀對話時仍然可按。
+ */
+.practice-return {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, #ffffff);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-card);
+}
+
+.practice-return__hint {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+/*
+ * 提問框：手機貼齊底部（在底部導覽之上），任何時候都可以自行輸入問題，
+ * 不必先捲過整段對話，亦不會只剩下系統建議可以按。
+ */
+@media (max-width: 767px) {
+  .tutor-composer {
+    position: sticky;
+    bottom: calc(3.4rem + env(safe-area-inset-bottom, 0px));
+    z-index: 30;
+    background: var(--surface);
+    box-shadow: 0 -6px 16px rgba(28, 34, 48, 0.08);
+  }
+}
+
 /* 設定頁只在手機顯示底部摘要列，桌面已有主要按鈕，無需重複 */
 .action-bar--mobile-only {
   display: none;

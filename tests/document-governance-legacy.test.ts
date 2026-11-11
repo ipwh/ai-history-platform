@@ -3,13 +3,13 @@
  *
  * 背景：`student_distribution` 這個布林值在遷移 0017 之前是唯一的發行權開關。因此在
  * 0017 之前已開放的文件、由舊備份還原的資料庫，或任何繞過 API 直接寫入的列，都可能
- * 出現「已開放但沒有任何版權／內容確認紀錄」的狀態。若讀取時只看布林值，這種文件會
+ * 出現「已開放但沒有任何使用授權／內容確認紀錄」的狀態。若讀取時只看布林值，這種文件會
  * 一直對學生可見（包括教師版原文、答案段落），而系統無法回答「這份文件為何可以給
  * 學生看」。
  *
  * 本檔驗證讀取端已 fail-closed：**必須同時**有
  *   1. `student_distribution = 1`
- *   2. 版權確認 `rights_confirmed_at`
+ *   2. 使用授權確認 `rights_confirmed_at`
  *   3. 教師版文件另需內容覆核 `content_reviewed_at`
  * 學生才會看到內容。兩條學生端路徑（教材節錄、學生即時 AI 出題的依據）都
  * 使用同一個判斷（`listStudentDistributableDocumentIds`），因此一次修正同時覆蓋。
@@ -168,12 +168,12 @@ describe("舊狀態：只設定 student_distribution 而沒有確認紀錄", () 
     expect(practiceService.sourceExcerptIsStudentVisible(question)).toBe(false);
   });
 
-  it("補回確認紀錄後才會顯示：教師版文件需要版權確認＋內容覆核", () => {
+  it("補回確認紀錄後才會顯示：教師版文件需要使用授權確認＋內容覆核", () => {
     const { document } = createTeacherEditionDocument();
     materialsRepo.setDocumentStudentDistribution(document.id, true);
 
     const at = new Date().toISOString();
-    // 只有版權確認：教師版文件仍然不可見
+    // 只有使用授權確認：教師版文件仍然不可見
     materialsRepo.recordDocumentGovernance({
       documentId: document.id,
       rights: { confirmedBy: "admin@example.com", at },
@@ -193,7 +193,7 @@ describe("舊狀態：只設定 student_distribution 而沒有確認紀錄", () 
     expect(materialsRepo.listStudentDistributableDocumentIds().has(document.id)).toBe(true);
   });
 
-  it("非教師版文件只需要版權確認", () => {
+  it("非教師版文件只需要使用授權確認", () => {
     const document = materialsRepo.createDocument({
       fileName: "課題5 學生用教材.docx",
       kind: "demo",

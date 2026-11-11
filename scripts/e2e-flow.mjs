@@ -262,7 +262,7 @@ async function main() {
       `    課題：${topic?.title}；分節：${childSection?.title ?? section?.title}（${section?.publishedQuestionCount ?? 0} 題）`,
     );
 
-    console.log("\n[2b] 教材發行權（版權閘門預設關閉）");
+    console.log("\n[2b] 教材發行權（教材授權閘門預設關閉）");
     // 先把所有教材還原為「未確認」（fail-closed 基準），令這一段可以重複執行：
     // 本流程後面會開放某份教材，若上一次執行未完成（例如中途失敗），
     // 殘留的狀態會令這裡看似「閘門失效」。這是測試隔離問題，不是產品問題。
@@ -284,14 +284,14 @@ async function main() {
         document.topicId === topic.id && document.kind !== "question-bank" && document.blockCount > 0,
     );
     if (distributableDocument) {
-      // 開放前必須有版權／發行權確認
+      // 開放前必須有使用授權／發行權確認
       const withoutRights = await call(
         "PATCH",
         `/api/admin/materials/${distributableDocument.id}`,
         { studentDistribution: true },
       );
       check(
-        "開放學生使用需要版權確認（409）",
+        "開放學生使用需要使用授權確認（409）",
         withoutRights.status === 409,
         `HTTP ${withoutRights.status}`,
       );
@@ -333,12 +333,12 @@ async function main() {
         0,
       );
       check(
-        "確認版權後學生才有可用的教材段落",
+        "確認使用授權後學生才有可用的教材段落",
         studentBlockTotal > 0,
         `可用段落：${studentBlockTotal}`,
       );
     } else {
-      check("找到可測試版權閘門的教材文件", false, "找不到已對應課題且含段落的教材文件");
+      check("找到可測試教材授權閘門的教材文件", false, "找不到已對應課題且含段落的教材文件");
     }
 
     console.log("\n[3] 建立練習（選擇題 + 填充題）");
@@ -426,7 +426,7 @@ async function main() {
         confirmRights: true,
         confirmTeacherEdition: true,
       });
-      check("重新確認版權後可以再次開放", restored.status === 200, `HTTP ${restored.status}`);
+      check("重新確認使用授權後可以再次開放", restored.status === 200, `HTTP ${restored.status}`);
       const afterRestore = await call("GET", `/api/practice/${session.id}/result?learnerId=${LEARNER_ID}`);
       check(
         "重新確認後節錄回復顯示",

@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-10-28T09:10:00.000Z",
-  "notice": "建立「推送即部署」（GitHub push → Cloud Build → Cloud Run）並以真實推送驗證。cloudbuild.yaml 新增建置前品質閘門（npm ci + lint + vitest）及教材同步步驟（由私有 GCS bucket 還原 materials/，不足下限即中止）；教材不進 GitHub（第三方版權），因此由 scripts/setup-push-to-deploy.ps1 一次過上載到私有 bucket 並建立觸發程序。映像由 commit 27451f0 建置。",
+  "notice": "建立「推送即部署」（GitHub push → Cloud Build → Cloud Run）並以真實推送驗證。cloudbuild.yaml 新增建置前品質閘門（npm ci + lint + vitest）及教材同步步驟（由私有 GCS bucket 還原 materials/，不足下限即中止）；教材不進 GitHub（第三方授權內容），因此由 scripts/setup-push-to-deploy.ps1 一次過上載到私有 bucket 並建立觸發程序。映像由 commit 27451f0 建置。",
   "reportedIssue": {
     "reportedAt": "2026-10-28T15:19:54+08:00",
     "request": "擁有者詢問：commit and push 到 GitHub 時，可否自動觸發 Cloud Build？"
@@ -35,7 +35,7 @@
         "fix": "指令碼把此錯誤轉成可執行的 Console 步驟（含網址）而非原始堆疊；擁有者於 Console 連結儲存庫後重跑 -Apply -SkipMaterials 即成功。"
       },
       {
-        "blocker": "materials/ 不在儲存庫內（第三方版權）",
+        "blocker": "materials/ 不在儲存庫內（第三方授權內容）",
         "symptom": "由 GitHub 觸發的建置只會拿到 materials/README.md，Dockerfile 的 COPY materials 會產生沒有教材的映像檔",
         "fix": "教材上載到私有 bucket gs://pccss-ai-history-history-backup/materials/（46 個檔），由 sync-materials 在建置時還原；_MIN_MATERIAL_FILES 下限作 fail-closed。"
       }

@@ -46,7 +46,7 @@ export function buildMaterialUnits(
   options: { audience?: "student" | "staff" } = {},
 ): MaterialUnit[] {
   // 學生端（學生自行觸發的即時生成）只可使用已確認可向學生發布、且非教師專用的教材：
-  // 否則「教材版權閘門」只擋住閱讀頁，學生仍可透過 AI 出題把未經確認的教師版內容
+  // 否則「教材教材授權閘門」只擋住閱讀頁，學生仍可透過 AI 出題把未經確認的教師版內容
   // （甚至答案、評分參考）引出並取得節錄。教師／管理員生成時不受此限，
   // 因為他們本來就可以在管理介面看到教材內容。
   const audience = options.audience ?? "staff";

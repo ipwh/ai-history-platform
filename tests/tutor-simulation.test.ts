@@ -219,14 +219,14 @@ beforeAll(async () => {
     blocks: [{ text: "《凡爾賽條約》規定德國須支付巨額賠款（校內試題）" }],
   });
 
-  // 未確認版權——即使已標示開放亦不得使用
+  // 未確認使用授權——即使已標示開放亦不得使用
   seedDocument({
     id: "doc-unconfirmed",
-    fileName: "課題9 兩次世界大戰_未確認版權.docx",
+    fileName: "課題9 兩次世界大戰_未確認使用授權.docx",
     kind: "demo",
     studentDistribution: 1,
     rightsConfirmedAt: null,
-    blocks: [{ text: "凡爾賽條約要求德國支付巨額賠款，此段來自未確認版權的文件。" }],
+    blocks: [{ text: "凡爾賽條約要求德國支付巨額賠款，此段來自未確認使用授權的文件。" }],
   });
 
   // 極權主義段落（課程用語進閘及召回測試用）
@@ -511,14 +511,14 @@ describe("C. 教材依據（grounding）", () => {
     return { meta, fetchMock, response };
   }
 
-  it("只引用學生可見教材：試題檔、未確認版權、教師專用、練習題、圖片全部排除", async () => {
+  it("只引用學生可見教材：試題檔、未確認使用授權、教師專用、練習題、圖片全部排除", async () => {
     const { meta } = await groundOnce();
     expect(meta.grounding).toBe("grounded");
     expect(meta.sources.length).toBeGreaterThan(0);
 
     const combined = meta.sources.map((source) => `${source.documentLabel}|${source.excerpt}`).join("\n");
     expect(combined).not.toContain("校內試題");
-    expect(combined).not.toContain("未確認版權");
+    expect(combined).not.toContain("未確認使用授權");
     expect(combined).not.toContain("參考答案");
     expect(combined).not.toContain("分）");
     expect(combined).not.toContain("插圖");

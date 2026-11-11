@@ -30,7 +30,7 @@ import {
 /**
  * 教材匯入後的自動開放政策（見 `ServerConfig.materialAutoOpenPolicy`）。
  *
- *   - `lesson-content`：匯入課文／筆記後自動確認版權並開放給學生（擁有者指示）；
+ *   - `lesson-content`：匯入課文／筆記後自動確認使用授權並開放給學生（擁有者指示）；
  *   - `off`：回復逐份人手確認。
  */
 export const MATERIAL_AUTO_OPEN_POLICIES = ["lesson-content", "off"] as const;
@@ -123,7 +123,7 @@ export interface ServerConfig {
    * 由環境變數 `MATERIAL_AUTO_OPEN_POLICY` 設定（2026-10-21 擁有者指示：
    * 「往後自動開放所有教材，讓用家順利使用 AI 生成題目自學」）。
    *
-   *   - `lesson-content`（預設）：匯入課文／筆記後自動完成「版權確認 + 開放」，
+   *   - `lesson-content`（預設）：匯入課文／筆記後自動完成「使用授權確認 + 開放」，
    *     學生可即時以此教材出題；`rights_confirmed_by` 會如實記錄為
    *     `owner-policy:auto-open-all-materials`（不是假裝某位教師逐份確認）。
    *   - `off`：回復逐份人手確認（舊行為）。

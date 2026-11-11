@@ -4,7 +4,7 @@ name: CI
 # 並定義瀏覽器測試（Playwright）的執行方式。
 #
 # 重要限制（如實記錄，不假裝已解決）：
-#   `data/` 及 `materials/` 依版權政策不納入版本控制，因此 GitHub 託管的 runner
+#   `data/` 及 `materials/` 依內容政策不納入版本控制，因此 GitHub 託管的 runner
 #   沒有內容資料庫可用。瀏覽器測試需要真實（或經核准的）內容快照，
 #   故只在 self-hosted runner（或已備妥內容快照的環境）執行；
 #   在沒有內容資料庫時不會以空資料庫代替，也不會削弱授權或隔離設定。

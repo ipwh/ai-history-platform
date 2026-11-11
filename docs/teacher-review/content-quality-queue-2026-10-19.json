@@ -3650,8 +3650,8 @@
     {
       "id": "copyright-and-distribution",
       "priority": "P1",
-      "owner": "擁有者／版權負責人",
-      "description": "教材發行權與版權許可。與史實準確度、題目結構及發布批准無關，不可互相替代。",
+      "owner": "擁有者／使用授權負責人",
+      "description": "教材發行權與使用授權。與史實準確度、題目結構及發布批准無關，不可互相替代。",
       "totals": {
         "documents": 36,
         "studentDistributionOn": 12,

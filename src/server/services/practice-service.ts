@@ -441,7 +441,7 @@ async function generatePracticeQuestions(options: {
     // 詳細原因（例如教材不足以出題）只記錄在伺服器日誌，學生端只顯示可行動的建議
     const reason = firstError instanceof Error ? firstError.message : "";
     if (reason.length > 0) console.warn("[practice] 即時生成題目失敗原因", reason);
-    // 版權閘門造成的失敗值得如實告知學生原因（不是「題目不足」，而是教材尚未開放），
+    // 教材授權閘門造成的失敗值得如實告知學生原因（不是「題目不足」，而是教材尚未開放），
     // 否則學生只會不斷重試同一分節而不知道要聯絡教師。
     if (reason.includes("尚未開放學生使用")) {
       throw new PracticeServiceError(reason, 409);

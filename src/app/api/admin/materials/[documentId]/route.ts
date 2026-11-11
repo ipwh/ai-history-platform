@@ -36,7 +36,7 @@ export async function GET(request: Request, context: { params: Promise<{ documen
       teacherOnlyBlockCount: teacherOnlyBlocks,
       looksLikeTeacherEdition: looksLikeTeacherEdition(document.fileName),
       /**
-       * 這份文件**現時**是否真的會顯示給學生。`studentDistribution` 為 true 但缺少版權確認
+       * 這份文件**現時**是否真的會顯示給學生。`studentDistribution` 為 true 但缺少使用授權確認
        * （教師版另需內容覆核）時，這裡會是 false——管理員介面會說明原因，避免誤以為已開放。
        */
       studentVisibleToStudents: documentIsStudentVisible(document),
@@ -50,13 +50,13 @@ const updateDocumentSchema = z
     /** 指定或解除教材所屬課題 */
     topicId: z.string().min(1).nullable().optional(),
     /**
-     * 學生可否在平台內閱讀這份教材（版權閘門）。
+     * 學生可否在平台內閱讀這份教材（教材授權閘門）。
      * 只有確認擁有在平台向學生發布該內容的權利時才可設為 true；
-     * 未確認的文件對學生完全不顯示（見 README「教材版權與學生閱讀範圍」）。
+     * 未確認的文件對學生完全不顯示（見 README「教材使用授權與學生閱讀範圍」）。
      */
     studentDistribution: z.boolean().optional(),
     /**
-     * 版權／發行權確認：**開放時必須帶上**（true）。這是「學校是否有權向學生發布
+     * 使用授權／發行權確認：**開放時必須帶上**（true）。這是「學校是否有權向學生發布
      * 這份內容」的確認，與內容安全覆核是兩件事。
      */
     confirmRights: z.boolean().optional(),
@@ -75,7 +75,7 @@ const updateDocumentSchema = z
  * 指定／解除教材所屬課題，或設定學生閱讀權限（後者會留下稽核記錄）。
  *
  * 開放（`studentDistribution: true`）需要兩項確認分工清楚：
- *   1. `confirmRights`：版權／發行權（**一律必要**）；
+ *   1. `confirmRights`：使用授權／發行權（**一律必要**）；
  *   2. `confirmTeacherEdition`：內容安全覆核（檔名標示為教師版時**必要**）。
  * 兩者都會記錄確認者及時間。撤銷立即生效，不需要任何確認。
  */
@@ -96,17 +96,17 @@ export async function PATCH(request: Request, context: { params: Promise<{ docum
     }
 
     if (body.studentDistribution === true) {
-      // 開放給學生：先確認版權／發行權，教師版另需內容安全覆核
+      // 開放給學生：先確認使用授權／發行權，教師版另需內容安全覆核
       if (body.confirmRights !== true) {
         throw new ApiRouteError(
-          `開放「${document.fileName}」給學生前，必須先確認版權／發行權（confirmRights: true）：` +
-            "即確認學校有權在平台向學生發布這份內容。系統不會代你判斷版權狀態。",
+          `開放「${document.fileName}」給學生前，必須先確認使用授權／發行權（confirmRights: true）：` +
+            "即確認學校有權在平台向學生發布這份內容。系統不會代你判斷使用授權狀態。",
           409,
         );
       }
       if (looksLikeTeacherEdition(document.fileName) && body.confirmTeacherEdition !== true) {
         // 教師版教材可能夾附答案、評分參考及教師註記；檔名已明確標示，
-        // 因此要求獨立的內容安全覆核（與版權確認分開記錄）。
+        // 因此要求獨立的內容安全覆核（與使用授權確認分開記錄）。
         throw new ApiRouteError(
           `「${document.fileName}」的檔名標示為教師版／答案材料，可能包含不適合學生閱讀的內容。` +
             "確認已逐段核對內容後，請帶同 confirmTeacherEdition: true 再次提交。",

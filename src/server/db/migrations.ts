@@ -398,7 +398,7 @@ export const MIGRATIONS: Migration[] = [
       // 原因：教材內容會在平台內向學生發布（例如作為 AI 出題依據及題目來源節錄）。
       // 教材可能是課本或第三方材料，學校未必有權在平台轉載；本專案沒有任何
       // 授權或發行權紀錄，因此**預設一律不可**（fail-closed），必須由管理員逐份文件
-      // 明確確認擁有發行權後才會顯示。詳見 README「教材版權與學生閱讀範圍」。
+      // 明確確認擁有發行權後才會顯示。詳見 README「教材使用授權與學生閱讀範圍」。
       `ALTER TABLE material_documents ADD COLUMN student_distribution INTEGER NOT NULL DEFAULT 0`,
     ],
   },
@@ -501,7 +501,7 @@ export const MIGRATIONS: Migration[] = [
     statements: [
       // 教材發布的兩項**分開**確認（Sprint 5）：
       //
-      //   rights_*  ：版權／發行權確認——學校是否有權在平台向學生發布這份內容。
+      //   rights_*  ：使用授權／發行權確認——學校是否有權在平台向學生發布這份內容。
       //   content_* ：內容安全覆核——已逐段核對，沒有答案、評分參考、教師註記等
       //               不適合學生閱讀的內容（教師版文件必須有此確認）。
       //

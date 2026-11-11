@@ -158,7 +158,7 @@ Sprint 14 的報告全部是**未提交的新增檔案**（untracked），已保
 [policy-decisions-2026-10-19.md](teacher-review/policy-decisions-2026-10-19.md) 頂部新增一頁總覽：13 項、每項含「決定、負責角色、影響閘門、未決安全預設、完成證據」。
 **所有負責角色目前為 `UNASSIGNED`**（沒有虛構人名）；優先次序：
 1. 歷史科審核者指派（`HISTORY_REVIEWER_EMAILS`）
-2. 36 份材料版權（擁有者聲明 vs 逐份授權）
+2. 36 份材料使用授權（擁有者聲明 vs 逐份授權）
 3. WAL sidecar 政策（A 已實作／B 未實作）
 4. SQLite 部署拓撲與多執行個體
 5. `export-production-snapshot`、`pilot-deepseek` 驗證責任
@@ -180,7 +180,7 @@ Sprint 14 的報告全部是**未提交的新增檔案**（untracked），已保
 | WARN (1) | copyright 12/36 |
 | INSUFFICIENT_EVIDENCE (3) | golden-evaluation、golden-approval、deployment |
 
-- `tests` PASS 只代表軟件檢查通過，**不**代表內容正確、版權、教師覆核或部署就緒（其他閘門仍 FAIL／PENDING）。
+- `tests` PASS 只代表軟件檢查通過，**不**代表內容正確、使用授權、教師覆核或部署就緒（其他閘門仍 FAIL／PENDING）。
 - 97 題在所有學生派題路徑仍被攔截（`tests/teacher-adjudication.test.ts`、`tests/release-controls.test.ts`）；舊快照未作答題目被隔離後回 409；批次候選排除；TOCTOU 條件更新仍在。
 - 沒有新增未受測試保護的繞過。
 
@@ -228,7 +228,7 @@ E2E 範圍：學生流程、後台教材／OCR、回報、教師覆核、練習�
 
 ## 11. 需要教師／科組／負責人決定【需決策】
 
-13 項（見 §7）。其中直接阻塞發布：歷史科審核者指派、Golden 教師安排、96 題處置、`qb-JTH2ndEdFBQ09015`、P1／P3 覆核政策、來源核實、解釋／技能標準、版權、部署驗收。
+13 項（見 §7）。其中直接阻塞發布：歷史科審核者指派、Golden 教師安排、96 題處置、`qb-JTH2ndEdFBQ09015`、P1／P3 覆核政策、來源核實、解釋／技能標準、使用授權、部署驗收。
 
 ---
 

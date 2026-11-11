@@ -30,7 +30,7 @@
 
 **未在 GitHub Actions 實際執行**（本機沒有 runner、沒有 GitHub 連線）：屬 `UNVERIFIED`。上述每個命令都已在本機以相同順序單獨執行（見 §4）。
 
-**已知阻塞（如實記錄）**：`data/` 與 `materials/*` 依版權政策列入 `.gitignore`，GitHub 託管 runner 沒有內容資料庫；瀏覽器測試需要真實或經核准的內容快照，因此 `ui-tests` 需 self-hosted runner。這是政策限制，不是可以用空資料庫繞過的技術問題。
+**已知阻塞（如實記錄）**：`data/` 與 `materials/*` 依使用授權政策列入 `.gitignore`，GitHub 託管 runner 沒有內容資料庫；瀏覽器測試需要真實或經核准的內容快照，因此 `ui-tests` 需 self-hosted runner。這是政策限制，不是可以用空資料庫繞過的技術問題。
 
 ## 4. 本次實際執行的檢查（全部為本 Sprint 新鮮結果）
 
@@ -90,7 +90,7 @@ Sprint 18 的修正全部保留並由瀏覽器測試覆蓋：錯誤區 `role="al
 | tests | PASS | PASS | 重新執行（1,235 passed、13 UI、128 E2E） |
 | deployment | INSUFFICIENT_EVIDENCE | INSUFFICIENT_EVIDENCE | 無 |
 
-**結論：`NOT READY` 不變，沒有任何 gate 因加入 CI 或重新執行測試而改變。** 加入 CI 與瀏覽器測試只影響 `tests` gate 的可信度，不影響內容、版權、政策或部署阻塞。
+**結論：`NOT READY` 不變，沒有任何 gate 因加入 CI 或重新執行測試而改變。** 加入 CI 與瀏覽器測試只影響 `tests` gate 的可信度，不影響內容、使用授權、政策或部署阻塞。
 
 ### 本 Sprint 的發現（未修正，需負責人決定）
 
@@ -103,7 +103,7 @@ Sprint 18 的修正全部保留並由瀏覽器測試覆蓋：錯誤區 `role="al
 3. 1,003 題來源待核實的安排。
 4. 1,334 題佔位解釋及 546 題只列答案的標準。
 5. 1,880 題技能標籤缺失的政策。
-6. 材料版權證據 12/36 的其餘 24 份。
+6. 材料使用授權證據 12/36 的其餘 24 份。
 7. Golden Dataset 42 候選的教師核准（0 approved）。
 8. staging／production 的 `HISTORY_REVIEWER_EMAILS`（本機設定不代表正式授權）。
 9. deployment 驗收證據、`export-production-snapshot`／`pilot-deepseek` 驗證、WAL sidecar 政策 B 是否採納、multi-instance SQLite 適用性。
@@ -115,7 +115,7 @@ Sprint 18 的修正全部保留並由瀏覽器測試覆蓋：錯誤區 `role="al
 | 項目 | 原因 |
 | --- | --- |
 | GitHub Actions 實際執行 | 本機無 runner／無 GitHub 連線；workflow 語法未經 Actions 解析器驗證 |
-| `ui-tests` job 在 GitHub 託管 runner 執行 | `data/` 依版權政策不入版本控制，託管 runner 無內容資料庫；不以空資料庫代替 |
+| `ui-tests` job 在 GitHub 託管 runner 執行 | `data/` 依使用授權政策不入版本控制，託管 runner 無內容資料庫；不以空資料庫代替 |
 | axe／自動無障礙掃描 | 需新增依賴，Sprint 19 明確不新增依賴 |
 | 螢幕閱讀器／鍵盤人工測試 | 需真人操作，未執行 |
 | 正式資料庫、migration、部署 | 明確禁止 |

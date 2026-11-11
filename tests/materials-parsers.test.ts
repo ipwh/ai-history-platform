@@ -2,7 +2,7 @@
  * 真實教材（DOCX／PDF）的解析器測試。
  *
  * ── 授權 fixture 機制（為甚麼這裡與其他測試不同）──────────────────────
- * `materials/` 是**受版權保護的課本內容**，依政策不納入版本控制。這個檔案驗證的是
+ * `materials/` 是**受使用授權限制的課本內容**，依政策不納入版本控制。這個檔案驗證的是
  * 「真實排版能否正確解析」（500+ 段落、表格、圖片標示、分節對應），用合成 DOCX
  * 無法取代，因此保留為**需要授權教材**的獨立測試：
  *
@@ -41,7 +41,7 @@ process.env.APP_DATABASE_PATH = testDbPath;
 const { materialsDir } = getServerConfig();
 // 書本內容以課題分資料夾存放，路徑由共用解析器找出（相容舊的檔名寫法）
 const pilotPath = resolveMaterialPath(materialsDir, "課題5 近代歐洲的興起/課題5 近代歐洲的興起.docx");
-// PDF 解析用倉庫內自製的最小樣本，不依賴 materials/ 內具版權的教材
+// PDF 解析用倉庫內自製的最小樣本，不依賴 materials/ 內具使用授權的教材
 const pdfFixturePath = fileURLToPath(new URL("./fixtures/sample-guideline.pdf", import.meta.url));
 const hasPilot = pilotPath !== null;
 const pilotFileName = pilotPath ? path.basename(pilotPath) : "";

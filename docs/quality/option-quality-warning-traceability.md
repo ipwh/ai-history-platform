@@ -164,6 +164,6 @@ SELECT code, COUNT(*) FROM question_quality_findings
 
 - 不是教師批准、不是覆核紀錄、不是發布許可；
 - 不是歷史事實正確性的證據（`correctAnswer` 只是平台記錄的答案）；
-- 不是版權或 provenance 已處理的證明；
+- 不是使用授權或 provenance 已處理的證明；
 - 不是「已消除選最長漏洞」的證明——Sprint 22／23 已證實長度線索在選項打亂後仍然存在，
   本 Sprint 只令它可以被**看見與統計**。

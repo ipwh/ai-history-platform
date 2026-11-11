@@ -210,7 +210,7 @@ describe("發布閘門判定", () => {
     expect(gateStatus(input, "source-traceability")).toBe("POLICY_PENDING");
   });
 
-  it("沒有擁有者版權確認 → POLICY_PENDING；有確認但逐份紀錄不足 → WARN", () => {
+  it("沒有擁有者使用授權確認 → POLICY_PENDING；有確認但逐份紀錄不足 → WARN", () => {
     expect(
       gateStatus(
         inputFixture({

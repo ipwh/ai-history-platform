@@ -62,7 +62,7 @@ const PAGE_HTML = [
   "<nav>主頁 | 關於我們</nav><main><h1>Treaty of Versailles</h1>",
   "<p>",
   PAGE_TEXT,
-  "</p></main><footer>版權所有</footer></body></html>",
+  "</p></main><footer>使用授權所有</footer></body></html>",
 ].join("");
 
 let postChat: typeof import("@/app/api/tutor/chat/route").POST;

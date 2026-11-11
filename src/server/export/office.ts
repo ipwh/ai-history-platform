@@ -184,13 +184,13 @@ ${normalized
     `${XML_DECLARATION}
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/">
 <dc:title>${xmlEscape(options.title ?? "學生練習記錄")}</dc:title>
-<dc:creator>香港中學歷史科自學互動網站</dc:creator>
+<dc:creator>香港中學歷史科自學互動平台</dc:creator>
 </cp:coreProperties>`,
   );
   zip.file(
     "docProps/app.xml",
     `${XML_DECLARATION}
-<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>香港中學歷史科自學互動網站</Application></Properties>`,
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>香港中學歷史科自學互動平台</Application></Properties>`,
   );
   zip.file(
     "xl/workbook.xml",
@@ -350,13 +350,13 @@ export async function buildDocx(
     `${XML_DECLARATION}
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/">
 <dc:title>${xmlEscape(options.title ?? "學生練習記錄")}</dc:title>
-<dc:creator>香港中學歷史科自學互動網站</dc:creator>
+<dc:creator>香港中學歷史科自學互動平台</dc:creator>
 </cp:coreProperties>`,
   );
   zip.file(
     "docProps/app.xml",
     `${XML_DECLARATION}
-<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>香港中學歷史科自學互動網站</Application></Properties>`,
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>香港中學歷史科自學互動平台</Application></Properties>`,
   );
   zip.file(
     "word/_rels/document.xml.rels",

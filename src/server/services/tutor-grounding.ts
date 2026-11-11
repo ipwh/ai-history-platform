@@ -9,7 +9,7 @@
  *   2. 回覆後檢查模型有沒有用了課本以外的寫法，讓介面可以顯示對照。
  *
  * ── 與既有政策的關係（不可繞過）────────────────────────────────────────
- *   1. 只使用 `listStudentDistributableDocumentIds()` 的文件（已開放、已確認版權；
+ *   1. 只使用 `listStudentDistributableDocumentIds()` 的文件（已開放、已確認使用授權；
  *      教師版文件另需內容覆核紀錄）；
  *   2. 校內試題檔（`kind = 'question-bank'`）永不使用——那是題目與答案，不是課文；
  *   3. 練習題／評分參考／圖片標記／零散數字（`isNonLessonContent`）及教師專用文字
@@ -987,7 +987,20 @@ export function lexiconScopeForTopicId(topicId: string): string | null {
   return match ? `課題${match[1]}` : null;
 }
 
+function requiresAnyMet(
+  normalizedText: string,
+  group: (typeof HISTORY_TERM_GROUPS)[number],
+): boolean {
+  if (group.requiresAny === undefined) return true;
+  return group.requiresAny.some((term) => {
+    const key = normalizeHistoryAnswer(term);
+    return key.length >= 1 && normalizedText.includes(key);
+  });
+}
+
 function groupMatchesText(normalizedText: string, group: (typeof HISTORY_TERM_GROUPS)[number]): boolean {
+  // 有些簡稱橫跨多個課題（「新界」），必須同時出現指定用語才算命中。
+  if (!requiresAnyMet(normalizedText, group)) return false;
   const canonical = normalizeHistoryAnswer(group.canonical);
   if (canonical.length >= 2 && normalizedText.includes(canonical)) return true;
   return group.aliases.some((alias) => {
@@ -1000,12 +1013,48 @@ function groupMatchesText(normalizedText: string, group: (typeof HISTORY_TERM_GR
   });
 }
 
+/**
+ * 明確專名是否「提問的主語」，而不是時間背景。
+ *
+ * 「二戰之後有兩個大國互相針對…」是在問冷戰，不是在問二戰；若只因出現「二戰」
+ * 就切換到課題9，會把學生正在溫習的課題10 換走（2026-11-11 回歸測試）。
+ * 出現「X之後」「X期間」「X前夕」等寫法時，X 只是時間定位，不算主語。
+ *
+ * 注意「後果」「前因」不是時間標記，因此以 negative lookahead 排除。
+ */
+const TEMPORAL_AFTER_TERM = /^(?:之後|以後|期間|時期|前夕|結束後|爆發後|(?:以)?後(?!果|遺|代|人|來)|前(?!因|夕|提))/;
+
+function explicitTermIsSubject(
+  normalizedText: string,
+  group: (typeof HISTORY_TERM_GROUPS)[number],
+): boolean {
+  const keys = [group.canonical, ...group.aliases]
+    .map((value) => normalizeHistoryAnswer(value))
+    .filter((key) => key.length >= 2);
+  for (const key of keys) {
+    let index = normalizedText.indexOf(key);
+    while (index >= 0) {
+      const after = normalizedText.slice(index + key.length, index + key.length + 4);
+      if (!TEMPORAL_AFTER_TERM.test(after)) return true;
+      index = normalizedText.indexOf(key, index + 1);
+    }
+  }
+  return false;
+}
+
 export interface TutorTopicGuess {
   topicId: string;
   topicTitle: string;
   score: number;
   /** 提問命中的分節（用於優先取該分節的教材段落） */
   sectionIds: string[];
+  /**
+   * 提問是否命中詞庫的**明確專名**（`topicId` 指定課題，或只有一個課題的 `課題N` 範疇）。
+   *
+   * 分節關鍵詞及課題標題片段也可以累積分數，但那些只是「可能相關」；明確專名才是
+   * 學生真的點名了某一課題。切換課題時以它為準（2026-11-11 學生模擬）。
+   */
+  explicitTerm?: boolean;
 }
 
 /**
@@ -1042,6 +1091,8 @@ export function guessTutorTopic(
   for (const topic of topics) {
     let score = 0;
     const sectionIds: string[] = [];
+    /** 詞庫明確專名（`topicId` 或單一課題的 `課題N` 範疇） */
+    let explicitTerm = false;
     // 學生直接說出課程編號：這是最明確的訊號，優先於其他比對。
     if (requestedTopicIds.has(topic.id)) score += 24;
     for (const segment of topic.title.split(/[：:–—()（）及]/)) {
@@ -1081,18 +1132,23 @@ export function guessTutorTopic(
     const pinnedMatches = HISTORY_TERM_GROUPS.filter(
       (group) =>
         group.topicId === topic.id &&
-        (groupMatchesText(normalizedText, group) || looseTerms.has(group.canonical)),
+        (groupMatchesText(normalizedText, group) ||
+          (looseTerms.has(group.canonical) && requiresAnyMet(normalizedText, group))),
     );
-    if (pinnedMatches.length > 0) score += 16;
+    if (pinnedMatches.length > 0) {
+      score += 16;
+      explicitTerm = true;
+    }
 
     const scope = lexiconScopeForTopicId(topic.id);
     if (scope !== null) {
-      const matchedScopeGroup = HISTORY_TERM_GROUPS.some(
+      const scopeMatches = HISTORY_TERM_GROUPS.filter(
         (group) =>
           group.topicId === undefined &&
           group.scope === scope &&
           (groupMatchesText(normalizedText, group) || looseTerms.has(group.canonical)),
       );
+      const matchedScopeGroup = scopeMatches.length > 0;
       /**
        * 「高中」範疇橫跨五個課題：若只因一個高中詞就給每個高中課題加分，五者會同分，
        * 平手時取資料庫次序第一個（香港的現代化）。實測個案：「Compare the American and
@@ -1102,7 +1158,22 @@ export function guessTutorTopic(
        * 初中 `課題N` 只對應一個課題，維持原本的加分。
        */
       const ambiguousScope = scope === "高中";
-      if (matchedScopeGroup && (!ambiguousScope || score > 0)) score += 10;
+      /**
+       * 初中 `課題N` 只對應一個課題，屬**明確專名**：分數維持 10（與高中範疇一致，
+       * 免得同一史實在初中／高中課題之間失衡），但會標記 `explicitTerm`。
+       * 課題切換時（見下方 `ANCHOR…` 規則）「有明確專名」即可蓋過 soft prior，
+       * 不必等待分數達到 16（2026-11-11 學生模擬：原本「柏林圍牆幾時拆？」
+       * 「希特拉係咪香港人？」在練習課題5 的脈絡下全部被拉回課題5）。
+       */
+      if (matchedScopeGroup && (!ambiguousScope || score > 0)) {
+        score += 10;
+        if (
+          !ambiguousScope &&
+          scopeMatches.some((group) => explicitTermIsSubject(normalizedText, group))
+        ) {
+          explicitTerm = true;
+        }
+      }
     }
     // 錯別字命中的專名若是某分節的關鍵詞（「明治為新」→ 分節「明治維新」），
     // 以該分節所屬課題為先；否則詞庫的「高中」範疇會令所有高中課題同分，
@@ -1127,6 +1198,7 @@ export function guessTutorTopic(
       topicTitle: topic.title,
       score,
       sectionIds,
+      explicitTerm,
     };
     if (isBetter(candidate, best)) best = candidate;
     if (studentLevel !== null && topic.level === studentLevel && isBetter(candidate, bestAtStudentLevel)) {
@@ -1643,6 +1715,15 @@ export function findTutorGrounding(
     studentLevel?: number | null;
     /** 本回合最多引用幾段教材（由回覆深度決定，見 services/tutor-depth.ts） */
     maxSources?: number;
+    /**
+     * soft prior 沒有可用片段時，是否可用教材內文反推另一個課題（2026-11-11）。
+     *
+     * 預設 **false**：改寫詞或一般詞彙不可把提問帶到另一個課題，否則
+     * 「改寫詞不會令無關段落成為依據」這項保證會失守（見 tutor-grounding.test.ts）。
+     * 只有練習題所屬課題、對話已保存的課題這類**平台推測**的 soft prior 才由呼叫端
+     * （`/api/tutor/chat`）明確開啟；學生自己設定的溫習目標永不開啟。
+     */
+    allowSoftPriorFallback?: boolean;
     /** 收集檢索至選段的處理紀錄（省略時仍會建立，隨結果回傳） */
     audit?: TutorPassageSelectionAudit;
   } = {},
@@ -1875,7 +1956,13 @@ export function findTutorGrounding(
     if (
       preferredGuess !== null &&
       preferredGuess.topicId !== guess.topicId &&
-      guess.score < EXPLICIT_TOPIC_OVERRIDE_SCORE
+      guess.score < EXPLICIT_TOPIC_OVERRIDE_SCORE &&
+      /**
+       * 明確專名（詞庫指定課題的「柏林圍牆」「希特拉」「展拓香港界址專條」等）
+       * 不受分數門檻限制：學生真的點名了另一課題，就應該切換（2026-11-11 學生模擬）。
+       * 分節關鍵詞及標題片段仍受 16 分門檻限制，避免「二戰」二字把提問帶走。
+       */
+      guess.explicitTerm !== true
     ) {
       const scratchAudit: TutorPassageSelectionAudit = {
         candidateBlocks: 0,
@@ -1906,8 +1993,16 @@ export function findTutorGrounding(
      * 只在推斷來自**課程用語**時才重試：若課題是學生自己設定的溫習目標
      * （`preferred-topic`），不可因為模型的改寫詞而把學生正在溫習的課題換掉——
      * 否則「改寫詞不會令無關段落成為依據」這項保證會失守。
+     *
+     * 2026-11-11 學生模擬：由練習頁進入時，練習題所屬課題只是 soft prior。
+     * 學生問「新界係幾時租俾英國？」時該課題沒有可用片段，原本直接回「教材未涵蓋」，
+     * 但教材其實在另一個課題有 12 段相關內容。現在 soft prior 沒有片段時亦會以
+     * 教材內文反推；只有學生**明確設定**的溫習目標（`preferredTopicIsGoal`）才不改寫。
      */
-    if (attempt.passages.length === 0 && audit.topicInference.source === "curriculum") {
+    const mayFallbackFromPreferred =
+      audit.topicInference.source !== "preferred-topic" ||
+      options.allowSoftPriorFallback === true;
+    if (attempt.passages.length === 0 && mayFallbackFromPreferred) {
       const fallbackGuess = applyMaterialFallback();
       if (fallbackGuess !== null && fallbackGuess.topicId !== guess.topicId) {
         guess = fallbackGuess;

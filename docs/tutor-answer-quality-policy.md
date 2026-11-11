@@ -205,3 +205,21 @@ C3 **不是**拒絕機制：提示詞明文「不可以因為找不到教材而�
 7. 回歸測試：[tutor-keyword-miss-regression.test.ts](../tests/tutor-keyword-miss-regression.test.ts)
    （55 條）及 [tutor-query-expansion-route.test.ts](../tests/tutor-query-expansion-route.test.ts)
    （含澄清前改寫、可答性重算）。
+
+## 12. 2026-11-11 更新（真實模型對答模擬）
+
+以 16 輪真實 DeepSeek 對答模擬（含粵語、簡體、英文、比較、評價、離題、要求直接代做功課、
+虛構前提「希特拉係咪香港人？」及追問依據）後：
+
+| 發現 | 處理 | 測試 |
+| --- | --- | --- |
+| 由練習進入後問另一課題的專名，回覆標示錯誤課題並引用另一課題段落 | 詞庫明確專名可切換 soft prior；時間背景（「二戰之後……」）不切換 | `tutor-topic-scope-regression.test.ts`、`tutor-keyword-miss-regression.test.ts` |
+| 「新界租借」因簡稱橫跨三個課題而推斷失敗，誤引課題6 的殖民擴張段落 | `requiresAny` 共現守衛；條約範疇更正為課題8；soft prior 無片段時以教材內文反推 | `tutor-topic-scope-regression.test.ts` |
+| 追問「有冇課本根據？」被當成新提問，語意改寫後引用完全無關的日本教材 | 依據查詢直接列出上一則回覆的教材節錄（零模型呼叫） | `tutor-chat.test.ts` |
+| 回覆用簡體字（誤報） | 以字元表逐個核對，確認「月」等字屬繁簡同形，**沒有**簡體字洩漏 | 模擬腳本輸出 |
+
+**仍然成立的分工**：這些修正只影響「檢索到哪個課題的哪幾段」，不會把模型回答升級為已核准內容。
+歷史正確性、教學適切性及語言質素仍需歷史科教師逐題覆核（見第 7、8 節）。
+
+**用語整理（同日）**：全部文件及介面中指向權利的字眼一律改為「使用授權」（`rights_confirmed_at`
+語意不變：只記錄「誰在何時確認學校有權向學生發布」，不代表已取得任何第三方授權）。

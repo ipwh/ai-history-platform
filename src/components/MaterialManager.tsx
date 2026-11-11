@@ -77,11 +77,11 @@ interface DocumentDetailResponse {
   /** 被判定為教師專用內容（答案、評分參考）而不會顯示給學生的段落數 */
   teacherOnlyBlockCount: number;
   /**
-   * 這份文件**現時**是否真的會顯示給學生。`studentDistribution` 為 true 但缺少版權確認
+   * 這份文件**現時**是否真的會顯示給學生。`studentDistribution` 為 true 但缺少使用授權確認
    * （教師版另需內容覆核）時為 false——管理員介面必須說明，否則會誤以為已開放給學生。
    */
   studentVisibleToStudents?: boolean;
-  /** 兩項發布確認（版權／發行權、內容安全覆核）的記錄 */
+  /** 兩項發布確認（使用授權／發行權、內容安全覆核）的記錄 */
   governance?: {
     rightsConfirmedAt: string | null;
     rightsConfirmedBy: string | null;
@@ -374,7 +374,7 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
   }, [data, initialDocumentId]);
 
   /**
-   * 設定學生閱讀權限（版權閘門）。
+   * 設定學生閱讀權限（教材授權閘門）。
    *
    * 只會在管理員於介面上明確確認（見 DistributionPanel 的兩步確認）後才會呼叫；
    * 關閉時立即生效。回應中的稽核記錄會即時顯示，讓管理員看到「誰在何時」改動。
@@ -392,7 +392,7 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
         governance: DocumentDetailResponse["governance"];
       }>(`/api/admin/materials/${documentId}`, {
         studentDistribution: allowed,
-        // 開放時必須帶上版權／發行權確認；教師版另需內容安全覆核確認
+        // 開放時必須帶上使用授權／發行權確認；教師版另需內容安全覆核確認
         ...(allowed
           ? { confirmRights: true, ...(options.confirmTeacherEdition ? { confirmTeacherEdition: true } : {}) }
           : {}),
@@ -815,9 +815,9 @@ export function MaterialManager({ initialDocumentId }: { initialDocumentId?: str
 /**
  * 教材發行權（學生閱讀權限）管理。
  *
- * 版權閘門預設關閉：未經管理員確認的文件對學生完全不顯示。開放前需要兩步確認
+ * 教材授權閘門預設關閉：未經管理員確認的文件對學生完全不顯示。開放前需要兩步確認
  * （先按「開放學生閱讀」，再勾選確認聲明），避免在清單上誤按即等同在平台向學生發布
- * 受版權保護的內容。所有變更都會留下「誰在何時」的稽核記錄。
+ * 受使用授權限制的內容。所有變更都會留下「誰在何時」的稽核記錄。
  */
 function DistributionPanel({
   document,
@@ -834,7 +834,7 @@ function DistributionPanel({
   looksLikeTeacherEdition: boolean;
   /** 被判定為教師專用內容而不會顯示給學生的段落數 */
   teacherOnlyBlockCount: number;
-  /** 兩項發布確認的記錄（版權／發行權、內容安全覆核） */
+  /** 兩項發布確認的記錄（使用授權／發行權、內容安全覆核） */
   governance: DocumentDetailResponse["governance"] | null;
   /** 伺服器判定的「現時是否真的會顯示給學生」 */
   studentVisibleToStudents: boolean | undefined;
@@ -850,7 +850,7 @@ function DistributionPanel({
       className="flex flex-col gap-2 rounded-lg p-3 text-sm"
       style={{ background: "var(--accent-soft)" }}
     >
-      <h3 className="font-semibold">教材版權閘門：學生閱讀權限</h3>
+      <h3 className="font-semibold">教材教材授權閘門：學生閱讀權限</h3>
 
       {isQuestionBank ? (
         <p className="text-gray-700">
@@ -867,24 +867,24 @@ function DistributionPanel({
           {document.studentDistribution && studentVisibleToStudents === false ? (
             <p className="text-xs" style={{ color: "#b45309" }}>
               ⚠ <strong>學生現時仍然看不到這份教材</strong>：雖然已標示開放，但缺少必要的確認
-              （版權／發行權未確認，或教師版文件未完成內容安全覆核）。這種情況常見於在
+              （使用授權／發行權未確認，或教師版文件未完成內容安全覆核）。這種情況常見於在
               「兩項確認」機制啟用前已開放、或由舊備份還原的文件。請按下方按鈕重新確認，
               學生才會看到內容。
             </p>
           ) : null}
           <p className="text-xs text-gray-600">
-            開放需要兩項確認（都會記錄確認者及時間）：<strong>版權／發行權</strong>
+            開放需要兩項確認（都會記錄確認者及時間）：<strong>使用授權／發行權</strong>
             （是否有權在平台向學生發布這份內容）與<strong>內容安全覆核</strong>
             （教師版文件另需逐段核對，確認沒有答案或評分參考）。撤銷立即生效，不需要任何確認。
-            系統不會代你判斷版權狀態，亦沒有內建授權紀錄。
+            系統不會代你判斷使用授權狀態，亦沒有內建授權紀錄。
           </p>
 
           {governance && (governance.rightsConfirmedAt || governance.contentReviewedAt) ? (
             <p className="text-xs text-gray-600">
               上次確認：
               {governance.rightsConfirmedAt
-                ? `版權／發行權由 ${governance.rightsConfirmedBy} 於 ${governance.rightsConfirmedAt.slice(0, 10)} 確認`
-                : "版權／發行權未確認"}
+                ? `使用授權／發行權由 ${governance.rightsConfirmedBy} 於 ${governance.rightsConfirmedAt.slice(0, 10)} 確認`
+                : "使用授權／發行權未確認"}
               ；
               {governance.contentReviewedAt
                 ? `內容安全覆核由 ${governance.contentReviewedBy} 於 ${governance.contentReviewedAt.slice(0, 10)} 完成`

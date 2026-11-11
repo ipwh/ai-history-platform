@@ -14,7 +14,7 @@
  * 本工具把這種情況明確列出來，而不是把它當成「已批准」或「已侵權」。
  *
  * 重要限制（不可由本工具推斷）：
- *   - 「有 approved 覆核」不代表史實正確、版權已清或課程適用；
+ *   - 「有 approved 覆核」不代表史實正確、使用授權已清或課程適用；
  *   - 「沒有證據」不代表內容錯誤或侵權，只代表**證據缺口**；
  *   - 本工具不連接正式資料庫；正式環境狀態須另行以可追溯方式核對。
  */
@@ -338,7 +338,7 @@ function main(): void {
     console.log(`  從未有任何批准：${summary.staleApprovalBreakdown.neverApproved}`);
     console.log("");
     console.log("注意：本工具只指出**證據缺口**，不代表內容錯誤、侵權或已獲批准。");
-    console.log("      「有 approved 覆核」亦不代表史實正確或版權已清。");
+    console.log("      「有 approved 覆核」亦不代表史實正確或使用授權已清。");
   }
 
   if (outDir !== null) {

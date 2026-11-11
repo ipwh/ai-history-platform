@@ -277,6 +277,36 @@ export function hasExplicitVagueness(raw: string): boolean {
   return EXPLICIT_VAGUENESS.test(normalizeTutorQuery(raw));
 }
 
+/**
+ * 「依據查詢」：學生追問上一則回覆有甚麼根據，而不是問一個新的歷史問題。
+ *
+ * 2026-11-11 學生模擬：學生問「新界係幾時租俾英國？」後追問「你憑咩話係咁？
+ * 有冇課本根據？」，系統把它當成新的歷史提問，語意改寫後竟把課題換成課題3
+ * （日本的現代化），回覆引用了完全無關的日本教材。
+ *
+ * 這類提問應留在**同一課題**並沿用上一輪的教材依據，不可重新推斷課題。
+ * 只在提問本身幾乎沒有內容詞時才成立，免得「凡爾賽條約有甚麼根據？」這類真正的
+ * 歷史提問被當成純粹的依據查詢。
+ */
+const EVIDENCE_QUESTION_PATTERNS: RegExp[] = [
+  /有(?:冇|沒有|無)(?:課本|教材|根據|依據|出處|來源|證據)/,
+  /(?:課本|教材|根據|依據|出處|來源|證據)(?:係|是)?(?:咩|什麼|甚麼|邊|哪)/,
+  /(?:邊|哪)(?:一)?(?:段|頁|篇|句)(?:教材|課本|課文)/,
+  /你(?:憑|根據)(?:咩|什麼|甚麼|乜)/,
+  /(?:點|怎麼|如何)(?:知|證明|支持)/,
+  /(?:howdoyouknow|whatsyour(?:source|evidence)|whatisyour(?:source|evidence)|canyouprovethat|citation)/,
+];
+
+export function isTutorEvidenceQuestion(raw: string): boolean {
+  const normalized = normalizeTutorQuery(raw);
+  if (normalized.length === 0) return false;
+  if (!EVIDENCE_QUESTION_PATTERNS.some((pattern) => pattern.test(normalized))) return false;
+  // 句中另有具體歷史內容（人名、事件、年份）時，視為新的歷史提問。
+  if (hasHistoricalYearSignal(normalized)) return false;
+  if (canonicalHistoryTerm(normalized) !== null) return false;
+  return true;
+}
+
 export function isUnclearTutorQuery(
   raw: string,
   curriculum: TutorCurriculumIndex,

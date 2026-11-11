@@ -312,7 +312,7 @@ export function listReviewQueue(  queue: ReviewQueue,
     };
   }
 
-  // 候選清單是**產生檔**（依版權政策不納入版本控制）：檔案不存在時必須如實回報
+  // 候選清單是**產生檔**（依使用授權政策不納入版本控制）：檔案不存在時必須如實回報
   // available=false 及原因，而不是令整個佇列 API 以 500 失敗（2026-10-23 CI 發現：
   // 乾淨 checkout 沒有 docs/teacher-review/golden-candidates-*.json）。
   let goldenCandidates;

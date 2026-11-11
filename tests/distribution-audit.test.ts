@@ -113,7 +113,7 @@ beforeAll(async () => {
   materialsRepo = await import("@/server/repositories/materials");
   teacherContent = await import("@/server/materials/teacher-content");
   seed.ensureBootstrap();
-  // 發行權是針對教材文件，因此測試需要已匯入的教材（合成教材，非受版權保護的課本）
+  // 發行權是針對教材文件，因此測試需要已匯入的教材（合成教材，非受使用授權限制的課本）
   await importTestPilotMaterial();
 });
 
@@ -125,15 +125,15 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
     expect(materialsRepo.listStudentDistributableDocumentIds().size).toBe(0);
   });
 
-  it("開放發行權需要版權確認（confirmRights），只帶 studentDistribution 會被拒（409）", async () => {
-    // 用教師版文件驗證：即使確認了版權，仍需要內容安全覆核（見下一個測試）
+  it("開放發行權需要使用授權確認（confirmRights），只帶 studentDistribution 會被拒（409）", async () => {
+    // 用教師版文件驗證：即使確認了使用授權，仍需要內容安全覆核（見下一個測試）
     const sectionId = PILOT_SECTION;
     const documentId = createTeacherEditionDocument(sectionId, "topic-5").id;
     const before = materialsRepo.listDistributionAudit(documentId).length;
     const response = await patchDocument(documentId, { studentDistribution: true }, cookieFor(ADMIN));
     expect(response.status).toBe(409);
     const body = (await response.json()) as { error?: string };
-    expect(body.error ?? "").toContain("版權");
+    expect(body.error ?? "").toContain("使用授權");
 
     // 未確認前不會開放，也不會留下稽核記錄
     expect(materialsRepo.getDocument(documentId)?.studentDistribution).toBe(false);
@@ -141,7 +141,7 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
     expect(materialsRepo.getDocumentGovernance(documentId).rightsConfirmedAt).toBeNull();
   });
 
-  it("版權確認與內容安全覆核分開記錄（誰在何時確認）", async () => {
+  it("使用授權確認與內容安全覆核分開記錄（誰在何時確認）", async () => {
     const sectionId = PILOT_SECTION;
     const documentId = createTeacherEditionDocument(sectionId, "topic-5").id;
     const response = await patchDocument(
@@ -174,10 +174,10 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
     expect(materialsRepo.getDocument(documentId)?.studentDistribution).toBe(false);
   });
 
-  it("沒有內容覆核確認時不會單獨寫入版權確認紀錄（兩項都通過才開放）", async () => {
+  it("沒有內容覆核確認時不會單獨寫入使用授權確認紀錄（兩項都通過才開放）", async () => {
     const sectionId = PILOT_SECTION;
     const documentId = createTeacherEditionDocument(sectionId, "topic-5").id;
-    // 教師版文件：只帶版權確認會被內容覆核關卡擋下
+    // 教師版文件：只帶使用授權確認會被內容覆核關卡擋下
     const blocked = await patchDocument(
       documentId,
       { studentDistribution: true, confirmRights: true },
@@ -187,7 +187,7 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
     const body = (await blocked.json()) as { error?: string };
     expect(body.error ?? "").toContain("教師版");
     expect(materialsRepo.getDocument(documentId)?.studentDistribution).toBe(false);
-    // 被擋下時兩項確認都不會寫入（不會留下「已確認版權」的半途狀態）
+    // 被擋下時兩項確認都不會寫入（不會留下「已確認使用授權」的半途狀態）
     const governance = materialsRepo.getDocumentGovernance(documentId);
     expect(governance.rightsConfirmedAt).toBeNull();
     expect(governance.contentReviewedAt).toBeNull();
@@ -295,7 +295,7 @@ describe("教材發行權（fail-closed 及稽核記錄）", () => {
       .listDocuments()
       .find((document) => document.kind === "question-bank");
     if (!questionBank) return;
-    // 即使已完整確認版權及內容，校內試題仍因 kind 而被排除
+    // 即使已完整確認使用授權及內容，校內試題仍因 kind 而被排除
     openDocumentForStudents(materialsRepo, questionBank.id);
     expect(materialsRepo.listStudentDistributableDocumentIds().has(questionBank.id)).toBe(false);
   });
@@ -419,7 +419,7 @@ describe("教師版／混合文件（不可只因 kind 不是試題檔就當作�
     ]);
     try {
       expect(teacherContent.looksLikeTeacherEdition(document.fileName)).toBe(true);
-      // 完整治理開放（版權 + 內容覆核）後，只有段落層級的教師專用過濾會令內容不計入
+      // 完整治理開放（使用授權 + 內容覆核）後，只有段落層級的教師專用過濾會令內容不計入
       openDocumentForStudents(materialsRepo, document.id);
       expect(studentBlockCount("topic-1", "topic-1-stone-age")).toBe(0);
     } finally {

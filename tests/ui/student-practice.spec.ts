@@ -31,10 +31,13 @@ async function signIn(page: Page, role: keyof typeof UI_TEST_IDENTITIES) {
 }
 
 /** 透過真實 API 建立一次練習，回傳 session id（學生身分由 cookie 決定） */
-async function createPracticeSession(questionCount = 3): Promise<string> {
+async function createPracticeSession(
+  questionCount = 3,
+  role: keyof typeof UI_TEST_IDENTITIES = "student",
+): Promise<string> {
   const context = await request.newContext({
     baseURL: UI_TEST_BASE_URL,
-    extraHTTPHeaders: { cookie: `${SESSION_COOKIE}=${cookies.student}` },
+    extraHTTPHeaders: { cookie: `${SESSION_COOKIE}=${cookies[role]}` },
   });
   try {
     const response = await context.post("/api/practice", {
@@ -234,6 +237,32 @@ test("私密瀏覽／localStorage 被封鎖時仍可載入及作答", async ({ p
   await expect(page.locator('.option-row[data-state="correct"]')).toHaveCount(1);
 });
 
+/**
+ * 作答頁的引導（2026-11-11 擁有者指示）：
+ * 學生經常誤按「提交答案」及「下一題」，因此未選答案時「提交答案」不可按；
+ * 提交後同一個位置才變成「下一題」，畫面任何時候只有一個「下一題」。
+ */
+test("未選答案時不可提交，提交後主要按鈕才變成「下一題」", async ({ page }) => {
+  await signIn(page, "student");
+  const sessionId = await createPracticeSession();
+  await page.goto(`/practice/${sessionId}`);
+  await expect(page.getByText(QUESTION_HEADER)).toBeVisible();
+
+  const submit = page.getByRole("button", { name: "提交答案" });
+  await expect(submit).toBeDisabled();
+  await expect(page.getByText(/第 1 步：點選一個答案方格/)).toBeVisible();
+
+  await page.locator(".option-row").first().click();
+  await expect(submit).toBeEnabled();
+  await submit.click();
+  await expect(page.locator('.option-row[data-state="correct"]')).toHaveCount(1);
+
+  // 已提交：主要按鈕變成「下一題」，而且只有一個（不會與另一個「下一題」並排）
+  await expect(page.getByRole("button", { name: "提交答案" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "下一題" })).toHaveCount(1);
+  await expect(page.getByText(/已提交，請按「下一題」繼續/)).toBeVisible();
+});
+
 test("未登入時由伺服器守衛導向登入頁，而不是顯示空白或假題目", async ({ page }) => {
   const sessionId = await createPracticeSession();
   // 刻意不加入任何登入 cookie
@@ -241,6 +270,96 @@ test("未登入時由伺服器守衛導向登入頁，而不是顯示空白或�
   await expect(page).toHaveURL(/\/login/);
   // 不是練習畫面：選項按鈕不存在（不會在未登入時派題或顯示假資料）
   await expect(page.locator(".option-row")).toHaveCount(0);
+});
+
+/**
+ * 練習 → 學伴（2026-11-11 擁有者指示）：
+ * 以往一按「問學伴這題的概念」就離開作答頁，學伴頁沒有回到該題的入口，
+ * 學生只能靠瀏覽器上一頁，作業等於中斷。網址現在會帶 `returnTo`，
+ * 學伴頁頂部顯示「返回這題繼續作答」，並回到同一題（答案與回饋已儲存）。
+ */
+test("按「問學伴這題的概念」後可返回同一題繼續作答", async ({ page }) => {
+  await signIn(page, "tutorStudent");
+  const sessionId = await createPracticeSession(3, "tutorStudent");
+  await page.goto(`/practice/${sessionId}`);
+  await expect(page.getByText(QUESTION_HEADER)).toBeVisible();
+
+  await page.locator(".option-row").first().click();
+  await page.getByRole("button", { name: "提交答案" }).click();
+  await expect(page.locator('.option-row[data-state="correct"]')).toHaveCount(1);
+  const questionStem = await page.locator("article h1").innerText();
+
+  const tutorLink = page.getByRole("link", { name: /問學伴這題的概念/ });
+  const tutorHref = (await tutorLink.getAttribute("href")) ?? "";
+  expect(tutorHref).toContain("returnTo=");
+  const questionId = new URL(tutorHref, UI_TEST_BASE_URL).searchParams.get("questionId");
+  await tutorLink.click();
+
+  await expect(page).toHaveURL(/\/tutor\?/);
+  const returnLink = page.getByRole("link", { name: "← 返回這題繼續作答" });
+  await expect(returnLink).toBeVisible();
+  await expect(returnLink).toHaveAttribute(
+    "href",
+    `/practice/${sessionId}?question=${questionId}`,
+  );
+
+  await returnLink.click();
+  await expect(page).toHaveURL(new RegExp(`/practice/${sessionId}\\?question=`));
+  await expect(page.getByText(QUESTION_HEADER)).toBeVisible();
+  // 回到同一題：題幹相同，而且那一題已作答（回饋仍在）
+  expect(await page.locator("article h1").innerText()).toBe(questionStem);
+  await expect(page.getByText(/已作答 1 題/)).toBeVisible();
+  await expect(page.locator('.option-row[data-state="correct"]')).toHaveCount(1);
+});
+
+/**
+ * 學伴提問（2026-11-11 擁有者指示）：
+ * 學生以往只會見到系統預設的問題，無法自行輸入。現在提問框在手機貼齊底部，
+ * 開場引導亦有「自己輸入問題」；學生自行輸入的內容會原樣送到 `/api/tutor/chat`。
+ */
+test("學生可在學伴頁自行輸入問題並送出（不限於系統建議）", async ({ page }) => {
+  const ownQuestion = "文藝復興的建築同哥德式建築有甚麼分別？";
+  const reply = "（示範）可以先比較圓頂與尖拱、圓柱與飛扶壁。";
+  const posted: Array<{ message?: string }> = [];
+
+  await signIn(page, "tutorStudent");
+  await page.route("**/api/tutor/chat**", async (route) => {
+    const request = route.request();
+    if (request.method() === "GET") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          sessionId: "ui-tutor-session",
+          messages: [],
+          remaining: 15,
+          dailyLimit: 15,
+          windowLimitReached: false,
+          truncated: false,
+          messageCount: 0,
+          topicId: null,
+          practiceContext: null,
+        }),
+      });
+      return;
+    }
+    posted.push(request.postDataJSON() as { message?: string });
+    await route.fulfill({
+      status: 200,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reply, sessionId: "ui-tutor-session", remaining: 14, dailyLimit: 15 }),
+    });
+  });
+
+  await page.goto("/tutor");
+  const composer = page.getByLabel(/你的歷史問題/);
+  await expect(composer).toBeEditable();
+  await composer.fill(ownQuestion);
+  await page.getByRole("button", { name: "傳送問題" }).click();
+
+  await expect(page.getByText(reply, { exact: true })).toBeVisible();
+  expect(posted).toHaveLength(1);
+  expect(posted[0]?.message).toBe(ownQuestion);
 });
 
 test("API 逾時（超過 20 秒沒有回應）會顯示逾時訊息並可重試", async ({ page }) => {

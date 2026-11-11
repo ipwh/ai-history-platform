@@ -1,4 +1,4 @@
-{
+﻿{
   "generatedAt": "2026-11-07T08:55:30.607Z",
   "notice": "唯讀發布閘門：沒有修改題目、覆核或發布狀態。未定義標準或沒有證據的項目不會當作通過。",
   "verdict": "READY WITH LIMITATIONS",
@@ -185,17 +185,17 @@
     },
     {
       "id": "copyright",
-      "title": "版權與教材發行權",
+      "title": "使用授權與教材發行權",
       "status": "PASS",
-      "summary": "擁有者已確認版權；可向學生發布 22／46 份；逐份權利紀錄 46 份",
+      "summary": "擁有者已確認使用授權；可向學生發布 22／46 份；逐份權利紀錄 46 份",
       "numerator": 46,
       "denominator": 46,
       "evidence": [
-        "docs/teacher-review/copyright-owner-attestation-2026-10-19.md"
+        "docs/teacher-review/source-use-attestation-2026-10-19.md"
       ],
       "recommendations": [
         "保留擁有者確認紀錄；如需逐份授權證明，另行補存",
-        "版權許可不等於歷史內容正確"
+        "使用授權不等於歷史內容正確"
       ]
     },
     {

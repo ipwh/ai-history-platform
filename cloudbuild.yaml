@@ -161,7 +161,7 @@ steps:
         npm test
     timeout: 1800s
 
-  # materials/ 不納入版本控制（版權，見 .gitignore），由 GitHub 觸發時工作目錄只有
+  # materials/ 不納入版本控制（第三方內容，見 .gitignore），由 GitHub 觸發時工作目錄只有
   # materials/README.md。這裡先由私有 bucket 同步回工作目錄，令 Dockerfile 的
   # `COPY ... /app/materials` 拿到完整教材；本機 gcloud builds submit 時
   # _MATERIALS_SOURCE 留空，直接使用本機的 materials/。

@@ -32,7 +32,7 @@ describe("/tutor 頁面守衛", () => {
   it("未登入時在伺服器端導向登入頁，並帶上 /tutor 作返回路徑", async () => {
     const { default: TutorPage } = await import("@/app/tutor/page");
 
-    const digest = await redirectDigest(TutorPage());
+    const digest = await redirectDigest(TutorPage({ searchParams: Promise.resolve({}) }));
 
     expect(digest).toContain("NEXT_REDIRECT");
     expect(digest).toContain("%2Ftutor");

@@ -39,9 +39,9 @@ interface StartAttempt {
 /**
  * 主題不可選時的原因。
  *
- * 「教材未開放給學生」（版權閘門）與「未匯入教材」對學生是兩件不同的事：前者要改用
+ * 「教材未開放給學生」（教材授權閘門）與「未匯入教材」對學生是兩件不同的事：前者要改用
  * 題庫題目或請教師開放，後者只能改用其他主題。若一律顯示「未有教材」，學生會以為
- * 平台沒有內容，而不是教材尚未通過版權確認。
+ * 平台沒有內容，而不是教材尚未通過使用授權確認。
  */
 function unavailableReason(
   section: SectionWithCount,
@@ -89,12 +89,12 @@ function describeStartFailure(
     };
   }
 
-  // 教材尚未開放給學生（版權或內容審核中）：不可改用未確認的教材頂替
+  // 教材尚未開放給學生（使用授權或內容審核中）：不可改用未確認的教材頂替
   if (status === 409 && message.includes("尚未開放學生使用")) {
     return {
       heading: "所選主題的教材仍未開放給學生使用",
       lines: [
-        "教師仍在確認教材的版權及內容，因此系統不會用這些教材出題。",
+        "教師仍在確認教材的使用授權及內容，因此系統不會用這些教材出題。",
         "你可以：改用「使用題庫題目」（內建示範題目及教師已核可的題目）、改選其他主題，或請歷史科教師開放教材。",
       ],
       canSwitchToBank: attempt.questionSource === "ai",
@@ -153,7 +153,7 @@ export function PracticeSetupForm() {
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   // 一次只練一種題型：選擇題可按難度調節；填充題以課本關鍵詞作答，不設難度。
   const [questionType, setQuestionType] = useState<QuestionType>("mc");
-  const [difficulty, setDifficulty] = useState<Difficulty>("basic");
+  const [difficulty, setDifficulty] = useState<Difficulty>("advanced");
   const [questionCount, setQuestionCount] = useState(10);
   const [mode, setMode] = useState<"standard" | "wrong-only">("standard");
   const [questionSource, setQuestionSource] = useState<PracticeQuestionSource>("bank");
@@ -348,61 +348,6 @@ export function PracticeSetupForm() {
         <p className="page-sub">先選擇主題，然後按「開始練習」。其餘設定已為你選好，需要時才展開。</p>
       </header>
 
-      <section className="quick-start">
-        <div>
-          <p className="quick-start__title">可以開始了</p>
-          <p className="quick-start__hint">
-            {totalSelectedThemes === 0
-              ? "請先在下方選擇至少一個主題。"
-              : `已選 ${totalSelectedThemes} 個主題，將按以下設定出題。`}
-          </p>
-        </div>
-        <div className="preset-row" aria-label="目前練習設定">
-          <span className="preset-pill">{questionCount} 題</span>
-          <span className="preset-pill">{QUESTION_TYPE_LABELS[questionType]}</span>
-          {questionType === "mc" ? (
-            <span className="preset-pill">{DIFFICULTY_LABELS[difficulty]}</span>
-          ) : (
-            <span className="preset-pill">以關鍵詞作答</span>
-          )}
-          <span className="preset-pill">{PRACTICE_QUESTION_SOURCE_LABELS[questionSource]}</span>
-          <span className="preset-pill">
-            {mode === "wrong-only" ? "重溫錯題" : "完整練習"}
-          </span>
-        </div>
-        <div className="quick-start__actions">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => void handleStart()}
-            disabled={starting}
-          >
-            {starting
-              ? questionSource === "ai" && mode === "standard"
-                ? "AI 正在按你揀選的主題生成題目…"
-                : "正在準備題目…"
-              : "開始練習"}
-          </button>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              if (!customSettingsRef.current) return;
-              customSettingsRef.current.open = true;
-              setCustomOpen(true);
-              customSettingsRef.current.scrollIntoView({ block: "start", behavior: "smooth" });
-            }}
-          >
-            自訂設定
-          </button>
-          <span className="text-meta">
-            {questionSource === "ai" && mode === "standard"
-              ? "AI 生成需時（約 10 至 60 秒），請勿關閉頁面。"
-              : "題目不足時，系統會按教材即時生成，並自動核對教材依據。"}
-          </span>
-        </div>
-      </section>
-
       <section className="card card--accent flex flex-col gap-3">
         <div className="card__heading">
           <div className="flex flex-wrap items-center gap-2">
@@ -484,6 +429,61 @@ export function PracticeSetupForm() {
             })}
           </div>
         )}
+      </section>
+
+      <section className="quick-start">
+        <div>
+          <p className="quick-start__title">可以開始了</p>
+          <p className="quick-start__hint">
+            {totalSelectedThemes === 0
+              ? "請先在上方選擇至少一個主題，然後按「開始練習」。"
+              : `已選 ${totalSelectedThemes} 個主題，將按以下設定出題。`}
+          </p>
+        </div>
+        <div className="preset-row" aria-label="目前練習設定">
+          <span className="preset-pill">{questionCount} 題</span>
+          <span className="preset-pill">{QUESTION_TYPE_LABELS[questionType]}</span>
+          {questionType === "mc" ? (
+            <span className="preset-pill">{DIFFICULTY_LABELS[difficulty]}</span>
+          ) : (
+            <span className="preset-pill">以關鍵詞作答</span>
+          )}
+          <span className="preset-pill">{PRACTICE_QUESTION_SOURCE_LABELS[questionSource]}</span>
+          <span className="preset-pill">
+            {mode === "wrong-only" ? "重溫錯題" : "完整練習"}
+          </span>
+        </div>
+        <div className="quick-start__actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => void handleStart()}
+            disabled={starting || totalSelectedThemes === 0}
+          >
+            {starting
+              ? questionSource === "ai" && mode === "standard"
+                ? "AI 正在按你揀選的主題生成題目…"
+                : "正在準備題目…"
+              : "開始練習"}
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              if (!customSettingsRef.current) return;
+              customSettingsRef.current.open = true;
+              setCustomOpen(true);
+              customSettingsRef.current.scrollIntoView({ block: "start", behavior: "smooth" });
+            }}
+          >
+            自訂設定
+          </button>
+          <span className="text-meta">
+            {questionSource === "ai" && mode === "standard"
+              ? "AI 生成需時（約 10 至 60 秒），請勿關閉頁面。"
+              : "題目不足時，系統會按教材即時生成，並自動核對教材依據。"}
+          </span>
+        </div>
       </section>
 
       <details
@@ -705,7 +705,7 @@ export function PracticeSetupForm() {
           type="button"
           className="btn btn-primary"
           onClick={() => void handleStart()}
-          disabled={starting}
+          disabled={starting || totalSelectedThemes === 0}
         >
           {starting
             ? questionSource === "ai" && mode === "standard"

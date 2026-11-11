@@ -1,6 +1,6 @@
 # 內容治理證據狀態（2026-10-23 稽核）
 
-本文件是**稽核結果摘要**，不是教師決定，也不是內容正確性或版權的證據。
+本文件是**稽核結果摘要**，不是教師決定，也不是內容正確性或使用授權的證據。
 
 ---
 
@@ -145,7 +145,7 @@ npx tsx scripts/audit-governance-evidence.ts --out <dir>     # 另存完整清�
 | Playwright job | **skipped**（需要 self-hosted runner 與內容資料庫；本機已另行執行 40 passed） |
 | `npm run release:gate` | **NOT READY**：`question-isolation` FAIL（42 題待確認）、`review-provenance` FAIL、`source-traceability`／`metadata`／`provenance-risk` POLICY_PENDING、`copyright` WARN、`golden-evaluation` INSUFFICIENT_EVIDENCE |
 | 正式環境 migration | 備份快照顯示只到 `0028`；`0029`、`0030` **未套用** |
-| 部署 | **未執行**（內容、版權、覆核 gate 仍開啟） |
+| 部署 | **未執行**（內容、使用授權、覆核 gate 仍開啟） |
 
 ### 部署會發生甚麼（由程式碼確認）
 
@@ -162,7 +162,7 @@ image 回滾在 schema 層面安全；若要回到舊 schema，需還原 bucket 
 
 - 42 題待教師確認（41 題 + 1 題 golden 候選相關）未解決；
 - 1,438 題缺現行版本證據；
-- 版權 gate 為 WARN（22／46 份教材獲准向學生發布）；
+- 使用授權 gate 為 WARN（22／46 份教材獲准向學生發布）；
 - `review-provenance` FAIL；
 - 部署前備份物件未建立（bucket 內最新 `app.db` 為執行期自動上載，需在部署前另存
   `app.db.pre-deploy-<timestamp>` 作為回滾點）；

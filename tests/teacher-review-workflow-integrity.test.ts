@@ -5,7 +5,7 @@
  *   1. 覆核者身分不可留空（服務層拒絕空白電郵／角色）。
  *   2. 正式環境不會以「示範模式：未登入」身分寫入覆核紀錄（即使設定了不安全示範開關）。
  *   3. 未登入的示範環境只會記錄如實的示範身分，不會假裝有教師帳戶；紀錄可稽核。
- *   4. 人工覆核不會改變教材的版權／來源可見性規則：覆核通過一題，不會令未核實的節錄
+ *   4. 人工覆核不會改變教材的使用授權／來源可見性規則：覆核通過一題，不會令未核實的節錄
  *      或未開放的教材對學生顯示。
  *   5. 機器驗證不能清除暫緩標記（Sprint 8.5 已修正，這裡由流程角度再確認一次）。
  *
@@ -412,7 +412,7 @@ describe("覆核路由對版本與參數的檢查（Sprint 8.7）", () => {
 describe("人工覆核不會繞過來源可見性及暫緩規則", () => {
   it("覆核通過一題不會令未開放教材的節錄對學生顯示", () => {
     const { blockId, document } = createDemoDocument("copyright-gate");
-    // 預設 student_distribution = 0（未確認版權）：即使教師覆核通過，節錄仍然不對學生顯示
+    // 預設 student_distribution = 0（未確認使用授權）：即使教師覆核通過，節錄仍然不對學生顯示
     const question = createQuestion("fx-review-copyright", { blockId, sourceVerified: true });
 
     questionService.recordQuestionReview({
@@ -424,7 +424,7 @@ describe("人工覆核不會繞過來源可見性及暫緩規則", () => {
 
     const stored = questions.getQuestion(question.id)!;
     expect(stored.status).toBe("published");
-    // 教材文件仍然是「未開放」：覆核題目不會改變版權決定
+    // 教材文件仍然是「未開放」：覆核題目不會改變使用授權決定
     expect(materialsRepo.getDocument(document.id)!.studentDistribution).toBe(false);
     expect(materialsRepo.listStudentDistributableDocumentIds().has(document.id)).toBe(false);
   });

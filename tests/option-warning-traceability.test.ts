@@ -22,7 +22,7 @@ import { HISTORY_SKILLS } from "@/lib/types";
  *   2. 由哪一版規則產生？（版本）
  *   3. 屬於哪一題？（警告存放在該題的 `qualityWarnings`，題目 ID 是鍵）
  *
- * 全部內容為合成樣本，不含史實或版權材料。
+ * 全部內容為合成樣本，不含史實或使用授權材料。
  */
 const LONG_STATEMENT =
   "這是一段刻意寫得較長的說明文字，用來模擬 AI 生成題目中過度詳細的正確選項";

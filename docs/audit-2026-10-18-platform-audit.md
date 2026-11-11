@@ -1,4 +1,4 @@
-# 平台稽核報告：歷史科自學網站（2026-10-18）
+﻿# 平台稽核報告：歷史科自學網站（2026-10-18）
 
 | 項目 | 內容 |
 | --- | --- |
@@ -27,7 +27,7 @@
   2. **黃金評估題庫仍為空**（`docs/teacher-review/golden-questions.v1.json`，`reviewStatus: pending-review`）：這是獨立的品質保證（QA）缺口，用於量度機器閘門與教師判斷的一致度，**不是**「是否曾核對史實」的證明。
   3. **解釋質量**：71%（1,334／1,882）已發布題目的「解釋」是同一句佔位文字「答案依校內試題檔的評卷參考。」，不構成解釋，更不支撐答案（要求 3.9）。
   4. **未決的歷史／答案鍵疑點**：附錄 B 的 12 項抽樣疑點仍須歷史科教師逐題裁決。另有 **18 題的考核答案在自動修復後已改變**（§7.5.2）：已於 2026-10-19 逐題裁決並記錄——16 題核准、2 題拒絕並刪除、0 題仍隔離（§7.6.6）。本報告不作歷史裁決。
-  5. **版權、正式環境及部署驗證**：見第 10 節，全部未完成。
+  5. **使用授權、正式環境及部署驗證**：見第 10 節，全部未完成。
 
 本次稽核同時**修正**兩個會直接影響學生的缺陷：
 
@@ -52,7 +52,7 @@
 
 **更正範圍**：本報告 §1、§7.1、§7.3、AU-04、§10.4、§11 及新增 §7.5；另同步修正 [docs/teacher-review/README.md](teacher-review/README.md) §5 及 `golden-questions.v1.json` 的說明文字（不改動任何題目或覆核紀錄）。
 
-**仍然成立的結論**：**NOT READY**。發布關卡未滿足的原因已改為「可追溯性、黃金資料集、解釋質量、未決史實疑點、版權、正式環境及部署驗證」各自獨立把關（第 10 節），而不是「史實從未核對」。
+**仍然成立的結論**：**NOT READY**。發布關卡未滿足的原因已改為「可追溯性、黃金資料集、解釋質量、未決史實疑點、使用授權、正式環境及部署驗證」各自獨立把關（第 10 節），而不是「史實從未核對」。
 
 ---
 
@@ -121,7 +121,7 @@
 | [tests/repair-provenance.test.ts](../../tests/repair-provenance.test.ts) | 新增 26 個測試（答案對應、理由準確性、idempotency、歷史作答快照、匯入標示、隔離標記不被清除） |
 | `package.json` | 新增 `audit:repair-provenance` 指令 |
 
-**沒有修改**：資料庫、題目狀態、覆核紀錄、發布狀態、教材版權設定、任何環境變數檔。
+**沒有修改**：資料庫、題目狀態、覆核紀錄、發布狀態、教材使用授權設定、任何環境變數檔。
 
 ---
 
@@ -263,7 +263,7 @@
 | 2 | POST | `/api/health` | 教師／管理員 | `requireTeacher` | 讀 | — | authz-negative |
 | 3 | GET | `/api/topics` | 公開（示範）／已登入 | `resolveOptionalLearnerId` | 讀 | — | authz-negative、e2e |
 | 4 | GET | `/api/topics/[topicId]` | 同上 | `resolveOptionalLearnerId` | 讀 | — | e2e |
-| 5 | GET | `/api/topics/[topicId]/lesson` | 同上 | `resolveOptionalLearnerId` + 發布／版權閘門 | 讀 | — | lesson-service、e2e |
+| 5 | GET | `/api/topics/[topicId]/lesson` | 同上 | `resolveOptionalLearnerId` + 發布／教材授權閘門 | 讀 | — | lesson-service、e2e |
 | 6 | GET | `/api/progress` | 學生（登入） | `resolveOptionalLearnerId` | 讀 | 只用自己的 learnerId | authz-negative、e2e |
 | 7 | POST | `/api/practice` | 學生／教師 | `requireSignInBeforeBody` + `resolveLearnerId` | 寫 | 只建立自己的練習 | authz-negative、practice-flow |
 | 8 | GET | `/api/practice/[sessionId]` | 學生（登入） | `resolveLearnerId` | 讀 | 服務層 403 | authz-negative、e2e |
@@ -292,7 +292,7 @@
 | 31 | GET | `/api/admin/materials/import` | 管理員 | `requireAdmin` | 讀 | — | authz-negative |
 | 32 | POST | `/api/admin/materials/import` | 管理員 | `requireAdmin` | 寫 | — | authz-negative |
 | 33 | GET | `/api/admin/materials/[documentId]` | 管理員 | `requireAdmin` | 讀 | — | authz-negative |
-| 34 | PATCH | `/api/admin/materials/[documentId]` | 管理員 | `requireAdmin` + 版權／內容確認 | 寫 | — | authz-negative、e2e |
+| 34 | PATCH | `/api/admin/materials/[documentId]` | 管理員 | `requireAdmin` + 使用授權／內容確認 | 寫 | — | authz-negative、e2e |
 | 35 | DELETE | `/api/admin/materials/[documentId]` | 管理員 | `requireAdmin` | 寫 | — | authz-negative |
 | 36 | GET | `/api/admin/materials/[documentId]/ocr` | 管理員 | `requireAdmin` | 讀 | — | authz-negative |
 | 37 | POST | `/api/admin/materials/[documentId]/ocr` | 管理員 | `requireAdmin` | 寫（背景工作） | — | authz-negative、e2e |
@@ -583,7 +583,7 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 | 解釋品質 | **POLICY_PENDING** | 1,334 佔位、546 只列答案；是否暫緩派發未有政策 |
 | 元數據完整性 | **POLICY_PENDING** | 1,587 項需教師確認；0 阻擋級 |
 | 未處理教師裁決 | **PASS** | 0 |
-| 版權 | **WARN** | 擁有者已確認；逐份權利紀錄 12／36 |
+| 使用授權 | **WARN** | 擁有者已確認；逐份權利紀錄 12／36 |
 | Golden dataset | **INSUFFICIENT_EVIDENCE** | 空 |
 | 測試／建置證據 | **INSUFFICIENT_EVIDENCE** | 見 §9（證據檔） |
 | 部署驗證 | **INSUFFICIENT_EVIDENCE** | 未部署 |
@@ -631,7 +631,7 @@ npm run repair:questions -- --quarantine docs/teacher-review/repair-provenance-2
 | 元數據 | POLICY_PENDING | 1,587 項需覆核 |
 | 教師裁決 | PASS | 0 |
 | **審核證據來源** | **POLICY_PENDING** | 623 題只有自動修復證據 |
-| 版權 | WARN | 擁有者確認；逐份 12／36 |
+| 使用授權 | WARN | 擁有者確認；逐份 12／36 |
 | Golden dataset | INSUFFICIENT_EVIDENCE | 0 approved |
 | 測試／建置 | PASS | 見 §9 |
 | 部署 | INSUFFICIENT_EVIDENCE | 未部署 |
@@ -855,7 +855,7 @@ P3 只代表覆核次序較後，不是已核准。
 - [x] 安全標頭實測
 - [x] 內容稽核（唯讀）：來源 877 可定位／1,003 待核實；解釋 1,334 佔位／546 只列答案；元數據及政策分類（§7.7）
 - [x] 發布閘門（唯讀）：`NOT READY`，11 個閘門的狀態及證據見 §7.7.4
-- [x] 版權：擁有者確認紀錄（[copyright-owner-attestation-2026-10-19.md](teacher-review/copyright-owner-attestation-2026-10-19.md)）
+- [x] 使用授權：擁有者確認紀錄（[source-use-attestation-2026-10-19.md](teacher-review/source-use-attestation-2026-10-19.md)）
 - [x] 不可作答題目逐題盤點（97 題，唯讀；[報告](quality/servability-remediation-2026-10-19.md)）
 - [x] 審核紀錄來源逐筆分類（3,168 筆；[報告](quality/review-provenance-2026-10-19.md)）
 - [x] Golden dataset v2 schema、候選清單及 runner（approved 0 → `INSUFFICIENT_EVIDENCE`）
@@ -868,9 +868,9 @@ P3 只代表覆核次序較後，不是已核准。
 - [ ] 正式資料庫備份與還原演練（包括教材原檔）
 - [ ] Cloud Run 多執行個體下的 SQLite 併發行為（單檔資料庫不支援多寫者）
 
-### 10.3 版權批准（**部分完成**）
+### 10.3 使用授權批准（**部分完成**）
 
-- [x] 擁有者確認版權（2026-10-19，[紀錄](teacher-review/copyright-owner-attestation-2026-10-19.md)）——這是擁有者聲明，不是逐份授權
+- [x] 擁有者確認使用授權（2026-10-19，[紀錄](teacher-review/source-use-attestation-2026-10-19.md)）——這是擁有者聲明，不是逐份授權
 - [ ] 逐份書面授權證據（`material_documents.rights_confirmed_at` 仍為 12／36；沒有批次回填）
 - [ ] 校內試題（1,003 題）的再使用授權逐份證據（如需要）
 
@@ -907,7 +907,7 @@ P3 只代表覆核次序較後，不是已核准。
 
 - [ ] 部署後學生完整流程（登入→選題→作答→成績→重溫）
 - [ ] 部署後教師覆核及發布一次（含版本鎖衝突）
-- [ ] 部署後教材上載＋OCR＋版權閘門
+- [ ] 部署後教材上載＋OCR＋教材授權閘門
 - [ ] 監控：AI 用量、429 次數、5xx、備份狀態
 
 **發布關卡：未滿足。**
@@ -921,7 +921,7 @@ P3 只代表覆核次序較後，不是已核准。
 3. **補足可追溯性（文件與 schema）**：把上載前的科組核對記錄為批次紀錄（不逐題假裝成教師覆核）；並在 `question_reviews` 引入 `actor_kind`，令批次與自動化通過不再與人類覆核共用同一種顯示（AU-04、AU-30）。
 4. **決策：是否暫緩沒有解釋的題目**：需要擁有者批准，因會令可用題目由 1,783 降至約 451（佔位解釋 1,334 題；另有 546 題只列出答案）。此項在 `release:gate` 顯示 `POLICY_PENDING`，不會當作通過。
 5. **知識點／難度／技能重新標示**：可由 `scripts/apply-question-queue.ts` 的 manifest 流程處理，但需教師提供正確值（殘留值 122 題、通用標籤「校內試題」587 題、待確認對應 878 題；技能空白 1,880 題）。
-6. **版權與教材發行權**：擁有者已於 2026-10-19 確認版權（[紀錄](teacher-review/copyright-owner-attestation-2026-10-19.md)）；逐份權利紀錄仍為 12／36，未有批次回填。12 份可向學生發布、24 份不可。
+6. **使用授權與教材發行權**：擁有者已於 2026-10-19 確認使用授權（[紀錄](teacher-review/source-use-attestation-2026-10-19.md)）；逐份權利紀錄仍為 12／36，未有批次回填。12 份可向學生發布、24 份不可。
 7. **來源文件紀錄（schema／工具）**：1,003 題校內試題只有「檔名 · 第 N 題」文字位置；建議新增文件紀錄（檔名、題號、SHA-256）及匯入批次，令來源可由系統核實。平台現時沒有匯入批次表。
 8. **97 題已發布但結構上不可作答**：已完成唯讀逐題盤點（96 題羅馬數字標示缺失、1 題答案外洩；全部 0 次作答、0 個快照），但**未修改**。派發層會攔下（學生不會收到），仍需教師逐題修正或授權改回草稿，令 `question-servability` 不再 FAIL。
 9. **623 題只有自動修復審核證據**：需要負責人決定「內容不變的自動修復」是否足以支持目前版本，或需教師逐題確認；未決定前 `review-provenance` 維持 `POLICY_PENDING`。

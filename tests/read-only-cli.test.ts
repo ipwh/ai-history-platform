@@ -110,7 +110,7 @@ beforeAll(async () => {
   migrations = await import("@/server/db/migrations");
   expect(fs.existsSync(TSX_CLI), "tsx CLI 存在").toBe(true);
   expect(migrations.MIGRATIONS.length).toBeGreaterThan(0);
-  // 候選清單是依版權政策不入庫的產生檔；以合成清單令 CLI 可以完成 schema 完整的路徑
+  // 候選清單是依使用授權政策不入庫的產生檔；以合成清單令 CLI 可以完成 schema 完整的路徑
   writeGoldenCandidatesFile(syntheticCandidates(1));
 });
 

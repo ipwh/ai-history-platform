@@ -108,7 +108,7 @@ beforeAll(async () => {
   session = await import("@/server/auth/session");
   seed = await import("@/server/seed");
   seed.ensureBootstrap();
-  // 候選清單是依版權政策不入庫的產生檔：以 42 個合成候選（全部不在這個測試資料庫）
+  // 候選清單是依使用授權政策不入庫的產生檔：以 42 個合成候選（全部不在這個測試資料庫）
   // 驗證「候選與資料庫不符時 fail-closed」的契約，不依賴真實候選檔。
   writeGoldenCandidatesFile(syntheticCandidates(42));
 });

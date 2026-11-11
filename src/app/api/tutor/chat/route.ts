@@ -36,6 +36,7 @@ import {
 } from "@/server/services/tutor";
 import {
   buildClarifyCandidates,
+  isTutorEvidenceQuestion,
   isUnclearTutorQuery,
   normalizeTutorQuery,
   tutorQueryWasRewritten,
@@ -200,6 +201,37 @@ function practiceSkillHint(context: TutorPracticeContext | null): string | null 
 }
 
 /**
+ * 「依據查詢」的固定回覆：列出**上一則回覆實際引用**的教材段落。
+ *
+ * 學生問「你憑咩話係咁？有冇課本根據？」時，正確答案是上一輪的來源，
+ * 不是重新推斷課題再檢索。2026-11-11 學生模擬中，系統把這條追問當成新的歷史提問，
+ * 語意改寫後換成課題3（日本的現代化），回覆引用了完全無關的日本教材。
+ *
+ * 這裡不呼叫模型、不改動課題：只把已保存的來源如實列出，並說明沒有來源時的實情。
+ */
+function buildEvidenceReply(previous: TutorMessage): string {
+  if (previous.groundingStatus === "off-topic") {
+    return "上一則回覆是平台的離題引導，並沒有引用教材。請提出與歷史科有關的問題，我會據教材回答。";
+  }
+  if (previous.sources.length === 0) {
+    return [
+      "上一則回覆沒有引用校本教材段落，屬一般歷史知識（回覆中已標明「未找到教材依據」）。",
+      "因此我未能指出課本哪一段支持它，也不會臨時引用其他課題的教材來充數。",
+      "如需核實，請以課本及科任老師所教為準；你也可以把課本相關段落貼出來，我再據此討論。",
+    ].join("\n\n");
+  }
+  const lines = previous.sources.map(
+    (source, index) =>
+      `${index + 1}. ${source.documentLabel}（${source.location}）：「${source.excerpt}」`,
+  );
+  return [
+    `上一則回覆引用了 ${previous.sources.length} 段校本教材，原文節錄如下：`,
+    lines.join("\n"),
+    "以上是回覆的教材依據。教材以外的補充我會另行標明「未找到教材依據」，不會混入這些段落。",
+  ].join("\n\n");
+}
+
+/**
  * 把課題卡的建議問題優先加入澄清候選（M2）。
  *
  * 卡片由科組預先撰寫，貼近學生實際困惑，因此排在自動產生的候選之前；
@@ -294,6 +326,29 @@ export async function POST(request: Request) {
       .filter((message) => message.role === "user")
       .map((message) => normalizeTutorQuery(message.content));
 
+    /**
+     * 依據查詢（2026-11-11）：學生追問上一則回覆的根據。
+     *
+     * 直接列出上一則回覆已保存的教材來源，不重新推斷課題、不呼叫模型、不計額度。
+     * 以往這類追問會被當成新的歷史提問，語意改寫後換成另一個課題，引用與問題
+     * 完全無關的教材（實測：問「有冇課本根據？」竟引用日本的現代化段落）。
+     */
+    if (sessionId !== null && isTutorEvidenceQuestion(body.message)) {
+      const lastAnswer = [...history].reverse().find((message) => message.role === "assistant");
+      if (lastAnswer !== undefined) {
+        return jsonOk({
+          reply: buildEvidenceReply(lastAnswer),
+          sessionId,
+          topicId: getTutorSessionContext(sessionId).topicId,
+          sources: lastAnswer.sources,
+          clarify: false,
+          evidenceCheck: true,
+          ...tutorDailyUsage(learnerId),
+          dailyLimit: TUTOR_DAILY_LIMIT,
+        });
+      }
+    }
+
     // 回覆深度（2026-11-06）：`auto` 按提問的認知要求判斷，短追問則沿用上一輪深度，
     // 免得學生剛開始的深入討論因為一句「點解？」而掉回精簡結構。
     const previousReplyDepth =
@@ -347,6 +402,7 @@ export async function POST(request: Request) {
     // services/tutor-answerability.ts）。這一步只是本地判斷，沒有額外模型請求。
     let grounding = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
       preferredTopicId,
+      allowSoftPriorFallback: goalTopicId === null,
       studentLevel,
       maxSources: tutorMaxSourcesForDepth(replyDepth),
     });
@@ -433,6 +489,7 @@ export async function POST(request: Request) {
           if (expansion.terms.length > 0) {
             const expanded = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
               preferredTopicId,
+              allowSoftPriorFallback: goalTopicId === null,
               studentLevel,
               extraTerms: expansion.terms,
               maxSources: tutorMaxSourcesForDepth(replyDepth),
@@ -586,6 +643,7 @@ export async function POST(request: Request) {
       if (expansion.terms.length > 0) {
         const expanded = findTutorGrounding(normalizedMessage, groundingContext, curriculum, {
           preferredTopicId,
+          allowSoftPriorFallback: goalTopicId === null,
           studentLevel,
           extraTerms: expansion.terms,
           maxSources: tutorMaxSourcesForDepth(replyDepth),

@@ -7,7 +7,7 @@
     所有步驟均可重複執行（已存在的資源會略過）。
 
     為什麼需要這支指令碼，而不能只在 Console 按幾下滑鼠：
-      1. materials/ 不納入版本控制（第三方版權，見 .gitignore 及 materials/README.md），
+      1. materials/ 不納入版本控制（第三方使用授權，見 .gitignore 及 materials/README.md），
          由 GitHub 觸發的建置只會拿到 materials/README.md。因此教材必須先上載到**私有**
          bucket，再由 cloudbuild.yaml 的 sync-materials 步驟同步回建置工作目錄。
       2. cloudbuild.yaml 的 substitution 預設值大多是空字串（名冊、備份 bucket、管理員），
@@ -257,7 +257,7 @@ if (-not $bucketExists) {
     Write-Host "  已存在：$bucketUri" -ForegroundColor DarkGray
 }
 
-Write-Step "3/6 上載教材到 $materialsSource（版權內容只留在私有 bucket，不進 GitHub）"
+Write-Step "3/6 上載教材到 $materialsSource（授權內容只留在私有 bucket，不進 GitHub）"
 if ($SkipMaterials) {
     Write-Host "  已略過（-SkipMaterials）" -ForegroundColor DarkGray
 } else {

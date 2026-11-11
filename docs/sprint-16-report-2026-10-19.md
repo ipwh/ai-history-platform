@@ -2,7 +2,7 @@
 
 日期：2026-10-19
 起始／結束 HEAD：`6895db9`（`main`，`origin/main` 相同，未 commit／未 push）
-發布狀態：**NOT READY**（完成 UI 不代表內容、版權或部署就緒）
+發布狀態：**NOT READY**（完成 UI 不代表內容、使用授權或部署就緒）
 
 > 【實測】＝本次執行；【靜態】＝閱讀程式碼；【未驗證】；【需決策】。
 
@@ -91,7 +91,7 @@ E2E 範圍：學生流程、後台、回報、教師覆核、OCR；**不覆蓋**
 
 ## 8. Release gate 與剩餘阻塞
 
-PASS 4（isolation、answer-provenance、teacher-decisions、tests）｜FAIL 1（servability 97）｜POLICY_PENDING 6（來源 877、解釋 1,334＋546、元數據 1,880、審核來源 623、結構裁決 97、provenance 530）｜WARN 1（版權 12/36）｜INSUFFICIENT 3（Golden×2、deployment）。UI 完成**沒有**改變任何 gate 狀態。
+PASS 4（isolation、answer-provenance、teacher-decisions、tests）｜FAIL 1（servability 97）｜POLICY_PENDING 6（來源 877、解釋 1,334＋546、元數據 1,880、審核來源 623、結構裁決 97、provenance 530）｜WARN 1（使用授權 12/36）｜INSUFFICIENT 3（Golden×2、deployment）。UI 完成**沒有**改變任何 gate 狀態。
 
 ## 9. 未驗證項目
 

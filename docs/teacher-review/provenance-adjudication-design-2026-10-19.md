@@ -20,7 +20,7 @@
 | --- | --- | --- |
 | `not_reviewed`（預設，不寫入） | 未進行覆核 | 否（維持 POLICY_PENDING） |
 | `evidence_insufficient` | 缺少原卷／修復前版本／必要比較維度 | 否（仍 pending） |
-| `verified_repair_semantics` | 已核對空格、答案映射、可接受答案、grading points，確認修復未改變語義 | 可作為 provenance 覆核進度證據，但**不**令題目變成可派發、不通過版權或部署閘門 |
+| `verified_repair_semantics` | 已核對空格、答案映射、可接受答案、grading points，確認修復未改變語義 | 可作為 provenance 覆核進度證據，但**不**令題目變成可派發、不通過使用授權或部署閘門 |
 | `correction_required` | 修復可能改變語義，需修正或進一步查證 | 否（列為待處理） |
 | `rejected` | 覆核後判定不可用（仍需另行決定發布狀態） | 否 |
 

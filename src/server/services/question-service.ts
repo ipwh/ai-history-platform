@@ -110,7 +110,7 @@ export interface GenerateOptions extends QuestionGenerationRequest {
    *   - `student`：學生自行觸發的即時生成，**只**取用已確認可向學生發布且非教師專用的
    *     段落（fail-closed）。沒有可用段落時會回 409 並說明原因，而不是改用未確認的內容。
    *
-   * 學生練習路徑必須傳 `student`，否則「教材版權閘門」會被 AI 出題繞過。
+   * 學生練習路徑必須傳 `student`，否則「教材教材授權閘門」會被 AI 出題繞過。
    */
   audience?: "student" | "staff";
   /**
@@ -167,7 +167,7 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
   if (units.length === 0) {
     throw new QuestionServiceError(
       audience === "student"
-        ? "這個分節的教材尚未開放學生使用，因此未能即時生成題目。平台不會在未確認版權的情況下把教材內容（或其衍生的題目）提供給學生；請改用題庫題目，或聯絡歷史科教師／管理員確認教材。"
+        ? "這個分節的教材尚未開放學生使用，因此未能即時生成題目。平台不會在未確認使用授權的情況下把教材內容（或其衍生的題目）提供給學生；請改用題庫題目，或聯絡歷史科教師／管理員確認教材。"
         : "此分節尚未匯入教材內容，無法生成有教材依據的題目。請先上載教材，或改用內建示範題庫。",
       409,
     );

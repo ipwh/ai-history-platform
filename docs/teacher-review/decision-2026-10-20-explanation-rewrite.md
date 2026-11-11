@@ -66,7 +66,7 @@
 | **合計** | **1,875** | **1,875**（100%） | 餘 0 |
 
 批次清單：`docs/teacher-review/explanation-batches/`（`*-context.json` 為依據，
-`*.json` 為寫入清單）。`*-context.json` 含課本原文節錄，依版權政策**不提交**
+`*.json` 為寫入清單）。`*-context.json` 含課本原文節錄，依使用授權政策**不提交**
 （`.gitignore`），可用 `npm run explanation:batch` 重新產生；補寫清單本身只有題目 ID 及新解釋，
 會提交作可追溯紀錄。同樣地，逐題工作清單 `docs/quality/explanation-skill-worklist-*.json`
 （內含題幹及來源節錄）不提交，可用 `npm run audit:explanation-worklist` 重新產生；

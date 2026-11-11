@@ -30,7 +30,7 @@ const SECTIONS = ["topic-5-renaissance-reformation", "topic-5-industrial"];
 /**
  * 學生自行觸發的即時出題只可使用「已確認可向學生發布」的教材（Sprint 5 收緊）。
  * 測試若需要學生端即時生成，必須先把教材切換到已確認狀態——這正是管理員在正式
- * 環境要做的事（見 README「教材版權與學生閱讀範圍」）。
+ * 環境要做的事（見 README「教材使用授權與學生閱讀範圍」）。
  */
 function grantDistributionForTopic(topicId: string): void {
   for (const block of materialsRepo.listGroundingBlocksForSections(topicId, [])) {
@@ -53,7 +53,7 @@ beforeAll(async () => {
   seed = await import("@/server/seed");
   types = await import("@/lib/types");
   seed.ensureBootstrap();
-  // 即時出題需要教材內容作依據；使用合成教材，不依賴受版權保護的 materials/
+  // 即時出題需要教材內容作依據；使用合成教材，不依賴受使用授權限制的 materials/
   await importTestPilotMaterial();
   grantDistributionForTopic("topic-5");
 });
@@ -96,7 +96,7 @@ describe("AI 即時出題模式", () => {
   it("學生端即時出題不可使用未確認可發布的教材（fail-closed）", async () => {
     revokeDistribution();
     try {
-      // 未確認版權時，學生自行觸發的即時生成必須拒絕，而**不是**改用教師版內容
+      // 未確認使用授權時，學生自行觸發的即時生成必須拒絕，而**不是**改用教師版內容
       await expect(
         practice.createPractice({
           learnerId: LEARNER,
@@ -339,7 +339,7 @@ describe("分節可用性（介面顯示用，取代容易誤解的題目數量�
       // 學生可用段落數必須為 0，介面才不會承諾做不到的 AI 出題
       expect(renaissance!.studentMaterialBlockCount).toBe(0);
       expect(types.isSectionPractisable(renaissance!, "ai")).toBe(false);
-      // 題庫題目不受版權閘門影響，有已發布題目的主題仍可練習
+      // 題庫題目不受教材授權閘門影響，有已發布題目的主題仍可練習
       const bankPractisable = overview!.sections.filter(
         (section) => section.publishedQuestionCount > 0,
       );

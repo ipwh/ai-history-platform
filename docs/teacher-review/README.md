@@ -1,4 +1,4 @@
-# 歷史科題目人工覆核流程（Teacher Review Workflow）
+﻿# 歷史科題目人工覆核流程（Teacher Review Workflow）
 
 > **本流程的目的**：把「系統證明節錄文字對得上教材」（`sourceVerified`）與
 > 「教師確認史實正確、題目適合學生」（`reviewed`）分開。系統只做前者；後者必須由
@@ -75,7 +75,7 @@
 > `sourceWithheld`，並略去節錄、來源位置及段落 ID（題目、答案及解釋不受影響）。
 > 因此**即使題目已由教師覆核通過，學生仍可能看不到節錄**，直到管理員在
 > `/admin/materials` 確認該文件的發行權（教師版另需內容安全覆核）。
-> 教師端覆核畫面一律顯示完整節錄，不受此閘門影響（見 README「教材版權與學生閱讀範圍」）。
+> 教師端覆核畫面一律顯示完整節錄，不受此閘門影響（見 README「教材使用授權與學生閱讀範圍」）。
 > 覆核時若 `sourceExcerpt` 對得上教材但未開放，應在覆核紀錄的 `reasoning` 說明依據來源，
 > 以免日後無法追溯。
 >
@@ -415,14 +415,14 @@
 
 | 類別 | 分類 |
 | --- | --- |
-| 來源 | `traceable`／`partial`／`unknown`／`pending_verification`（只代表可定位程度，不代表史實或版權） |
+| 來源 | `traceable`／`partial`／`unknown`／`pending_verification`（只代表可定位程度，不代表史實或使用授權） |
 | 解釋 | `placeholder`／`answer_only`／`insufficient`／`potentially_inconsistent`／`not_assessed`，另標示「有人工覆核但仍低品質」 |
 | 元數據 | 知識點空白／排版殘留／通用標籤／與分節對不上；技能空白；無效課題或分節關聯（阻擋級） |
 | 政策 | `hard_block`／`teacher_review`／`warning`／`policy_pending` |
 
 報告：[../quality/content-audit-2026-10-19.md](../quality/content-audit-2026-10-19.md)。
 
-**重要界線**：分類只會發現問題，不會修改題目，也不會裁定歷史事實、答案正確性或版權。
+**重要界線**：分類只會發現問題，不會修改題目，也不會裁定歷史事實、答案正確性或使用授權。
 
 ### 9.2 發布閘門
 
@@ -431,12 +431,12 @@
 會顯示 `POLICY_PENDING`，沒有證據（Golden dataset 空、部署證據）會顯示 `INSUFFICIENT_EVIDENCE`，
 兩者都不會當作通過。
 
-### 9.3 版權確認
+### 9.3 使用授權確認
 
-擁有者已於 2026-10-19 確認版權，紀錄見
-[copyright-owner-attestation-2026-10-19.md](./copyright-owner-attestation-2026-10-19.md)。
+擁有者已於 2026-10-19 確認使用授權，紀錄見
+[source-use-attestation-2026-10-19.md](./source-use-attestation-2026-10-19.md)。
 此紀錄是擁有者聲明，不是逐份授權；`material_documents` 的逐份權利紀錄仍為 12／36，
-未有批次回填。版權許可與來源可追溯性、歷史準確性必須分開判斷。
+未有批次回填。使用授權與來源可追溯性、歷史準確性必須分開判斷。
 
 ## 10. 可作答性、審核來源與 Golden 基準（Sprint 10，2026-10-19）
 

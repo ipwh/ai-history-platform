@@ -94,7 +94,7 @@ try {
     ? path.resolve(process.env.UI_TEST_SOURCE_DB)
     : path.join(root, "data", "app.db");
   if (!fs.existsSync(sourceDatabase)) {
-    // 內容資料庫（data/）依政策不納入版本控制（第三方版權），因此 GitHub 託管的 CI
+    // 內容資料庫（data/）依政策不納入版本控制（第三方使用授權），因此 GitHub 託管的 CI
     // 沒有可供快照的來源。這裡必須明確失敗，不可改用空資料庫假裝已測試內容行為。
     throw new Error(
       `找不到內容資料庫：${sourceDatabase}。瀏覽器測試需要一份真實（或經核准的）內容資料庫快照；` +

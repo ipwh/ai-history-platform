@@ -3,7 +3,7 @@
  *
  * ── 為甚麼需要 ────────────────────────────────────────────────────────
  * `docs/teacher-review/golden-candidates-*.json` 是由 `npm run golden:candidates` 從資料庫
- * 產生的檔案，內含完整題幹／答案／原文段落，依版權政策**不納入版本控制**。因此乾淨
+ * 產生的檔案，內含完整題幹／答案／原文段落，依使用授權政策**不納入版本控制**。因此乾淨
  * checkout 的 CI 沒有這個檔案，令 golden 相關的 API、CLI 及稽核腳本全部失敗
  * （GitHub Actions run 39885612625：golden-approval 500、golden:export exit 2、
  * review-queue 沒有 total）。

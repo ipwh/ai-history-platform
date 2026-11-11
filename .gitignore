@@ -45,7 +45,7 @@ next-env.d.ts
 /tmp
 
 # 教材來源檔案（教科書內容、溫習筆記及校內試題庫）
-# 這些內容屬第三方版權，不應上載到公開倉庫；請在各部電腦自行放入 materials/。
+# 這些內容屬第三方材料，不應上載到公開倉庫；請在各部電腦自行放入 materials/。
 /materials/*
 !/materials/README.md
 
@@ -67,7 +67,7 @@ next-env.d*.ts
 /blob-report/
 /playwright/.cache/
 
-# 內含完整題幹／答案／原文段落的產生檔：屬第三方版權內容，不入公開倉庫（與 materials/ 政策一致）
+# 內含完整題幹／答案／原文段落的產生檔：屬第三方內容，不入公開倉庫（與 materials/ 政策一致）
 /docs/teacher-review/adjudication-packet-*.csv
 /docs/teacher-review/adjudication-packet-*.html
 /docs/teacher-review/roman-label-dry-run-*.json
@@ -76,7 +76,7 @@ next-env.d*.ts
 /docs/teacher-review/golden-candidates-*.md
 /docs/teacher-review/golden-questions.v2.json
 # 解釋補寫工作清單（逐題題幹／現有解釋／來源節錄）及批次上下文（含課本原文節錄）：
-# 同樣屬版權內容，只留在本機，可用 `npm run audit:explanation-worklist` 及
+# 同樣屬第三方內容，只留在本機，可用 `npm run audit:explanation-worklist` 及
 # `npm run explanation:batch` 隨時重新產生。補寫清單本身（*-batch-N.json）只有題目 ID 及新解釋，會提交。
 /docs/quality/explanation-skill-worklist-*.json
 /docs/teacher-review/explanation-batches/*-context.json

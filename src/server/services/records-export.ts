@@ -289,7 +289,7 @@ function buildPdfBody(records: PracticeRecordSession[], options: RecordsExportOp
 
   return buildPdf(blocks, {
     title: "學生練習記錄",
-    footer: `香港中學歷史科自學互動網站　${hongKongDateTime((options.generatedAt ?? new Date()).toISOString())}`,
+    footer: `香港中學歷史科自學互動平台　${hongKongDateTime((options.generatedAt ?? new Date()).toISOString())}`,
   });
 }
 

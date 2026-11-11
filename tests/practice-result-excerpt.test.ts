@@ -7,7 +7,7 @@
  *   1. `POST /api/practice/[sessionId]/answers`：作答回饋不會包含未確認教材的原文。
  *   2. `GET  /api/practice/[sessionId]/result`：整份回應（包括其他欄位、錯誤路徑）都不會
  *      以任何形式包含該段原文——不只是 `sourceExcerpt` 一個欄位。
- *   3. 管理員確認版權（教師版另需內容覆核）後才會顯示；撤銷後立即再次停止顯示。
+ *   3. 管理員確認使用授權（教師版另需內容覆核）後才會顯示；撤銷後立即再次停止顯示。
  *   4. 略去節錄不會過度阻擋：標準答案、解釋、知識點及評分結果如常回傳。
  *
  * 測試以學生工作階段 cookie 呼叫路由，因此同時覆蓋授權與內容判斷兩層。
@@ -240,7 +240,7 @@ describe("未確認來源文件的節錄不會經路由外洩", () => {
     expect(await forbidden.text()).not.toContain(PROTECTED_TEXT);
   });
 
-  it("管理員確認版權（教師版另需內容覆核）後才會顯示，撤銷後立即再次停止顯示", async () => {
+  it("管理員確認使用授權（教師版另需內容覆核）後才會顯示，撤銷後立即再次停止顯示", async () => {
     const { document, blockId } = createSourceDocument(true);
     materialsRepo.setDocumentStudentDistribution(document.id, true);
     const { question, sessionId } = makeQuestion(blockId);
@@ -249,7 +249,7 @@ describe("未確認來源文件的節錄不會經路由外洩", () => {
     const hidden = await getResult(sessionId, STUDENT.learnerId);
     expect((await hidden.text()).includes(PROTECTED_TEXT)).toBe(false);
 
-    // 完整治理開放（版權 + 教師版內容覆核）
+    // 完整治理開放（使用授權 + 教師版內容覆核）
     openDocumentForStudents(materialsRepo, document.id);
     const shown = await getResult(sessionId, STUDENT.learnerId);
     const shownRaw = await shown.text();
@@ -266,7 +266,7 @@ describe("未確認來源文件的節錄不會經路由外洩", () => {
     expect(await revoked.text()).not.toContain(PROTECTED_TEXT);
   });
 
-  it("非教師版文件只需版權確認即可顯示節錄", async () => {
+  it("非教師版文件只需使用授權確認即可顯示節錄", async () => {
     const { document, blockId } = createSourceDocument(false);
     const { question, sessionId } = makeQuestion(blockId);
     await submitAnswer(sessionId, question.id, STUDENT.learnerId);

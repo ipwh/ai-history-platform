@@ -36,7 +36,7 @@ beforeAll(async () => {
   questionsRepo = await import("@/server/repositories/questions");
   seed = await import("@/server/seed");
   seed.ensureBootstrap();
-  // 題庫生成需要教材內容作依據；使用合成教材（不依賴受版權保護的 materials/）
+  // 題庫生成需要教材內容作依據；使用合成教材（不依賴受使用授權限制的 materials/）
   const imported = await importTestPilotMaterial();
 
   // 明確驗證教材真的成功擷取：若擷取失敗（例如檔案讀取或解析問題），
@@ -84,7 +84,7 @@ describe("題庫難度分配", () => {
     ]);
   });
 
-  it("生成後題庫齊備基礎、進階及挑戰的題目", async () => {
+  it("生成後題庫齊備基礎、一般及挑戰的題目", async () => {
     const report = await bank.generateQuestionBank({ topicId: "topic-5", perSection: 3 });
     // 若這裡失敗，訊息會直接指出是「分節已夠題目」還是「教材不足」，
     // 令將來的隔離問題（例如沿用了舊資料庫）不會再表現成難以診斷的 created = 0。

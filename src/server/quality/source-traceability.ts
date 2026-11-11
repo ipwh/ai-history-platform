@@ -3,7 +3,7 @@
  *
  * 界線：
  *   - `traceable` 只代表「可以定位到具體來源文件／段落」，不代表歷史內容正確；
- *   - 也不代表已取得版權許可。三項必須分開判斷（見 question-policy.ts）。
+ *   - 也不代表已取得使用授權。三項必須分開判斷（見 question-policy.ts）。
  *   - 不以題目文字相似度推斷來源；只使用實際存在的識別碼及位置欄位。
  */
 export const SOURCE_TRACEABILITY_STATUSES = [

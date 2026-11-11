@@ -749,7 +749,7 @@ function QuestionListCard({
                 等待教師確認（自動發布暫緩）
               </span>
             ) : null}
-            {/* 學生是否看得到教材節錄：由版權／教材閘門決定，教師必須知道實際情況 */}
+            {/* 學生是否看得到教材節錄：由授權／教材閘門決定，教師必須知道實際情況 */}
             {review?.sourceExcerptHiddenFromStudents ? (
               <span
                 className="badge badge-warning"

@@ -86,7 +86,7 @@ export function describeDeployment(): DeploymentInfo {
 }
 
 /**
- * 部署目錄內是否有教材檔案（只回報數量，不顯示檔名——教材內容受版權保護）。
+ * 部署目錄內是否有教材檔案（只回報數量，不顯示檔名——教材內容受使用授權限制）。
  *
  * Git 不含教材（`.gitignore` 排除 `materials/*`），但 Docker 映像檔會 `COPY materials/`。
  * 若在建置環境缺少教材，映像檔仍會成功建置並啟動，只是管理員無法匯入課本內容、
@@ -413,7 +413,7 @@ export function describeConfigIssues(): ConfigIssue[] {
       level: "info",
       code: "material-auto-open-active",
       message:
-        "MATERIAL_AUTO_OPEN_POLICY=lesson-content（擁有者指示）：匯入課文／筆記後會自動確認版權並開放給學生，" +
+        "MATERIAL_AUTO_OPEN_POLICY=lesson-content（擁有者指示）：匯入課文／筆記後會自動確認使用授權並開放給學生，" +
         "確認者記錄為 owner-policy:auto-open-all-materials。校內試題檔永不開放；檔名標示教師版／答案的材料仍需逐份人手確認內容。",
     });
   }
@@ -551,7 +551,7 @@ export function describeConfigIssues(): ConfigIssue[] {
       code: "materials-bundle-missing",
       message:
         "映像檔／部署目錄內沒有教材檔案：管理員無法匯入課本內容，學生會看到沒有教材的平台。" +
-        "教材不納入版本控制（版權考量），請在含有教材的電腦上建置映像檔，或改用受控的教材匯入流程。",
+        "教材不納入版本控制（使用授權考量），請在含有教材的電腦上建置映像檔，或改用受控的教材匯入流程。",
     });
   }
 

@@ -1405,7 +1405,7 @@ async function main() {
       (total, section) => total + (section.studentMaterialBlockCount ?? 0),
       0,
     );
-    if (studentBlocks === 0) note(`課題 ${item.id} 沒有學生可用教材段落（即時出題會被版權閘門擋下）`);
+    if (studentBlocks === 0) note(`課題 ${item.id} 沒有學生可用教材段落（即時出題會被教材授權閘門擋下）`);
   }
 
   // 學生實際會打開的頁面：必須可以載入（App Router 的頁面在匿名模式下不會被重導向）

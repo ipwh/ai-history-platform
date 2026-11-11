@@ -54,7 +54,7 @@ Sprint 9–16 的 91 項全部保留；本 Sprint **只新增 2 個文件檔案*
 - 概念決定：未覆核／證據不足／已核實修復語義／需修正／拒絕；**在 schema 契約批准前不得成為 API enum**。
 - 必填證據：revision＋fingerprint（伺服器計算）、來源核實結果及參考、空格位置與映射、可接受答案及正規化、grading points／semantics、理由 ≥ 20 字、明確 `missing_evidence`（不得以猜測填補）。
 - 授權：`HISTORY_REVIEWER_EMAILS`；冪等（相同決定＋理由回 `created:false`）；版本改變 → `stale`；只新增。
-- 明確：provenance 決定**不會**令題目可派發，也不通過版權或部署閘門。
+- 明確：provenance 決定**不會**令題目可派發，也不通過使用授權或部署閘門。
 
 **BLOCKED 原因（需負責人批准）**：① 新資料表＋migration（未獲授權執行 migration）；② 決定值與「是否影響 gate」的映射（政策第 3 項）；③ P1 grading 語義須教師提供；④ 未批准即加 API 會造成第三套審核來源。
 
@@ -84,7 +84,7 @@ Sprint 9–16 的 91 項全部保留；本 Sprint **只新增 2 個文件檔案*
 
 ## 8. Release gate 與阻塞
 
-15 項、**NOT READY**：PASS 4／FAIL 1（servability 97）／POLICY_PENDING 6（來源 877、解釋 1,334＋546、元數據 1,880、審核來源 623、結構裁決 97、provenance 530）／WARN 1（版權 12/36）／INSUFFICIENT 3（Golden×2、deployment）。本 Sprint 沒有新增或修改 gate，也沒有一個 gate 因新文件而改變。
+15 項、**NOT READY**：PASS 4／FAIL 1（servability 97）／POLICY_PENDING 6（來源 877、解釋 1,334＋546、元數據 1,880、審核來源 623、結構裁決 97、provenance 530）／WARN 1（使用授權 12/36）／INSUFFICIENT 3（Golden×2、deployment）。本 Sprint 沒有新增或修改 gate，也沒有一個 gate 因新文件而改變。
 
 ## 9. 政策決策包
 

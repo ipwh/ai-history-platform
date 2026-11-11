@@ -124,7 +124,7 @@ function main(): void {
     `缺少文件紀錄：${audit.source.missingDocumentRecord}；缺少題號：${audit.source.missingQuestionNumber}；缺少來源雜湊：${audit.source.missingSourceHash}；失效段落引用：${audit.source.staleBlockReferences}；匯入批次表：不存在（schema 缺口）`,
   );
   lines.push("");
-  lines.push("**來源可追溯 ≠ 歷史正確 ≠ 版權許可。**");
+  lines.push("**來源可追溯 ≠ 歷史正確 ≠ 使用授權。**");
   lines.push("");
   lines.push("## 解釋品質");
   lines.push("");

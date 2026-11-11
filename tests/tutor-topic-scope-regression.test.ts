@@ -14,6 +14,7 @@ import { ALL_CURRICULUM_TOPICS, flatSectionSeeds } from "@/server/seed/curriculu
 import { HISTORY_TERM_GROUPS } from "@/lib/history-lexicon";
 import {
   extractQueryTerms,
+  findTutorGrounding,
   guessTutorTopic,
   matchesCurriculumTerms,
   supportingTopicIds,
@@ -179,5 +180,65 @@ describe("課程用語硬閘與課題推斷保持一致（規格 3.17）", () =>
     for (const query of ["幫我寫 Python", "今天天氣如何", "數學方程式怎樣解"]) {
       expect(matchesCurriculumTerms(curriculum, query), query).toBe(false);
     }
+  });
+});
+
+/**
+ * 2026-11-11 學生模擬（真實模型）發現的課題切換缺口。
+ *
+ * 由練習頁進入學伴時，練習題所屬課題只是 soft prior。學生其後明確問另一個課題的
+ * 專名（「柏林圍牆」「希特拉」「First World War」），回覆卻仍標示練習課題，
+ * 引用另一課題的段落作依據。這些測試固定「明確專名可以蓋過 soft prior」。
+ */
+describe("明確專名可以切換練習帶入的 soft prior（2026-11-11 學生模擬）", () => {
+  const options = { preferredTopicId: "topic-5", allowSoftPriorFallback: true } as const;
+
+  it("柏林圍牆（課題10）不會被拉回練習課題5", () => {
+    const result = findTutorGrounding("柏林圍牆幾時拆？", [], curriculum, options);
+    expect(result.topicId).toBe("topic-10");
+    expect(result.topicTitle).toContain("課題10");
+  });
+
+  it("英文 First World War（課題9）不會被拉回練習課題5", () => {
+    const result = findTutorGrounding("What caused the First World War?", [], curriculum, options);
+    expect(result.topicId).toBe("topic-9");
+  });
+
+  it("希特拉（課題9）不會被拉回練習課題5", () => {
+    const result = findTutorGrounding("希特拉係咪香港人？", [], curriculum, options);
+    expect(result.topicId).toBe("topic-9");
+  });
+
+  it("只在分節關鍵詞命中時仍以 soft prior 為先（不會被「二戰」二字帶走）", () => {
+    const result = findTutorGrounding("第二次世界大戰對香港有甚麼影響？", [], curriculum, options);
+    expect(["topic-5", "topic-9", "topic-12"]).toContain(result.topicId);
+  });
+});
+
+/**
+ * 「新界」橫跨課題4（新界五大族）、課題8（租借新界）及課題12（新市鎮）。
+ * 詞庫加入 `requiresAny` 守衛後，只有句中另有租借用語才定位到課題8。
+ */
+describe("新界租借的詞庫守衛（2026-11-11 學生模擬）", () => {
+  it("「新界係幾時租俾英國？」→ 課題8，並找到教材", () => {
+    const result = findTutorGrounding("新界係幾時租俾英國？", [], curriculum, {
+      preferredTopicId: "topic-5",
+      allowSoftPriorFallback: true,
+    });
+    expect(result.status).toBe("grounded");
+    expect(result.topicId).toBe("topic-8");
+    expect(result.sources.length).toBeGreaterThan(0);
+  });
+
+  it("「新界五大族」仍然屬課題4（不會被租借條目搶走）", () => {
+    expect(guess("新界五大族有甚麼特色？")?.topicId).toBe("topic-4");
+  });
+
+  it("「新界有甚麼新市鎮？」不會定位到租借課題", () => {
+    expect(guess("新界有甚麼新市鎮？")?.topicId).not.toBe("topic-8");
+  });
+
+  it("只有「新界」而沒有租借用語時不推斷為課題8", () => {
+    expect(guess("新界係邊度？")?.topicId).not.toBe("topic-8");
   });
 });

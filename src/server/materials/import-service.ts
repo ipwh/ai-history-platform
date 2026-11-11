@@ -256,7 +256,7 @@ export async function importMaterial(options: ImportOptions): Promise<ImportOutc
 
   if (parsed.limitationNote) warnings.push(parsed.limitationNote);
 
-  // 擁有者政策（2026-10-21）：匯入課文／筆記後自動確認版權並開放給學生，
+  // 擁有者政策（2026-10-21）：匯入課文／筆記後自動確認使用授權並開放給學生，
   // 令學生可即時以該教材 AI 出題自學。校內試題檔及教師版檔名不在自動開放範圍
   // （見 services/material-distribution.ts）。
   {

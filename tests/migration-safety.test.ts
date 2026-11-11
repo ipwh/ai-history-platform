@@ -6,7 +6,7 @@
  *   2. 重複執行 `runMigrations` 是安全的（冪等），不會重複套用或損毀資料。
  *   3. 由較舊的資料庫升級：已存在的資料（題目、教材、作答記錄）不會遺失，
  *      新欄位以 fail-closed 的預設值加入。
- *   4. 版權閘門的預設值仍為「不對學生發布」。
+ *   4. 教材授權閘門的預設值仍為「不對學生發布」。
  *   5. 契約測試**不會**連接正式資料庫：全程使用暫存資料庫。
  */
 import fs from "node:fs";
@@ -109,7 +109,7 @@ describe("升級與冪等", () => {
     expect(revision.revision).toBeGreaterThanOrEqual(1);
     expect(["draft", "published", "disabled"]).toContain(revision.status);
 
-    // 版權閘門：新增的文件預設為「不對學生發布」
+    // 教材授權閘門：新增的文件預設為「不對學生發布」
     const document = materialsRepo.createDocument({
       fileName: "升級測試教材.docx",
       kind: "demo",

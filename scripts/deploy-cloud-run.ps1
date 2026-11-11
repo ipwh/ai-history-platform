@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    建置並部署「香港中學歷史科自學互動網站」到 Google Cloud Run。
+    建置並部署「香港中學歷史科自學互動平台」到 Google Cloud Run。
 
 .DESCRIPTION
     預設只會「顯示」將會執行的 gcloud 指令（安全起見不會改動雲端資源）；
@@ -196,7 +196,7 @@ if ($studentPatternEntries.Count -gt 0) {
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
-# 教材檔案檢查：`materials/` 不納入版本控制（版權考量，見 .gitignore 與 materials/README.md），
+# 教材檔案檢查：`materials/` 不納入版本控制（使用授權考量，見 .gitignore 與 materials/README.md），
 # 但 Dockerfile 會把 `materials/` 複製到映像檔。若在建置環境缺少教材，Cloud Build 仍會
 # **成功**建置並部署，只是管理員無法匯入課本內容、學生會看到沒有教材的平台。
 # 因此這裡在部署前擋下來（只回報數量，不顯示檔名）。如確實要部署無教材的映像檔，
@@ -214,7 +214,7 @@ if (-not $AllowMissingMaterials) {
         throw @"
 建置環境內沒有教材檔案（materials/ 只有說明檔）。
 
-教材不納入版本控制（版權考量），但 Docker 映像檔需要 materials/ 的內容，否則部署後
+教材不納入版本控制（使用授權考量），但 Docker 映像檔需要 materials/ 的內容，否則部署後
 管理員無法匯入課本內容，學生會看到沒有教材的平台——而 Cloud Build 仍會回報成功。
 
 請在含有教材檔案的電腦上執行部署，或先把教材放回 materials/。
@@ -354,7 +354,7 @@ function Ensure-Secret {
     }
 }
 
-Write-Host "香港中學歷史科自學互動網站 → Google Cloud Run" -ForegroundColor Green
+Write-Host "香港中學歷史科自學互動平台 → Google Cloud Run" -ForegroundColor Green
 Write-Host "專案：$Project；區域：$Region；服務：$Service"
 if (-not $Apply) {
     Write-Host "目前為模擬模式：只會顯示指令。要真正部署請加上 -Apply。" -ForegroundColor Yellow

@@ -164,7 +164,7 @@ beforeAll(async () => {
 beforeEach(() => {
   getDb().prepare("DELETE FROM golden_fixture_reviews").run();
   questionId = createQuestion();
-  // 候選清單是依版權政策不入庫的產生檔；測試以合成清單指向本題，令路由可以載入候選
+  // 候選清單是依使用授權政策不入庫的產生檔；測試以合成清單指向本題，令路由可以載入候選
   writeGoldenCandidatesFile(candidatesFor(questionId));
 });
 

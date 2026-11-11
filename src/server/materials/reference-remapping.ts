@@ -144,7 +144,7 @@ export interface ApplyRemappingOptions {
   /** 只檢查及報告，不寫入資料庫（預設 false） */
   dryRun?: boolean;
   /**
-   * 要求目標段落所屬文件已開放給學生（`student_distribution` + 版權／內容確認）。
+   * 要求目標段落所屬文件已開放給學生（`student_distribution` + 使用授權／內容確認）。
    * 正式環境的流程應在 `npm run open:materials -- --apply` 之後加上這個旗標。
    */
   requireOpenDocuments?: boolean;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 發布就緒閘門（純函式）。
  *
  * 原則：
@@ -254,21 +254,21 @@ export function evaluateReleaseGates(input: ReleaseGateInput): ReleaseGateReport
     },
     {
       id: "copyright",
-      title: "版權與教材發行權",
+      title: "使用授權與教材發行權",
       status: !input.copyright.ownerAttestation
         ? "POLICY_PENDING"
         : input.copyright.rightsRecorded < input.copyright.documents
           ? "WARN"
           : "PASS",
       summary: input.copyright.ownerAttestation
-        ? `擁有者已確認版權；可向學生發布 ${input.copyright.distributable}／${input.copyright.documents} 份；逐份權利紀錄 ${input.copyright.rightsRecorded} 份`
-        : "未記錄版權確認",
+        ? `擁有者已確認使用授權；可向學生發布 ${input.copyright.distributable}／${input.copyright.documents} 份；逐份權利紀錄 ${input.copyright.rightsRecorded} 份`
+        : "未記錄使用授權確認",
       numerator: input.copyright.rightsRecorded,
       denominator: input.copyright.documents,
-      evidence: ["docs/teacher-review/copyright-owner-attestation-2026-10-19.md"],
+      evidence: ["docs/teacher-review/source-use-attestation-2026-10-19.md"],
       recommendations: [
         "保留擁有者確認紀錄；如需逐份授權證明，另行補存",
-        "版權許可不等於歷史內容正確",
+        "使用授權不等於歷史內容正確",
       ],
     },
     {

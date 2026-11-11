@@ -861,14 +861,14 @@ describe("學伴教材依據：資料庫檢索（只使用已開放給學生的�
       texts: ["《凡爾賽條約》規定德國須支付巨額賠款（2分）。"],
     });
 
-    // 尚未確認版權：即使已標示開放，亦不可引用
+    // 尚未確認使用授權：即使已標示開放，亦不可引用
     seedMaterial({
       documentId: "doc-unconfirmed",
-      fileName: "課題9 兩次世界大戰_未確認版權.docx",
+      fileName: "課題9 兩次世界大戰_未確認使用授權.docx",
       kind: "demo",
       studentDistribution: 1,
       rightsConfirmedAt: null,
-      texts: ["凡爾賽條約要求德國支付巨額賠款，此段來自未確認版權的文件。"],
+      texts: ["凡爾賽條約要求德國支付巨額賠款，此段來自未確認使用授權的文件。"],
     });
   });
 
@@ -901,10 +901,10 @@ describe("學伴教材依據：資料庫檢索（只使用已開放給學生的�
     expect(grounding.passages.map((passage) => passage.promptText).join("\n")).toContain("人文主義");
   });
 
-  it("校內試題檔及未確認版權的文件不會被引用", () => {
+  it("校內試題檔及未確認使用授權的文件不會被引用", () => {
     const grounding = groundingModule.findTutorGrounding("凡爾賽條約如何約束德國？");
     const combined = grounding.passages.map((passage) => passage.promptText).join("\n");
-    expect(combined).not.toContain("未確認版權");
+    expect(combined).not.toContain("未確認使用授權");
     expect(combined).not.toContain("2分");
     expect(
       grounding.sources.every((source) => source.documentLabel.includes("筆記")),
