@@ -18,7 +18,7 @@
 
 ## [未發布] — 2026-11-11（十八）：介面不再顯示 AI 供應商及模型名稱；文件與實作對齊
 
-**狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run` 172 檔 2,650 項通過／4 略過）；部署狀態見本節末。
+**狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run` 172 檔 2,650 項通過／4 略過）；**已部署**（commit `0ea5945`、revision `history-self-study-00104-nsd`，證據見 [deployment-evidence-2026-11-11-neutral-ai-labels.json](docs/deployment-evidence-2026-11-11-neutral-ai-labels.json)）。
 
 ### 背景
 

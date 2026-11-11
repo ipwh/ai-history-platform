@@ -1,0 +1,84 @@
+{
+  "generatedAt": "2026-11-11T07:05:00.000Z",
+  "notice": "部署 2026-11-11 第十八節：介面不再顯示 AI 供應商或模型名稱，改以中性「AI 生成功能」描述；同時對齊文件與實作（AI 用量位置、系統狀態頁路徑）。映像由 commit 0ea5945 建置（main），Cloud Build 先執行 quality-gate（npm ci ＋ lint ＋ vitest）再部署到 Cloud Run。",
+  "changes": {
+    "commit": "0ea5945",
+    "previousCommit": "67da00b",
+    "summary": [
+      {
+        "file": "src/server/config.ts, src/server/llm/index.ts, src/server/llm/openai-provider.ts",
+        "detail": "LLM provider 顯示標籤統一為「AI 生成功能」；AI 語意批改顯示為「AI 語意批改」。內部 provider／model 識別碼及設定不變。"
+      },
+      {
+        "file": "src/components/AppShell.tsx, AdminDashboard.tsx, AdminSettings.tsx",
+        "detail": "頁首狀態、管理員儀表板及系統狀態不再顯示 provider／模型名稱，改為「AI 生成功能：正常」／「示範模式（未連接外部 AI）」；「最近的 LLM 請求」清單不再列出 provider／模型。"
+      },
+      {
+        "file": "src/app/api/tutor/chat/route.ts, src/components/TutorView.tsx",
+        "detail": "學伴上游錯誤訊息由供應商名稱改為「AI 生成服務…」；串流錯誤改為「AI 生成回應時發生錯誤」。"
+      },
+      {
+        "file": "src/components/HomeView.tsx, PracticeSetupForm.tsx, ReviewWorkbench.tsx, MaterialManager.tsx, src/lib/review-workbench-labels.ts, src/server/seed/tutor-topic-cards.ts",
+        "detail": "介面及教師工作台文字統一為中性的「教材」用語；教材發布確認識別的標題更清晰。"
+      },
+      {
+        "file": "src/server/services/tutor-query.ts, src/server/services/tutor-grounding.ts, src/server/services/tutor-answerability-prompt.ts",
+        "detail": "「有甚麼證據？」「有咩證據？」等依據追問可正確命中；含歷史專名或 1999 年前年份的提問仍視為新的歷史問題。提示詞用語同步中性化。"
+      },
+      {
+        "file": "README.md, CHANGELOG.md, docs/tutor-retrieval-architecture.md",
+        "detail": "文件對齊：AI 用量統計位置更正為 /admin、系統狀態頁更正為 /admin/settings；新增「介面不顯示供應商或模型名稱」說明；CHANGELOG 新增第十八節。"
+      }
+    ]
+  },
+  "deployment": {
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "revision": "history-self-study-00104-nsd",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "buildId": "172c45c7-debb-4951-8af6-5f45c9dca620",
+    "trigger": "history-main-push（^main$ → cloudbuild.yaml）",
+    "notes": [
+      "Cloud Build 172c45c7 一次成功（quality-gate → build-image → deploy）。",
+      "部署沿用線上既有設定；沒有更改角色、名冊或 AI 供應商設定。"
+    ]
+  },
+  "verification": {
+    "health": {
+      "url": "https://history-self-study-4sija7xvrq-df.a.run.app/api/health",
+      "status": 200,
+      "ok": true,
+      "llmProvider": "deepseek",
+      "llmProviderLabel": "AI 生成功能",
+      "llmConfigured": true,
+      "demoMode": false,
+      "aiGrading": true,
+      "materials": { "documents": 46, "blocks": 26599 }
+    },
+    "loginPage": {
+      "url": "https://history-self-study-4sija7xvrq-df.a.run.app/login",
+      "status": 200,
+      "title": "登入 ｜ 歷史科自學平台"
+    },
+    "clientBundle": {
+      "scan": "以 ripgrep 掃描 .next/static 的 .js 檔",
+      "forbiddenStrings": ["DeepSeek API", "deepseek-flash"],
+      "matches": 0,
+      "note": "客戶端 bundle 不再包含供應商或模型名稱；機器可讀的 llmProvider 仍保留在 /api/health，供維運診斷。"
+    },
+    "localGates": {
+      "typecheck": "tsc --noEmit 0 error",
+      "lint": "eslint 0 error（1 個既有 warning：scripts/verify-questionbank-sync.ts 未使用的 fs）",
+      "build": "npm run build 成功",
+      "unitTests": "vitest run：172 檔、2,650 項通過、4 項略過"
+    }
+  },
+  "environmentUnchanged": {
+    "staffAccessPolicy": "school-domain（pochiu.edu.hk）",
+    "adminEmails": "ipwh@pochiu.edu.hk",
+    "reviewerEmails": "ipwh@pochiu.edu.hk",
+    "rosterSheetId": "1RlzeojjxJqu8vk7ctTliVRahA1sXnR-BJRiyFMCr_uM",
+    "note": "由 Cloud Build trigger substitutions 沿用；沒有更改角色或名冊政策。"
+  }
+}
