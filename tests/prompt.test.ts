@@ -159,10 +159,29 @@ describe("語意批改提示詞的錯別字界線", () => {
       knowledgePoint: "人類起源",
       explanation: "古人類最早在非洲出現。",
       studentAnswer: "非洲",
+      truncatedAnswer: false,
     });
 
     expect(prompt).toContain("<<<學生答案開始>>>");
     expect(prompt).toContain("<<<學生答案結束>>>");
     expect(prompt).toContain("只輸出 JSON");
+    // 完整答案不應加入「只寫出前段」的提示
+    expect(prompt).not.toContain("只是標準答案的前段");
+  });
+
+  it("答案只寫出詞語前段時，批改提示會明確要求不可判為正確", () => {
+    const prompt = buildGradingPrompt({
+      topicTitle: "課題1",
+      questionType: "fill",
+      question: "＿＿＿是文藝復興的核心思想。",
+      referenceAnswer: "人文主義",
+      acceptedAnswers: [],
+      gradingPoints: [],
+      knowledgePoint: "文藝復興",
+      explanation: "文藝復興以人文主義為核心。",
+      studentAnswer: "人文主",
+      truncatedAnswer: true,
+    });
+    expect(prompt).toContain("只是標準答案的前段");
   });
 });

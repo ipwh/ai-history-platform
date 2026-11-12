@@ -6,6 +6,7 @@ import {
   gradeAnswer,
   hasAttachedLatinJunk,
   normalizeAnswer,
+  truncatesStandardAnswer,
 } from "@/server/services/grading";
 
 function buildQuestion(overrides: Partial<Question>): Question {
@@ -153,6 +154,50 @@ describe("填充題的近似答案標示為不確定", () => {
   it("選擇題不會標示為不確定", () => {
     const question = buildQuestion({});
     expect(gradeAnswer(question, "選項乙").uncertain).toBeUndefined();
+  });
+});
+
+/**
+ * 只寫出詞語前段（2026-11-12 模擬學生輸入「似是而非」答案時發現）：
+ * 12 個截短答案中有 6 個被語意批改判為正确（「資產階」對「資產階級」等），
+ * 學生只要輸入詞語開頭幾個字就可以得分。這裡以固定規則辨識，交由教師覆核。
+ */
+describe("只寫出詞語前段的答案", () => {
+  const fill = (correctAnswer: string, acceptedAnswers: string[] = []) =>
+    buildQuestion({
+      questionType: "fill",
+      options: [],
+      correctAnswer,
+      acceptedAnswers,
+      question: "＿＿＿是文藝復興的核心思想。",
+    });
+
+  it("截短詞語（漏掉詞語內部的字）視為只寫出前段", () => {
+    expect(truncatesStandardAnswer(fill("資產階級"), "資產階")).toBe(true);
+    expect(truncatesStandardAnswer(fill("會員大會"), "會員大")).toBe(true);
+    expect(truncatesStandardAnswer(fill("馬歇爾計劃"), "馬歇爾計")).toBe(true);
+    expect(truncatesStandardAnswer(fill("香港房屋委員會"), "香港房屋委員")).toBe(true);
+  });
+
+  it("只省略尾巴的通用名詞屬可接受的簡短寫法", () => {
+    expect(truncatesStandardAnswer(fill("文藝復興運動"), "文藝復興")).toBe(false);
+    expect(truncatesStandardAnswer(fill("不干預政策"), "不干預")).toBe(false);
+  });
+
+  it("完整答案、括號補充及可接受寫法都不算截短", () => {
+    expect(truncatesStandardAnswer(fill("國際貨幣基金組織（IMF）"), "國際貨幣基金組織")).toBe(false);
+    expect(truncatesStandardAnswer(fill("國際貨幣基金組織（IMF）"), "國際貨幣基金組織IMF")).toBe(false);
+    expect(truncatesStandardAnswer(fill("封建", ["封建社會"]), "封建社會")).toBe(false);
+    expect(truncatesStandardAnswer(fill("資產階級"), "資產階級")).toBe(false);
+  });
+
+  it("沒有前綴關係的錯誤答案不是截短", () => {
+    expect(truncatesStandardAnswer(fill("馬歇爾計劃"), "莫洛托夫計劃")).toBe(false);
+    expect(truncatesStandardAnswer(fill("資產階級"), "無產階級")).toBe(false);
+  });
+
+  it("選擇題不適用", () => {
+    expect(truncatesStandardAnswer(buildQuestion({}), "選項")).toBe(false);
   });
 });
 

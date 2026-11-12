@@ -56,6 +56,7 @@ function makeRecord(overrides: Partial<PracticeRecordSession> = {}): PracticeRec
         sourceLocation: "課題1_筆記.docx · 第 12 段",
         sourceExcerpt: "1978 年，香港推行九年免費教育。",
         isCorrect: true,
+        uncertain: false,
         selfAssessment: null,
         aiVerdict: null,
         answered: true,
@@ -74,6 +75,7 @@ function makeRecord(overrides: Partial<PracticeRecordSession> = {}): PracticeRec
         sourceLocation: "課題1_筆記.docx · 第 20 段",
         sourceExcerpt: "1997 年 7 月 1 日，香港回歸中國。",
         isCorrect: false,
+        uncertain: false,
         selfAssessment: null,
         aiVerdict: null,
         answered: true,
@@ -107,8 +109,7 @@ describe("匯出格式", () => {
     expect(hongKongDateTime(null)).toBe("—");
   });
 
-  it("CSV 保留原有欄位並阻擋公式注入", async () => {
-    const danger = makeRecord({
+  it("CSV 保留原有欄位並阻擋公式注入", async () => {    const danger = makeRecord({
       questions: [
         {
           ...makeRecord().questions[0],
@@ -129,6 +130,19 @@ describe("匯出格式", () => {
     const text = result.body.toString("utf8");
     expect(text.startsWith("\uFEFF作答日期,")).toBe(true);
     expect(text).toContain("'=1+1");
+  });
+
+  it("待教師覆核的答案在 CSV 結果欄同樣標明", async () => {
+    const record = makeRecord({
+      questions: [{ ...makeRecord().questions[1], uncertain: true }],
+      totalQuestions: 1,
+      answeredCount: 1,
+      correctCount: 0,
+      wrongCount: 1,
+      accuracy: 0,
+    });
+    const result = await buildRecordsExport([record], { format: "csv" });
+    expect(result.body.toString("utf8")).toContain("答錯（待教師覆核）");
   });
 });
 

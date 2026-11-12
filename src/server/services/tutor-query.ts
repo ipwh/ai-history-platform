@@ -276,6 +276,20 @@ export function hasExplicitVagueness(raw: string): boolean {
 }
 
 /**
+ * 「請求式提問」：學生用「我想知道／想了解／請說明」等句式提出明確題目。
+ *
+ * 這類句子往往沒有「為甚麼／如何」等疑問詞，但意思清楚（例如「我想知道德國係
+ * 發動第二次世界大戰中的責任」）。只按疑問詞判斷會把它當成含混而要求澄清，
+ * 令學生要先回答一條反問才得到答案；因此連同具體歷史錨點一併視為可作答提問。
+ */
+const REQUEST_SHAPE =
+  /(?:想知道|想知|想了解|想請教|想問|請(?:問|說明|解釋|講解|介紹|告訴我)|告訴我|話我知|講(?:俾|畀)我聽|同我講|教我|解釋一下|說明一下|講解一下|介紹一下|講下|介紹下|解釋下|i\s+want\s+to\s+know|i'?d\s+like\s+to\s+know|tell\s+me|explain|describe)/i;
+
+export function hasTutorRequestShape(raw: string): boolean {
+  return REQUEST_SHAPE.test(raw) || REQUEST_SHAPE.test(normalizeTutorQuery(raw));
+}
+
+/**
  * 「依據查詢」：學生追問上一則回覆有甚麼根據，而不是問一個新的歷史問題。
  *
  * 2026-11-11 學生模擬：學生問「新界係幾時租俾英國？」後追問「你憑咩話係咁？
@@ -320,10 +334,12 @@ export function isUnclearTutorQuery(
     return true;
   }
   if (!hasSpecificHistoryAnchor(normalized, curriculum)) return true;
+  // 「我想知道／請說明…」已清楚表明要問的歷史內容，即使沒有疑問詞也應直接作答。
+  if (hasTutorRequestShape(raw)) return false;
   // 學生只打了一個課程專名（例如「五功？」「凡爾賽條約」）：提問對象已經明確，
   // 不應再要求澄清（2026-11-02）。
   if (normalized.length <= 8 && canonicalHistoryTerm(normalized) !== null) return false;
-  const hasQuestionWord = /(?:為什麼|為何|如何|怎樣|成因|起因|原因|背景|影響|特色|特點|內容|分別|比較|誰|哪些|哪個|哪一|何時|幾時|哪裡|邊度|順序|次序|時序|排列|配對|填充|完成|下表|表格|改變|爆發|佔領|解釋|說明|方法|計算|甚麼|什麼|是否|一樣|做了|做過|做咩|做乜|乜|割|列出|整理|提示|抄|例子|舉例|例如|評論|評價|分析|角色|立場|看法|意見|背|記住|記憶|溫習|讀|成功|失敗|會唔會|咩|邊(?:個|幾|一|二|三|四|五|六|七|八|九|十|多|樣|年|月|日)|幾多|幾耐|關係|係點|是怎樣|導致|造成|引致|多大程度|幾大程度|重要性|關鍵|同意嗎|贊成嗎|應否|對唔對|對不對|是否正確|正確嗎|啱唔啱|有冇|有沒有|對嗎|係咪|啱嗎|記錯)/.test(
+  const hasQuestionWord = /(?:為什麼|為何|如何|怎樣|成因|起因|原因|背景|影響|特色|特點|內容|分別|比較|誰|哪些|哪個|哪一|何時|幾時|哪裡|邊度|順序|次序|時序|排列|配對|填充|完成|下表|表格|改變|爆發|佔領|解釋|說明|方法|計算|甚麼|什麼|是否|一樣|做了|做過|做咩|做乜|乜|割|列出|整理|提示|抄|例子|舉例|例如|評論|評價|分析|角色|責任|貢獻|定位|立場|看法|意見|背|記住|記憶|溫習|讀|成功|失敗|會唔會|咩|邊(?:個|幾|一|二|三|四|五|六|七|八|九|十|多|樣|年|月|日)|幾多|幾耐|關係|係點|是怎樣|導致|造成|引致|多大程度|幾大程度|重要性|關鍵|同意嗎|贊成嗎|應否|對唔對|對不對|是否正確|正確嗎|啱唔啱|有冇|有沒有|對嗎|係咪|啱嗎|記錯)/.test(
     normalized,
   );
   // 純英文提問（"Who was Hitler?"）：正規化已去掉空格，因此不可用 \b 邊界，
@@ -376,7 +392,16 @@ function sectionQuestion(title: string): string {
   if (/改革|維新/.test(subject)) {
     return `${subject}回應了當時哪些歷史挑戰？`;
   }
-  return `${subject}的背景和影響有甚麼關係？`;
+  // 「第二次世界大戰（1939–1945）：爆發、經過與結果」這類標題已用冒號列出面向，
+  // 直接問這些面向的概況；否則會拼成「…結果的背景和影響有甚麼關係？」這類生硬句子。
+  const parts = subject
+    .split(/[：:]/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (parts.length >= 2) {
+    return `${parts[0]}的${parts.slice(1).join("：")}是甚麼？`;
+  }
+  return `${subject}有甚麼背景和影響？`;
 }
 
 function candidateFromSection(

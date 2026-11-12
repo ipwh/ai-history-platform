@@ -87,6 +87,56 @@ export interface GradeOutcome {
   uncertain?: boolean;
 }
 
+/** 括號內的補充說明（例如「國際貨幣基金組織（IMF）」的 IMF），本身不是答案主體 */
+const BRACKETED_SUPPLEMENT = /[（(【\[][^）)】\]]*[）)】\]]/g;
+
+/**
+ * 詞語尾巴的通用名詞（「文藝復興**運動**」「不干預**政策**」）。
+ *
+ * 學生只寫出前面的專名部分（「文藝復興」）屬可接受的簡短寫法，不算截短；但漏掉詞語
+ * **內部**的字（「資產階」對「資產階級」、「會員大」對「會員大會」）則屬不完整答案。
+ */
+const GENERIC_TAIL =
+  /(?:運動|事件|政策|主義|制度|組織|會議|條約|計劃|計畫|戰爭|革命|法案|宣言|機構|時期|條例|方案|協定|公約)$/;
+
+/**
+ * 學生是否只寫出標準答案的前段（截短詞語）。
+ *
+ * 2026-11-12 模擬學生輸入「似是而非」答案：12 個截短答案中有 6 個被語意批改判為
+ * 正確（「資產階」對「資產階級」、「會員大」對「會員大會」、「馬歇爾計」對
+ * 「馬歇爾計劃」等），並附上「屬簡寫／筆誤」的說明。截短後的字串多數不成詞，
+ * 與真正的簡稱（「中共」對「中國共產黨」）不同——簡稱會改動字詞，並非原答案的前段。
+ * 這條固定規則用來擋住「只輸入詞語開頭幾個字就得分」的情況，命中時交由教師覆核。
+ */
+export function truncatesStandardAnswer(question: Question, answer: string): boolean {
+  if (question.questionType !== "fill") return false;
+  const student = normalizeAnswer(answer);
+  if (student.length < 2) return false;
+
+  const references = [
+    ...answerAlternatives(question.correctAnswer),
+    ...question.acceptedAnswers,
+  ];
+  // 括號內的補充（例如「（IMF）」）不是答案主體：只寫出主體不算截短
+  const cores: string[] = [];
+  for (const reference of references) {
+    const core = normalizeAnswer(reference.replace(BRACKETED_SUPPLEMENT, ""));
+    if (core.length === 0) continue;
+    if (normalizeAnswer(reference) === student || core === student) return false;
+    cores.push(core);
+  }
+
+  for (const core of cores) {
+    if (core.length <= student.length) continue;
+    if (!core.startsWith(student)) continue;
+    // 只省略尾巴的通用名詞（「文藝復興」對「文藝復興運動」）→ 屬可接受的簡短寫法
+    const tail = core.slice(student.length);
+    if (student.length >= 3 && GENERIC_TAIL.test(tail)) continue;
+    return true;
+  }
+  return false;
+}
+
 /**
  * 兩個已正規化的答案是否「只差一個字」（取代、漏字或多字）。
  *

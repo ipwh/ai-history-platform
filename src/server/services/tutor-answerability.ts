@@ -36,7 +36,13 @@ import {
 } from "@/lib/history-lexicon";
 import type { TutorGrounding } from "./tutor-grounding";
 import { matchesCurriculumTerms, type TutorCurriculumIndex } from "./tutor-grounding";
-import { hasExplicitVagueness, hasHistoricalYearSignal, isClearlyNonHistoryTutorQuery, normalizeTutorQuery } from "./tutor-query";
+import {
+  hasExplicitVagueness,
+  hasHistoricalYearSignal,
+  hasTutorRequestShape,
+  isClearlyNonHistoryTutorQuery,
+  normalizeTutorQuery,
+} from "./tutor-query";
 import { isHistoryTopicPrompt, isShortHistoryFollowUp } from "./tutor";
 
 /** 歷史年代界限（與 `services/tutor-query.ts` 共用同一常數，避免兩處不一致） */
@@ -620,7 +626,7 @@ export function classifyTutorAnswerability(
      * 學生確實在問課程會處理的題材，不可當成離題；但既不能斷定課題、也不可引用
      * 未確認的教材，因此只可澄清並列出可能方向（2026-11-10 模擬）。
      */
-    if (input.courseVocabularyMatched === true && hasQuestionShape(raw)) {
+    if (input.courseVocabularyMatched === true && (hasQuestionShape(raw) || hasTutorRequestShape(raw))) {
       return {
         ...base,
         state: "D-needs-clarification",
@@ -634,8 +640,10 @@ export function classifyTutorAnswerability(
   const anchor = hasSpecificAnchor(input);
   // 原有的「含混」判斷只在**沒有具體提問**時成立：單講一個課題名（「改革」「德國」）
   // 仍應澄清；但「明治維新點解成功？」這類有錨點、有明確問法的提問不可被當成含混
-  // （Sprint 29 修正）。
-  const needsClarification = input.unclear && !(anchor && hasQuestionShape(raw));
+  // （Sprint 29 修正）。「我想知道德國係發動第二次世界大戰中的責任」這類請求式
+  // 提問雖無疑問詞，意思仍然清楚，同樣應直接作答（2026-11-12）。
+  const needsClarification =
+    input.unclear && !(anchor && (hasQuestionShape(raw) || hasTutorRequestShape(raw)));
 
   if (needsClarification) {
     return {

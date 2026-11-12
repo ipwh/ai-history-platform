@@ -453,6 +453,11 @@ describe("學生練習流程（整合測試）", () => {
     const learner = practiceRepo.listRecordLearners().find((item) => item.learnerId === LEARNER);
     expect(learner?.answeredQuestions).toBeGreaterThan(0);
     expect(learner?.correctCount).toBe(progress.correctAnswers);
+
+    // 教師逐次匯出：指定 sessionId 時只取該次練習
+    const singleSession = recordsService.listPracticeRecords({ sessionId: record.sessionId });
+    expect(singleSession).toHaveLength(1);
+    expect(singleSession[0].sessionId).toBe(record.sessionId);
   });
 
   it("班級／班別篩選及記錄查詢只會包括符合的學習者", () => {
@@ -474,9 +479,9 @@ describe("學生練習流程（整合測試）", () => {
     ];
     const scopedLearners = recordsService.enrichRecordLearners([], rosterStudents);
     const parsedFilter = recordsService.recordFilterFromParams(
-      new URLSearchParams("className=1A&formLevel=1"),
+      new URLSearchParams("className=1A&formLevel=1&sessionId=sess_demo"),
     );
-    expect(parsedFilter).toMatchObject({ className: "1A", formLevel: "1" });
+    expect(parsedFilter).toMatchObject({ className: "1A", formLevel: "1", sessionId: "sess_demo" });
 
     expect(
       recordsService.recordLearnerIdsForFilters(scopedLearners, { formLevel: "1" }),

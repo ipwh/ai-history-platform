@@ -543,7 +543,7 @@ body {
   border-radius: 999px;
   background: #e8edf8;
   border: 1px solid var(--border);
-  /* 窄螢幕時五個分頁放不下：容許橫向捲動，而不是把「主題甲」拆成兩行 */
+  /* 窄螢幕時五個分頁（中一至中三及高中課程主題甲／乙）放不下：容許橫向捲動，而不是把標籤拆成兩行 */
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

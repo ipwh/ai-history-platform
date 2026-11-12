@@ -415,6 +415,22 @@ describe("AI 歷史自學學伴 API", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("請求式歷史提問直接作答，不會只以反問回應", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => mockStreamingAnswer());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postChat(
+      requestFor("POST", STUDENT_A, {
+        message: "我想知道德國係發動第二次世界大戰中嘅責任",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    await response.text();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("未登入學生回傳 401", async () => {
     const response = await postChat(requestFor("POST", null, { message: "一戰的起因是甚麼？" }));
     expect(response.status).toBe(401);

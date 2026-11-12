@@ -154,6 +154,7 @@ function buildSessionRecord(
       sourceLocation: question.sourceLocation,
       sourceExcerpt: question.sourceExcerpt,
       isCorrect: attempt?.isCorrect ?? null,
+      uncertain: attempt?.uncertain ?? false,
       selfAssessment: attempt?.selfAssessment ?? null,
       aiVerdict: attempt?.aiGrading?.verdict ?? null,
       answered: attempt !== null && attempt.answer.trim().length > 0,
@@ -254,6 +255,7 @@ export function recordFilterFromParams(
   };
   return {
     topicId: params.get("topicId")?.trim() || null,
+    sessionId: params.get("sessionId")?.trim() || null,
     learnerId: params.get("learnerId")?.trim() || null,
     className: params.get("className")?.trim() || null,
     formLevel: params.get("formLevel")?.trim() || null,
@@ -302,6 +304,10 @@ export function recordOutcomeLabel(row: PracticeRecordQuestion): string {
   const outcome = outcomeOf(row);
   if (outcome === "ungraded" && row.selfAssessment === "needs-review") {
     return "待自我檢查（需重溫）";
+  }
+  // 批改當時標示為無法確定（近似答案或只寫出詞語前段）→ 讓匯出檔同樣看得到待覆核
+  if (row.uncertain && outcome !== "correct") {
+    return `${OUTCOME_LABELS[outcome]}（待教師覆核）`;
   }
   return OUTCOME_LABELS[outcome];
 }

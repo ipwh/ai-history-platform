@@ -19,6 +19,15 @@ function outcomeBadge(record: PracticeRecordQuestion) {
   };
 }
 
+export type RecordExportFormat = "xlsx" | "docx" | "pdf" | "csv";
+
+const RECORD_EXPORT_OPTIONS: { format: RecordExportFormat; label: string }[] = [
+  { format: "xlsx", label: "Excel（XLSX）" },
+  { format: "docx", label: "Word（DOCX）" },
+  { format: "pdf", label: "PDF" },
+  { format: "csv", label: "CSV" },
+];
+
 /** 選擇題選項的 A／B／C／D 標記（與學生作答時看到的次序一致） */
 function optionLetter(index: number): string {
   return String.fromCharCode(65 + index);
@@ -46,13 +55,16 @@ export interface PracticeRecordCardProps {
   answerLabel?: string;
   /** 選項標記：教師端「學生選擇」，學生端「你的選擇」 */
   choiceLabel?: string;
+  /** 教師端逐次匯出：提供時會在卡片顯示「匯出此次練習」的下載選項 */
+  exportHref?: (format: RecordExportFormat) => string;
 }
 
 /**
  * 一次練習記錄（統計標籤＋可展開的逐題回顧）。
  *
  * 教師端與學生端共用同一份呈現，避免兩邊對「答對／答錯／未作答」的用語或
- * 選項標記出現分歧。
+ * 選項標記出現分歧。未按「完成練習並查看結果」便離開的練習會標示「未完成」，
+ * 因為這類記錄仍會列出已提交的答案，但不會計入完成練習次數。
  */
 export function PracticeRecordCard({
   record,
@@ -63,6 +75,7 @@ export function PracticeRecordCard({
   topicLabel,
   answerLabel = "學生答案",
   choiceLabel = "學生選擇",
+  exportHref,
 }: PracticeRecordCardProps) {
   const visible = record.questions
     .map((question, index) => ({ question, index }))
@@ -84,6 +97,14 @@ export function PracticeRecordCard({
         ) : null}
         <span className="font-semibold">{formatDateTime(record.createdAt)}</span>
         <span>{topicLabel ?? record.topicTitle}</span>
+        {record.completedAt === null ? (
+          <span
+            className="badge badge-warning"
+            title="這次練習尚未按「完成練習並查看結果」；已提交的答案仍會保留，未作答題目不會計分。"
+          >
+            未完成
+          </span>
+        ) : null}
         {record.questionTypeLabels.map((label) => (
           <span key={label} className="badge">
             {label}
@@ -96,9 +117,28 @@ export function PracticeRecordCard({
             準確率 {Math.round(record.accuracy * 100)}%
           </span>
         ) : null}
-        <button type="button" className="btn ml-auto" onClick={onToggle}>
-          {expanded ? "收起題目" : `查看題目（${record.totalQuestions}）`}
-        </button>
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          {exportHref ? (
+            <details className="flex flex-col items-end gap-2">
+              <summary className="btn cursor-pointer">匯出此次練習</summary>
+              <div className="flex flex-wrap justify-end gap-2">
+                {RECORD_EXPORT_OPTIONS.map((option) => (
+                  <a
+                    key={option.format}
+                    className="btn"
+                    href={exportHref(option.format)}
+                    download
+                  >
+                    {option.label}
+                  </a>
+                ))}
+              </div>
+            </details>
+          ) : null}
+          <button type="button" className="btn" onClick={onToggle}>
+            {expanded ? "收起題目" : `查看題目（${record.totalQuestions}）`}
+          </button>
+        </div>
       </div>
 
       {expanded ? (
@@ -119,6 +159,14 @@ export function PracticeRecordCard({
                     <span className="text-gray-500">{index + 1}.</span>
                     <span className="badge">{question.questionTypeLabel}</span>
                     <span className={badge.className}>{badge.label}</span>
+                    {question.uncertain ? (
+                      <span
+                        className="badge badge-warning"
+                        title="批改時無法確定這個答案是否應該算對（可能是錯別字、另一個可接受的寫法，或只寫出詞語前段），已標示交由教師覆核。"
+                      >
+                        待覆核
+                      </span>
+                    ) : null}
                     {question.sectionTitle ? (
                       <span className="text-xs text-gray-500">{question.sectionTitle}</span>
                     ) : null}

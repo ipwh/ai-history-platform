@@ -24,6 +24,8 @@ export const runtime = "nodejs";
 /** 篩選條件的文字說明（寫進 DOCX／PDF 開頭，存檔後仍知道匯出範圍） */
 function describeFilter(params: URLSearchParams, learnerLabel: string | null): string {
   const parts: string[] = [];
+  const sessionId = params.get("sessionId")?.trim();
+  if (sessionId) parts.push(`單次練習 ${sessionId}`);
   const topicId = params.get("topicId")?.trim();
   if (topicId) parts.push(`課題 ${topicId}`);
   const formLevel = params.get("formLevel")?.trim();
@@ -51,7 +53,7 @@ function describeFilter(params: URLSearchParams, learnerLabel: string | null): s
  * 教師端：下載學生練習記錄。
  *
  * `format` 可為 csv（預設，每題一列）、xlsx（練習概況＋逐題記錄）、docx 或 pdf（每次練習一節）。
- * 所有格式都套用同一組篩選條件，內容一致。
+ * 所有格式都套用同一組篩選條件，內容一致；加上 `sessionId` 則只匯出該次練習。
  */
 export async function GET(request: Request) {
   return handleRoute(async () => {

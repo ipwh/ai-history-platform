@@ -12,7 +12,7 @@ import type {
   PracticeRecordTopicOption,
 } from "@/lib/types";
 import { ErrorNotice, Loading, Notice, StatBox } from "@/components/ui";
-import { formatDateTime, PracticeRecordCard } from "@/components/PracticeRecordCard";
+import { formatDateTime, PracticeRecordCard, type RecordExportFormat } from "@/components/PracticeRecordCard";
 
 interface RecordsResponse {
   records: PracticeRecordSession[];
@@ -324,6 +324,16 @@ export function TeacherRecords() {
     return `/api/teacher/records/export?${params.toString()}`;
   };
   const filtersPending = queryString(draft) !== queryString(applied);
+  /**
+   * 逐次匯出：只帶 `sessionId`，不受目前篩選影響。
+   *
+   * 老師在逐題記錄中看到某一次練習時，可直接下載該次練習的檔案，不必先收窄
+   * 篩選再匯出整批記錄。
+   */
+  const sessionExportHref = (sessionId: string) => (format: RecordExportFormat): string => {
+    const params = new URLSearchParams({ sessionId, format });
+    return `/api/teacher/records/export?${params.toString()}`;
+  };
   /** 篩選條件的中文摘要（課題、學習者、日期），供畫面說明「現在顯示／將匯出」的是甚麼 */
   const scopeText = (filters: Filters): string =>
     [
@@ -812,6 +822,7 @@ export function TeacherRecords() {
                 {applied.learnerId ? `目前顯示：${activeLearnerName}` : "目前顯示：全部學習者"}
                 ・共 {sessionTotal} 次練習
                 {recordsTruncated ? `（列表只顯示最新 ${records.length} 次）` : ""}
+                ・每次練習可逐次匯出
               </span>
             </div>
           </div>
@@ -836,6 +847,7 @@ export function TeacherRecords() {
             wrongOnly={wrongOnly}
             learnerLabel={learnerById.get(record.learnerId)?.name || record.learnerLabel}
             topicLabel={topicLabelById.get(record.topicId) ?? record.topicTitle}
+            exportHref={sessionExportHref(record.sessionId)}
           />
         ))}
         </div>

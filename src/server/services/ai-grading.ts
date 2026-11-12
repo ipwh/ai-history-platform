@@ -172,6 +172,37 @@ export async function gradeWithAi(context: AiGradingContext): Promise<AiGrading 
       };
     }
 
+    // 學生只寫出標準答案的前段（「資產階」對「資產階級」）：模型會把這類漏字當成
+    // 「簡稱／筆誤」而判正確，令猜中詞語開頭就可以得分（2026-11-12 模擬）。
+    // 與截短後的固定規則一致，這裡也否決「正確」的判斷，交由教師覆核。
+    if (parsed.verdict === "correct" && input.truncatedAnswer) {
+      logGradingAttempt({
+        ...baseLog,
+        success: false,
+        fellBack: true,
+        durationMs,
+        errorType: "truncated-answer",
+      });
+      logLlmUsage({
+        requestType: "grading",
+        provider: grader.providerName,
+        model,
+        topicId: context.topicId ?? null,
+        success: false,
+        durationMs,
+        usage: outcome.usage,
+        errorType: "truncated-answer",
+      });
+      console.warn("[ai-grading] 答案只寫出詞語前段，不採用 AI 的「正確」判斷", context.question.id);
+      return {
+        verdict: "partial",
+        hitPoints: parsed.hitPoints,
+        missingPoints: parsed.missingPoints,
+        feedback: `你只寫出答案的前段，未完整寫出「${context.question.correctAnswer}」，這次暫不視為正確，已交教師覆核。請對照參考答案再確認一次。`,
+        note: null,
+      };
+    }
+
     logGradingAttempt({ ...baseLog, success: true, fellBack: false, durationMs, errorType: null });
     logLlmUsage({
       requestType: "grading",

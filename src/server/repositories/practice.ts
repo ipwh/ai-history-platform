@@ -392,6 +392,8 @@ export function listWrongAttempts(options: {
 export interface SessionRecordFilter {
   learnerId?: string | null;
   learnerIds?: string[];
+  /** 只取指定的一次練習（供教師逐次匯出） */
+  sessionId?: string | null;
   topicId?: string | null;
   /** 起始日期（含當日） */
   from?: string | null;
@@ -430,6 +432,10 @@ function sessionRecordWhere(filter: SessionRecordFilter): { clause: string; para
   if (filter.learnerId) {
     conditions.push("s.learner_id = ?");
     params.push(filter.learnerId);
+  }
+  if (filter.sessionId) {
+    conditions.push("s.id = ?");
+    params.push(filter.sessionId);
   }
   if (filter.topicId) {
     conditions.push("s.topic_id = ?");

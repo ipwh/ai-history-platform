@@ -13,7 +13,7 @@ import type {
 import {
   CURRICULUM_LEVEL_LABELS,
   CURRICULUM_THEMES,
-  CURRICULUM_THEME_LABELS,
+  CURRICULUM_THEME_TAB_LABELS,
   LEARNING_STATE_LABELS,
   LEARNER_STORAGE_KEY,
   SENIOR_CURRICULUM_THEMES,
@@ -347,7 +347,7 @@ export function HomeView() {
                 title={SENIOR_CURRICULUM_THEMES[seniorTheme].title}
                 onClick={() => chooseSeniorTheme(seniorTheme)}
               >
-                {CURRICULUM_THEME_LABELS[seniorTheme]}
+                {CURRICULUM_THEME_TAB_LABELS[seniorTheme]}
               </button>
             )) : null}
           </div>

@@ -177,6 +177,21 @@ describe("可答性狀態：教材涵蓋程度與問題是否可答分開", () =
     }
   });
 
+  it("請求式提問雖無疑問詞，但歷史錨點清楚時直接作答", () => {
+    const query = "我想知道德國係發動第二次世界大戰中嘅責任";
+    const decision = classifyTutorAnswerability({
+      message: query,
+      curriculum: EMPTY_CURRICULUM,
+      grounding: groundingFor("none"),
+      hasHistoryContext: false,
+      unclear: isUnclearTutorQuery(query, EMPTY_CURRICULUM, false),
+    });
+    expect(decision.state).toBe("C-general-knowledge");
+    expect(decision.scope).toBe("history");
+    expect(decision.allowGeneralKnowledge).toBe(true);
+    expect(decision.requireDisclosure).toBe(true);
+  });
+
   it("有上文時，代詞及角色追問沿用上文而不要求澄清", () => {
     for (const query of ["佢有咩影響？", "咁之後呢？", "天皇係咩角色？", "Why?"]) {
       const decision = classifyTutorAnswerability({

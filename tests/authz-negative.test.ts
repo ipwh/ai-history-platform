@@ -1043,6 +1043,7 @@ describe("匯出的 CSV 不會被試算表執行公式", () => {
             sourceLocation: "課題5_筆記.docx · 第 3 段",
             sourceExcerpt: "人文主義是文藝復興的核心思想。",
             isCorrect: false,
+            uncertain: false,
             selfAssessment: null,
             aiVerdict: null,
             answered: true,

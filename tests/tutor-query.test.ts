@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildClarifyCandidates,
+  hasTutorRequestShape,
   hasWeakHistorySignal,
   isClearlyNonHistoryTutorQuery,
   isTutorEvidenceQuestion,
@@ -130,6 +131,16 @@ describe("學伴提問正規化與澄清候選", () => {
     expect(isUnclearTutorQuery(raw, curriculum, true)).toBe(false);
   });
 
+  it.each([
+    "我想知道德國係發動第二次世界大戰中嘅責任",
+    "我想知道第二次世界大戰嘅經過",
+    "我想了解凡爾賽條約",
+    "請說明冷戰嘅發展",
+  ])("請求式提問有具體歷史錨點時直接作答，不要求澄清：%s", (raw) => {
+    expect(hasTutorRequestShape(raw)).toBe(true);
+    expect(isUnclearTutorQuery(raw, curriculum, false)).toBe(false);
+  });
+
   it("沒有有效上文的「佢呢」只提供澄清方向，不猜測人物", () => {
     const raw = "佢呢";
     expect(hasWeakHistorySignal(raw)).toBe(true);
@@ -168,6 +179,28 @@ describe("學伴提問正規化與澄清候選", () => {
         (candidate) => !isUnclearTutorQuery(candidate.suggestedQuestion, curriculum, false),
       ),
     ).toBe(true);
+  });
+
+  it("分節標題以冒號列出面向時，建議問題直接問該些面向而不是拼成生硬句子", () => {
+    const index: TutorCurriculumIndex = {
+      topics: [{ id: "topic-9", title: "課題9：兩次世界大戰" }],
+      sectionsByTopic: new Map([
+        [
+          "topic-9",
+          [
+            {
+              id: "ww2",
+              title: "第二次世界大戰（1939–1945）：爆發、經過與結果",
+              matchKeywords: ["第二次世界大戰"],
+            },
+          ],
+        ],
+      ]),
+    };
+    const candidates = buildClarifyCandidates("第二次世界大戰", [], index);
+    expect(candidates[0]?.suggestedQuestion).toBe(
+      "第二次世界大戰（1939–1945）的爆發、經過與結果是甚麼？",
+    );
   });
 
   it("沒有課程索引可用時仍提供有限、歷史科專屬的保底方向", () => {

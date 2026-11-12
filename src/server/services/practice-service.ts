@@ -40,7 +40,12 @@ import {
 import { getQuestion, listQuestions } from "../repositories/questions";
 import { expandSectionIds, getTopic, sectionTitleMap } from "../repositories/topics";
 import { toStudentQuestions } from "../../lib/student-question";
-import { calculateAccuracy, gradeAnswer, gradeSubmittedAnswer, type GradeOutcome } from "./grading";
+import {
+  calculateAccuracy,
+  gradeSubmittedAnswer,
+  truncatesStandardAnswer,
+  type GradeOutcome,
+} from "./grading";
 import { gradeWithAi } from "./ai-grading";
 import { generateQuestions } from "./question-service";
 import { checkQuestionDeliverable } from "./question-servability";
@@ -799,12 +804,9 @@ export async function submitAnswer(
 
   const existing = getAttempt(sessionId, questionId);
   if (existing) {    // 已提交過的題目不會再改變分數，避免看到答案後重覆作答影響成績。
-    // 重新整理頁面時亦要顯示相同的覆核標示，因此重新計算一次（純字串比對，成本極低）。
-    const storedOutcome = gradeAnswer(question, existing.answer);
-    const storedNearMiss =
-      storedOutcome.uncertain === true && existing.aiGrading?.verdict !== "correct"
-        ? "uncertain-answer"
-        : null;
+    // 覆核標示沿用**當時寫入的判定**（attempts.uncertain）：題目答案之後被修正時，
+    // 不應重新詮釋這筆歷史作答，畫面亦要與第一次提交時一致。
+    const storedNearMiss = existing.uncertain ? "uncertain-answer" : null;
     return {
       feedback: buildFeedback(
         question,
@@ -859,12 +861,18 @@ export async function submitAnswer(
   }
 
   const isCorrect =
-    outcome.isCorrect === null ? null : outcome.isCorrect || aiGrading?.verdict === "correct";
+    outcome.isCorrect === null
+      ? null
+      : outcome.isCorrect ||
+        (aiGrading?.verdict === "correct" && !truncatesStandardAnswer(question, trimmed));
 
-  // 逐字比對不合格但答案極為接近（可能是錯別字），且 AI 亦未判定為正確時，
-  // 標示為需要教師覆核，讓學生知道這個判斷未必準確。
+  // 逐字比對不合格但答案極為接近（可能是錯別字），或學生只寫出詞語前段（未完整），
+  // 且 AI 亦未判定為正確時，標示為需要教師覆核，讓學生知道這個判斷未必準確。
   const nearMiss =
-    outcome.uncertain === true && aiGrading?.verdict !== "correct" ? "uncertain-answer" : null;
+    (outcome.uncertain === true || truncatesStandardAnswer(question, trimmed)) &&
+    isCorrect !== true
+      ? "uncertain-answer"
+      : null;
 
   const attempt = saveAttempt({
     sessionId,

@@ -1,5 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { freshTestDatabasePath } from "./test-database";
+import { truncatesStandardAnswer } from "@/server/services/grading";
+import { recordOutcomeLabel } from "@/server/services/practice-records";
 
 // 使用獨立暫存資料庫，並以 DeepSeek 設定模擬「已接上 AI」的情況（fetch 會被 stub，不會真的發送請求）
 const testDbPath = freshTestDatabasePath("ai-grading");
@@ -11,11 +13,13 @@ process.env.LLM_GRADING_ENABLED = "true";
 type PracticeService = typeof import("@/server/services/practice-service");
 type QuestionRepository = typeof import("@/server/repositories/questions");
 type GraderModule = typeof import("@/server/llm/grader");
+type RecordsService = typeof import("@/server/services/practice-records");
 type Seed = typeof import("@/server/seed");
 
 let practice: PracticeService;
 let questionsRepo: QuestionRepository;
 let grader: GraderModule;
+let recordsService: RecordsService;
 let seed: Seed;
 
 const LEARNER = "ai-grading-learner";
@@ -35,6 +39,7 @@ beforeAll(async () => {
   practice = await import("@/server/services/practice-service");
   questionsRepo = await import("@/server/repositories/questions");
   grader = await import("@/server/llm/grader");
+  recordsService = await import("@/server/services/practice-records");
   seed = await import("@/server/seed");
   seed.ensureBootstrap();
 });
@@ -269,5 +274,63 @@ describe("答案中的指令型文字不可影響評分", () => {
     ]) {
       expect(looksLikeGradingInstruction(answer)).toBe(false);
     }
+  });
+});
+
+/**
+ * 只寫出詞語前段（2026-11-12 模擬學生輸入「似是而非」答案時發現）：
+ * 模型會把「資產階」對「資產階級」這類漏字當成簡稱／筆誤而判正確，
+ * 學生只要猜中詞語開頭就可以得分。這條路徑同樣需要獨立於模型的防線。
+ */
+describe("只寫出詞語前段不可被判為正確", () => {
+  it("模型回覆 correct 時仍判為部分正確，並在記錄中標示待教師覆核", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          gradingResponse({ verdict: "correct", hitPointIndexes: [], feedback: "屬簡寫，判斷為正確。" }),
+        ),
+      ),
+    );
+
+    const assembled = await practice.createPractice({
+      learnerId: LEARNER,
+      topicId: "topic-5",
+      sectionIds: [SECTION],
+      questionTypes: ["fill"],
+      difficulty: "basic",
+      questionCount: 5,
+      mode: "standard",
+      sourceSessionId: null,
+    });
+
+    // 題庫的示範題答案長短不一：選一條夠長的題目，才可用「截短兩個字」示範
+    const chosen = assembled.questions.find((item) => {
+      const full = questionsRepo.getQuestion(item.id);
+      return full !== null && full.correctAnswer.length >= 5;
+    });
+    expect(chosen).toBeDefined();
+    const question = questionsRepo.getQuestion(chosen!.id)!;
+    const truncated = question.correctAnswer.slice(0, question.correctAnswer.length - 2);
+    expect(truncatesStandardAnswer(question, truncated)).toBe(true);
+
+    const submit = await practice.submitAnswer(
+      assembled.session.id,
+      LEARNER,
+      chosen!.id,
+      truncated,
+    );
+
+    expect(submit.recorded).toBe(true);
+    expect(submit.feedback.isCorrect).toBe(false);
+    expect(submit.feedback.aiGrading?.verdict).toBe("partial");
+    expect(submit.feedback.reviewFlag).toBe("uncertain-answer");
+
+    const records = recordsService.listPracticeRecords({ learnerId: LEARNER });
+    const row = records
+      .flatMap((record) => record.questions)
+      .find((item) => item.questionId === question.id);
+    expect(row?.uncertain).toBe(true);
+    expect(recordOutcomeLabel(row!)).toContain("待教師覆核");
   });
 });

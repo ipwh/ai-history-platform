@@ -168,6 +168,18 @@ export const CURRICULUM_THEME_LABELS: Record<CurriculumTheme, string> = {
   B: "主題乙",
 };
 
+/**
+ * 學生端首頁的課程主題分頁標示。
+ *
+ * 首頁把初中年級（中一／中二／中三）與高中課程主題並列，只寫「主題甲／乙」時
+ * 學生難以分辨這是高中課程，因此加上「高中課程」前綴；教師端的課題名稱仍沿用
+ * `CURRICULUM_THEME_LABELS`。
+ */
+export const CURRICULUM_THEME_TAB_LABELS: Record<CurriculumTheme, string> = {
+  A: "高中課程主題甲",
+  B: "高中課程主題乙",
+};
+
 export function curriculumThemeText(
   level: CurriculumLevel,
   theme?: CurriculumTheme | null,
@@ -984,6 +996,11 @@ export interface PracticeRecordQuestion {
   sourceExcerpt: string;
   /** 已作答且可自動評分時為 true／false；未作答時為 null（舊資料可能有短答自我檢查的 null） */
   isCorrect: boolean | null;
+  /**
+   * 批改當時標示為「無法確定」而交由教師覆核（近似答案或只寫出詞語前段）。
+   * 這類答案一律以「未達到」記錄，教師可在記錄中直接看到需要覆核的個案。
+   */
+  uncertain: boolean;
   selfAssessment: "understood" | "needs-review" | null;
   aiVerdict: "correct" | "partial" | "incorrect" | null;
   answered: boolean;

@@ -12,6 +12,7 @@
  */
 import type { AiGrading, LlmUsage, Question, QuestionType } from "../../lib/types";
 import { llmGradingSchema } from "../../lib/types";
+import { truncatesStandardAnswer } from "../services/grading";
 import { requestGeminiJsonCompletion, requestJsonCompletion, type ChatMessage } from "./chat-client";
 import { GRADING_SYSTEM_PROMPT, buildGradingPrompt } from "./prompt";
 
@@ -26,6 +27,11 @@ export interface AnswerGradingInput {
   knowledgePoint: string;
   explanation: string;
   studentAnswer: string;
+  /**
+   * 學生答案只是標準答案的前段（例如「資產階」對「資產階級」）。
+   * 提示模型不可把這類不完整答案當成簡稱而判正確。
+   */
+  truncatedAnswer: boolean;
 }
 
 export interface LlmAnswerGrading {
@@ -173,5 +179,6 @@ export function buildGradingInput(
     knowledgePoint: question.knowledgePoint,
     explanation: question.explanation,
     studentAnswer,
+    truncatedAnswer: truncatesStandardAnswer(question, studentAnswer),
   };
 }
