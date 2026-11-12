@@ -1,0 +1,92 @@
+{
+  "generatedAt": "2026-11-12T01:34:00.000Z",
+  "notice": "部署 2026-11-12（十九）變更：高中課程主題分頁標示、教師逐次匯出、未完成／待覆核標示、填充題截短答案收緊、學伴請求式提問。由 commit 3863888 推送 main 觸發 Cloud Build（trigger history-main-push，cloudbuild.yaml 先跑 lint 及 vitest 再部署 Cloud Run），環境變數及 Secret 未改動。",
+  "changes": {
+    "commit": "3863888",
+    "previousCommit": "943cb6f",
+    "summary": [
+      {
+        "file": "src/lib/types.ts, src/components/HomeView.tsx",
+        "detail": "學生首頁高中主題分頁改為「高中課程主題甲／乙」（新增 CURRICULUM_THEME_TAB_LABELS），教師端課題名稱不變"
+      },
+      {
+        "file": "src/components/PracticeRecordCard.tsx, src/components/TeacherRecords.tsx, src/app/api/teacher/records/export/route.ts, src/server/repositories/practice.ts, src/server/services/practice-records.ts",
+        "detail": "每張練習卡可逐次匯出（sessionId）；未完成練習標示「未完成」；待覆核題目標示「待覆核」；匯出結果欄寫「答錯（待教師覆核）」；記錄 API 每題新增 uncertain"
+      },
+      {
+        "file": "src/server/services/grading.ts, src/server/services/ai-grading.ts, src/server/llm/grader.ts, src/server/llm/prompt.ts, src/server/services/practice-service.ts",
+        "detail": "新增 truncatesStandardAnswer：只寫出詞語前段的答案不可判為正確（模型回覆 correct 亦降為 partial），記錄為待覆核；省略通用尾巴及括號補充仍接受"
+      },
+      {
+        "file": "src/server/services/tutor-query.ts, src/server/services/tutor-answerability.ts",
+        "detail": "請求式提問（我想知道／請說明…）有具體歷史錨點時直接作答；澄清選項措辭改為「…是甚麼？」"
+      },
+      {
+        "file": "README.md, CHANGELOG.md",
+        "detail": "文件對齊：頁面功能表、匯出章節、API 表、學伴規則、常見問題及變更記錄"
+      }
+    ]
+  },
+  "deployment": {
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "trigger": "history-main-push（main，cloudbuild.yaml）",
+    "buildId": "5ae1add7-ae7c-4190-893a-49b1d445889d",
+    "buildConsole": "https://console.cloud.google.com/cloud-build/builds/5ae1add7-ae7c-4190-893a-49b1d445889d?project=pccss-ai-history",
+    "buildResult": "SUCCESS（2026-11-12T01:36:51Z 完成）",
+    "pushedAt": "2026-11-12T01:27:41Z",
+    "observedContainerStart": "2026-11-12T01:36:58Z",
+    "notes": [
+      "推送後 Cloud Build 的 GitHub check run `history-main-push (pccss-ai-history)` 於 09:36:51 HKT 完成，結論 success。",
+      "完成後 7 秒，正式環境程序重新啟動（/api/health 的 materialsAutoImport.startedAt = 2026-11-12T01:36:58.228Z），其後多次查詢維持同一個啟動時間。",
+      "啟動時由備份 bucket 還原資料庫（persistence.restore = restored），教材 46 份、26,599 段與部署前一致。",
+      "環境變數、Secret 及名冊設定未改動。"
+    ]
+  },
+  "verification": {
+    "health": {
+      "url": "https://history-self-study-4sija7xvrq-df.a.run.app/api/health",
+      "status": 200,
+      "ok": true,
+      "version": "0.1.0",
+      "llmProviderLabel": "AI 生成功能",
+      "aiGrading": true,
+      "materials": { "documents": 46, "blocks": 26599, "studentVisibleDocuments": 22 },
+      "persistence": { "restore": "restored", "backupEnabled": true }
+    },
+    "routes": {
+      "/login": 200,
+      "/api/teacher/records（未登入）": 401,
+      "/api/practice POST（未登入）": 401
+    },
+    "clientBundle": {
+      "scan": "以 ripgrep 掃描本機 .next/static 的 .js 檔",
+      "newStrings": ["高中課程主題甲", "匯出此次練習"],
+      "matches": 3,
+      "deployedBundleMatchesLocal": {
+        "chunk": "/_next/static/chunks/2krjqx6kg9b3-.js",
+        "bytes": 136657,
+        "sha256Prefix": "be58a4f1bcfcce29",
+        "note": "部署前（01:31Z）此 chunk 在正式環境回 404；部署後（01:37Z）回 200，且與本機建置逐位元相同，證明正式環境正服務新版本的用戶端程式碼。"
+      }
+    },
+    "localGates": {
+      "typecheck": "tsc --noEmit 0 error",
+      "lint": "eslint 0 error（1 個既有 warning：scripts/verify-questionbank-sync.ts 未使用 fs）",
+      "build": "npm run build 成功",
+      "unitTests": "vitest run：172 檔 2,665 項通過／4 略過"
+    }
+  },
+  "limitations": [
+    "本機 gcloud 工作階段已需要重新認證（gcloud auth login），非互動執行無法完成，因此未能以 gcloud 讀取 Cloud Run revision 名稱及映像 digest；部署狀態改以 Cloud Build 的 GitHub check run（build `5ae1add7-ae7c-4190-893a-49b1d445889d`，success）、正式環境程序啟動時間及用戶端 chunk 逐位元比對核對。",
+    "推送後的部署由 history-main-push 觸發程序執行，過程未經人手改動環境設定。"
+  ],
+  "environmentUnchanged": {
+    "staffAccessPolicy": "school-domain（pochiu.edu.hk）",
+    "adminEmails": "ipwh@pochiu.edu.hk",
+    "reviewerEmails": "ipwh@pochiu.edu.hk",
+    "note": "由 Cloud Build trigger substitutions 沿用，未改動"
+  }
+}

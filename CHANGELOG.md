@@ -18,7 +18,7 @@
 
 ## [未發布] — 2026-11-12（十九）：學生首頁明確標示高中課程主題；教師可逐次匯出；填充題不收「只寫前段」的答案
 
-**狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`vitest run` 172 檔 2,665 項通過／4 略過）；**待部署**（部署後補記 commit 及 revision）。
+**狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run` 172 檔 2,665 項通過／4 略過）；**已部署**（commit `3863888`；2026-11-12 09:27 HKT 推送 `main` 觸發 Cloud Build `5ae1add7`，09:36 HKT 建置成功，正式環境隨即以新映像檔重啟，證據見 [deployment-evidence-2026-11-12.json](docs/deployment-evidence-2026-11-12.json)）。
 
 ### 背景
 
