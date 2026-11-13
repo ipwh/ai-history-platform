@@ -418,6 +418,88 @@ export interface TutorAnswerabilityInput extends TutorHistoricalQuestionInput {
    * route 會在澄清前先試一次語意改寫，改寫後仍找不到教材才真正澄清。
    */
   courseVocabularyMatched?: boolean;
+  /**
+   * 本回合是否帶有練習題上下文（由練習頁進入，或對話已保存練習題）。
+   *
+   * 用途（2026-11-13 學生模擬）：學生在練習頁問「這題的正確答案係咩？」「我唔明白
+   * 呢個概念」時，句中沒有歷史專名、字詞亦檢索不到教材，舊規則會回覆「只能討論
+   * 歷史科相關話題」——學生明明在問練習。這類提問應以 C 作答（並由提示詞的作業
+   * 支援規則拒絕提供答案），而不是當成離題。
+   */
+  hasPracticeContext?: boolean;
+}
+
+/**
+ * 「請你再講多啲」類的延伸追問（2026-11-13 學生模擬）。
+ *
+ * 已有上文時，學生最常打的是「可以再詳細啲嗎？」「我唔明白」「點樣記住呢啲年份？」。
+ * 這些句子沒有任何歷史專名，字詞檢索必然失敗，舊規則因此把它們當成離題，學生在
+ * 對話中途收到「只能討論歷史科」。它們其實是要求延伸上一輪內容，應以 C 作答。
+ *
+ * 只認固定的追問寫法（而非「點樣」「如何」等單詞），避免把「點樣煮飯？」這類
+ * 真正離題的短句也放行。
+ */
+const ELABORATION_FOLLOW_UP_PHRASES: readonly string[] = [
+  "講多啲",
+  "講多d",
+  "講多些",
+  "再講",
+  "續講",
+  "詳細啲",
+  "詳細d",
+  "詳細一點",
+  "再詳細",
+  "清楚啲",
+  "清楚d",
+  "深入啲",
+  "深入d",
+  "多啲例子",
+  "多些例子",
+  "舉例",
+  "例子",
+  "唔明白",
+  "不明白",
+  "唔係好明",
+  "唔太明",
+  "聽唔明",
+  "睇唔明",
+  "唔清楚",
+  "唔識",
+  "點樣記",
+  "如何記",
+  "記唔到",
+  "點記",
+  "第二點",
+  "第三點",
+  "上一點",
+  "你講嘅",
+  "你講的",
+  "上面講",
+];
+
+function isElaborationFollowUp(raw: string): boolean {
+  const normalized = normalizeTutorQuery(raw);
+  if (normalized.length === 0 || normalized.length > 24) return false;
+  return ELABORATION_FOLLOW_UP_PHRASES.some((phrase) => normalized.includes(phrase));
+}
+
+/**
+ * 學生只輸入名詞短語（「鴉片」「宗教」「香港的教育普及過程」）。
+ *
+ * 這是最常見的輸入方式之一，但句子沒有疑問詞，`hasQuestionShape` 為 false；
+ * 舊規則因此把它們判為離題，回覆「只能討論歷史科相關話題」——即使教材有幾十段
+ * （實測「鴉片」21 段、「宗教」205 段、「關稅」47 段）。只要這些詞確實出現在
+ * 已發布教材（由 `messageUsesAnyCourseVocabulary` 證明），就應改為澄清並列出
+ * 可能方向，而不是拒答。
+ *
+ * 限制長度：過長的段落不可能只是「一個課題名」，避免把整句離題文字當成課題查詢。
+ */
+function isBareTopicLookup(raw: string): boolean {
+  const normalized = normalizeTutorQuery(raw);
+  if (normalized.length === 0 || normalized.length > 12) return false;
+  // 含拉丁字母的短句（“Cold War”）交由詞庫英文別名處理，避免與英文句子混淆
+  if (/[a-z]/i.test(normalized)) return false;
+  return true;
 }
 
 function hasDanglingReferenceWithoutContext(raw: string, hasHistoryContext: boolean): boolean {
@@ -622,11 +704,52 @@ export function classifyTutorAnswerability(
 
   if (!historicalQuestion && !materialBacked) {
     /**
+     * 對話已有上文 → 延伸追問（2026-11-13 學生模擬）。
+     *
+     * 「可以再詳細啲嗎？」「我唔明白」「點樣記住呢啲年份？」沒有歷史專名，字詞檢索
+     * 必然失敗；舊規則把這些句子當成離題，學生在對話中途收到「只能討論歷史科」。
+     * 它們其實是要求延伸上一輪內容，以 C（一般歷史知識 + 標明教材未涵蓋）作答。
+     */
+    if (input.hasHistoryContext && isElaborationFollowUp(raw)) {
+      return {
+        ...base,
+        state: "C-general-knowledge",
+        scope: "history",
+        historicalQuestion: true,
+        allowGeneralKnowledge: true,
+        requireDisclosure: true,
+        confidence: cConfidenceFor(raw),
+        reason: "follow-up-elaboration",
+      };
+    }
+    /**
+     * 練習題上下文 → 以作業支援規則作答（2026-11-13 學生模擬）。
+     *
+     * 學生由練習頁進入並問「這題的正確答案係咩？」時，回覆「只能討論歷史科」既不合
+     * 情境，亦沒有解釋平台為何不提供答案。改為 C：由提示詞拒絕提供標準答案，並以
+     * 練習題所屬課題的概念引導作答（練習上下文已寫入提示詞）。
+     */
+    if (input.hasPracticeContext === true) {
+      return {
+        ...base,
+        state: "C-general-knowledge",
+        scope: "history",
+        historicalQuestion: true,
+        allowGeneralKnowledge: true,
+        requireDisclosure: true,
+        confidence: cConfidenceFor(raw),
+        reason: "practice-context",
+      };
+    }
+    /**
      * 沒有課題脈絡，但提問用了教材內的詞彙（「美國點解要同英國分手？」）：
      * 學生確實在問課程會處理的題材，不可當成離題；但既不能斷定課題、也不可引用
      * 未確認的教材，因此只可澄清並列出可能方向（2026-11-10 模擬）。
      */
-    if (input.courseVocabularyMatched === true && (hasQuestionShape(raw) || hasTutorRequestShape(raw))) {
+    if (
+      input.courseVocabularyMatched === true &&
+      (hasQuestionShape(raw) || hasTutorRequestShape(raw) || isBareTopicLookup(raw))
+    ) {
       return {
         ...base,
         state: "D-needs-clarification",

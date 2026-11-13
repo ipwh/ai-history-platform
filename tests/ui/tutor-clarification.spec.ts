@@ -84,7 +84,7 @@ test("已核對學生點選歷史澄清候選後進入 mock 回答串流", async
   });
 
   await page.goto("/tutor");
-  await expect(page.getByRole("heading", { name: /歷史科自學學伴/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /AI歷史學伴/ })).toBeVisible();
   const quota = page.getByText(/今日剩餘提問次數：/);
   await expect(quota).toContainText("15 / 15");
 

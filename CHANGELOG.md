@@ -16,6 +16,58 @@
 
 ---
 
+## [未發布] — 2026-11-13（二十）：平台改名「AI歷史科自學平台」、學伴改名「AI歷史學伴」、修正學伴四項未能命中教材的缺陷
+
+**狀態**：已實作、已驗證（`npm run typecheck`、`npx eslint src/app src/components src/lib src/server --max-warnings=0`、`npm run build`、`vitest run tests/tutor tests/tutor-retrieval-short-term.test.ts` 36 檔 1,002 項通過）；本機以 `next dev` 實測 `/`、`/login`、`/tutor`、`/records`、`/account` 的 `<title>` 均為新名稱；學生使用模擬（`scripts/simulate-student-usage.mjs --no-ai`）408 項檢查、71 次練習、544 次作答全部通過。**未部署**。
+
+### 背景
+
+擁有者指示（2026-11-13）：①名稱由「歷史科自學平台」改為「AI歷史科自學平台」；②以學生身分模擬各功能，找出潛在缺口（尤其學伴未能命中教材的提問）；③修正全部缺口並統一學伴名稱。
+
+### 變更
+
+- **平台名稱**：`SITE_NAME` 由 [SchoolBrand.tsx](src/components/SchoolBrand.tsx) 移到新檔案 [site.ts](src/lib/site.ts)，值改為「AI歷史科自學平台」；14 個頁面的 `metadata.title`、[layout.tsx](src/app/layout.tsx) 的標題及說明、登入頁品牌區一律改為引用 `SITE_NAME`，不再各自寫死名稱。
+- **匯出檔中繼資料**：[pdf.ts](src/server/export/pdf.ts)（Author／Creator／Producer）、[office.ts](src/server/export/office.ts)（DOCX／XLSX `dc:creator` 及 `Application`）、[records-export.ts](src/server/services/records-export.ts)（PDF 頁尾）改為引用 `SITE_NAME`。**這修正了一個殘留名稱**：匯出檔一直寫「香港中學歷史科自學互動平台」，與畫面上的名稱不一致（2026-11-11 的改名未覆蓋匯出檔）。
+- **學伴名稱統一**：新增 `TUTOR_NAME = "AI歷史學伴"`（[site.ts](src/lib/site.ts)）。導覽、`/tutor` 頁面標題（新增 `metadata.title`）及標題列、回覆署名、離題引導句、每日配額訊息、系統提示詞角色一律改用同一常數；原本介面同時出現「歷史學伴」「歷史科自學學伴 (Beta)」「歷史自學學伴」「香港中學歷史科自學學伴（Beta）」四個寫法。提示詞版本提升為 `2026-11-13.1`。
+- **文件及腳本**：[README.md](README.md)（標題、簡介、學伴名稱、OAuth 同意畫面名稱）、[Dockerfile](Dockerfile)、[scripts/setup.ts](scripts/setup.ts)、[scripts/deploy-cloud-run.ps1](scripts/deploy-cloud-run.ps1)、[.env.example](.env.example) 同步更新。
+
+### 修正（學生模擬發現）
+
+- **兩字內容詞永遠不計為命中證據**：`extractQueryTerms` 的 n-gram 權重是「長度 − 1」，兩字詞只有 1 分，而選段要求至少一個「強詞」（權重 ≥ 2），教材內文反推亦只收 3 字以上的詞。結果單獨輸入「貨幣」（教材 62 段）、「民主」（169 段）、「割讓」（40 段）均回「未找到教材依據」。
+  - 新增 `boostRareShortTerms`（[tutor-grounding.ts](src/server/services/tutor-grounding.ts)）：在同一課題**一段都選不到**時，把「提問關鍵詞」中**罕見**（≤ 25%）的兩字詞提升為強詞再試一次；常用詞（「政府」「事件」）及已被詞庫長詞涵蓋的兩字詞（「珍珠」之於「珍珠港」）不加權。
+  - `inferTopicFromMaterial` 亦接受罕見的兩字詞，令「貨幣」這類單詞提問可以推斷課題。
+  - 實測：「香港戰後點樣發展工業？」「殖民主義對非洲有咩影響？」「希臘嘅民主同今日嘅民主有咩分別？」由「未找到教材依據」改為命中課題12／6／2。
+- **「點解／為甚麼」的通用詞展開壓過主題**：「成因／起因／因素」等論述型詞彙原本權重 20（高於課本專名的 8），而筆記常有「…的成因」短標題，令無關段落排前。這類通用展開改為 6（「統治者」10、「措施」8），主題詞維持 20。
+  - 實測 8 條原因類問句共 24 段來源，**24 段全部含提問主題詞**（修正前 49 段中有 5 段無關，其中「香港點解要發展新市鎮？」3 段全部無關）。
+- **對話已有上文時，延伸追問被當成離題**：「可以再詳細啲嗎？」「我唔明白」「點樣記住呢啲年份？」等沒有歷史專名，檢索必然失敗，舊規則因此回覆「只能討論歷史科」（實測 12 種追問中 5 種）。[tutor-answerability.ts](src/server/services/tutor-answerability.ts) 新增延伸追問判斷：**有上文**且訊息屬固定追問寫法時以 C（一般歷史知識 + 標明教材未涵蓋）作答；沒有上文時維持離題。
+- **由練習頁進入學伴卻收到離題引導句**：學生在練習頁問「這題的正確答案係咩？」「我唔明白呢個概念」時，同樣被判離題。`classifyTutorAnswerability` 新增 `hasPracticeContext`（由 `POST /api/tutor/chat` 傳入）：有練習上下文時以 C 作答，由提示詞的作業支援規則拒絕提供答案；明確離題（「今日天氣如何？」）仍然拒絕。
+- **介面**：`/tutor` 補上 `metadata.title`；`TutorView` 的配額錯誤改以穩定字串「提問上限」偵測，不再依賴完整句子。
+
+### 測試
+
+- 新增 [tutor-retrieval-short-term.test.ts](tests/tutor-retrieval-short-term.test.ts)：兩字詞加權（罕見／常用／詞庫長詞涵蓋／白名單）、通用詞權重低於專名，以及 5 條需真實教材的召回及來源相關性個案（無 `data/app.db` 時略過）。
+- [tutor-answerability.test.ts](tests/tutor-answerability.test.ts) 新增延伸追問（有／無上文）、練習情境及「點樣煮飯？」的離題對照。
+- **已知限制（未修正）**：完全沒有課題脈絡的單一兩字詞若同時散見多個課題（「民主」「割讓」），仍會回「未找到教材依據」——推斷需要兩個課題以上的分佈判斷，屬另一項設計工作。
+
+### 第二輪模擬（填充題批改及更多學伴問法）
+
+**方法**：①以 1,022 題真實填充題為對象，逐字比對層與 AI 語意層分別測試簡體字、譯名不一致、同義詞、格式差異及必須判錯的對照組；②以 380 個常用字的繁簡對照逐一核對轉換表；③以 67 條更貼近課堂的學伴提問（試述式長問句、只寫兩字名詞、簡體、英文、錯別字、章節標題原文）及 3 組多輪追問測試召回；④透過 HTTP 走完整提交及學伴對話流程。
+
+**結果**：AI 語意批改層 13／13 判斷正確（含 3 個簡體缺字個案、否定句、正確名稱配錯誤史實、相關但不同的概念），沒有誤判為正確。逐字比對層發現以下缺口並已修正：
+
+- **簡體對照表缺 4 個高頻字**（`丝`／`范`／`冲`／`迹`）：學生輸入「势力范围」「丝绸之路」「冲突」時逐字比對判錯，只能靠 AI 補救；AI 不可用（額度或網絡問題）時會被直接判錯，其中 3 字以上的差異連「待覆核」標示也沒有。已在 [history-lexicon.ts](src/lib/history-lexicon.ts) 補上（`里／裡` 刻意不收錄：「公里」與「裡面」在簡體同字）。
+- **譯名不在詞庫**：填充題標準答案有「尼克遜」「諾曼第」，但詞庫沒有收錄，學生寫「尼克松」「諾曼底」時逐字判錯。已補上 `尼克遜`（別名：尼克松）及擴充 `諾曼第登陸` 組（別名：諾曼第、諾曼底、諾曼地）。
+- **只輸入名詞短語被判離題**：學生打「鴉片」「宗教」「關稅」「賠款」「茶葉」「難民」「香港的教育普及過程」時，因句子沒有疑問詞而被判離題，回覆「只能討論歷史科」——即使教材分別有 21、205、47、21、9、9 段。現在只要該詞確實出現在已發布教材，就改為澄清或（語意改寫後）以教材作答；`POST /api/tutor/chat` 不再要求提問必須是疑問句才做教材詞彙檢查。端到端實測：「鴉片」→（改寫後）命中 3 段教材、「宗教」→ 3 段、「香港的教育普及過程」→ 3 段；「今日天氣如何？」仍正確拒答。
+- **測試**：[grading.test.ts](tests/grading.test.ts) 新增繁簡及譯名不一致個案；[tutor-answerability.test.ts](tests/tutor-answerability.test.ts) 新增名詞短語（含「芝士蛋糕」必須拒答、「過長句子不可當名詞查詢」的對照）。
+
+**未修正（已記錄）**：
+- 「自由港」的標準答案下，學生寫「免稅港」→ AI 判 `partial`（教師可能接受）。屬評分寬嚴的產品決定，未改動。
+- 英文長句（"How did Hong Kong develop into an international financial centre?"）仍被判離題：詞庫只有個別英文別名，沒有覆蓋整句語意。建議日後補英文別名或英文提問的語意閘。
+- 1,022 題填充題中只有 12 題有 `acceptedAnswers`、**0 題有 `gradingPoints`**：AI 批改只能靠參考答案及解釋判斷，`hitPointIndexes`／`missPoints` 永遠為空。屬內容治理工作（教師逐題補充），不是程式缺陷。
+- AI 語意批改每次約 1.0–1.8 秒；逐字比對已正確的答案不會呼叫模型（約 0.1–0.3 秒）。
+
+---
+
 ## [未發布] — 2026-11-12（十九）：學生首頁明確標示高中課程主題；教師可逐次匯出；填充題不收「只寫前段」的答案
 
 **狀態**：已實作、已驗證（`tsc --noEmit`、`eslint` 0 error、`npm run build`、`vitest run` 172 檔 2,665 項通過／4 略過）；**已部署**（commit `3863888`；2026-11-12 09:27 HKT 推送 `main` 觸發 Cloud Build `5ae1add7`，09:36 HKT 建置成功，正式環境隨即以新映像檔重啟，證據見 [deployment-evidence-2026-11-12.json](docs/deployment-evidence-2026-11-12.json)）。

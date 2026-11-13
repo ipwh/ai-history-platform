@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { SchoolBrand } from "@/components/SchoolBrand";
 import { api } from "@/lib/api-client";
+import { TUTOR_NAME } from "@/lib/site";
 import { SIGN_IN_ROLE_LABELS, type AuthStatus, type Health } from "@/lib/types";
 
 /** 教師端導覽：只包含出題相關功能及學生練習記錄 */
@@ -107,9 +108,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       short: "首頁",
     },
     { href: "/review", label: "重溫", exact: false, icon: "🔁", short: "重溫" },
-    // 歷史自學學伴：學生及教職員都可進入（教師供科組測試，2026-10-27 起）。
+    // 學伴：學生及教職員都可進入（教師供科組測試，2026-10-27 起）。
     ...(role === "student" || role === "teacher" || role === "admin"
-      ? [{ href: "/tutor", label: "歷史學伴", exact: false, icon: "🏛️", short: "學伴" }]
+      ? [{ href: "/tutor", label: TUTOR_NAME, exact: false, icon: "🏛️", short: "學伴" }]
       : []),
     // 我的練習記錄：按教師端「學生練習記錄」的同一份內容，只顯示自己的記錄並可匯出
     ...(authEnabled || demoMode

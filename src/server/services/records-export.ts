@@ -9,6 +9,7 @@
  * PDF／DOCX 會在記錄過多時只取最近若干次並在文件內註明，因為這兩種格式是給人閱讀的，
  * 過長的文件既難閱讀亦會令回應變大；需要完整資料請用 XLSX／CSV。
  */
+import { SITE_NAME } from "@/lib/site";
 import type { PracticeRecordQuestion, PracticeRecordSession } from "../../lib/types";
 import { buildDocx, buildXlsx, type CellValue, type DocxBlock } from "../export/office";
 import { buildPdf, type PdfBlock } from "../export/pdf";
@@ -289,7 +290,7 @@ function buildPdfBody(records: PracticeRecordSession[], options: RecordsExportOp
 
   return buildPdf(blocks, {
     title: "學生練習記錄",
-    footer: `香港中學歷史科自學互動平台　${hongKongDateTime((options.generatedAt ?? new Date()).toISOString())}`,
+    footer: `${SITE_NAME}　${hongKongDateTime((options.generatedAt ?? new Date()).toISOString())}`,
   });
 }
 

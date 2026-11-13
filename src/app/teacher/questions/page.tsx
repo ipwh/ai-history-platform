@@ -1,7 +1,8 @@
 import { QuestionManager } from "@/components/QuestionManager";
+import { SITE_NAME } from "@/lib/site";
 import { guardTeacherPage } from "@/server/auth/guards";
 
-export const metadata = { title: "題目管理 ｜ 歷史科自學平台" };
+export const metadata = { title: `題目管理 ｜ ${SITE_NAME}` };
 
 /**
  * 題目管理。

@@ -14,6 +14,7 @@ import path from "node:path";
 
 import PDFDocument from "pdfkit";
 
+import { SITE_NAME } from "@/lib/site";
 import { ApiRouteError } from "../http";
 
 const PAGE_MARGIN = 36;
@@ -78,9 +79,9 @@ export async function buildPdf(
     bufferPages: true,
     info: {
       Title: options.title ?? "學生練習記錄",
-      Author: "香港中學歷史科自學互動平台",
-      Creator: "香港中學歷史科自學互動平台",
-      Producer: "香港中學歷史科自學互動平台",
+      Author: SITE_NAME,
+      Creator: SITE_NAME,
+      Producer: SITE_NAME,
     },
   });
 

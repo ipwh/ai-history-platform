@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { SchoolBrand, SITE_NAME } from "@/components/SchoolBrand";
+import { SITE_NAME } from "@/lib/site";
+import { SchoolBrand } from "@/components/SchoolBrand";
 import { getSessionUser } from "@/server/auth/session";
 import { safeNextPath } from "@/server/auth/redirect";
 import { getServerConfig } from "@/server/config";
 
-export const metadata = { title: "登入 ｜ 歷史科自學平台" };
+export const metadata = { title: `登入 ｜ ${SITE_NAME}` };
 
 /** 登入失敗時顯示的說明（代碼由 /api/auth/google/callback 提供） */
 const ERROR_MESSAGES: Record<string, string> = {

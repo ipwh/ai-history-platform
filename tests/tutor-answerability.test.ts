@@ -546,3 +546,104 @@ describe("提示詞：可答性政策區塊", () => {
     expect(prompt).toContain("不可以因為找不到教材而拒絕回答");
   });
 });
+
+describe("對話中的延伸追問及練習情境（2026-11-13 學生模擬）", () => {
+  const notCovered: TutorGrounding = {
+    status: "not-covered",
+    topicId: null,
+    topicTitle: null,
+    sources: [],
+    passages: [],
+  };
+
+  function classify(
+    message: string,
+    extra: { hasHistoryContext?: boolean; hasPracticeContext?: boolean } = {},
+  ): TutorAnswerabilityDecision {
+    return classifyTutorAnswerability({
+      message,
+      curriculum: EMPTY_CURRICULUM,
+      grounding: notCovered,
+      hasHistoryContext: extra.hasHistoryContext ?? false,
+      unclear: false,
+      hasPracticeContext: extra.hasPracticeContext,
+    });
+  }
+
+  const followUps = ["可以再詳細啲嗎？", "我唔明白", "點樣記住呢啲年份？", "唔係好明你講嘅第二點"];
+
+  for (const message of followUps) {
+    it(`已有上文時，「${message}」以一般歷史知識作答，不可當成離題`, () => {
+      const decision = classify(message, { hasHistoryContext: true });
+      expect(decision.state).toBe("C-general-knowledge");
+      expect(decision.scope).toBe("history");
+      expect(decision.reason).toBe("follow-up-elaboration");
+      expect(decision.requireDisclosure).toBe(true);
+    });
+
+    it(`沒有上文時，「${message}」維持離題（不可只憑句式放行）`, () => {
+      expect(classify(message).state).toBe("out-of-scope");
+    });
+  }
+
+  it("練習情境中索取答案時以作業支援作答，而不是回「只能討論歷史科」", () => {
+    const decision = classify("這題的正確答案係咩？", { hasPracticeContext: true });
+    expect(decision.state).toBe("C-general-knowledge");
+    expect(decision.reason).toBe("practice-context");
+  });
+
+  it("練習情境中的明確離題提問仍會拒絕", () => {
+    expect(classify("今日天氣如何？", { hasPracticeContext: true, hasHistoryContext: true }).state).toBe(
+      "out-of-scope",
+    );
+  });
+
+  it("「點樣煮飯？」不會因為句式相似而放行", () => {
+    expect(classify("點樣煮飯？", { hasHistoryContext: true }).state).toBe("out-of-scope");
+  });
+
+  /**
+   * 2026-11-13 學生模擬：只輸入名詞短語（「鴉片」「宗教」「香港的教育普及過程」）
+   * 是最常見的輸入方式，但舊規則因「沒有疑問詞」而判離題，回覆「只能討論歷史科」，
+   * 即使教材有 21～205 段。只要該詞確實出現在已發布教材，就應澄清而非拒答。
+   */
+  it("只輸入教材內出現的名詞短語時，改為澄清而不是拒答", () => {
+    for (const message of ["鴉片", "宗教", "香港的教育普及過程"]) {
+      const decision = classifyTutorAnswerability({
+        message,
+        curriculum: EMPTY_CURRICULUM,
+        grounding: notCovered,
+        hasHistoryContext: false,
+        unclear: false,
+        courseVocabularyMatched: true,
+      });
+      expect(decision.state, message).toBe("D-needs-clarification");
+      expect(decision.scope, message).toBe("history");
+      expect(decision.reason, message).toBe("course-vocabulary-without-topic");
+    }
+  });
+
+  it("名詞短語不屬教材詞彙時仍然拒答", () => {
+    const decision = classifyTutorAnswerability({
+      message: "芝士蛋糕",
+      curriculum: EMPTY_CURRICULUM,
+      grounding: notCovered,
+      hasHistoryContext: false,
+      unclear: false,
+      courseVocabularyMatched: false,
+    });
+    expect(decision.state).toBe("out-of-scope");
+  });
+
+  it("過長的句子不會因為含教材詞彙而被當成名詞查詢", () => {
+    const decision = classifyTutorAnswerability({
+      message: "我今日喺圖書館借咗一本講宗教嘅書但係我唔記得書名",
+      curriculum: EMPTY_CURRICULUM,
+      grounding: notCovered,
+      hasHistoryContext: false,
+      unclear: false,
+      courseVocabularyMatched: true,
+    });
+    expect(decision.state).toBe("out-of-scope");
+  });
+});

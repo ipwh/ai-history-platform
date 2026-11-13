@@ -181,6 +181,13 @@ const SIMPLIFIED_TRADITIONAL_PAIRS = [
   "鹤鶴 鹦鸚 鹧鷓 鹨鷚 鹩鷯 鹪鷦 鹫鷲 鹬鷸 鹭鷺 鹰鷹 鹳鸛 麦麥 麸麩 黄黃 黉黌",
   "黩黷 黾黽 鼋黿 鼍鼉 鼹鼴 齐齊 齑齏 齿齒 龀齔 龃齟 龄齡 龅齙 龆齠 龇齜 龈齦",
   "龉齬 龊齪 龋齲 龌齷 龙龍 龚龔 龛龕 龟龜",
+  // 2026-11-13 學生模擬：以 380 個常用字的繁簡對照逐一核對，發現下列 4 個高頻歷史科
+  // 用字未被收錄（「丝綢之路」正規化為「丝綢之路」而對不上「絲綢之路」、「势力范围」
+  // 對不上「勢力範圍」、「衝突」對不上「衝突」、「事迹」對不上「事跡」）。缺少對照時
+  // 逐字比對必然判錯，只能依賴 AI 語意批改補救；AI 不可用時學生會被誤判為答錯。
+  // 「里／裡」刻意不收錄：簡體把「公里」「里正」與「裡面」都寫成「里」，
+  // 一律轉成「裡」會令「公里」變成錯字。
+  "丝絲 范範 冲衝 迹跡",
 ].join(" ");
 
 const SIMPLIFIED_TO_TRADITIONAL: ReadonlyMap<string, string> = new Map(
@@ -1128,7 +1135,9 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
   },
   {
     canonical: "諾曼第登陸",
-    aliases: ["諾曼地登陸", "d-day", "normandy landings"],
+    // 2026-11-13 學生模擬：填充題標準答案亦會只寫地點「諾曼第」；內地譯「諾曼底」。
+    // 三者屬同一史實，學生寫哪一個都應判對（缺少這一組時只能靠 AI 批改補救）。
+    aliases: ["諾曼地登陸", "諾曼第", "諾曼底", "諾曼地", "d-day", "normandy landings"],
     category: "event",
     scope: "課題9",
   },
@@ -1212,6 +1221,15 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     aliases: ["丘吉爾", "溫斯頓邱吉爾", "winston churchill", "churchill"],
     category: "person",
     // 2026-11-02：教材以冷戰（課題10，21 段）為主，課題9 沒有出現此名。
+    scope: "課題10",
+  },
+  {
+    // 2026-11-13 學生模擬：題庫有填充題以「尼克遜」為標準答案，但詞庫沒有收錄此名，
+    // 學生寫內地譯名「尼克松」時逐字比對判錯，只能依賴 AI 批改補救。
+    // 教材全部寫「尼克遜」（課題10 19 段、高中課題4 6 段），故以課題10 為範圍。
+    canonical: "尼克遜",
+    aliases: ["尼克松", "尼克遜總統", "richard nixon", "nixon"],
+    category: "person",
     scope: "課題10",
   },
   {

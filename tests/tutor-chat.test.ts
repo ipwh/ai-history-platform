@@ -13,6 +13,7 @@ import {
   hongKongDayStart,
   hongKongTimestamp,
   isShortHistoryFollowUp,
+  TUTOR_OFF_TOPIC_REPLY,
   tutorDailyUsage,
 } from "@/server/services/tutor";
 import { freshTestDatabasePath } from "./test-database";
@@ -281,9 +282,7 @@ describe("AI 歷史自學學伴 API", () => {
 
       expect(response.status).toBe(200);
       expect(payload.clarify).not.toBe(true);
-      expect(payload.reply).toBe(
-        "我是你的歷史科自學學伴，只能討論歷史科相關話題喔！你可以告訴我你想探討哪一個歷史事件或課題嗎？",
-      );
+      expect(payload.reply).toBe(TUTOR_OFF_TOPIC_REPLY);
       expect(payload.remaining).toBe(15);
       expect(fetchMock).not.toHaveBeenCalled();
       expect(tutorDailyUsage(STUDENT_A).used).toBe(0);
@@ -334,9 +333,7 @@ describe("AI 歷史自學學伴 API", () => {
       const response = await postChat(requestFor("POST", STUDENT_A, { message }));
 
       expect(response.status).toBe(200);
-      expect((await response.json()).reply).toBe(
-        "我是你的歷史科自學學伴，只能討論歷史科相關話題喔！你可以告訴我你想探討哪一個歷史事件或課題嗎？",
-      );
+      expect((await response.json()).reply).toBe(TUTOR_OFF_TOPIC_REPLY);
       expect(fetchMock).toHaveBeenCalledTimes(0);
     },
   );
@@ -659,9 +656,7 @@ describe("AI 歷史自學學伴 API", () => {
     const response = await postChat(requestFor("POST", STUDENT_A, { message: "點解？" }));
 
     expect(response.headers.get("content-type")).toContain("application/json");
-    expect((await response.json()).reply).toBe(
-      "我是你的歷史科自學學伴，只能討論歷史科相關話題喔！你可以告訴我你想探討哪一個歷史事件或課題嗎？",
-    );
+    expect((await response.json()).reply).toBe(TUTOR_OFF_TOPIC_REPLY);
     expect(fetchMock).toHaveBeenCalledTimes(0);
   });
 

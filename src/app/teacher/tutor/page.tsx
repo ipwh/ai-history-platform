@@ -1,7 +1,8 @@
 import { TutorUsagePanel } from "@/components/TutorUsagePanel";
+import { SITE_NAME } from "@/lib/site";
 import { guardTeacherPage } from "@/server/auth/guards";
 
-export const metadata = { title: "學伴使用概況 ｜ 歷史科自學平台" };
+export const metadata = { title: `學伴使用概況 ｜ ${SITE_NAME}` };
 
 /**
  * 教師／管理員的學伴使用概況。

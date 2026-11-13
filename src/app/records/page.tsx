@@ -1,7 +1,8 @@
 import { StudentRecords } from "@/components/StudentRecords";
+import { SITE_NAME } from "@/lib/site";
 import { guardStudentPage } from "@/server/auth/guards";
 
-export const metadata = { title: "我的練習記錄 ｜ 歷史科自學平台" };
+export const metadata = { title: `我的練習記錄 ｜ ${SITE_NAME}` };
 
 /**
  * 學生端：我的練習記錄。

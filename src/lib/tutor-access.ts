@@ -1,7 +1,7 @@
 import type { SessionUser } from "./types";
 
 /**
- * 誰可以使用 AI 歷史自學學伴（Beta）。
+ * 誰可以使用 AI歷史學伴（Beta）。
  *
  * 這個判斷刻意與伺服器端 API 的守衛（`src/app/api/tutor/chat/route.ts` 的
  * `requireTutorAccess`）使用同一個語意，令介面在同一情況下顯示說明，

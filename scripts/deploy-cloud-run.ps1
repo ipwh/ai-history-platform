@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    建置並部署「香港中學歷史科自學互動平台」到 Google Cloud Run。
+    建置並部署「AI歷史科自學平台」到 Google Cloud Run。
 
 .DESCRIPTION
     預設只會「顯示」將會執行的 gcloud 指令（安全起見不會改動雲端資源）；
@@ -354,7 +354,7 @@ function Ensure-Secret {
     }
 }
 
-Write-Host "香港中學歷史科自學互動平台 → Google Cloud Run" -ForegroundColor Green
+Write-Host "AI歷史科自學平台 → Google Cloud Run" -ForegroundColor Green
 Write-Host "專案：$Project；區域：$Region；服務：$Service"
 if (-not $Apply) {
     Write-Host "目前為模擬模式：只會顯示指令。要真正部署請加上 -Apply。" -ForegroundColor Yellow

@@ -1,4 +1,4 @@
-# 香港中學歷史科自學平台 —— Google Cloud Run 映像檔
+# AI歷史科自學平台 —— Google Cloud Run 映像檔
 #
 # 建置方式（在本機測試）：
 #   docker build -t hk-history-self-study .

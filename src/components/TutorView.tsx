@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { safeInternalPath } from "@/lib/safe-internal-path";
+import { TUTOR_NAME } from "@/lib/site";
 import type {
   TopicOverview,
   TutorDepthPreference,
@@ -567,7 +568,7 @@ export function TutorView({
             payload !== null &&
             "error" in payload &&
             typeof payload.error === "string" &&
-            payload.error.includes("今日已達到歷史自學學伴提問上限")
+            payload.error.includes("提問上限")
           ) {
             setQuota((current) => ({ ...current, remaining: 0 }));
           }
@@ -764,7 +765,7 @@ export function TutorView({
         </div>
       ) : null}
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="page-title">🏛️ 歷史科自學學伴 (Beta)</h1>
+        <h1 className="page-title">🏛️ {TUTOR_NAME} (Beta)</h1>
         <div className="flex flex-wrap items-center gap-2">
           <p className="badge badge-accent" aria-live="polite">
             今日剩餘提問次數：{quota.remaining} / {quota.dailyLimit}
@@ -886,7 +887,7 @@ export function TutorView({
             style={{ background: "#f4f5f8" }}
             aria-label="練習開場引導"
           >
-            <p className="mb-1 text-xs font-semibold text-gray-500">歷史自學學伴</p>
+            <p className="mb-1 text-xs font-semibold text-gray-500">{TUTOR_NAME}</p>
             <p className="text-sm">
               我們會針對你在練習中遇到的
               {opening.topicTitle.length > 0 ? `「${opening.topicTitle}」` : ""}概念討論。
@@ -964,7 +965,7 @@ export function TutorView({
               }}
             >
               <p className="mb-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-500">
-                <span>{message.role === "user" ? "你" : "歷史自學學伴"}</span>
+                <span>{message.role === "user" ? "你" : TUTOR_NAME}</span>
                 {message.role === "assistant" && depthLabel(message.depth) !== null ? (
                   <span className="badge badge-accent">{depthLabel(message.depth)}</span>
                 ) : null}

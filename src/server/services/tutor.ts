@@ -1,3 +1,4 @@
+import { TUTOR_NAME } from "@/lib/site";
 import {
   HISTORY_TERM_GROUPS,
   findLooseHistoryTerms,
@@ -8,8 +9,7 @@ import type { TutorMessage } from "../repositories/tutor";
 import { hasHistoricalYearSignal } from "./tutor-query";
 
 export const TUTOR_DAILY_LIMIT = 15;
-export const TUTOR_OFF_TOPIC_REPLY =
-  "我是你的歷史科自學學伴，只能討論歷史科相關話題喔！你可以告訴我你想探討哪一個歷史事件或課題嗎？";
+export const TUTOR_OFF_TOPIC_REPLY = `我是你的${TUTOR_NAME}，只能討論歷史科相關話題喔！你可以告訴我你想探討哪一個歷史事件或課題嗎？`;
 
 const HONG_KONG_OFFSET_MS = 8 * 60 * 60 * 1000;
 

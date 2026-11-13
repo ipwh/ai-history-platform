@@ -2,6 +2,7 @@
 import { z } from "zod";
 
 import { getServerConfig } from "@/server/config";
+import { TUTOR_NAME } from "@/lib/site";
 import {
   parseTutorQuestionSuggestions,
   type TutorQuestionCandidate,
@@ -54,7 +55,6 @@ import {
 } from "@/server/services/tutor-grounding";
 import {
   classifyTutorAnswerability,
-  hasQuestionShape,
 } from "@/server/services/tutor-answerability";
 import {
   collectTutorWebSupplement,
@@ -409,11 +409,13 @@ export async function POST(request: Request) {
     /**
      * 沒有課題脈絡時的教材詞彙檢查（2026-11-10）：字詞檢索失敗，但提問用了任何已發布
      * 教材的詞彙 → 不可當離題，改為澄清；命中課題用作澄清方向。
+     *
+     * 2026-11-13 學生模擬：原本只有「提問句」（`hasQuestionShape`）才做這項檢查，
+     * 學生只打「鴉片」「宗教」「香港的教育普及過程」時仍被判離題，回覆「只能討論
+     * 歷史科」——即使教材有 21／205 段。名詞短語是最常見的輸入方式，因此一律檢查。
      */
     const courseVocabulary =
-      preferredTopicId === null &&
-      grounding.status === "not-covered" &&
-      hasQuestionShape(body.message)
+      preferredTopicId === null && grounding.status === "not-covered"
         ? messageUsesAnyCourseVocabulary(normalizedMessage)
         : { matched: false, topicIds: [] as string[] };
 
@@ -429,6 +431,7 @@ export async function POST(request: Request) {
       grounding,
       hasHistoryContext: hasValidHistoryContext,
       unclear,
+      hasPracticeContext: effectivePracticeContext !== null,
       // 主題硬閘的最後防線（2026-11-10）：學生已在某課題脈絡下發問、字詞檢索失敗，
       // 但該課題教材確實用過提問的詞彙 → 以 C（一般歷史知識 + 標明教材未涵蓋）作答，
       // 不要只因為「寫法與教科書不同」而拒答。
@@ -502,6 +505,7 @@ export async function POST(request: Request) {
                 grounding,
                 hasHistoryContext: hasValidHistoryContext,
                 unclear,
+                hasPracticeContext: effectivePracticeContext !== null,
               });
             }
           }
@@ -602,7 +606,7 @@ export async function POST(request: Request) {
     const usage = tutorDailyUsage(learnerId);
     if (usage.remaining <= 0) {
       if (sessionId !== null) setTutorSessionLastTurnOnTopic(sessionId, false);
-      throw new ApiRouteError("你今日已達到歷史自學學伴提問上限（15 次），請於明日再試。", 429);
+      throw new ApiRouteError(`你今日已達到${TUTOR_NAME}提問上限（15 次），請於明日再試。`, 429);
     }
 
     if (!reservedBeforeClarify) {
@@ -663,6 +667,7 @@ export async function POST(request: Request) {
             unclear,
             materialVocabularyMatched: false,
             courseVocabularyMatched: false,
+            hasPracticeContext: effectivePracticeContext !== null,
           });
         }
       }

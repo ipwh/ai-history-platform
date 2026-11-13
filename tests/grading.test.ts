@@ -256,6 +256,25 @@ describe("歷史專名同義詞", () => {
     expect(gradeAnswer(fill("明治維新"), "明治變法").isCorrect).toBe(true);
   });
 
+  /**
+   * 2026-11-13 學生模擬：以 380 個常用字逐一核對繁簡對照表，發現「丝／范／冲／迹」
+   * 未被收錄。學生輸入「势力范围」「丝绸之路」時，逐字比對判錯，只能依賴 AI 語意批改；
+   * AI 不可用（額度或網絡問題）時就會被誤判為答錯，且部分寫法連「待覆核」標示也沒有。
+   */
+  it("繁簡對照覆蓋常見歷史科用字（丝／范／冲／迹）", () => {
+    expect(gradeAnswer(fill("絲綢之路"), "丝绸之路").isCorrect).toBe(true);
+    expect(gradeAnswer(fill("勢力範圍"), "势力范围").isCorrect).toBe(true);
+    expect(gradeAnswer(fill("衝突"), "冲突").isCorrect).toBe(true);
+    expect(gradeAnswer(fill("事跡"), "事迹").isCorrect).toBe(true);
+  });
+
+  it("譯名不一致時接受另一地區的通用寫法", () => {
+    expect(gradeAnswer(fill("尼克遜"), "尼克松").isCorrect).toBe(true);
+    expect(gradeAnswer(fill("諾曼第"), "諾曼底").isCorrect).toBe(true);
+    expect(gradeAnswer(fill("希特拉"), "希特勒").isCorrect).toBe(true);
+    expect(gradeAnswer(fill("達文西"), "達芬奇").isCorrect).toBe(true);
+  });
+
   it("同義詞寫法不會被標示為需要覆核（已確定為正確）", () => {
     expect(gradeAnswer(fill("第一次世界大戰"), "一戰").uncertain).toBeUndefined();
   });

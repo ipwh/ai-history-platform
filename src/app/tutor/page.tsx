@@ -1,9 +1,12 @@
 import Link from "next/link";
 
+import { SITE_NAME, TUTOR_NAME } from "@/lib/site";
 import { TutorView } from "@/components/TutorView";
 import { safeInternalPath } from "@/lib/safe-internal-path";
 import { tutorAccessState } from "@/lib/tutor-access";
 import { guardStudentPage } from "@/server/auth/guards";
+
+export const metadata = { title: `${TUTOR_NAME} ｜ ${SITE_NAME}` };
 
 /**
  * 學伴頁面守衛：與其他學生頁面一致，未登入時由伺服器端導向登入頁，
@@ -29,7 +32,7 @@ export default async function TutorPage({
   if (access === "unverified") {
     return (
       <section className="card space-y-3">
-        <h1 className="text-xl font-bold">🏛️ 歷史科自學學伴 (Beta)</h1>
+        <h1 className="text-xl font-bold">🏛️ {TUTOR_NAME} (Beta)</h1>
         <p>
           你的帳戶尚未完成<b>學生名冊核對</b>，因此暫不可使用學伴。請聯絡歷史科老師確認班別及學號是否已在名冊內。
         </p>
