@@ -1,0 +1,53 @@
+{
+  "generatedAt": "2026-11-13T03:15:00.000Z",
+  "notice": "部署高中年級配色（橙色）及課題卡「題庫進度」文案修正。經 GitHub `main` 推送觸發 Cloud Build，正式環境於 2026-11-13 11:10 HKT 回應含新配色規則的建置產物。",
+  "sourceCommit": {
+    "sha": "f1a279c878ee365838bd561f9057fe68f51ff32a",
+    "shortSha": "f1a279c",
+    "subject": "fix(ui): 高中改用橙色配色與中二區分、課題卡「已作答」改稱「題庫進度」",
+    "pushedAt": "2026-11-13T03:02:20Z"
+  },
+  "changes": [
+    "globals.css 新增 [data-level=\"4\"] 調色盤（--level-accent #b45309、--level-tint #fdf1e0）；缺少該規則時高中會靜默沿用預設 --accent #2f5bd7，即與中二完全相同（根因）",
+    "使用 --level-accent 的 9 組選擇器（首頁主視覺、年級分頁、年級橫幅、主要行動按鈕等）補上 [data-level=\"4\"]",
+    "課題卡「已作答 A／B 條」改為「題庫進度 A／B 題」，tooltip 及說明段落寫明 A＝做過的題庫題目（同一題只算一次）、B＝已發布題目總數、不要求全部完成",
+    "新增 tests/level-colour.test.ts：斷言四個年級各有互不相同的 --level-accent，且每個使用位置都涵蓋四個年級"
+  ],
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "traffic": "100% 新 revision（推送即部署，`main` 分支觸發）"
+  },
+  "deploymentMethod": {
+    "trigger": "GitHub push → Cloud Build（scripts/setup-push-to-deploy.ps1 設定）",
+    "observed": "推送 03:02:20Z（11:02 HKT）；11:02–11:10 HKT 正式環境 CSS 未含 data-level=4；11:10:59 HKT 首次偵測到新規則（由推送至生效約 9 分鐘）"
+  },
+  "ci": {
+    "workflow": "CI (.github/workflows/ci.yml)",
+    "runId": 43356227799,
+    "runUrl": "https://github.com/ipwh/ai-history-platform/actions/runs/43356227799",
+    "conclusion": "success",
+    "startedAt": "2026-11-13T03:02:24Z",
+    "completedAt": "2026-11-13T03:05:08Z"
+  },
+  "localVerification": {
+    "typecheck": "npm run typecheck：通過",
+    "eslint": "npx eslint src tests --max-warnings=0：通過（0 error、0 warning）",
+    "build": "npm run build（先刪 .next 以避 Turbopack 增量快取）：通過；建置產物含 30 處 data-level=\"4\" 規則",
+    "tests": "npx vitest run：174 檔 2,697 項通過、4 略過",
+    "browser": "Playwright 讀取各年級 --level-accent 計算值：中一 rgb(15, 118, 110)、中二 rgb(47, 91, 215)、中三 rgb(109, 59, 191)、高中 rgb(180, 83, 9)，四者互不相同（headless 下需先 document.getAnimations().forEach(a => a.finish()) 再讀）"
+  },
+  "productionVerification": [
+    "GET /login → 200，<title>「登入 ｜ AI歷史科自學平台」",
+    "登入頁引用的樣式表含 data-level=\"4\" 規則 20 處，並含 #b45309 及 #fdf1e0",
+    "GET /api/health → ok:true、database ok、demoMode:false、llmConfigured:true、aiGrading:true、staffApiOpen:false、教材 46 份／26,599 段／學生可見 22 份、restore=restored",
+    "GET / 、/tutor、/records（未登入）→ 307 轉 /login 並帶 next 參數"
+  ],
+  "notes": [
+    "Revision／build id 未能記錄：本機 gcloud 憑證過期（Reauthentication failed），如實註明。",
+    "建置陷阱：以程式改寫 globals.css 後直接 npm run build，Turbopack 增量快取會沿用舊 CSS，建置產物缺少新選擇器；必須先刪 .next 再建置。"
+  ]
+}

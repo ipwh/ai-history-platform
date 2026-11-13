@@ -18,7 +18,7 @@
 
 ## [未發布] — 2026-11-13（二十一）：高中改用橙色而與中二區分；課題卡「已作答」改稱「題庫進度」並在頁面解釋口徑
 
-**狀態**：已實作、已驗證（見下「驗證」）。**已部署**（2026-11-13）。
+**狀態**：已實作、已驗證（見下「驗證」）。**已部署**（commit `f1a279c`；2026-11-13 11:02 HKT 推送 `main` 觸發 Cloud Build，11:10 HKT 正式環境首次回應含 `data-level="4"` 規則的建置產物，`/login` 標題正常、`/api/health` 全部正常；CI run `43356227799` 成功；證據見 [deployment-evidence-2026-11-13-level-colour.json](docs/deployment-evidence-2026-11-13-level-colour.json)）。Revision／build id 因本機 gcloud 憑證過期未能記錄，已於證據檔如實註明。
 
 ### 背景
 
