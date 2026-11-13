@@ -2585,7 +2585,14 @@ Google 登入畫面仍會顯示該專案的名稱（例如「您即將重新登�
 | 名冊服務帳戶 | `history-roster-reader@pccss-ai-history.iam.gserviceaccount.com` |
 | 執行身分 | `history-run@pccss-ai-history.iam.gserviceaccount.com` |
 
-> **最近部署**：2026-10-21 08:06 UTC，revision **`history-self-study-00031-fxx`**（沿用映像檔
+> **最新部署（2026-11-13）**：commit `4f2139e` 推送 `main` 觸發 Cloud Build，10:36 HKT 生效；
+> 正式環境 `/login` 顯示「登入 ｜ AI歷史科自學平台」，`/api/health` ok（`demoMode=false`、
+> `llmConfigured=true`、`aiGrading=true`、教材 46 份／26,599 段／學生可見 22 份、`restore=restored`）。
+> 證據：[docs/deployment-evidence-2026-11-13.json](docs/deployment-evidence-2026-11-13.json)。
+> 每次部署的 revision、建置及驗證記錄一律以 [CHANGELOG.md](CHANGELOG.md) 各節的「狀態」行及
+> `docs/deployment-evidence-*.json` 為準；下表以下的 2026-10-21 記錄保留為歷史參考。
+
+> **2026-10-21 部署（歷史記錄）**：08:06 UTC，revision **`history-self-study-00031-fxx`**（沿用映像檔
 > `7e0e539f-69d9-4003-89d3-56d43ee9559e`，先上載資料、後重啟），100% 流量；資料快照於 08:06 UTC 上載，
 > 由新 revision 啟動時還原（13,256 KB）。`/api/health` 200（`persistence.restore = restored`）；
 > 正式題庫 **2,080** 題（全部已發布、`teacher_confirmation_required = 0`），由 bucket 重新下載核對：

@@ -18,7 +18,7 @@
 
 ## [未發布] — 2026-11-13（二十）：平台改名「AI歷史科自學平台」、學伴改名「AI歷史學伴」、修正學伴四項未能命中教材的缺陷
 
-**狀態**：已實作、已驗證（`npm run typecheck`、`npx eslint src/app src/components src/lib src/server --max-warnings=0`、`npm run build`、`vitest run tests/tutor tests/tutor-retrieval-short-term.test.ts` 36 檔 1,002 項通過）；本機以 `next dev` 實測 `/`、`/login`、`/tutor`、`/records`、`/account` 的 `<title>` 均為新名稱；學生使用模擬（`scripts/simulate-student-usage.mjs --no-ai`）408 項檢查、71 次練習、544 次作答全部通過。**未部署**。
+**狀態**：已實作、已驗證（`npm run typecheck`、`npx eslint src tests --max-warnings=0`、`npm run build`、`vitest run` 173 檔 2,694 項通過／4 略過）；本機以 `next dev` 實測 `/`、`/login`、`/tutor`、`/records`、`/account` 的 `<title>` 均為新名稱；學生使用模擬（`scripts/simulate-student-usage.mjs --no-ai`）408 項檢查、71 次練習、544 次作答全部通過。**已部署**（commit `4f2139e`；2026-11-13 10:27 HKT 推送 `main` 觸發 Cloud Build，10:36 HKT 正式環境 `/login` 已顯示「登入 ｜ AI歷史科自學平台」，`/api/health` 全部正常；證據見 [deployment-evidence-2026-11-13.json](docs/deployment-evidence-2026-11-13.json)。Revision／build id 因本機 gcloud 憑證過期未能記錄，已於證據檔如實註明）。
 
 ### 背景
 
@@ -65,6 +65,10 @@
 - 英文長句（"How did Hong Kong develop into an international financial centre?"）仍被判離題：詞庫只有個別英文別名，沒有覆蓋整句語意。建議日後補英文別名或英文提問的語意閘。
 - 1,022 題填充題中只有 12 題有 `acceptedAnswers`、**0 題有 `gradingPoints`**：AI 批改只能靠參考答案及解釋判斷，`hitPointIndexes`／`missPoints` 永遠為空。屬內容治理工作（教師逐題補充），不是程式缺陷。
 - AI 語意批改每次約 1.0–1.8 秒；逐字比對已正確的答案不會呼叫模型（約 0.1–0.3 秒）。
+
+### 部署（2026-11-13）
+
+推送 `main`（commit `4f2139e`）觸發 Cloud Build，10:36 HKT 正式環境生效。驗證：`/login` 標題為「登入 ｜ AI歷史科自學平台」、`/`・`/tutor`・`/records` 未登入一律 307 轉登入頁、`/api/health` ok（demoMode=false、llmConfigured=true、aiGrading=true、staffApiOpen=false、教材 46 份／26,599 段／學生可見 22 份、restore=restored）。CI run `43352272409` 成功。Revision／build id 因本機 gcloud 憑證過期未能記錄，證據檔已如實註明。
 
 ---
 

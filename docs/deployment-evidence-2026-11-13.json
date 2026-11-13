@@ -1,0 +1,69 @@
+{
+  "generatedAt": "2026-11-13T02:40:00.000Z",
+  "notice": "部署「AI歷史科自學平台」改名、學伴名稱統一、學伴檢索三項修正及填充題繁簡／譯名補漏。經 GitHub `main` 推送觸發（推送即部署），正式環境於 2026-11-13 10:36 HKT 顯示新名稱。",
+  "sourceCommit": {
+    "sha": "4f2139ed1cfd9cd0cee0324c1153f0b38f6a4e5d",
+    "shortSha": "4f2139e",
+    "subject": "feat(ui,tutor,grading): 改名為 AI歷史科自學平台、統一學伴名稱，並修正檢索與批改缺口",
+    "pushedAt": "2026-11-13T02:27:05Z"
+  },
+  "changes": [
+    "平台名稱由「歷史科自學平台」改為「AI歷史科自學平台」：SITE_NAME／TUTOR_NAME 集中於 src/lib/site.ts，14 個頁面、匯出檔（PDF／DOCX／XLSX）中繼資料、Dockerfile 及腳本同步；同時修正匯出檔一直沿用「香港中學歷史科自學互動平台」的殘留名稱",
+    "學伴名稱統一為「AI歷史學伴」：導覽、頁面標題、回覆署名、離題引導句、每日配額訊息、系統提示詞角色；提示詞版本 2026-11-13.1",
+    "學伴檢索：兩字內容詞稀有度加權（零命中時才啟用）、論述型展開詞（成因／起因／因素）權重 20→6、延伸追問及練習情境不再判離題、只輸入名詞短語改為澄清或（改寫後）以教材作答",
+    "填充題批改：繁簡對照補 4 個高頻字（丝／范／冲／迹）、譯名補 2 個（尼克遜、諾曼第），簡體及譯名答案毋須依賴 AI 亦能判對"
+  ],
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "traffic": "100% 新 revision（推送即部署，`main` 分支觸發）"
+  },
+  "deploymentMethod": {
+    "trigger": "GitHub push → Cloud Build（scripts/setup-push-to-deploy.ps1 設定）",
+    "observed": "推送 02:27:05Z；10:27–10:34 HKT 仍為舊名稱；10:36 HKT 首次回應新名稱（由推送至生效約 9 分鐘）"
+  },
+  "ci": {
+    "workflow": "CI (.github/workflows/ci.yml)",
+    "runId": 43352272409,
+    "headSha": "4f2139ed1cfd9cd0cee0324c1153f0b38f6a4e5d",
+    "conclusion": "success",
+    "startedAt": "2026-11-13T02:27:13Z",
+    "completedAt": "2026-11-13T02:29:25Z"
+  },
+  "verification": [
+    {
+      "check": "登入頁名稱",
+      "command": "GET /login",
+      "result": "200；<title>登入 ｜ AI歷史科自學平台</title>；頁面出現「AI歷史科自學平台」7 次（新名稱已生效）"
+    },
+    {
+      "check": "受保護頁面仍要求登入",
+      "command": "GET /、/tutor、/records",
+      "result": "全部 307 → /login?next=…（分別 next=%2F、%2Ftutor、%2Frecords）；未登入者不能進入"
+    },
+    {
+      "check": "健康檢查",
+      "command": "GET /api/health",
+      "result": "ok=true、version=0.1.0、demoMode=false、llmConfigured=true、aiGrading=true、authEnabled=true、staffApiOpen=false、database.status=ok、materials.documents=46／blocks=26,599／studentVisibleDocuments=22、persistence.restore=restored、lastError=null、tutorWeb.enabled=true／mode=not-covered-only"
+    },
+    {
+      "check": "本機品質閘門（推送前）",
+      "command": "npm run typecheck；npx eslint src tests --max-warnings=0；npm run build；npx vitest run",
+      "result": "typecheck 0 error；eslint 0 error／0 warning；build 成功（66 路由）；vitest 173 檔 2,694 項通過、0 失敗、4 略過"
+    },
+    {
+      "check": "未驗證（如實記錄）",
+      "command": "（需登入後人工操作）",
+      "result": "登入後在 /tutor 的實際回覆品質、填充題提交在正式環境的 AI 批改結果未人工覆核。建議登入後：①問「鴉片」「宗教」，預期以教材作答或列出澄清方向而不是「只能討論歷史科」；②在填充題輸入簡體「势力范围」，預期判對。"
+    },
+    {
+      "check": "未取得（如實記錄）",
+      "command": "gcloud run services describe／gcloud builds list",
+      "result": "本機 gcloud 憑證已過期（Reauthentication failed），因此未能記錄 revision 名稱、映像 digest 及 Cloud Build build id；上述部署結果以公開 HTTP 驗證確認。如需完整 revision 記錄，請執行 `gcloud auth login` 後補查。"
+    }
+  ],
+  "rollback": "gcloud run services update-traffic history-self-study --project pccss-ai-history --region asia-east2 --to-revisions <上一個 revision>=100（需先 `gcloud auth login`）"
+}
