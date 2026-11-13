@@ -16,6 +16,33 @@
 
 ---
 
+## [未發布] — 2026-11-13（二十一）：高中改用橙色而與中二區分；課題卡「已作答」改稱「題庫進度」並在頁面解釋口徑
+
+**狀態**：已實作、已驗證（見下「驗證」）。**已部署**（2026-11-13）。
+
+### 背景
+
+擁有者回報（2026-11-13）：①「中二級及高中的顏色一樣，要區分開」；②提問「課題底下『已作答 0/502 條』是甚麼意思？」——即介面文字無法自我解釋。
+
+### 修正（缺陷：高中沒有配色規則）
+
+- **根因**：[globals.css](src/app/globals.css) 只定義 `[data-level="1"]`（中一綠）、`[data-level="2"]`（中二藍）、`[data-level="3"]`（中三紫）三組 `--level-accent`／`--level-tint`，而高中在 [HomeView.tsx](src/components/HomeView.tsx) 是以 `data-level="4"`（`SENIOR_SECONDARY_LEVEL`）標示。**缺少該年級規則時不會報錯，只會靜默沿用預設 `--accent`（`#2f5bd7`）**，即與中二完全相同。
+- **修正**：新增 `[data-level="4"]` 調色盤（`--level-accent: #b45309`（橙）、`--level-tint: #fdf1e0`），並把 `--level-accent` 套用到的 9 組選擇器（首頁主視覺、年級分頁、年級橫幅、主要行動按鈕等）全部補上 `[data-level="4"]`，令高中在切換後與中二明顯不同。
+- **迴歸測試**：[level-colour.test.ts](tests/level-colour.test.ts)（新增）讀取 `globals.css`，斷言四個年級各自定義了**互不相同**的 `--level-accent`，而且每個 `--level-accent` 使用位置都同時涵蓋四個年級——避免日後再出現「漏一級」這類靜默失效。
+- **建置注意**：以程式改寫 `globals.css` 後執行 `npm run build`，Turbopack 增量快取會沿用舊 CSS（建置產物缺少新選擇器）。本次需先刪除 `.next` 再建置才正確；驗證方式為檢查 `.next/static/**/*.css` 是否包含新規則。
+
+### 變更（課題卡文字）
+
+- **「已作答 A／B 條」→「題庫進度 A／B 題」**：原文案沒有說明兩個數字的關係，容易讀成「有 502 題要做」。現於 [HomeView.tsx](src/components/HomeView.tsx) 改稱「題庫進度」，`title` 提示及課題卡說明段落寫明：A＝你在這課題做過的題庫題目（同一題只算一次），B＝該課題已發布題庫題目總數，**不要求全部完成**；只做 AI 即時生成題目時 A 不會增加。學習進度清單的單位亦由「條」統一為「題」。
+- 文件：[README.md](README.md) 第三節課題卡說明、第七節年級配色（補上高中橙色及本次根因）同步更新。
+
+### 驗證
+
+- 以 Playwright 在真實資料上讀取各年級 `--level-accent` 的計算值：中一 `rgb(15, 118, 110)`、中二 `rgb(47, 91, 215)`、中三 `rgb(109, 59, 191)`、高中 `rgb(180, 83, 9)`，四者互不相同；截圖確認視覺上可區分。（headless 下需先 `document.getAnimations().forEach(a => a.finish())` 再讀，否則會讀到轉場中的舊顏色。）
+- `npm run typecheck`、`npx eslint src tests --max-warnings=0`、`npm run build`（先刪 `.next`，建置產物確認含 30 處 `data-level="4"` 規則）、`npx vitest run`（174 檔 2,697 項通過／4 略過）全部通過。
+
+---
+
 ## [未發布] — 2026-11-13（二十）：平台改名「AI歷史科自學平台」、學伴改名「AI歷史學伴」、修正學伴四項未能命中教材的缺陷
 
 **狀態**：已實作、已驗證（`npm run typecheck`、`npx eslint src tests --max-warnings=0`、`npm run build`、`vitest run` 173 檔 2,694 項通過／4 略過）；本機以 `next dev` 實測 `/`、`/login`、`/tutor`、`/records`、`/account` 的 `<title>` 均為新名稱；學生使用模擬（`scripts/simulate-student-usage.mjs --no-ai`）408 項檢查、71 次練習、544 次作答全部通過。**已部署**（commit `4f2139e`；2026-11-13 10:27 HKT 推送 `main` 觸發 Cloud Build，10:36 HKT 正式環境 `/login` 已顯示「登入 ｜ AI歷史科自學平台」，`/api/health` 全部正常；證據見 [deployment-evidence-2026-11-13.json](docs/deployment-evidence-2026-11-13.json)。Revision／build id 因本機 gcloud 憑證過期未能記錄，已於證據檔如實註明）。

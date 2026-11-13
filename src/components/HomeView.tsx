@@ -365,8 +365,9 @@ export function HomeView() {
         </div>
 
         <p className="text-xs text-gray-500">
-          課題卡的「題庫進度」只計算題庫內已發布的題目；只練習 AI 即時生成的題目時會顯示「練習中」，
-          累計答題及答對比率仍會計入上方統計。
+          課題卡的「題庫進度 A／B 題」＝你在這課題做過的題庫題目（A）佔該課題已發布題庫題目總數（B）的比例；
+          同一題只算一次，<strong>不要求全部完成</strong>。只練習 AI 即時生成的題目時，這個數字不會增加
+          （會顯示「練習中」），累計答題及答對比率仍會計入上方統計。
         </p>
 
         {levelTopics.length === 0 ? (
@@ -422,10 +423,10 @@ export function HomeView() {
                   <ProgressBar value={eligible > 0 ? answered / eligible : 0} />
                   <span
                     className="topic-tile__progressText"
-                    title={`題庫進度 ${answered}／${eligible} 條；練習累計答題 ${topic.progress.answeredQuestions} 題`}
+                    title={`題庫進度：你在這課題做過 ${answered} 題，該課題題庫共有 ${eligible} 題已發布題目（不要求全部完成）；練習累計答題 ${topic.progress.answeredQuestions} 題`}
                   >
                     {eligible > 0
-                      ? `已作答 ${answered}／${eligible} 條`
+                      ? `題庫進度 ${answered}／${eligible} 題`
                       : "暫未有可作答題目"}
                   </span>
                 </span>
@@ -466,9 +467,9 @@ export function HomeView() {
                   {LEARNING_STATE_LABELS[item.state]}
                 </span>
                 <span className="text-gray-600">
-                  已作答 {item.attemptedQuestions}／{item.eligibleQuestions} 條（答對{" "}
-                  {item.correctQuestions} 條
-                  {item.uncertainQuestions > 0 ? `，未能確定 ${item.uncertainQuestions} 條` : ""}）
+                  已作答 {item.attemptedQuestions}／{item.eligibleQuestions} 題（答對{" "}
+                  {item.correctQuestions} 題
+                  {item.uncertainQuestions > 0 ? `，未能確定 ${item.uncertainQuestions} 題` : ""}）
                 </span>
               </li>
             ))}

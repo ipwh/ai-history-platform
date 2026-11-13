@@ -756,7 +756,8 @@ body {
   color: var(--level-accent);
 }
 
-/* 年級配色：中一綠、中二藍、中三紫，令學生一眼認出自己身處哪一年級 */
+/* 年級配色：中一綠、中二藍、中三紫、高中橙，令學生一眼認出自己身處哪一年級
+   （2026-11-13：高中（level 4）原本沒有任何配色規則，介面沿用預設藍色而與中二完全相同） */
 [data-level="1"] {
   --level-accent: #0f766e;
   --level-tint: #e3f4f1;
@@ -772,9 +773,15 @@ body {
   --level-tint: #f1eafd;
 }
 
+[data-level="4"] {
+  --level-accent: #b45309;
+  --level-tint: #fdf1e0;
+}
+
 [data-level="1"] .home-hero,
 [data-level="2"] .home-hero,
-[data-level="3"] .home-hero {
+[data-level="3"] .home-hero,
+[data-level="4"] .home-hero {
   border-color: color-mix(in srgb, var(--level-accent) 25%, #ffffff);
   background: linear-gradient(
     135deg,
@@ -785,19 +792,22 @@ body {
 
 [data-level="1"] .home-hero__eyebrow,
 [data-level="2"] .home-hero__eyebrow,
-[data-level="3"] .home-hero__eyebrow {
+[data-level="3"] .home-hero__eyebrow,
+[data-level="4"] .home-hero__eyebrow {
   color: var(--level-accent);
 }
 
 [data-level="1"] .home-stat__value,
 [data-level="2"] .home-stat__value,
-[data-level="3"] .home-stat__value {
+[data-level="3"] .home-stat__value,
+[data-level="4"] .home-stat__value {
   color: var(--level-accent);
 }
 
 [data-level="1"] .home-cta--primary,
 [data-level="2"] .home-cta--primary,
-[data-level="3"] .home-cta--primary {
+[data-level="3"] .home-cta--primary,
+[data-level="4"] .home-cta--primary {
   background: var(--level-accent);
   border-color: var(--level-accent);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--level-accent) 30%, transparent);
@@ -805,35 +815,40 @@ body {
 
 [data-level="1"] .home-cta--primary:hover,
 [data-level="2"] .home-cta--primary:hover,
-[data-level="3"] .home-cta--primary:hover {
+[data-level="3"] .home-cta--primary:hover,
+[data-level="4"] .home-cta--primary:hover {
   background: color-mix(in srgb, var(--level-accent) 85%, #000000);
   border-color: color-mix(in srgb, var(--level-accent) 85%, #000000);
 }
 
 [data-level="1"] .home-cta--light,
 [data-level="2"] .home-cta--light,
-[data-level="3"] .home-cta--light {
+[data-level="3"] .home-cta--light,
+[data-level="4"] .home-cta--light {
   color: var(--level-accent);
   border-color: color-mix(in srgb, var(--level-accent) 35%, #ffffff);
 }
 
 [data-level="1"] .level-tab[data-active="true"],
 [data-level="2"] .level-tab[data-active="true"],
-[data-level="3"] .level-tab[data-active="true"] {
+[data-level="3"] .level-tab[data-active="true"],
+[data-level="4"] .level-tab[data-active="true"] {
   border-color: var(--level-accent);
   color: var(--level-accent);
 }
 
 [data-level="1"] .level-banner,
 [data-level="2"] .level-banner,
-[data-level="3"] .level-banner {
+[data-level="3"] .level-banner,
+[data-level="4"] .level-banner {
   background: var(--level-tint);
   border-color: color-mix(in srgb, var(--level-accent) 22%, #ffffff);
 }
 
 [data-level="1"] .level-banner__count,
 [data-level="2"] .level-banner__count,
-[data-level="3"] .level-banner__count {
+[data-level="3"] .level-banner__count,
+[data-level="4"] .level-banner__count {
   color: var(--level-accent);
   border-color: color-mix(in srgb, var(--level-accent) 30%, #ffffff);
 }
