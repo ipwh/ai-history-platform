@@ -1,9 +1,12 @@
 # 學伴受控模型評估計劃（Sprint 30 制定；Sprint 31、33 更新）
 
 **日期**：2026-11-07（Sprint 33 更新）
-**提示詞版本**：`TUTOR_PROMPT_VERSION = 2026-11-07.2`
+**第一輪實際評估提示詞版本**：`TUTOR_PROMPT_VERSION = 2026-11-07.2`
 **狀態**：**LIVE EVALUATION EXECUTED（Sprint 33）** — 專案擁有者於 Sprint 33 規格第 5 節明示授權 12 個案例、最多 20 次 provider attempts、總費用 ≤ US$0.10；實際執行 12 次呼叫（0 重試）、總成本 **US$0.012599**。結果見 [Sprint 33 報告](sprint-33-report-2026-11-07.md)。
-**仍未授權**：第二輪評估（覆蓋 `expandTutorQuery` 與 web supplement 路徑）、`git commit`／`push`、任何部署。
+**第二輪評估仍未授權**：覆蓋 `expandTutorQuery` 與 web supplement 路徑的付費模型呼叫。
+專案擁有者於 2026-11-16 明確授權本次程式碼文件的 `git commit`／`push` 及部署；該授權不包含任何付費模型評估。
+
+**目前程式提示詞版本（2026-11-16）**：`2026-11-16.1`，新增核心知識卡、自我檢查題、非計分形成性回饋及跨課題來源披露。Sprint 33 第一輪結果仍只代表 `2026-11-07.2`；新版本沒有執行付費模型評估。
 
 ## 1. 為甚麼需要這一層
 
@@ -115,12 +118,14 @@ npx tsx scripts/tutor-live-eval.ts --apply --self-test --resume "$env:TEMP\selft
 
 **Sprint 33 已完成 1–4**，證據：`files/sprint33-live-evaluation.json`、`files/tutor-review-packet-sprint33.json`。評分為 AI 依實際輸出的評分，全部 `pending-human-review`。
 
-## 6. 現時未完成的部分
+## 6. 未完成部分（截至 2026-11-07 第一輪評估）
+
+以下狀態記錄第一輪評估當時的情況；不代表本次 2026-11-16 發布的部署狀態。
 
 - 第二輪評估未執行（未授權）：`expandTutorQuery`（語意改寫重試檢索）與 `collectTutorWebSupplement`（正式環境 `not-covered-only`）不在 12 次樣本的覆蓋範圍，因此「正式環境的 C 狀態行為」仍屬**未驗證**。
 - D／out-of-scope 案例（live-06、live-07）的回覆只代表「若呼叫模型會怎樣」；正式 route 對這兩類不呼叫模型。
 - **教師覆核進度為 0**：83 條教師矩陣與 12 條 live 案例全部 `pending-human-review`。
-- 正式環境（Cloud Run revision／流量、登入學生的實際回覆）未重新驗證；無候選 commit，故無 CI 證據。
+- **當時**正式環境（Cloud Run revision／流量、登入學生的實際回覆）未重新驗證；無候選 commit，故無 CI 證據。2026-11-16 發布的程式及部署驗證另以本次部署證據為準；仍未完成的是新提示詞版本的付費模型評估及教師覆核。
 
 ## 7. 執行前的安全檢查（Sprint 31 已驗證；Sprint 32 擴充）
 

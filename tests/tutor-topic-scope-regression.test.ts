@@ -215,6 +215,38 @@ describe("明確專名可以切換練習帶入的 soft prior（2026-11-11 學生
   });
 });
 
+describe("學習目標課題優先處理跨課題共用詞", () => {
+  it("「轉口港」同時見於初中課題8及高中香港現代化課題時，保留學生選擇的課題", () => {
+    const result = findTutorGrounding(
+      "香港在20世紀如何由轉口港發展成現代都市？",
+      [],
+      curriculum,
+      { preferredTopicId: "hs-topic-1", allowSoftPriorFallback: false, studentLevel: 4 },
+    );
+    expect(result.topicId).toBe("hs-topic-1");
+  });
+
+  it("明確點名其他課題時仍可切換，不被學習目標鎖住", () => {
+    const result = findTutorGrounding(
+      "課題8：新界租約與轉口港有甚麼關係？",
+      [],
+      curriculum,
+      { preferredTopicId: "hs-topic-1", allowSoftPriorFallback: false, studentLevel: 4 },
+    );
+    expect(result.topicId).toBe("topic-8");
+  });
+
+  it("另一課題的專名即使與所選課題共用詞同時出現，仍可切換", () => {
+    const result = findTutorGrounding(
+      "新界租約與轉口港有甚麼關係？",
+      [],
+      curriculum,
+      { preferredTopicId: "hs-topic-1", allowSoftPriorFallback: false, studentLevel: 4 },
+    );
+    expect(result.topicId).toBe("topic-8");
+  });
+});
+
 /**
  * 「新界」橫跨課題4（新界五大族）、課題8（租借新界）及課題12（新市鎮）。
  * 詞庫加入 `requiresAny` 守衛後，只有句中另有租借用語才定位到課題8。

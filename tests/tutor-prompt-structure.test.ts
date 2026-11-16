@@ -56,6 +56,31 @@ describe("學伴回覆結構（固定短結構）", () => {
     expect(prompt).toContain("避免長篇議論");
   });
 
+  it("精簡回覆先提供核心知識卡，再以一條不附答案的題目讓學生自我檢查", () => {
+    const prompt = buildTutorSystemPrompt({ grounding: EMPTY_GROUNDING });
+    expect(prompt).toContain("【核心知識】");
+    expect(prompt).toContain("直接回答問題的核心");
+    expect(prompt).toContain("【自我檢查題】");
+    expect(prompt).toContain("不附答案、提示或分數");
+    expect(prompt).toContain("形成性回饋");
+    expect(prompt).toContain("不要給數字分數");
+  });
+
+  it("檢索到的教材屬另一課題時，要求說明來源與限制", () => {
+    const prompt = buildTutorSystemPrompt({
+      grounding: {
+        ...groundingWithPassage(),
+        topicId: "topic-8",
+        topicTitle: "課題8：香港直至二十世紀初的成長與發展",
+      },
+      goalTopicId: "hs-topic-1",
+      goalTopicTitle: "課題1：香港的現代化與蛻變",
+    });
+    expect(prompt).toContain("【教材課題與學習目標不同】");
+    expect(prompt).toContain("課題8：香港直至二十世紀初的成長與發展");
+    expect(prompt).toContain("不可把它們當成學習目標課題的直接依據");
+  });
+
   it("要求先更正學生的錯誤前提，不可順着錯誤前題作答（2026-11-06 實測）", () => {
     const prompt = buildTutorSystemPrompt({ grounding: EMPTY_GROUNDING });
     expect(prompt).toContain("前提與教材片段不符");

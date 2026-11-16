@@ -56,7 +56,7 @@ export const TUTOR_MAX_SOURCES = 3;
  * 可答性／證據規則產生的。任何改動 `buildTutorSystemPrompt` 組成部分（基礎提示、
  * 結構、可答性政策、片段規則）都要更新此值。
  */
-export const TUTOR_PROMPT_VERSION = "2026-11-13.1";
+export const TUTOR_PROMPT_VERSION = "2026-11-16.1";
 /** 送去模型的段落組長度上限（控制 token，亦避免一次外泄大量原文） */
 export const TUTOR_MODEL_PASSAGE_MAX_CHARS = 240;
 /** 顯示給學生的節錄長度上限（與 mock-provider 的 MAX_EXPLANATION_QUOTE 一致） */
@@ -1861,6 +1861,40 @@ export function findTutorGrounding(
             score: 0,
             sectionIds: (sectionsByTopic.get(preferredTopic.id) ?? []).map((section) => section.id),
           };
+    const normalizedMessage = normalizeHistoryAnswer(message);
+    const explicitlyRequestedTopicIds = [
+      ...normalizedMessage.matchAll(/課題\s*(\d+)/g),
+    ].map((match) => `topic-${match[1]}`);
+    const explicitlyRequestedOtherTopic =
+      preferredTopic !== null &&
+      explicitlyRequestedTopicIds.some((topicId) => topicId !== preferredTopic.id);
+    const hasTopicSpecificExplicitTerm =
+      currentGuess !== null &&
+      HISTORY_TERM_GROUPS.some(
+        (group) =>
+          group.topicId === currentGuess.topicId &&
+          groupMatchesText(normalizedMessage, group),
+      );
+    const preferredText =
+      preferredTopic === null
+        ? ""
+        : normalizeHistoryAnswer(
+            (sectionsByTopic.get(preferredTopic.id) ?? [])
+              .flatMap((section) => [section.title, ...section.matchKeywords])
+              .join("\n"),
+          );
+    const preferredTopicHasSharedScopedTerm =
+      preferredTopic !== null &&
+      !explicitlyRequestedOtherTopic &&
+      !hasTopicSpecificExplicitTerm &&
+      HISTORY_TERM_GROUPS.some((group) => {
+        if (group.topicId !== undefined || group.scope === "高中") return false;
+        if (!groupMatchesText(normalizedMessage, group)) return false;
+        return [group.canonical, ...group.aliases].some((term) => {
+          const normalizedTerm = normalizeHistoryAnswer(term);
+          return normalizedTerm.length >= 4 && preferredText.includes(normalizedTerm);
+        });
+      });
     const extraTerms = options.extraTerms ?? [];
     const distributable = listStudentDistributableDocumentIds();
     const messageTerms = extractQueryTerms(message);
@@ -2090,13 +2124,13 @@ export function findTutorGrounding(
     if (
       preferredGuess !== null &&
       preferredGuess.topicId !== guess.topicId &&
-      guess.score < EXPLICIT_TOPIC_OVERRIDE_SCORE &&
+      (guess.score < EXPLICIT_TOPIC_OVERRIDE_SCORE || preferredTopicHasSharedScopedTerm) &&
       /**
        * 明確專名（詞庫指定課題的「柏林圍牆」「希特拉」「展拓香港界址專條」等）
        * 不受分數門檻限制：學生真的點名了另一課題，就應該切換（2026-11-11 學生模擬）。
        * 分節關鍵詞及標題片段仍受 16 分門檻限制，避免「二戰」二字把提問帶走。
        */
-      guess.explicitTerm !== true
+      (guess.explicitTerm !== true || preferredTopicHasSharedScopedTerm)
     ) {
       const scratchAudit: TutorPassageSelectionAudit = {
         candidateBlocks: 0,
@@ -2203,6 +2237,19 @@ const TUTOR_HOMEWORK_GUARD_STANDARD =
 const TUTOR_HOMEWORK_GUARD_DEEP =
   "【作業支援】不可提供可直接提交的完整作業答案；但本回合容許較完整的示範論述（分析框架、正反論據、有條件的判斷），並必須：① 結尾用一句說明這是示範，不可直接提交為作業；② 留下最少一個由學生自行完成的環節（例如選定立場、補上教材引文、改寫成自己的文字）；③ 不可寫成一篇已完成的文章。";
 
+const TUTOR_LEARNING_LOOP_PROMPT = [
+  "【核心知識卡與自我檢查】只適用於意思清楚、需要實質歷史回答的提問；簡單寒暄、澄清、離題回覆及自我檢查作答回饋不套用。",
+  "回覆最前先獨立輸出「【核心知識】」一行，下一行用 1 至 3 句直接回答問題的核心，讓初中學生先掌握必要概念或史實。只可使用本回合有依據的內容；教材只部分支持時要指出限制，找不到時按教材規則標明一般歷史知識。不要在卡片內寫成可直接提交的完整作業答案。",
+  "核心知識卡後留一空行，再按本回合的回覆結構補充分析；不要逐字重複核心知識卡。",
+  "實質回答末段另輸出「【自我檢查題】」一行，下一行只提出一條初中程度、可用本回覆及其教材依據作答的開放式問題；不附答案、提示或分數。題目不可要求學生記憶教材片段未交代的細節。",
+].join("\n");
+
+const TUTOR_SELF_CHECK_FEEDBACK_PROMPT = [
+  "【自我檢查作答回饋】若學生訊息以「【自我檢查作答】」開首，這是提交自己的嘗試，不是要求代寫作業。",
+  "給予形成性回饋，只按本對話可見的教材依據及已提出的自我檢查題，指出一項答得準確的重點、一項仍需補充或修正之處，以及一個能讓學生自行改進的下一步提示。",
+  "若教材不足以判斷，明確說明限制，不可用一般知識冒充教材評分標準。不要給數字分數、不要聲稱是正式評分、不要提供完整標準答案，也不要再輸出核心知識卡或自我檢查題標記。",
+].join("\n");
+
 /**
  * 進階／挑戰深度共用的分析角度詞彙。
  *
@@ -2269,6 +2316,8 @@ export function buildTutorSystemPrompt(input: {
   practiceContextBlock?: string | null;
   /** 學生自選的學習目標課題標題（M4，soft prior） */
   goalTopicTitle?: string | null;
+  /** 學生自選的學習目標課題 ID；用來判斷教材是否來自另一課題 */
+  goalTopicId?: string | null;
   /**
    * 本回合的回覆深度（見 services/tutor-depth.ts）。省略時使用 `standard`，
    * 即原有的四段精簡結構。
@@ -2288,6 +2337,7 @@ export function buildTutorSystemPrompt(input: {
   // 固定短結構（2026-11-01）：令回覆長度及形狀可預期，也令學生知道下一步可以做甚麼。
   // 只約束「歷史問題」的回覆；簡單確認或寒暄不強制套用，避免变成公式化廢話。
   sections.push(TUTOR_REPLY_STRUCTURES[depth]);
+  sections.push(TUTOR_LEARNING_LOOP_PROMPT, TUTOR_SELF_CHECK_FEEDBACK_PROMPT);
   if (depth !== "standard") sections.push(TUTOR_ANALYSIS_DIMENSIONS);
   // 可答性政策（Sprint 29）：必須先於教材片段出現，令「教材找不到也要作答」的
   // 指示不會被後面的片段規則蓋過。A 狀態不另加區塊（既有片段規則已足夠）。
@@ -2302,6 +2352,21 @@ export function buildTutorSystemPrompt(input: {
   if (goalTopicTitle.length > 0) {
     sections.push(
       `【學習目標】學生正在溫習「${goalTopicTitle}」。若本題與該課題相關，可優先連繫該課題的概念；若學生明確問另一個課題，則以學生當前的問題為準。`,
+    );
+  }
+  const goalTopicId = input.goalTopicId?.trim() ?? "";
+  if (
+    goalTopicId.length > 0 &&
+    input.grounding.topicId !== null &&
+    input.grounding.topicId !== goalTopicId &&
+    input.grounding.topicTitle !== null
+  ) {
+    sections.push(
+      [
+        `【教材課題與學習目標不同】學生設定的課題是「${goalTopicTitle}」，但本回合找到的教材屬於「${input.grounding.topicTitle}」。`,
+        "必須明確說明實際引用的是哪個課題；只可用這些段落支持它們實際交代的內容，不可把它們當成學習目標課題的直接依據。",
+        "若段落只提供背景或部分線索，要指出哪部分仍未能由教材支持；不可把跨課題材料延伸成未有依據的史實。",
+      ].join("\n"),
     );
   }
   const practiceContextBlock = input.practiceContextBlock?.trim() ?? "";

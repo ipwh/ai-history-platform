@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { buildTutorSelfCheckSubmission } from "@/lib/tutor-response-format";
 import {
   TUTOR_HISTORICAL_ERA_LAST_YEAR,
   classifyTutorAnswerability,
@@ -190,6 +191,23 @@ describe("可答性狀態：教材涵蓋程度與問題是否可答分開", () =
     expect(decision.scope).toBe("history");
     expect(decision.allowGeneralKnowledge).toBe(true);
     expect(decision.requireDisclosure).toBe(true);
+  });
+
+  it("自我檢查答案及回饋指示不會被可答性硬閘誤判為離題", () => {
+    const message = buildTutorSelfCheckSubmission(
+      "冷戰為何被稱為「冷」戰？",
+      "因為美蘇沒有直接爆發全面戰爭。",
+    );
+    const decision = classifyTutorAnswerability({
+      message,
+      curriculum: EMPTY_CURRICULUM,
+      grounding: groundingFor("none"),
+      hasHistoryContext: false,
+      unclear: isUnclearTutorQuery(message, EMPTY_CURRICULUM, false),
+    });
+
+    expect(decision.scope).toBe("history");
+    expect(decision.state).toBe("C-general-knowledge");
   });
 
   it("有上文時，代詞及角色追問沿用上文而不要求澄清", () => {

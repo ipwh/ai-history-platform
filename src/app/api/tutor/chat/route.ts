@@ -716,6 +716,7 @@ export async function POST(request: Request) {
               ? null
               : describeTutorPracticeContextForPrompt(effectivePracticeContext),
           goalTopicTitle: goalTopic?.published === true ? goalTopic.title : null,
+          goalTopicId: goalTopic?.published === true ? goalTopic.id : null,
           depth: replyDepth,
           answerability,
         }),

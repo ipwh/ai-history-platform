@@ -98,3 +98,134 @@ test("學生選擇回覆深度後，請求會帶 depth 並在回覆上顯示標�
     page.locator("article").filter({ hasText: ANSWER }).getByText("挑戰・史觀"),
   ).toBeVisible();
 });
+
+test("新對話提供可修改的歷史事件分析起步問題", async ({ page }) => {
+  const cookies = readTestCookies();
+  await page.context().addCookies([
+    { name: SESSION_COOKIE, value: cookies.tutorStudent, url: UI_TEST_BASE_URL },
+  ]);
+  await page.route("**/api/tutor/chat**", async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        sessionId: "ui-tutor-empty-session",
+        messages: [],
+        remaining: 15,
+        dailyLimit: 15,
+        windowLimitReached: false,
+        truncated: false,
+        messageCount: 0,
+        topicId: null,
+        practiceContext: null,
+      }),
+    });
+  });
+
+  await page.goto("/tutor");
+  await page.getByRole("button", { name: "分析：第一次世界大戰" }).click();
+
+  await expect(page.getByPlaceholder(/可用口語、錯字或簡體字提問/)).toHaveValue(
+    "請按教材分析第一次世界大戰的背景、起因、經過及結果，並指出一個可供深入評價的角度。",
+  );
+  await expect(page.getByRole("button", { name: "傳送問題" })).toBeEnabled();
+});
+
+test("學伴回覆顯示核心知識卡，並可提交自我檢查答案取得回饋", async ({ page }) => {
+  const cookies = readTestCookies();
+  await page.context().addCookies([
+    { name: SESSION_COOKIE, value: cookies.tutorStudent, url: UI_TEST_BASE_URL },
+  ]);
+
+  const submitted: string[] = [];
+  let answerTurn = 0;
+  await page.route("**/api/tutor/chat**", async (route) => {
+    const request = route.request();
+    if (request.method() === "GET") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          sessionId: null,
+          messages: [],
+          remaining: 15,
+          dailyLimit: 15,
+          windowLimitReached: false,
+          truncated: false,
+          messageCount: 0,
+          topicId: null,
+          practiceContext: null,
+        }),
+      });
+      return;
+    }
+
+    const body = request.postDataJSON() as { message?: string };
+    submitted.push(body.message ?? "");
+    answerTurn += 1;
+    const text =
+      answerTurn === 1
+        ? [
+            "【核心知識】",
+            "冷戰是美蘇兩大陣營長期對抗，但沒有直接爆發全面戰爭。",
+            "",
+            "教材線索：兩極格局和意識形態對立。",
+            "",
+            "【自我檢查題】",
+            "冷戰為何被稱為「冷」戰？",
+            "",
+          ].join("\n")
+        : "你已指出兩大陣營沒有直接開戰；可再補充對抗仍透過哪些方式進行。";
+    const remaining = answerTurn === 1 ? 14 : 13;
+
+    await route.fulfill({
+      status: 200,
+      headers: {
+        "content-type": "text/event-stream; charset=utf-8",
+        "x-tutor-session-id": "ui-tutor-session",
+        "x-tutor-remaining": String(remaining),
+      },
+      body: [
+        `event: meta\ndata: ${JSON.stringify({
+          grounding: "grounded",
+          topicTitle: "課題10：冷戰",
+          sources: [],
+          depth: "standard",
+        })}\n\n`,
+        `event: delta\ndata: ${JSON.stringify({ text })}\n\n`,
+        `event: done\ndata: ${JSON.stringify({
+          remaining,
+          grounding: "grounded",
+          topicTitle: "課題10：冷戰",
+          sources: [],
+          termNotes: [],
+          depth: "standard",
+        })}\n\n`,
+      ].join(""),
+    });
+  });
+
+  await page.goto("/tutor");
+  await page.getByPlaceholder(/可用口語、錯字或簡體字提問/).fill("冷戰是甚麼？");
+  await page.getByRole("button", { name: "傳送問題" }).click();
+
+  await expect(page.getByLabel("核心知識")).toContainText(
+    "冷戰是美蘇兩大陣營長期對抗",
+  );
+  const selfCheck = page.getByRole("form", { name: "自我檢查作答" });
+  await expect(selfCheck).toContainText("冷戰為何被稱為「冷」戰？");
+  await selfCheck.getByLabel("你的答案").fill("因為美蘇沒有直接爆發全面戰爭。");
+  await selfCheck.getByRole("button", { name: "提交答案，請學伴回饋" }).click();
+
+  await expect(
+    page.getByText("你已指出兩大陣營沒有直接開戰", { exact: false }),
+  ).toBeVisible();
+  expect(submitted).toHaveLength(2);
+  expect(submitted[1]).toContain("【自我檢查作答】");
+  expect(submitted[1]).toContain("冷戰為何被稱為「冷」戰？");
+  expect(submitted[1]).toContain("因為美蘇沒有直接爆發全面戰爭。");
+});

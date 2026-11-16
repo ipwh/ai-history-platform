@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 
 import { safeInternalPath } from "@/lib/safe-internal-path";
 import { TUTOR_NAME } from "@/lib/site";
@@ -19,6 +19,10 @@ import {
   parseTutorQuestionSuggestions,
   type TutorQuestionCandidate,
 } from "@/lib/tutor-question-suggestions";
+import {
+  buildTutorSelfCheckSubmission,
+  parseTutorResponseSections,
+} from "@/lib/tutor-response-format";
 
 interface TutorMessage {
   role: "user" | "assistant";
@@ -83,10 +87,28 @@ const DEPTH_STORAGE_KEY = "history-tutor-depth";
 
 const DEPTH_OPTIONS: { value: TutorDepthPreference; label: string; hint: string }[] = [
   { value: "auto", label: "自動（按提問判斷）", hint: "平台會按提問要求自動選擇深度" },
-  { value: "standard", label: "精簡", hint: "四段短結構：定位、線索、依據、下一步" },
+  { value: "standard", label: "精簡", hint: "先看核心知識，再看線索、依據和自我檢查" },
   { value: "advanced", label: "進階分析", hint: "分析框架、張力與反駁、挑戰問題" },
   { value: "challenge", label: "挑戰・史觀", hint: "問題拆解、立場光譜、判斷準則、挑戰任務" },
 ];
+
+const EVENT_ANALYSIS_STARTERS = [
+  {
+    label: "第一次世界大戰",
+    question:
+      "請按教材分析第一次世界大戰的背景、起因、經過及結果，並指出一個可供深入評價的角度。",
+  },
+  {
+    label: "第二次世界大戰",
+    question:
+      "請按教材分析第二次世界大戰的背景、起因、經過及結果，並說明它與第一次世界大戰的關聯。",
+  },
+  {
+    label: "冷戰",
+    question:
+      "請按教材梳理冷戰的背景、發展階段及結束，並分析其中一項關鍵轉變。",
+  },
+] as const;
 
 /** 回覆氣泡上方顯示的深度標籤（`standard` 不顯示，避免每則回覆都多一個標籤） */
 function depthLabel(depth: TutorReplyDepth | undefined): string | null {
@@ -299,6 +321,64 @@ function TutorEvidence({ message }: { message: TutorMessage }) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function TutorSelfCheck({
+  question,
+  disabled,
+  onSubmit,
+}: {
+  question: string;
+  disabled: boolean;
+  onSubmit: (message: string) => void;
+}) {
+  const [answer, setAnswer] = useState("");
+  const answerId = useId();
+
+  function submitAnswer(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const message = buildTutorSelfCheckSubmission(question, answer);
+    if (message.length === 0 || disabled) return;
+    onSubmit(message);
+  }
+
+  return (
+    <form
+      className="mt-3 space-y-2 rounded-lg border p-3"
+      style={{ borderColor: "var(--border-strong)", background: "var(--accent-soft)" }}
+      aria-label="自我檢查作答"
+      onSubmit={submitAnswer}
+    >
+      <p className="text-sm font-semibold">自我檢查題</p>
+      <p className="text-sm">{question}</p>
+      <label className="block text-xs font-semibold text-gray-600" htmlFor={answerId}>
+        你的答案
+      </label>
+      <textarea
+        id={answerId}
+        className="w-full rounded-lg border bg-white px-3 py-2 text-sm"
+        style={{ borderColor: "var(--border-strong)" }}
+        rows={3}
+        maxLength={1200}
+        value={answer}
+        onChange={(event) => setAnswer(event.target.value)}
+        placeholder="用自己的話寫下答案；不必一次寫得完美。"
+        disabled={disabled}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-gray-600">
+          回饋只供自我檢查，不計分；提交會使用 1 次提問額度，請以教材及老師為準。
+        </p>
+        <button
+          type="submit"
+          className="btn btn-primary text-sm"
+          disabled={disabled || answer.trim().length === 0}
+        >
+          提交答案，請學伴回饋
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -937,9 +1017,29 @@ export function TutorView({
           </div>
         ) : null}
         {!loading && messages.length === 0 && opening === null ? (
-          <p className="text-sm text-gray-600">
-            你可以提出歷史課題或事件；學伴會以問題和線索協助你思考，不會代答功課。
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">
+              你可以提出歷史課題或事件；學伴會以問題和線索協助你思考，不會代答功課。
+            </p>
+            <div className="space-y-2" aria-label="歷史事件分析起步問題">
+              <p className="text-sm text-gray-600">
+                或選一個事件開始分析；問題會先填入下方輸入框，讓你自行修改：
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {EVENT_ANALYSIS_STARTERS.map((starter) => (
+                  <button
+                    key={starter.label}
+                    type="button"
+                    className="btn text-left text-sm"
+                    disabled={sending || inputBlocked || loading}
+                    onClick={() => chooseQuestionSuggestion(starter.question)}
+                  >
+                    分析：{starter.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         ) : null}
         {skillHint !== null && messages.length > 0 ? (
           <p className="text-xs text-gray-600">🎯 {skillHint}</p>
@@ -950,10 +1050,16 @@ export function TutorView({
           </p>
         ) : null}
         {messages.map((message, index) => {
-          const parsed =
+          const suggestions =
             message.role === "assistant"
               ? parseTutorQuestionSuggestions(message.content)
               : { content: message.content, suggestions: [] };
+          const sections =
+            message.role === "assistant"
+              ? parseTutorResponseSections(suggestions.content)
+              : { content: suggestions.content, coreKnowledge: null, selfCheckQuestion: null };
+          const currentAssistantIsStreaming =
+            sending && index === messages.length - 1 && message.role === "assistant";
           return (
             <article
               key={`${index}-${message.role}`}
@@ -970,14 +1076,25 @@ export function TutorView({
                   <span className="badge badge-accent">{depthLabel(message.depth)}</span>
                 ) : null}
               </p>
-              {parsed.content.length > 0 ? <TutorMarkdown content={parsed.content} /> : null}
-              {parsed.suggestions.length > 0 ? (
+              {sections.coreKnowledge !== null ? (
+                <div
+                  role="region"
+                  className="mb-3 rounded-lg border px-3 py-2"
+                  style={{ borderColor: "var(--border-strong)", background: "white" }}
+                  aria-label="核心知識"
+                >
+                  <p className="mb-1 text-xs font-semibold text-gray-600">核心知識</p>
+                  <TutorMarkdown content={sections.coreKnowledge} />
+                </div>
+              ) : null}
+              {sections.content.length > 0 ? <TutorMarkdown content={sections.content} /> : null}
+              {suggestions.suggestions.length > 0 ? (
                 <div className="mt-3 space-y-2" aria-label="可能的提問方向">
                   <p className="text-sm text-gray-600">
                     可選一個方向填入問題框再傳送，亦可自行改寫：
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {parsed.suggestions.map((suggestion) => (
+                    {suggestions.suggestions.map((suggestion) => (
                       <button
                         key={suggestion}
                         type="button"
@@ -990,6 +1107,15 @@ export function TutorView({
                     ))}
                   </div>
                 </div>
+              ) : null}
+              {message.role === "assistant" &&
+              sections.selfCheckQuestion !== null &&
+              !currentAssistantIsStreaming ? (
+                <TutorSelfCheck
+                  question={sections.selfCheckQuestion}
+                  disabled={sending || inputBlocked || loading}
+                  onSubmit={(submission) => void submitMessage(submission)}
+                />
               ) : null}
               {message.candidates && message.candidates.length > 0 ? (
                 <div className="mt-3 space-y-2" aria-label="可選的歷史提問">
