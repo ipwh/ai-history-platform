@@ -2140,7 +2140,7 @@ export function findTutorGrounding(
         excluded: [],
       };
       const anchoredAttempt = retrieveWithShortTerms(preferredGuess, scratchAudit);
-      if (anchoredAttempt.passages.length > 0) {
+      if (anchoredAttempt.passages.length > 0 || preferredTopicHasSharedScopedTerm) {
         guess = preferredGuess;
         audit.topicInference = { source: "preferred-topic" };
         audit.searchedTopicIds = undefined;
