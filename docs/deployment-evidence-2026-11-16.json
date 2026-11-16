@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-11-16T02:11:40.844Z",
+  "notice": "記錄學伴核心知識卡及自我檢查功能的正式部署證據；未修改教材或題庫資料。",
+  "target": {
+    "provider": "Google Cloud Run",
+    "project": "pccss-ai-history",
+    "region": "asia-east2",
+    "service": "history-self-study",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00108-rrs",
+    "image": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study@sha256:f63501983ac2d3df204835b3860defa3311c48229f5051681911992d226fa6d5",
+    "revisionCreatedAt": "2026-11-16T02:07:17.740305Z",
+    "traffic": "100%"
+  },
+  "build": {
+    "provider": "Google Cloud Build",
+    "buildId": "8d2ff6ec-f9f1-45ef-b507-4e7def1a78bf",
+    "status": "SUCCESS",
+    "startedAt": "2026-11-16T01:58:20Z",
+    "finishedAt": "2026-11-16T02:07:40.506702Z",
+    "imageDigest": "sha256:f63501983ac2d3df204835b3860defa3311c48229f5051681911992d226fa6d5"
+  },
+  "source": {
+    "branch": "main",
+    "commit": "e2dbf6ac73df00cd5efff68fbf8274e35cb21bbe",
+    "commitSubject": "fix(tutor): preserve selected topic for shared terms",
+    "deploymentTrigger": "history-main-push"
+  },
+  "verification": {
+    "githubActions": {
+      "runId": "43789329609",
+      "status": "success",
+      "unitAndIntegrationTests": "175 files; 2706 passed; 4 skipped",
+      "typecheck": "success",
+      "lint": "success",
+      "build": "success",
+      "staffPagesDynamicCheck": "success",
+      "contentDatabasePlaywrightJob": "skipped"
+    },
+    "production": {
+      "health": {
+        "ok": true,
+        "database": "sqlite / ok",
+        "authEnabled": true,
+        "materials": {
+          "documents": 46,
+          "blocks": 26599,
+          "studentVisibleDocuments": 22
+        },
+        "persistence": {
+          "restore": "restored",
+          "lastSuccessAt": "2026-11-16T02:11:40.844Z",
+          "lastError": null
+        }
+      },
+      "tutorUi": "已重新載入 /tutor，確認顯示「先看核心知識，再看線索、依據和自我檢查」。"
+    }
+  }
+}
