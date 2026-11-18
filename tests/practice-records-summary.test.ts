@@ -86,6 +86,7 @@ describe("練習記錄統計不受清單上限影響", () => {
     expect(summary.graded).toBe(summary.correct + summary.wrong);
     expect(summary.graded).toBeGreaterThan(limited.length);
   });
+
 });
 
 describe("答對題數及答對百分比篩選", () => {
@@ -141,5 +142,47 @@ describe("答對題數及答對百分比篩選", () => {
     });
     expect(list).toHaveLength(2);
     expect(summary.sessions).toBe(2);
+  });
+});
+
+describe("練習紀錄類型", () => {
+  it("保留一般練習與重溫錯題的類型及來源", async () => {
+    const standard = await practice.createPractice({
+      learnerId: LEARNER,
+      topicId: "topic-5",
+      sectionIds: [SECTION],
+      questionTypes: ["mc"],
+      difficulty: "basic",
+      questionCount: 1,
+      mode: "standard",
+      sourceSessionId: null,
+    });
+    const standardQuestion = repository.getSessionQuestions(standard.session.id)[0]!;
+    await practice.submitAnswer(
+      standard.session.id,
+      LEARNER,
+      standardQuestion.id,
+      "刻意答錯",
+    );
+    const retry = await practice.createPractice({
+      learnerId: LEARNER,
+      topicId: "topic-5",
+      sectionIds: [SECTION],
+      questionTypes: ["mc"],
+      difficulty: "basic",
+      questionCount: 1,
+      mode: "wrong-only",
+      sourceSessionId: standard.session.id,
+    });
+    const records = recordsService.listPracticeRecords({ learnerId: LEARNER });
+    const standardRecord = records.find((record) => record.sessionId === standard.session.id);
+    const retryRecord = records.find((record) => record.sessionId === retry.session.id);
+
+    expect(standardRecord?.modeLabel).toBe("一般練習");
+    expect(standardRecord?.originLabel).toBe("內建示範");
+    expect(retryRecord?.mode).toBe("wrong-only");
+    expect(retryRecord?.modeLabel).toBe("重溫錯題");
+    expect(retryRecord?.originLabel).toBe("沿用先前錯題");
+    expect(retryRecord?.sourceSessionId).toBe(standard.session.id);
   });
 });

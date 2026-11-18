@@ -101,11 +101,13 @@ function sessionHeading(record: PracticeRecordSession): string {
   const details = [record.learnerClassName, record.learnerStudentNumber]
     .filter((value): value is string => Boolean(value))
     .join("・");
-  return `${learner}${details ? `（${details}）` : ""}　${hongKongDateTime(record.createdAt)}　${record.topicTitle}`;
+  return `${learner}${details ? `（${details}）` : ""}　${hongKongDateTime(record.createdAt)}　${record.topicTitle}　${record.modeLabel}`;
 }
 
 function sessionMeta(record: PracticeRecordSession): string {
   const parts = [
+    `練習類型：${record.modeLabel}`,
+    `題目來源：${record.originLabel}`,
     `題型：${record.questionTypeLabels.join("、")}`,
     `難度：${record.difficultyLabel}`,
     `題數：${record.totalQuestions}`,
@@ -170,6 +172,8 @@ function buildXlsxBody(records: PracticeRecordSession[], options: RecordsExportO
     "電郵",
     "學習者 ID",
     "課題",
+    "練習類型",
+    "題目來源",
     "題型",
     "難度",
     "題數",
@@ -187,6 +191,8 @@ function buildXlsxBody(records: PracticeRecordSession[], options: RecordsExportO
     record.learnerEmail ?? "",
     record.learnerId,
     record.topicTitle,
+    record.modeLabel,
+    record.originLabel,
     record.questionTypeLabels.join("、"),
     record.difficultyLabel,
     record.totalQuestions,
@@ -216,13 +222,13 @@ function buildXlsxBody(records: PracticeRecordSession[], options: RecordsExportO
         name: "練習概況",
         columns: overviewColumns,
         rows: overviewRows,
-        widths: [20, 12, 8, 8, 26, 28, 34, 16, 8, 8, 8, 8, 8, 12, 24],
+        widths: [20, 12, 8, 8, 26, 28, 34, 12, 14, 16, 8, 8, 8, 8, 8, 12, 24],
       },
       {
         name: "逐題記錄",
         columns: [...RECORDS_ROW_HEADER],
         rows: detailRows,
-        widths: [20, 12, 8, 8, 26, 28, 34, 20, 8, 8, 60, 30, 30, 12, 24],
+        widths: [20, 12, 8, 8, 26, 28, 34, 12, 14, 20, 8, 8, 60, 30, 30, 12, 24],
       },
     ],
     { title: "學生練習記錄" },

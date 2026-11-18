@@ -854,6 +854,10 @@ export const AI_VERDICT_LABELS: Record<AiGrading["verdict"], string> = {
 
 export const practiceModeSchema = z.enum(["standard", "wrong-only"]);
 export type PracticeMode = z.infer<typeof practiceModeSchema>;
+export const PRACTICE_MODE_LABELS: Record<PracticeMode, string> = {
+  standard: "一般練習",
+  "wrong-only": "重溫錯題",
+};
 
 /**
  * 出題方式：
@@ -1019,6 +1023,11 @@ export interface PracticeRecordSession {
   topicTitle: string;
   createdAt: string;
   completedAt: string | null;
+  mode: PracticeMode;
+  modeLabel: string;
+  sourceSessionId: string | null;
+  origin: PracticeSession["origin"];
+  originLabel: string;
   questionTypes: QuestionType[];
   questionTypeLabels: string[];
   difficulty: Difficulty;

@@ -6,6 +6,7 @@
  */
 import {
   DIFFICULTY_LABELS,
+  PRACTICE_MODE_LABELS,
   QUESTION_TYPE_LABELS,
   type PracticeRecordLearner,
   type PracticeRecordQuestion,
@@ -24,6 +25,12 @@ import {
 } from "../repositories/practice";
 
 export type { PracticeRecordQuestion, PracticeRecordSession };
+
+const PRACTICE_ORIGIN_LABELS: Record<PracticeRecordSession["origin"], string> = {
+  bank: "題庫題目",
+  generated: "AI 即時生成",
+  demo: "內建示範",
+};
 
 export interface PracticeRecordFilter extends SessionRecordFilter {
   className?: string | null;
@@ -127,7 +134,8 @@ export function learnerLabel(learnerId: string): string {
   if (learnerId.startsWith("school:")) return learnerId.slice("school:".length);
   if (learnerId.startsWith("admin:")) return `${learnerId.slice("admin:".length)}（管理員測試）`;
   if (learnerId.startsWith("teacher:")) return `${learnerId.slice("teacher:".length)}（教師測試）`;
-  return `匿名 ${learnerId.slice(0, 8)}`;}
+  return `匿名 ${learnerId.slice(0, 8)}`;
+}
 
 function buildSessionRecord(
   session: ReturnType<typeof listSessionsForRecords>[number],
@@ -178,6 +186,14 @@ function buildSessionRecord(
     topicTitle,
     createdAt: session.createdAt,
     completedAt: session.completedAt,
+    mode: session.mode,
+    modeLabel: PRACTICE_MODE_LABELS[session.mode],
+    sourceSessionId: session.sourceSessionId,
+    origin: session.origin,
+    originLabel:
+      session.mode === "wrong-only"
+        ? "沿用先前錯題"
+        : PRACTICE_ORIGIN_LABELS[session.origin],
     questionTypes: session.questionTypes,
     questionTypeLabels: session.questionTypes.map((type) => QUESTION_TYPE_LABELS[type]),
     difficulty: session.difficulty,
@@ -321,6 +337,8 @@ export const RECORDS_ROW_HEADER = [
   "電郵",
   "學習者 ID",
   "課題",
+  "練習類型",
+  "題目來源",
   "分節",
   "題型",
   "難度",
@@ -341,6 +359,8 @@ export function recordRowValues(record: PracticeRecordSession): (string | null)[
     record.learnerEmail,
     record.learnerId,
     record.topicTitle,
+    record.modeLabel,
+    record.originLabel,
     row.sectionTitle,
     row.questionTypeLabel,
     record.difficultyLabel,

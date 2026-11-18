@@ -264,6 +264,7 @@ const HISTORICAL_PROPER_TERMS: readonly string[] = [
  */
 const HISTORICAL_EVERYDAY_TERMS: readonly string[] = [
   "教會",
+  "天主教",
   "教皇",
   "修道院",
   "工廠",

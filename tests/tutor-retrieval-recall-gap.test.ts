@@ -17,7 +17,11 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { findTutorGrounding, loadTutorCurriculumIndex } from "@/server/services/tutor-grounding";
+import {
+  extractQueryTerms,
+  findTutorGrounding,
+  loadTutorCurriculumIndex,
+} from "@/server/services/tutor-grounding";
 import { normalizeTutorQuery } from "@/server/services/tutor-query";
 
 const curriculum = loadTutorCurriculumIndex();
@@ -77,5 +81,52 @@ describe.skipIf(!hasContentDatabase)("檢索召回缺口修正（Sprint 34）", 
     for (const query of ["火箭推進器的燃燒溫度是多少？", "板球比賽的規則有幾條？"]) {
       expect(ground(query).status).toBe("not-covered");
     }
+  });
+
+  it("匿名學生事件：中古時代以前的藝術問法會召回古典文明教材", () => {
+    const queries = [
+      "中古時期前的雕塑和建築的風格",
+      "中古时前的建築和繪畫风格",
+    ];
+    for (const query of queries) {
+      const grounding = ground(query);
+      expect(grounding.status).toBe("grounded");
+      expect(grounding.topicId).toBe("topic-2");
+    }
+  });
+
+  it("匿名學生事件：科學領域與天主教問法會召回科學革命教材", () => {
+    const grounding = ground(
+      "为什么那么多聪明人出现，开始在科学领域有重大成就，罗马天主教不会阻止吗",
+    );
+    expect(grounding.status).toBe("grounded");
+    expect(grounding.topicId).toBe("topic-5");
+  });
+});
+
+describe("匿名學生事件的召回詞展開", () => {
+  it("只將「中古時前」映射至古典文明，不把一般中古提問改寫", () => {
+    const beforeMiddleAges = extractQueryTerms("中古時前的雕塑和建築");
+    expect(beforeMiddleAges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ term: "古代" }),
+        expect.objectContaining({ term: "古典文明" }),
+      ]),
+    );
+
+    const middleAges = extractQueryTerms("中古時期的封建制度");
+    expect(middleAges).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ term: "古典文明" })]),
+    );
+  });
+
+  it("科學領域及天主教補上課程用語", () => {
+    const terms = extractQueryTerms("科學領域與羅馬天主教的關係");
+    expect(terms).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ term: "科學革命" }),
+        expect.objectContaining({ term: "羅馬天主教會" }),
+      ]),
+    );
   });
 });

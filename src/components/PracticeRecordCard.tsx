@@ -97,6 +97,17 @@ export function PracticeRecordCard({
         ) : null}
         <span className="font-semibold">{formatDateTime(record.createdAt)}</span>
         <span>{topicLabel ?? record.topicTitle}</span>
+        <span
+          className={record.mode === "wrong-only" ? "badge badge-warning" : "badge badge-accent"}
+          title={
+            record.mode === "wrong-only"
+              ? "這次練習只包含學生先前答錯或標記需重溫的題目。"
+              : "這次是學生按所選設定建立的一般練習。"
+          }
+        >
+          {record.modeLabel}
+        </span>
+        <span className="badge">{record.originLabel}</span>
         {record.completedAt === null ? (
           <span
             className="badge badge-warning"

@@ -32,6 +32,11 @@ function makeRecord(overrides: Partial<PracticeRecordSession> = {}): PracticeRec
     topicTitle: "高中・主題甲｜課題1：香港的現代化與蛻變",
     createdAt: "2026-10-21T06:40:42.068Z",
     completedAt: "2026-10-21T06:45:00.000Z",
+    mode: "standard",
+    modeLabel: "一般練習",
+    sourceSessionId: null,
+    origin: "generated",
+    originLabel: "AI 即時生成",
     questionTypes: ["mc", "fill"],
     questionTypeLabels: ["選擇題", "填充題"],
     difficulty: "basic",
@@ -129,6 +134,8 @@ describe("匯出格式", () => {
     expect(result.filename).toBe("practice-records-2026-10-22.csv");
     const text = result.body.toString("utf8");
     expect(text.startsWith("\uFEFF作答日期,")).toBe(true);
+    expect(text).toContain("練習類型,題目來源");
+    expect(text).toContain("一般練習,AI 即時生成");
     expect(text).toContain("'=1+1");
   });
 
@@ -143,6 +150,20 @@ describe("匯出格式", () => {
     });
     const result = await buildRecordsExport([record], { format: "csv" });
     expect(result.body.toString("utf8")).toContain("答錯（待教師覆核）");
+  });
+
+  it("重溫錯題會以獨立類型匯出，並保留來源練習關聯", async () => {
+    const record = makeRecord({
+      sessionId: "sess_retry",
+      mode: "wrong-only",
+      modeLabel: "重溫錯題",
+      sourceSessionId: "sess_1",
+      originLabel: "沿用先前錯題",
+    });
+    const result = await buildRecordsExport([record], { format: "docx" });
+    const files = await unzip(result.body);
+    expect(files["word/document.xml"]).toContain("重溫錯題");
+    expect(files["word/document.xml"]).toContain("沿用先前錯題");
   });
 });
 
