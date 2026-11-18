@@ -59,6 +59,7 @@ const nextConfig: NextConfig = {
    */
   experimental: {
     mcpServer: false,
+    agentUpgrade: "security",
   },
   /**
    * 本網站的頁面及 API 每次請求都會讀取本機 SQLite 資料庫，屬於「完全動態」的應用，
