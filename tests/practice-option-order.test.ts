@@ -66,6 +66,12 @@ const BANK_QUESTIONS = [
     label: "Ｄ",
     options: ["寅城", "卯城", "辰城", "巳城"],
   },
+  {
+    id: "q-opt-order-labelled",
+    correctIndex: 2,
+    label: "位置標籤",
+    options: ["甲城", "乙城", "丙城", "丁城"],
+  },
 ] as const;
 
 function insertMcq(entry: (typeof BANK_QUESTIONS)[number]): void {
@@ -79,7 +85,10 @@ function insertMcq(entry: (typeof BANK_QUESTIONS)[number]): void {
     options: [...entry.options],
     correctAnswer: entry.options[entry.correctIndex],
     acceptedAnswers: [],
-    explanation: "測試用解釋：這題只用來驗證選項次序及評分，不是歷史題目。",
+    explanation:
+      entry.id === "q-opt-order-labelled"
+        ? "選項B錯在把乙城當作正確答案，選項D亦不符合題意。"
+        : "測試用解釋：這題只用來驗證選項次序及評分，不是歷史題目。",
     knowledgePoint: "測試",
     sourceExcerpt: `（合成測試題${entry.label}）${entry.options.join("、")}`,
     sourceLocation: "測試",
@@ -119,7 +128,7 @@ describe("選項次序與評分", () => {
       sectionIds: [SECTION],
       questionTypes: ["mc"],
       difficulty: "basic",
-      questionCount: 4,
+      questionCount: 5,
       mode: "standard",
       sourceSessionId: null,
     });
@@ -141,6 +150,9 @@ describe("選項次序與評分", () => {
       expect(Object.hasOwn(presented!, "correctAnswer")).toBe(false);
       expect(Object.hasOwn(presented!, "explanation")).toBe(false);
     }
+    expect(
+      sessionQuestions.find((question) => question.id === "q-opt-order-labelled")?.options,
+    ).toEqual(["甲城", "乙城", "丙城", "丁城"]);
 
     // 2. 不論正確答案此刻在哪個位置，以答案文字提交都必須正確
     for (const entry of BANK_QUESTIONS) {
@@ -157,7 +169,7 @@ describe("選項次序與評分", () => {
       sectionIds: [SECTION],
       questionTypes: ["mc"],
       difficulty: "basic",
-      questionCount: 4,
+      questionCount: 5,
       mode: "standard",
       sourceSessionId: null,
     });
@@ -179,7 +191,7 @@ describe("選項次序與評分", () => {
       sectionIds: [SECTION],
       questionTypes: ["mc"],
       difficulty: "basic",
-      questionCount: 4,
+      questionCount: 5,
       mode: "standard",
       sourceSessionId: null,
     });
@@ -199,7 +211,7 @@ describe("選項次序與評分", () => {
       sectionIds: [SECTION],
       questionTypes: ["mc"],
       difficulty: "basic",
-      questionCount: 4,
+      questionCount: 5,
       mode: "standard",
       sourceSessionId: null,
     });
@@ -220,7 +232,7 @@ describe("選項次序與評分", () => {
       sectionIds: [SECTION],
       questionTypes: ["mc"],
       difficulty: "basic",
-      questionCount: 4,
+      questionCount: 5,
       mode: "standard",
       sourceSessionId: null,
     });
@@ -234,7 +246,7 @@ describe("選項次序與評分", () => {
       sectionIds: [SECTION],
       questionTypes: ["mc"],
       difficulty: "basic",
-      questionCount: 4,
+      questionCount: 5,
       mode: "wrong-only",
       sourceSessionId: first.session.id,
     });

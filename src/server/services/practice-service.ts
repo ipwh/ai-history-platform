@@ -104,12 +104,26 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 /**
+ * 位置標籤會隨選項次序改變而失效；舊題目可能仍使用這種寫法。
+ * 新題目則由出題提示禁止使用位置標籤。
+ */
+function explanationUsesOptionLabels(explanation: string): boolean {
+  return /(?:選項\s*[A-DＡ-Ｄ]|[A-DＡ-Ｄ]\s*選項)/i.test(explanation);
+}
+
+/**
  * 打亂選擇題的選項次序。
  * 題庫及 AI 生成都習慣把正確答案放在第一個選項，若沿用原本次序，
  * 學生每次選 A 就會答對大部分題目。標準答案以文字儲存，打亂選項不影響評分。
  */
 function shuffleQuestionOptions(question: Question): Question {
-  if (question.questionType !== "mc" || question.options.length < 2) return question;
+  if (
+    question.questionType !== "mc" ||
+    question.options.length < 2 ||
+    explanationUsesOptionLabels(question.explanation)
+  ) {
+    return question;
+  }
   return { ...question, options: shuffle(question.options) };
 }
 

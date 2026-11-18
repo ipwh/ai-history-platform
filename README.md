@@ -364,6 +364,7 @@ npm run publish:senior
 - **粵語追問與代詞**：有有效上文時，「天皇係咩角色？」「算唔算成功？」「佢有咩影響？」沿用上文課題；沒有上文時只會澄清，不猜對象。
 - **深度調整**：因果判斷（「是否主要原因」）、`significance`、`Was X a failure?`、`historians disagree`、「算唔算成功？」等由 `advanced` 升為 `challenge`（需判斷準則及反駁），避免把所有分析題都當成同一種結構。
 - **評估文件**：[docs/tutor-answer-quality-policy.md](docs/tutor-answer-quality-policy.md)（四個狀態、深度規則、35 類提問、學生人物設定、15 項 0–4 分評分表、自動與人手覆核分工、限制）；教師逐題覆核流程見 [docs/tutor-teacher-review-process.md](docs/tutor-teacher-review-process.md)。
+- **最新學生模擬（Sprint 35）**：[docs/sprint-35-report-2026-11-18.md](docs/sprint-35-report-2026-11-18.md)：37 個學伴回歸測試檔、1,018 項測試及 12 案例本機 mock self-test 全數通過；沒有執行付費 live evaluation，真實模型回答仍須教師覆核。
 
 **Sprint 30 追加（2026-11-07）**：
 

@@ -85,6 +85,10 @@ npx tsx scripts/tutor-live-eval.ts --apply --self-test --resume "$env:TEMP\selft
 
 ## 4. 分層樣本
 
+2026-11-18 Sprint 35 已完成 12 案例本機 mock self-test（12／12、0 重試、0 模型呼叫）。
+此結果只驗證評估引擎及案例契約；本次沒有新的付費 live evaluation，真實回答仍須明示授權
+及教師覆核。完整學生模擬結果見 [Sprint 35 報告](sprint-35-report-2026-11-18.md)。
+
 固定資料集：`tests/fixtures/tutor-live-eval-dataset.ts`（12 條，合成問題）。覆蓋：
 
 | 類別 | 案例 |
