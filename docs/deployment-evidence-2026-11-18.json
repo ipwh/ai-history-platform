@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-18",
+  "commit": "6a2c63138a87f061f7013eacb1f5273aeb3262cf",
+  "subject": "feat: add production usage reports and tutor recall fixes",
+  "repository": "ipwh/ai-history-platform",
+  "branch": "main",
+  "ci": {
+    "runId": 44206318425,
+    "url": "https://github.com/ipwh/ai-history-platform/actions/runs/44206318425",
+    "conclusion": "success"
+  },
+  "cloudBuild": {
+    "id": "e6fa758c-3139-4c8a-819c-e1597ea824ad",
+    "project": "pccss-ai-history",
+    "status": "SUCCESS",
+    "createdAt": "2026-11-18T00:15:24.979765Z",
+    "finishedAt": "2026-11-18T00:24:24.602812Z",
+    "image": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:e6fa758c-3139-4c8a-819c-e1597ea824ad"
+  },
+  "cloudRun": {
+    "service": "history-self-study",
+    "region": "asia-east2",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00110-4ms",
+    "trafficPercent": 100
+  },
+  "verification": {
+    "healthStatus": 200,
+    "healthOk": true,
+    "database": {
+      "driver": "sqlite",
+      "status": "ok"
+    },
+    "llmConfigured": true,
+    "demoMode": false,
+    "materials": {
+      "documents": 46,
+      "blocks": 26599,
+      "studentVisibleDocuments": 22
+    },
+    "persistence": {
+      "backupEnabled": true,
+      "restore": "restored",
+      "lastSuccessAt": "2026-11-18T00:25:15.483Z",
+      "lastError": null,
+      "backupsUploaded": 1
+    }
+  },
+  "localValidation": {
+    "tutorTestFiles": 37,
+    "tutorTestsPassed": 1014,
+    "fullTestFilesPassed": 176,
+    "fullTestsPassed": 2715,
+    "fullTestsSkipped": 4,
+    "typecheck": "passed",
+    "lintErrors": 0,
+    "lintWarnings": 1,
+    "lintWarning": "pre-existing unused import in scripts/verify-questionbank-sync.ts",
+    "releaseGate": "READY WITH LIMITATIONS",
+    "localBuild": "first build compiled and generated routes, then Next security reminder stopped it; a later retry was blocked by Microsoft OneDrive holding .next/turbopack. Cloud Build completed the authoritative Linux production build successfully."
+  },
+  "tutorSimulation": {
+    "productionEventWindowDays": 30,
+    "anonymousEvents": 6,
+    "newGapEventsRepaired": 3,
+    "matrixCases": 83,
+    "liveModelCalls": 0,
+    "remainingHumanReview": "History content, completeness, pedagogical suitability and language quality remain pending-human-review; deterministic repair does not constitute teacher approval."
+  }
+}

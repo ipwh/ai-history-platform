@@ -18,6 +18,8 @@
 
 ## [未發布] — 2026-11-18（二十三）：正式匿名提問模擬、學伴召回修復及 Copilot 使用統計
 
+**狀態**：已部署。功能提交 `6a2c631` 的 GitHub Actions CI（run `44206318425`）及 Cloud Build（`e6fa758c-3139-4c8a-819c-e1597ea824ad`）均成功；Cloud Run revision `history-self-study-00110-4ms` 承接 100% 流量，正式 `/api/health` 回應 200、`database=sqlite/ok`。詳見 [deployment-evidence-2026-11-18.json](docs/deployment-evidence-2026-11-18.json)。
+
 ### 新增
 
 - **Copilot 練習使用統計**：新增 `npm run report:usage`，以唯讀方式輸出全校／班別／學生／課題／每日的練習次數、作答及準確率；`--production` 從正式備份 bucket 下載最新 SQLite 快照至暫存目錄，分析後自動刪除，避免用本機舊快照誤判。
