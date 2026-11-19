@@ -47,6 +47,7 @@
     "golden:export": "tsx scripts/export-golden-fixtures.ts",
     "db:migrate": "tsx scripts/db-migrate.ts",
     "report:usage": "tsx scripts/report-platform-usage.ts",
+    "export:grade-daily": "tsx scripts/export-grade-practice-daily.ts",
     "release:gate": "tsx scripts/release-gate.ts",
     "review:adjudication": "tsx scripts/build-teacher-adjudication.ts",
     "review:content-queue": "tsx scripts/build-content-quality-queue.ts",

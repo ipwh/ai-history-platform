@@ -16,6 +16,30 @@
 
 ---
 
+## [未發布] — 2026-11-19（二十四）：中四每日作答自動匯出（Excel）及排程
+
+### 新增
+
+- **`npm run export:grade-daily`**：匯出指定級別（預設中四）逐位學生的一般練習作答情況為 Excel，含「說明」「總表」「班別統計」及 4A–4D 各分表；當日沒有練習的學生亦列出 0 次，方便核對未提交名單。口徑與教師端一致：**只計一般練習，重溫錯題不計入**練習次數、作答題數及準確率。
+- **Windows 工作排程**：[schedule-grade-practice-export.ps1](scripts/schedule-grade-practice-export.ps1) 可註冊每日固定時間（預設 07:45）執行並寫入 OneDrive 資料夾；[run-grade-practice-export.ps1](scripts/run-grade-practice-export.ps1) 負責執行及寫入日誌（`logs\export-<日期>.log`），排程的「上次執行結果」可反映成敗。
+- **資料來源**：預設從正式備份 bucket 下載最新 SQLite 快照到暫存目錄，分析及寫檔後刪除；不修改任何練習、作答或名冊紀錄。
+
+### 修正
+
+- **排程誤報失敗**：以 `$ErrorActionPreference = "Stop"` 呼叫原生指令時，gcloud／npm 寫到 stderr 的進度訊息會被當成終止錯誤，令成功的匯出回報失敗。改為在該呼叫期間使用 `Continue` 並以離開碼判斷。
+- **排程日誌中文亂碼**：非互動執行時主控台以 ANSI／OEM 解讀原生輸出；runner 固定使用 UTF-8，日誌可直接閱讀。
+
+### 驗證
+
+- [tests/grade-practice-export.test.ts](tests/grade-practice-export.test.ts)：重溫錯題完全排除、按班別及班號排序、只統計指定香港日期、未列入名冊者不出現、香港日期不受伺服器時區影響。
+- 以正式快照實測：中四 135 位名冊學生中 1 位當日有一般練習，Excel 工作表為「說明／總表／班別統計／4A／4B／4C／4D」；再由工作排程器實際觸發，結果碼 `0`、檔案更新、日誌正常。
+
+### 已知限制
+
+- 排程依賴使用者登入的 Windows 工作排程：電腦關機或未登入不會執行（開機後補跑一次）；`gcloud` 憑證過期時會失敗並記錄於日誌，需先 `gcloud auth login`。完全不依賴本機的 Cloud Scheduler／GitHub Actions 方案**未實作**。
+
+---
+
 ## [未發布] — 2026-11-18（二十三）：正式匿名提問模擬、學伴召回修復及 Copilot 使用統計
 
 **狀態**：已部署。功能提交 `6a2c631` 的 GitHub Actions CI（run `44206318425`）及 Cloud Build（`e6fa758c-3139-4c8a-819c-e1597ea824ad`）均成功；Cloud Run revision `history-self-study-00110-4ms` 承接 100% 流量，正式 `/api/health` 回應 200、`database=sqlite/ok`。詳見 [deployment-evidence-2026-11-18.json](docs/deployment-evidence-2026-11-18.json)。

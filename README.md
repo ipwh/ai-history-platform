@@ -89,6 +89,7 @@ npm run dev          # 啟動開發伺服器
 | `npm run golden:export` | 匯出教師已核准的 golden fixture 至 `golden-questions.v2.json`；`-- --check` **只驗證**（不寫檔、不寫 DB、不 migration），schema 不足時 exit 2 |
 | `npm run db:migrate` | **明確**套用資料庫 migration（必須 `-- --database <path>`；沒有預設值，不會誤對 `data/app.db` 執行） |
 | `npm run report:usage` | **唯讀**統計練習使用情況：總數、學生／班別／課題、一般練習／重溫錯題、題目來源、準確率、每日趨勢及重溫成效；預設讀本機 `data/app.db`，加 `-- --production` 會從正式環境備份 bucket 下載最新快照至暫存目錄並在分析後刪除；加 `--json` 可讓 Copilot 直接分析，`--from`／`--to` 使用香港日期 `YYYY-MM-DD` |
+| `npm run export:grade-daily` | **唯讀**匯出某一級別的逐位學生一般練習作答情況為 Excel（總表、班別統計、每班分表；**不計重溫錯題**）：`-- --form 4 --date 2026-11-19 --out "D:\匯出"`；預設由正式備份下載最新快照，`--database <快照>` 可改用本機檔案，`--from`／`--to` 可匯出日期範圍 |
 | `npm run golden:eval` | 唯讀：驗證 golden dataset 並執行評估；approved fixture 為 0 時輸出 `INSUFFICIENT_EVIDENCE` |
 | `npm run release:gate` | 唯讀發布閘門：綜合隔離、可作答性、來源、解釋、元數據、教師裁決、審核來源、結構裁決、provenance 風險、使用授權、Golden 核准、測試及部署證據，輸出 `PASS`／`FAIL`／`WARN`／`POLICY_PENDING`／`INSUFFICIENT_EVIDENCE` 及 `READY`／`READY WITH LIMITATIONS`／`NOT READY` |
 | `npm run review:adjudication` | 唯讀：由修復來源報告產生 18 題逐題裁決套件（原始 vs 現行、空格位置及答案次序、版本與紀錄來源、待填決定欄） |
@@ -121,6 +122,22 @@ node scripts/e2e-flow.mjs --start     # 或先 npm start，再另開視窗執行
 > 單元測試及端對端共累積 1,376 個、10.2 GB）。單元測試已由 `tests/setup-uploads.ts` 自動改用
 > 暫存資料夾（見第十一節），端對端腳本則由執行者指定，例如
 > `APP_DATABASE_PATH=<暫存目錄>/app.db APP_UPLOADS_DIR=<暫存目錄>/uploads node scripts/e2e-flow.mjs --start`。
+
+### 4. 每日自動匯出某級別的作答情況（選用）
+
+教師需要每日核對某一級（例如中四）的逐位學生作答情況時，可註冊 Windows 工作排程，每日固定時間把 Excel 寫入 OneDrive 資料夾：
+
+```powershell
+./scripts/schedule-grade-practice-export.ps1 `
+    -OutDir "$env:USERPROFILE\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\AI\學習記錄匯出" `
+    -Form 4 -Time 07:45
+```
+
+- 檔案：`中四_每日作答_<日期>.xlsx`，含「說明」「總表」「班別統計」及 4A–4D 各一張工作表；當日沒有練習的學生亦會列出 0 次。
+- 口徑：只計**一般練習**，重溫錯題（`wrong-only`）不計入練習次數、作答題數及準確率；與教師端記錄一致。
+- 資料來源：預設下載正式環境最新備份快照（唯讀，分析後刪除暫存檔）；`--database` 可改用本機快照。
+- 日誌：`<OutDir>\logs\export-<日期>.log`；失敗時保留完整輸出。移除排程：`./scripts/schedule-grade-practice-export.ps1 -OutDir <資料夾> -Unregister`。
+- **限制（必須如實說明）**：依賴使用者登入的 Windows 工作排程，電腦關機或未登入時不會執行（開機後會補跑一次）；`gcloud` 憑證過期時會失敗並記錄於日誌，需先執行 `gcloud auth login`。如需完全不依賴本機，應改用 Cloud Scheduler 或 GitHub Actions 方案（未實作）。
 
 ---
 
