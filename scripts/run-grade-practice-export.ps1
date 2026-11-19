@@ -14,7 +14,10 @@
 param(
     [Parameter(Mandatory = $true)][string]$OutDir,
     [string]$Form = "4",
-    [string]$NodeExe = "npm.cmd"
+    [string]$NodeExe = "npm.cmd",
+    # 統計日期（YYYY-MM-DD）。預設為「前一日」：排程在早上 07:45 執行，
+    # 當日尚未有練習，匯出當日只會得到近乎空白的檔案。
+    [string]$Date = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -39,12 +42,16 @@ function Write-Log([string]$Text) {
 }
 
 Write-Log "開始匯出中${Form}每日作答情況 → $OutDir"
+if ([string]::IsNullOrWhiteSpace($Date)) {
+    $Date = (Get-Date).AddDays(-1).ToString("yyyy-MM-dd")
+}
+Write-Log "統計日期：$Date"
 Push-Location $RepoRoot
 try {
     # 原生指令（npm／gcloud）會把進度寫到 stderr；若保持 ErrorActionPreference=Stop，
     # PowerShell 會把每一行 stderr 當成終止錯誤，令成功的匯出被誤報為失敗。
     $ErrorActionPreference = "Continue"
-    $output = & $NodeExe run --silent export:grade-daily -- --form $Form --out $OutDir 2>&1
+    $output = & $NodeExe run --silent export:grade-daily -- --form $Form --date $Date --out $OutDir 2>&1
     $exitCode = $LASTEXITCODE
     $ErrorActionPreference = "Stop"
     foreach ($line in @($output)) { Write-Log "  $line" }
