@@ -20,9 +20,10 @@
 
 ### 新增
 
+- **免 `gcloud auth login` 的固定憑證**：新增專用服務帳戶 `history-export-reader`（只具備備份 bucket 的 `roles/storage.objectViewer`）及金鑰 `secrets\export-reader-service-account.json`（已列入 `.gitignore`）。排程改用[服務帳戶 JWT 直接下載 Cloud Storage 物件](scripts/lib/gcs-service-account.ts)，不需要任何互動登入，金鑰亦不會過期。
+- **電郵派發**：匯出後以附件寄出 Excel。SMTP 由[自建的極簡 SMTP 用戶端](scripts/lib/smtp-mail.ts)傳送（Node 內建模組，不新增依賴）：支援隱含 TLS（465）、STARTTLS（587／25）、`AUTH LOGIN`、中文主旨及附件檔名；伺服器未提供 STARTTLS 時**拒絕明文傳送**。設定放 `secrets\export-mail.env`（`EXPORT_SMTP_*`、`EXPORT_MAIL_FROM`、`EXPORT_EMAIL_TO`）。
 - **`npm run export:grade-daily`**：匯出指定級別（預設中四）逐位學生的一般練習作答情況為 Excel，含「說明」「總表」「班別統計」及 4A–4D 各分表；當日沒有練習的學生亦列出 0 次，方便核對未提交名單。口徑與教師端一致：**只計一般練習，重溫錯題不計入**練習次數、作答題數及準確率。
 - **Windows 工作排程**：[schedule-grade-practice-export.ps1](scripts/schedule-grade-practice-export.ps1) 可註冊每日固定時間（預設 07:45）執行並寫入 OneDrive 資料夾；[run-grade-practice-export.ps1](scripts/run-grade-practice-export.ps1) 負責執行及寫入日誌（`logs\export-<日期>.log`），排程的「上次執行結果」可反映成敗。
-- **資料來源**：預設從正式備份 bucket 下載最新 SQLite 快照到暫存目錄，分析及寫檔後刪除；不修改任何練習、作答或名冊紀錄。
 
 ### 修正
 
@@ -33,11 +34,15 @@
 ### 驗證
 
 - [tests/grade-practice-export.test.ts](tests/grade-practice-export.test.ts)：重溫錯題完全排除、按班別及班號排序、只統計指定香港日期、未列入名冊者不出現、香港日期不受伺服器時區影響。
-- 以正式快照實測：中四 135 位名冊學生中 1 位當日有一般練習，Excel 工作表為「說明／總表／班別統計／4A／4B／4C／4D」；再由工作排程器實際觸發，結果碼 `0`、檔案更新、日誌正常。
+- [tests/gcs-service-account.test.ts](tests/gcs-service-account.test.ts)：`gs://` 解析、JWT 以私鑰簽署且可被公鑰驗證、下載失敗回傳可行動訊息（HTTP 403 → 提示 `objectViewer`）、成功回傳原始位元組。
+- [tests/smtp-mail.test.ts](tests/smtp-mail.test.ts)：RFC 2047 中文標頭、multipart 附件、465／587 設定推導、缺少設定如實回報、以本機假 SMTP 伺服器完成 EHLO／MAIL／RCPT／DATA／QUIT、未提供 STARTTLS 時拒絕明文、拒絕非 ASCII 收件人。
+- 以服務帳戶金鑰實測匯出：**完全沒有呼叫 `gcloud`**，成功產生 2026-11-18 的中四檔案（135 位名冊學生、11 位有練習）。
 
 ### 已知限制
 
-- 排程依賴使用者登入的 Windows 工作排程：電腦關機或未登入不會執行（開機後補跑一次）；`gcloud` 憑證過期時會失敗並記錄於日誌，需先 `gcloud auth login`。完全不依賴本機的 Cloud Scheduler／GitHub Actions 方案**未實作**。
+- 排程依賴使用者登入的 Windows 工作排程：電腦關機或未登入不會執行（開機後補跑一次）。
+- SMTP 認證失敗、收件人被拒或伺服器要求 SMTPUTF8／OAuth2 時，排程會標示失敗並把伺服器回應寫入日誌（本用戶端不支援 XOAUTH2 及非 ASCII 收件人地址）。
+- 完全不依賴本機的 Cloud Scheduler／GitHub Actions 方案**未實作**。
 
 ---
 

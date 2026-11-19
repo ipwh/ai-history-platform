@@ -17,7 +17,13 @@ param(
     [string]$NodeExe = "npm.cmd",
     # 統計日期（YYYY-MM-DD）。預設為「前一日」：排程在早上 07:45 執行，
     # 當日尚未有練習，匯出當日只會得到近乎空白的檔案。
-    [string]$Date = ""
+    [string]$Date = "",
+    # 收件人（多個以分號或逗號分隔）。留空 = 使用 secrets\export-mail.env 的 EXPORT_EMAIL_TO。
+    [string]$EmailTo = "",
+    # 只寫本機檔案、不寄電郵（例如除錯）
+    [switch]$NoEmail,
+    # 沒有設定收件人時只警告而不失敗（預設：失敗，避免「以為已派發」）
+    [switch]$AllowNoEmail
 )
 
 $ErrorActionPreference = "Stop"
@@ -46,18 +52,35 @@ if ([string]::IsNullOrWhiteSpace($Date)) {
     $Date = (Get-Date).AddDays(-1).ToString("yyyy-MM-dd")
 }
 Write-Log "統計日期：$Date"
+
+$arguments = @("run", "--silent", "export:grade-daily", "--", "--form", $Form, "--date", $Date, "--out", $OutDir)
+if ($NoEmail) {
+    $arguments += "--no-email"
+} elseif (-not [string]::IsNullOrWhiteSpace($EmailTo)) {
+    $arguments += @("--email-to", $EmailTo)
+}
+
 Push-Location $RepoRoot
 try {
-    # 原生指令（npm／gcloud）會把進度寫到 stderr；若保持 ErrorActionPreference=Stop，
+    # 原生指令（npm）會把進度寫到 stderr；若保持 ErrorActionPreference=Stop，
     # PowerShell 會把每一行 stderr 當成終止錯誤，令成功的匯出被誤報為失敗。
     $ErrorActionPreference = "Continue"
-    $output = & $NodeExe run --silent export:grade-daily -- --form $Form --date $Date --out $OutDir 2>&1
+    $output = & $NodeExe @arguments 2>&1
     $exitCode = $LASTEXITCODE
     $ErrorActionPreference = "Stop"
     foreach ($line in @($output)) { Write-Log "  $line" }
     if ($exitCode -ne 0) {
-        Write-Log "失敗：exit=$exitCode"
+        Write-Log "失敗：exit=$exitCode（詳見上方輸出；常見原因：secrets\export-mail.env 未設定或 SMTP 認證失敗）"
         exit 1
+    }
+    $delivered = @($output | Where-Object { "$_" -match "已以電郵派發" }).Count -gt 0
+    if (-not $delivered -and -not $NoEmail) {
+        if ($AllowNoEmail) {
+            Write-Log "警告：未派發電郵（沒有設定收件人）。"
+        } else {
+            Write-Log "失敗：沒有派發電郵。請設定 secrets\export-mail.env 的 EXPORT_EMAIL_TO 及 EXPORT_SMTP_*，或明確使用 -NoEmail。"
+            exit 1
+        }
     }
     Write-Log "完成。"
     exit 0

@@ -6,8 +6,13 @@
  *   npm run export:grade-daily -- --form 4 --from 2026-11-16 --to 2026-11-19 --out <資料夾>
  *   npm run export:grade-daily -- --database <本機快照> --date 2026-11-19 --out <資料夾>
  *
- * 預設由正式環境備份 bucket 下載最新 SQLite 快照（`--production`）；分析及寫檔後即刪除暫存
- * 快照。只讀取資料庫，不會修改任何練習、作答或名冊紀錄。
+ * 預設由正式環境備份 bucket 以**服務帳戶金鑰**下載最新 SQLite 快照（不需要
+ * `gcloud auth login`）；分析及寫檔後即刪除暫存快照。加 `--use-gcloud` 只為診斷用途。
+ * 只讀取資料庫，不會修改任何練習、作答或名冊紀錄。
+ *
+ * 電郵派發（預設開啟）：收件人取自 `--email-to` 或 `secrets/export-mail.env` 的
+ * `EXPORT_EMAIL_TO`；SMTP 設定取自同一環境檔（`EXPORT_SMTP_*`、`EXPORT_MAIL_FROM`）。
+ * 兩者皆未設定時只寫本機檔案並如實說明，不會假裝已寄出。--no-email 可停用派發。
  *
  * 輸出：
  *   - 「總表」：全年級逐位學生（按班別、班號排序），當日沒有練習亦會列出 0 次；
@@ -30,8 +35,18 @@ import {
   hongKongDateTime,
   type GradePracticeRow,
 } from "../src/server/services/grade-practice-export";
+import { downloadGcsObject } from "./lib/gcs-service-account";
+import {
+  contentTypeFor,
+  loadEnvFile,
+  sendMail,
+  smtpConfigFromEnv,
+  type SmtpConfig,
+} from "./lib/smtp-mail";
 
 const PRODUCTION_BACKUP = "gs://pccss-ai-history-history-backup/history/data/app.db";
+const DEFAULT_KEY_FILE = path.join("secrets", "export-reader-service-account.json");
+const DEFAULT_ENV_FILE = path.join("secrets", "export-mail.env");
 
 function argument(name: string): string | null {
   const index = process.argv.indexOf(name);
@@ -103,22 +118,37 @@ async function main(): Promise<void> {
     ? path.resolve(argument("--database")!)
     : "";
 
+  /**
+   * 正式快照預設以服務帳戶金鑰下載（不需 `gcloud auth login`，憑證不會過期）。
+   * `--use-gcloud` 只為過渡或診斷之用而保留。
+   */
+  const useGcloud = process.argv.includes("--use-gcloud");
+  const keyFile = argument("--key-file")
+    ?? process.env.GOOGLE_APPLICATION_CREDENTIALS
+    ?? DEFAULT_KEY_FILE;
+  const gcsUri = argument("--gcs-uri") ?? PRODUCTION_BACKUP;
+
   if (useProduction) {
     temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "history-grade-export-"));
     const downloaded = path.join(temporaryDirectory, "app.db.download");
     databasePath = path.join(temporaryDirectory, "app.db");
-    const args =
-      process.platform === "win32"
-        ? [
-            "/d",
-            "/s",
-            "/c",
-            `gcloud.cmd storage cp --no-user-output-enabled ${PRODUCTION_BACKUP} ${downloaded}`,
-          ]
-        : ["storage", "cp", "--no-user-output-enabled", PRODUCTION_BACKUP, downloaded];
-    execFileSync(process.platform === "win32" ? "cmd.exe" : "gcloud", args, {
-      stdio: ["ignore", "ignore", "inherit"],
-    });
+    if (useGcloud) {
+      const args =
+        process.platform === "win32"
+          ? [
+              "/d",
+              "/s",
+              "/c",
+              `gcloud.cmd storage cp --no-user-output-enabled ${gcsUri} ${downloaded}`,
+            ]
+          : ["storage", "cp", "--no-user-output-enabled", gcsUri, downloaded];
+      execFileSync(process.platform === "win32" ? "cmd.exe" : "gcloud", args, {
+        stdio: ["ignore", "ignore", "inherit"],
+      });
+    } else {
+      fs.writeFileSync(downloaded, await downloadGcsObject(gcsUri, path.resolve(keyFile)));
+    }
+
     const payload = fs.readFileSync(downloaded);
     const gzip = payload[0] === 0x1f && payload[1] === 0x8b;
     fs.writeFileSync(databasePath, gzip ? gunzipSync(payload) : payload);
@@ -218,6 +248,69 @@ async function main(): Promise<void> {
     console.log(
       `已匯出 ${report.rows.length} 位學生（${report.totals.activeStudents} 位有練習）到 ${target}`,
     );
+
+    // ── 電郵派發 ────────────────────────────────────────────────────────
+    if (!process.argv.includes("--no-email")) {
+      const envFile = path.resolve(argument("--env-file") ?? DEFAULT_ENV_FILE);
+      const fileEnv = loadEnvFile(envFile);
+      const lookup = (name: string): string | undefined =>
+        process.env[name] ?? fileEnv[name] ?? undefined;
+
+      const recipients = (argument("--email-to") ?? lookup("EXPORT_EMAIL_TO") ?? "")
+        .split(/[;,]/)
+        .map((value) => value.trim())
+        .filter(Boolean);
+
+      if (recipients.length === 0) {
+        console.log("未設定收件人（--email-to 或 EXPORT_EMAIL_TO），已略過電郵派發。");
+      } else {
+        const resolved = smtpConfigFromEnv({
+          EXPORT_SMTP_HOST: lookup("EXPORT_SMTP_HOST"),
+          EXPORT_SMTP_PORT: lookup("EXPORT_SMTP_PORT"),
+          EXPORT_SMTP_SECURE: lookup("EXPORT_SMTP_SECURE"),
+          EXPORT_SMTP_USER: lookup("EXPORT_SMTP_USER"),
+          EXPORT_SMTP_PASSWORD: lookup("EXPORT_SMTP_PASSWORD"),
+          EXPORT_SMTP_ALLOW_PLAINTEXT: lookup("EXPORT_SMTP_ALLOW_PLAINTEXT"),
+          EXPORT_MAIL_FROM: lookup("EXPORT_MAIL_FROM"),
+        });
+        if ("error" in resolved) {
+          fail(`電郵設定不完整：${resolved.error}（設定檔：${envFile}）`);
+        }
+        const config: SmtpConfig = resolved.config;
+        const dateLabel = from === to ? from : `${from} 至 ${to}`;
+        const subject =
+          argument("--email-subject") ??
+          lookup("EXPORT_MAIL_SUBJECT")?.replaceAll("{date}", dateLabel) ??
+          `中${numeral} 每日作答情況（${dateLabel}）`;
+        const body = [
+          `中${numeral}每日作答情況（${dateLabel}，香港時間）`,
+          "",
+          `名冊學生：${report.totals.students} 位（當日有一般練習 ${report.totals.activeStudents} 位）`,
+          `一般練習：${report.totals.sessions} 次`,
+          `作答題數：${report.totals.answeredQuestions}／${report.totals.assignedQuestions} 題`,
+          `答對：${report.totals.correct} 題；答錯：${report.totals.wrong} 題`,
+          `準確率：${report.totals.accuracy === null ? "—" : `${(report.totals.accuracy * 100).toFixed(1)}%`}`,
+          "",
+          "各班主任／教師可按附件「總表」或各班分表核對。",
+          "口徑：只計一般練習；重溫錯題不計入練習次數、作答題數及準確率。",
+        ].join("\r\n");
+
+        await sendMail(config, {
+          from: lookup("EXPORT_MAIL_FROM")!,
+          to: recipients,
+          subject,
+          text: body,
+          attachments: [
+            {
+              filename: fileName,
+              contentType: contentTypeFor(fileName),
+              content: buffer,
+            },
+          ],
+        });
+        console.log(`已以電郵派發給 ${recipients.length} 位收件人（${subject}）。`);
+      }
+    }
   } finally {
     if (temporaryDirectory) fs.rmSync(temporaryDirectory, { recursive: true, force: true });
   }

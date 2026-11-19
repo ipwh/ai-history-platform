@@ -130,15 +130,18 @@ node scripts/e2e-flow.mjs --start     # 或先 npm start，再另開視窗執行
 ```powershell
 ./scripts/schedule-grade-practice-export.ps1 `
     -OutDir "$env:USERPROFILE\OneDrive - PO CHIU CATHOLIC SECONDARY SCHOOL\AI\學習記錄匯出" `
-    -Form 4 -Time 07:45
+    -Form 4 -Time 07:45 -EmailTo "ipwh@pochiu.edu.hk"
 ```
+
+郵件憑證（SMTP）只需設定一次：填寫 `secrets\export-mail.env`（已列入 `.gitignore`，不會提交）。
 
 - 檔案：`中四_每日作答_<日期>.xlsx`，含「說明」「總表」「班別統計」及 4A–4D 各一張工作表；當日沒有練習的學生亦會列出 0 次。
 - **統計日期為前一日**：排程在早上 07:45 執行，當日尚未有練習，因此預設匯出前一日的完整紀錄（手動執行時可用 `--date`／`--from`／`--to` 指定其他日期或範圍）。
+- **電郵派發**：同一份 Excel 以附件寄出。收件人及 SMTP 設定放 `secrets\export-mail.env`（已列入 `.gitignore`），首次使用請填寫 `EXPORT_SMTP_HOST`／`EXPORT_SMTP_PORT`／`EXPORT_SMTP_USER`／`EXPORT_SMTP_PASSWORD`／`EXPORT_MAIL_FROM`／`EXPORT_EMAIL_TO`。未設定收件人時排程會**失敗並記錄**，不會靜默當作已派發（除錯可用 `-NoEmail`）。
 - 口徑：只計**一般練習**，重溫錯題（`wrong-only`）不計入練習次數、作答題數及準確率；與教師端記錄一致。
-- 資料來源：預設下載正式環境最新備份快照（唯讀，分析後刪除暫存檔）；`--database` 可改用本機快照。
+- **憑證（不需要定期 `gcloud auth login`）**：正式備份以專用服務帳戶金鑰讀取（`secrets\export-reader-service-account.json`，只具該 bucket 的 `roles/storage.objectViewer`），金鑰不會過期；分析後刪除暫存快照。`--use-gcloud` 只保留作診斷。
 - 日誌：`<OutDir>\logs\export-<日期>.log`；失敗時保留完整輸出。移除排程：`./scripts/schedule-grade-practice-export.ps1 -OutDir <資料夾> -Unregister`。
-- **限制（必須如實說明）**：依賴使用者登入的 Windows 工作排程，電腦關機或未登入時不會執行（開機後會補跑一次）；`gcloud` 憑證過期時會失敗並記錄於日誌，需先執行 `gcloud auth login`。如需完全不依賴本機，應改用 Cloud Scheduler 或 GitHub Actions 方案（未實作）。
+- **限制（必須如實說明）**：依賴使用者登入的 Windows 工作排程，電腦關機或未登入時不會執行（開機後會補跑一次）；SMTP 認證失敗或收件人被拒時，排程會標示失敗並把伺服器回應寫入日誌。如需完全不依賴本機，應改用 Cloud Scheduler 或 GitHub Actions 方案（未實作）。
 
 ---
 
