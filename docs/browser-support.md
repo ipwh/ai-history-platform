@@ -160,7 +160,7 @@ Playwright 的 WebKit 專案（如已安裝瀏覽器）可驗證學生練習流�
 
 ### 7.1 官方文件依據
 
-`node_modules/next/dist/docs/03-architecture/supported-browsers.md`（Next.js 16.4.1）：
+`node_modules/next/dist/docs/03-architecture/supported-browsers.md`（Next.js 16.4.6，2026-11-20 升級後重新核對，內容與 16.4.1 相同）：
 
 - 「Next.js supports **modern browsers** with zero configuration: Chrome 111+、Edge 111+、
   Firefox 111+、Safari 16.4+」。

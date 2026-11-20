@@ -16,6 +16,18 @@
 
 ---
 
+## [未發布] — 2026-11-20（二十六）：Next.js 升級至 16.4.6（安全性）
+
+### 安全
+
+- **Next.js 16.4.1 → 16.4.6**（`next`、`eslint-config-next` 及 `package-lock.json`）：升級至官方修補版本，處理 16.4.1 已公布的安全通告。[next.config.ts](next.config.ts) 同時明確寫上 `experimental.agentUpgrade: "security"`（16.4 起的升級提醒政策，預設值本來就是 `security`；明寫是為了日後 `next dev`／`next build` 的提醒不會被靜默改動）。**沒有其他設定或程式碼改動**。
+- 驗證（全部在本機另外的 Git worktree 完成，該目錄不在 OneDrive 同步範圍，避開 OneDrive 鎖住 `.next/turbopack` 的既有問題）：
+  - `npm run build`（Next.js 16.4.6）成功，全部動態路由正常列出；
+  - 以 `next start` 啟動建置產物並請求 `/api/health`：回傳 `ok: true`、`database.status: ok`，啟動日誌顯示 `Next.js 16.4.6`、`✓ Ready`；
+  - `npm run typecheck`、`npm run lint` 通過（lint 只有 `scripts/verify-questionbank-sync.ts` 1 項既有警告）；
+  - `npm test`：合併回 `main` 並以本機真實教材資料庫（`data/app.db`）重跑，2,742 通過、4 略過（worktree 沒有教材資料庫時，依賴教材的 68 項會略過，符合 CI 情況）。
+- 瀏覽器基線沒有改變：16.4.6 的官方 `supported-browsers.md` 仍為 Chrome／Edge／Firefox 111+、Safari 16.4+，與 [docs/browser-support.md](docs/browser-support.md) 的結論一致（已更新引述的版本號）。
+
 ## [未發布] — 2026-11-20（二十五）：模擬學生使用學伴，修正「世界組織」類別詞的檢索缺口
 
 ### 新增
