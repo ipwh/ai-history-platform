@@ -35,8 +35,11 @@ import {
   hongKongDate,
   hongKongDateTime,
   hongKongWeekStart,
+  PRACTICE_TABLE_COLUMNS,
+  practiceTableRows,
   type GradePracticeRow,
 } from "../src/server/services/grade-practice-export";
+import { renderPracticeTableJpeg } from "./lib/table-image";
 import { downloadGcsObject } from "./lib/gcs-service-account";
 import {
   contentTypeFor,
@@ -260,6 +263,42 @@ async function main(): Promise<void> {
       `已匯出 ${report.rows.length} 位學生（${report.totals.activeStudents} 位有練習）到 ${target}`,
     );
 
+    // ── JPG（存檔及分享用；與電郵正文同一份表格）──────────────────────
+    const jpgName = fileName.replace(/\.xlsx$/, ".jpg");
+    const jpgPath = path.join(outDir, jpgName);
+    let jpgBuffer: Buffer | null = null;
+    let jpgError: string | null = null;
+    if (!process.argv.includes("--no-jpg")) {
+      try {
+        await renderPracticeTableJpeg(
+          {
+            title: `中${numeral} ${weekToDate ? "本週累計" : "每日作答情況"}`,
+            subtitle: `統計期間：${from === to ? from : `${from} 至 ${to}`}（香港時間）`,
+            summary: [
+              `名冊學生：${report.totals.students} 位`,
+              `有練習：${report.totals.activeStudents} 位`,
+              `練習次數：${report.totals.sessions} 次`,
+              `作答題數：${report.totals.answeredQuestions}／${report.totals.assignedQuestions} 題`,
+              `準確率：${report.totals.accuracy === null ? "—" : `${(report.totals.accuracy * 100).toFixed(2)}%`}`,
+            ],
+            columns: [...PRACTICE_TABLE_COLUMNS],
+            rows: practiceTableRows(report.rows),
+            notes: [
+              "只列有練習紀錄的學生；完整名冊（含 0 次）見附件 Excel。",
+              "口徑：只計一般練習；重溫錯題不計入練習次數、作答題數及準確率。",
+              `準確率低於 60% 以紅色顯示（共 ${report.rows.filter((row) => row.sessions > 0 && row.accuracy !== null && row.accuracy < 0.6).length} 位）。`,
+            ],
+          },
+          jpgPath,
+        );
+        jpgBuffer = fs.readFileSync(jpgPath);
+        console.log(`已產生 JPG：${jpgPath}`);
+      } catch (error) {
+        jpgError = error instanceof Error ? error.message : String(error);
+        console.error(`警告：${jpgError}（Excel 已產生，電郵仍會派發 Excel）`);
+      }
+    }
+
     // ── 電郵派發 ────────────────────────────────────────────────────────
     if (!process.argv.includes("--no-email")) {
       const envFile = path.resolve(argument("--env-file") ?? DEFAULT_ENV_FILE);
@@ -313,13 +352,22 @@ async function main(): Promise<void> {
           from: lookup("EXPORT_MAIL_FROM")!,
           to: recipients,
           subject,
-          text: body,
+          text: jpgError ? `${body}\r\n（注意：本次未能產生 JPG：${jpgError}）` : body,
           attachments: [
             {
               filename: fileName,
               contentType: contentTypeFor(fileName),
               content: buffer,
             },
+            ...(jpgBuffer
+              ? [
+                  {
+                    filename: jpgName,
+                    contentType: "image/jpeg",
+                    content: jpgBuffer,
+                  },
+                ]
+              : []),
           ],
         });
         console.log(`已以電郵派發給 ${recipients.length} 位收件人（${subject}）。`);

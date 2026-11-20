@@ -20,6 +20,8 @@
 
 ### 新增
 
+- **JPG 圖片輸出**：排程同時產生 `中四_本週累計_<日期>.jpg`（與電郵正文同一份表格；準確率低於 60% 以紅色標示），方便存檔及在手機／即時通訊分享。以 Playwright／Chromium 截圖輸出 JPEG（Chromium 是既有開發依賴，不新增原生套件）；生成後會檢查 JPEG 檔頭，避免把錯誤頁當成圖片。JPG 失敗時會在日誌及電郵註明，Excel 仍會派發。
+- **電郵附件**：Excel 與 JPG 一併附上（`image/jpeg`），正文仍為 TAB 分隔表格。
 - **免 `gcloud auth login` 的固定憑證**：新增專用服務帳戶 `history-export-reader`（只具備備份 bucket 的 `roles/storage.objectViewer`）及金鑰 `secrets\export-reader-service-account.json`（已列入 `.gitignore`）。排程改用[服務帳戶 JWT 直接下載 Cloud Storage 物件](scripts/lib/gcs-service-account.ts)，不需要任何互動登入，金鑰亦不會過期。
 - **電郵派發**：匯出後以附件寄出 Excel。SMTP 由[自建的極簡 SMTP 用戶端](scripts/lib/smtp-mail.ts)傳送（Node 內建模組，不新增依賴）：支援隱含 TLS（465）、STARTTLS（587／25）、`AUTH LOGIN`、中文主旨及附件檔名；伺服器未提供 STARTTLS 時**拒絕明文傳送**。設定放 `secrets\export-mail.env`（`EXPORT_SMTP_*`、`EXPORT_MAIL_FROM`、`EXPORT_EMAIL_TO`）。
 - **`npm run export:grade-daily`**：匯出指定級別（預設中四）逐位學生的一般練習作答情況為 Excel，含「說明」「總表」「班別統計」及 4A–4D 各分表；當日沒有練習的學生亦列出 0 次，方便核對未提交名單。口徑與教師端一致：**只計一般練習，重溫錯題不計入**練習次數、作答題數及準確率。
@@ -40,6 +42,8 @@
 ### 驗證
 
 - [tests/grade-practice-export.test.ts](tests/grade-practice-export.test.ts)：重溫錯題完全排除、按班別及班號排序、只統計指定香港日期、未列入名冊者不出現、香港日期及本週一計算不受伺服器時區影響、電郵表格格式（TAB 分隔、兩位小數、`MM-DD`、只列有練習者）。
+- [tests/table-image.test.ts](tests/table-image.test.ts)：JPG 版 HTML 包含標題／摘要／全部欄名／學生資料、低於 60% 加標示、HTML 轉義（防止姓名或內容破壞版面）。
+- 實測排程執行：同一執行同時產生 `中四_本週累計_2026-11-20.xlsx` 及 `.jpg`，並把兩者一併以電郵派發；JPG 已人工檢視，中文、班號排序及紅字標示正常。
 - [tests/gcs-service-account.test.ts](tests/gcs-service-account.test.ts)：`gs://` 解析、JWT 以私鑰簽署且可被公鑰驗證、下載失敗回傳可行動訊息（HTTP 403 → 提示 `objectViewer`）、成功回傳原始位元組。
 - [tests/smtp-mail.test.ts](tests/smtp-mail.test.ts)：RFC 2047 中文標頭、multipart 附件、465／587 設定推導、缺少設定如實回報、以本機假 SMTP 伺服器完成 EHLO／MAIL／RCPT／DATA／QUIT、未提供 STARTTLS 時拒絕明文、拒絕非 ASCII 收件人。
 - 以服務帳戶金鑰實測匯出：**完全沒有呼叫 `gcloud`**，成功產生 2026-11-18 的中四檔案（135 位名冊學生、11 位有練習）。

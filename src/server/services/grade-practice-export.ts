@@ -232,38 +232,44 @@ export function hongKongWeekStart(now: Date = new Date()): string {
     .slice(0, 10);
 }
 
+/** 電郵正文及 JPG 共用同一個欄序（不可任意改動，教師會直接貼進 Excel 對照） */
+export const PRACTICE_TABLE_COLUMNS = [
+  "班別班號",
+  "姓名",
+  "練習",
+  "獲派",
+  "作答",
+  "答對",
+  "答錯",
+  "準確率",
+  "最後練習",
+] as const;
+
 /**
- * 電郵正文的表格（以 TAB 分隔，可直接貼進 Excel）。
+ * 逐位學生的表格內容（只列有練習紀錄的學生）。
  *
- * 只列有練習紀錄的學生（`sessions > 0`）：教師要追蹤的是「誰交了」，把 100 多位
- * 0 次的學生全部列出只會令表格失去焦點；完整名冊（含 0 次）仍在附件 Excel 內。
+ * 只列 `sessions > 0`：教師要追蹤的是「誰交了」，把 100 多位 0 次的學生全部列出
+ * 只會令表格失去焦點；完整名冊（含 0 次）仍在附件 Excel 內。
  */
-export function formatPracticeTable(rows: GradePracticeRow[]): string {
-  const header = [
-    "班別班號",
-    "姓名",
-    "練習",
-    "獲派",
-    "作答",
-    "答對",
-    "答錯",
-    "準確率",
-    "最後練習",
-  ].join("\t");
-  const body = rows
+export function practiceTableRows(rows: GradePracticeRow[]): string[][] {
+  return rows
     .filter((row) => row.sessions > 0)
-    .map((row) =>
-      [
-        `${row.className}-${row.studentNumber}`,
-        row.name,
-        row.sessions,
-        row.assignedQuestions,
-        row.answeredQuestions,
-        row.correct,
-        row.wrong,
-        row.accuracy === null ? "—" : `${(row.accuracy * 100).toFixed(2)}%`,
-        hongKongMonthDay(row.lastPractisedAt),
-      ].join("\t"),
-    );
-  return [header, ...body].join("\n");
+    .map((row) => [
+      `${row.className}-${row.studentNumber}`,
+      row.name,
+      String(row.sessions),
+      String(row.assignedQuestions),
+      String(row.answeredQuestions),
+      String(row.correct),
+      String(row.wrong),
+      row.accuracy === null ? "—" : `${(row.accuracy * 100).toFixed(2)}%`,
+      hongKongMonthDay(row.lastPractisedAt),
+    ]);
+}
+
+/** 電郵正文的表格（以 TAB 分隔，可直接貼進 Excel） */
+export function formatPracticeTable(rows: GradePracticeRow[]): string {
+  return [PRACTICE_TABLE_COLUMNS.join("\t"), ...practiceTableRows(rows).map((row) => row.join("\t"))].join(
+    "\n",
+  );
 }
