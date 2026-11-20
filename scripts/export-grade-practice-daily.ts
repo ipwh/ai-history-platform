@@ -31,8 +31,10 @@ import { openReadOnlyDatabase } from "../src/server/db/connection";
 import { buildXlsx, type CellValue, type SheetSpec } from "../src/server/export/office";
 import {
   buildGradePracticeExport,
+  formatPracticeTable,
   hongKongDate,
   hongKongDateTime,
+  hongKongWeekStart,
   type GradePracticeRow,
 } from "../src/server/services/grade-practice-export";
 import { downloadGcsObject } from "./lib/gcs-service-account";
@@ -104,7 +106,9 @@ async function main(): Promise<void> {
 
   const today = hongKongDate();
   const date = argument("--date");
-  const from = argument("--from") ?? date ?? today;
+  // --week：本週一（香港時間）至今日的累計，供「逢星期一至五每日更新」使用
+  const weekToDate = process.argv.includes("--week");
+  const from = argument("--from") ?? date ?? (weekToDate ? hongKongWeekStart() : today);
   const to = argument("--to") ?? date ?? today;
   if (!isDate(from) || !isDate(to)) fail("--date／--from／--to 必須是 YYYY-MM-DD");
   if (from > to) fail("--from 不可晚於 --to");
@@ -166,6 +170,11 @@ async function main(): Promise<void> {
 
     if (report.rows.length === 0) {
       fail(`名冊沒有 ${formLevel} 年級（${formLevel}A–${formLevel}Z）的學生，未產生檔案。`);
+    }
+
+    // --json：印出結構化結果（供 Copilot 或教師逐項核對，不必解析 Excel）
+    if (process.argv.includes("--json")) {
+      console.log(JSON.stringify(report, null, 2));
     }
 
     const summaryRows: CellValue[][] = report.classes.map((entry) => [
@@ -240,8 +249,10 @@ async function main(): Promise<void> {
       })),
     ];
 
-    const buffer = await buildXlsx(sheets, { title: `中${numeral} 每日作答情況` });
-    const fileName = `中${numeral}_每日作答_${from === to ? from : `${from}_至_${to}`}.xlsx`;
+    const buffer = await buildXlsx(sheets, { title: `中${numeral} ${weekToDate ? "本週累計" : "每日作答情況"}` });
+    const fileName = weekToDate
+      ? `中${numeral}_本週累計_${to}.xlsx`
+      : `中${numeral}_每日作答_${from === to ? from : `${from}_至_${to}`}.xlsx`;
     const target = path.join(outDir, fileName);
     // 同一天重跑時覆寫（排程重試不應堆疊重複檔案）
     fs.writeFileSync(target, buffer);
@@ -281,17 +292,20 @@ async function main(): Promise<void> {
         const subject =
           argument("--email-subject") ??
           lookup("EXPORT_MAIL_SUBJECT")?.replaceAll("{date}", dateLabel) ??
-          `中${numeral} 每日作答情況（${dateLabel}）`;
+          `中${numeral} ${weekToDate ? "本週累計" : "每日作答情況"}（${dateLabel}）`;
+        const table = formatPracticeTable(report.rows);
         const body = [
-          `中${numeral}每日作答情況（${dateLabel}，香港時間）`,
+          `中${numeral}一般練習情況（${dateLabel}，香港時間）`,
+          `名冊學生 ${report.totals.students} 位，其中 ${report.totals.activeStudents} 位有練習；` +
+            `練習 ${report.totals.sessions} 次、作答 ${report.totals.answeredQuestions}／` +
+            `${report.totals.assignedQuestions} 題，準確率 ` +
+            `${report.totals.accuracy === null ? "—" : `${(report.totals.accuracy * 100).toFixed(2)}%`}。`,
           "",
-          `名冊學生：${report.totals.students} 位（當日有一般練習 ${report.totals.activeStudents} 位）`,
-          `一般練習：${report.totals.sessions} 次`,
-          `作答題數：${report.totals.answeredQuestions}／${report.totals.assignedQuestions} 題`,
-          `答對：${report.totals.correct} 題；答錯：${report.totals.wrong} 題`,
-          `準確率：${report.totals.accuracy === null ? "—" : `${(report.totals.accuracy * 100).toFixed(1)}%`}`,
+          table,
           "",
-          "各班主任／教師可按附件「總表」或各班分表核對。",
+          report.totals.activeStudents === 0
+            ? "（此期間沒有任何一般練習紀錄。）"
+            : "（只列有練習紀錄的學生；完整名冊及各班分表見附件 Excel。）",
           "口徑：只計一般練習；重溫錯題不計入練習次數、作答題數及準確率。",
         ].join("\r\n");
 

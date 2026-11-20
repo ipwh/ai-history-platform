@@ -6,6 +6,11 @@
     由 `schedule-grade-practice-export.ps1` 註冊的排程呼叫。本身亦可手動執行：
 
         ./scripts/run-grade-practice-export.ps1 -OutDir "D:\匯出"
+        ./scripts/run-grade-practice-export.ps1 -OutDir "D:\匯出" -Date 2026-11-19
+        ./scripts/run-grade-practice-export.ps1 -OutDir "D:\匯出" -PreviousDay
+
+    預設統計「本週一至今日」的累計（逢星期一至五每日更新），電郵正文為
+    TAB 分隔的逐位學生表格；`-PreviousDay` 改為只統計前一日。
 
     日誌檔：`<OutDir>\logs\export-<YYYY-MM-DD>.log`（每次執行附加，失敗時保留完整輸出）。
     離開碼：0 = 成功；1 = 失敗（排程的「上次執行結果」會顯示）。
@@ -15,9 +20,12 @@ param(
     [Parameter(Mandatory = $true)][string]$OutDir,
     [string]$Form = "4",
     [string]$NodeExe = "npm.cmd",
-    # 統計日期（YYYY-MM-DD）。預設為「前一日」：排程在早上 07:45 執行，
-    # 當日尚未有練習，匯出當日只會得到近乎空白的檔案。
+    # 統計日期（YYYY-MM-DD）。留空時按 -PreviousDay 決定：
+    #   預設 = 本週一至今日（逢星期一至五每日更新，累計本週至今）；
+    #   -PreviousDay = 前一日單日。
     [string]$Date = "",
+    # 只統計前一日（預設為累計本週一至今日）
+    [switch]$PreviousDay,
     # 收件人（多個以分號或逗號分隔）。留空 = 使用 secrets\export-mail.env 的 EXPORT_EMAIL_TO。
     [string]$EmailTo = "",
     # 只寫本機檔案、不寄電郵（例如除錯）
@@ -48,12 +56,20 @@ function Write-Log([string]$Text) {
 }
 
 Write-Log "開始匯出中${Form}每日作答情況 → $OutDir"
-if ([string]::IsNullOrWhiteSpace($Date)) {
-    $Date = (Get-Date).AddDays(-1).ToString("yyyy-MM-dd")
+$rangeArgs = @()
+if (-not [string]::IsNullOrWhiteSpace($Date)) {
+    $rangeArgs = @("--date", $Date)
+    Write-Log "統計日期：$Date"
+} elseif ($PreviousDay) {
+    $previous = (Get-Date).AddDays(-1).ToString("yyyy-MM-dd")
+    $rangeArgs = @("--date", $previous)
+    Write-Log "統計日期：$previous（前一日）"
+} else {
+    $rangeArgs = @("--week")
+    Write-Log "統計範圍：本週一至今日（累計）"
 }
-Write-Log "統計日期：$Date"
 
-$arguments = @("run", "--silent", "export:grade-daily", "--", "--form", $Form, "--date", $Date, "--out", $OutDir)
+$arguments = @("run", "--silent", "export:grade-daily", "--", "--form", $Form, "--out", $OutDir) + $rangeArgs
 if ($NoEmail) {
     $arguments += "--no-email"
 } elseif (-not [string]::IsNullOrWhiteSpace($EmailTo)) {

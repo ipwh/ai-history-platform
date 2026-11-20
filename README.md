@@ -135,9 +135,17 @@ node scripts/e2e-flow.mjs --start     # 或先 npm start，再另開視窗執行
 
 郵件憑證（SMTP）只需設定一次：填寫 `secrets\export-mail.env`（已列入 `.gitignore`，不會提交）。
 
-- 檔案：`中四_每日作答_<日期>.xlsx`，含「說明」「總表」「班別統計」及 4A–4D 各一張工作表；當日沒有練習的學生亦會列出 0 次。
-- **統計日期為前一日**：排程在早上 07:45 執行，當日尚未有練習，因此預設匯出前一日的完整紀錄（手動執行時可用 `--date`／`--from`／`--to` 指定其他日期或範圍）。
-- **電郵派發**：同一份 Excel 以附件寄出。收件人及 SMTP 設定放 `secrets\export-mail.env`（已列入 `.gitignore`），首次使用請填寫 `EXPORT_SMTP_HOST`／`EXPORT_SMTP_PORT`／`EXPORT_SMTP_USER`／`EXPORT_SMTP_PASSWORD`／`EXPORT_MAIL_FROM`／`EXPORT_EMAIL_TO`。未設定收件人時排程會**失敗並記錄**，不會靜默當作已派發（除錯可用 `-NoEmail`）。
+- 檔案：`中四_本週累計_<執行日>.xlsx`（週報）或 `中四_每日作答_<日期>.xlsx`（指定單日），含「說明」「總表」「班別統計」及 4A–4D 各一張工作表；沒有練習的學生亦會列出 0 次。
+- **逢星期一至五 07:45 執行**，統計**本週一至今日**的累計（`--week`）；星期六、日不派發。手動執行時可用 `--date`／`--from`／`--to` 指定單日或範圍。
+- **電郵正文為逐位學生表格**（TAB 分隔，可直接貼進 Excel），只列有練習紀錄的學生：
+
+  ```text
+  班別班號	姓名	練習	獲派	作答	答對	答錯	準確率	最後練習
+  4A-01	歐咏怡	3	30	22	17	5	77.27%	11-20
+  ```
+
+  同時附上同一份 Excel（完整名冊及各班分表）。
+- **電郵派發**：同一份 Excel 以附件寄出，正文為逐位學生表格。收件人及 SMTP 設定放 `secrets\export-mail.env`（已列入 `.gitignore`），首次使用請填寫 `EXPORT_SMTP_HOST`／`EXPORT_SMTP_PORT`／`EXPORT_SMTP_USER`／`EXPORT_SMTP_PASSWORD`／`EXPORT_MAIL_FROM`／`EXPORT_EMAIL_TO`。未設定收件人時排程會**失敗並記錄**，不會靜默當作已派發（除錯可用 `-NoEmail`）。
 - 口徑：只計**一般練習**，重溫錯題（`wrong-only`）不計入練習次數、作答題數及準確率；與教師端記錄一致。
 - **憑證（不需要定期 `gcloud auth login`）**：正式備份以專用服務帳戶金鑰讀取（`secrets\export-reader-service-account.json`，只具該 bucket 的 `roles/storage.objectViewer`），金鑰不會過期；分析後刪除暫存快照。`--use-gcloud` 只保留作診斷。
 - 日誌：`<OutDir>\logs\export-<日期>.log`；失敗時保留完整輸出。移除排程：`./scripts/schedule-grade-practice-export.ps1 -OutDir <資料夾> -Unregister`。

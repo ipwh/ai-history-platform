@@ -25,15 +25,21 @@
 - **`npm run export:grade-daily`**：匯出指定級別（預設中四）逐位學生的一般練習作答情況為 Excel，含「說明」「總表」「班別統計」及 4A–4D 各分表；當日沒有練習的學生亦列出 0 次，方便核對未提交名單。口徑與教師端一致：**只計一般練習，重溫錯題不計入**練習次數、作答題數及準確率。
 - **Windows 工作排程**：[schedule-grade-practice-export.ps1](scripts/schedule-grade-practice-export.ps1) 可註冊每日固定時間（預設 07:45）執行並寫入 OneDrive 資料夾；[run-grade-practice-export.ps1](scripts/run-grade-practice-export.ps1) 負責執行及寫入日誌（`logs\export-<日期>.log`），排程的「上次執行結果」可反映成敗。
 
+### 變更
+
+- **電郵正文改為 TSV 逐位學生表格**：`班別班號／姓名／練習／獲派／作答／答對／答錯／準確率／最後練習`（TAB 分隔，可直接貼進 Excel），只列有練習紀錄的學生；準確率兩位小數，「最後練習」為香港時間 `MM-DD`。Excel 附件保留完整名冊（含 0 次）及各班分表。
+- **排程改為逢星期一至五**（工作排程 `DaysOfWeek` 只含週一至週五），並改為統計**本週一至今日**的累計（`--week`），對應「每日更新、累計本週」的用法；`-PreviousDay` 可回到單日模式。
+- **週報檔名**：`中四_本週累計_<執行日>.xlsx`，避免每日堆疊不同日期範圍的檔案。
+
 ### 修正
 
 - **排程誤報失敗**：以 `$ErrorActionPreference = "Stop"` 呼叫原生指令時，gcloud／npm 寫到 stderr 的進度訊息會被當成終止錯誤，令成功的匯出回報失敗。改為在該呼叫期間使用 `Continue` 並以離開碼判斷。
 - **排程日誌中文亂碼**：非互動執行時主控台以 ANSI／OEM 解讀原生輸出；runner 固定使用 UTF-8，日誌可直接閱讀。
-- **排程時間與統計日不一致**：07:45 執行「當日」只會匯出近乎空白的檔案（學校仍未開始練習）。runner 改為預設統計**前一日**完整紀錄（可用 `-Date` 覆寫），檔名亦以該日為準。
+- **排程時間與統計範圍不一致**：07:45 只統計「當日」會得到近乎空白的檔案；改為累計本週一至今日（`-PreviousDay` 保留單日模式）。
 
 ### 驗證
 
-- [tests/grade-practice-export.test.ts](tests/grade-practice-export.test.ts)：重溫錯題完全排除、按班別及班號排序、只統計指定香港日期、未列入名冊者不出現、香港日期不受伺服器時區影響。
+- [tests/grade-practice-export.test.ts](tests/grade-practice-export.test.ts)：重溫錯題完全排除、按班別及班號排序、只統計指定香港日期、未列入名冊者不出現、香港日期及本週一計算不受伺服器時區影響、電郵表格格式（TAB 分隔、兩位小數、`MM-DD`、只列有練習者）。
 - [tests/gcs-service-account.test.ts](tests/gcs-service-account.test.ts)：`gs://` 解析、JWT 以私鑰簽署且可被公鑰驗證、下載失敗回傳可行動訊息（HTTP 403 → 提示 `objectViewer`）、成功回傳原始位元組。
 - [tests/smtp-mail.test.ts](tests/smtp-mail.test.ts)：RFC 2047 中文標頭、multipart 附件、465／587 設定推導、缺少設定如實回報、以本機假 SMTP 伺服器完成 EHLO／MAIL／RCPT／DATA／QUIT、未提供 STARTTLS 時拒絕明文、拒絕非 ASCII 收件人。
 - 以服務帳戶金鑰實測匯出：**完全沒有呼叫 `gcloud`**，成功產生 2026-11-18 的中四檔案（135 位名冊學生、11 位有練習）。

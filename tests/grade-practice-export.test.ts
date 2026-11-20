@@ -136,4 +136,40 @@ describe("按級別每日匯出", () => {
     // UTC 16:00 = 香港翌日 00:00
     expect(service.hongKongDate(new Date("2026-11-19T16:00:00.000Z"))).toBe("2026-11-20");
   });
+
+  it("本週一以香港時間計算（星期一至日同屬一週）", () => {
+    // 2026-11-20 是星期五；香港 07:57
+    expect(service.hongKongWeekStart(new Date("2026-11-19T23:57:00.000Z"))).toBe("2026-11-16");
+    // 2026-11-16 星期一 00:30（香港）→ 仍是同一日
+    expect(service.hongKongWeekStart(new Date("2026-11-15T16:30:00.000Z"))).toBe("2026-11-16");
+    // 2026-11-22 星期日（香港）→ 該週星期一仍是 11-16
+    expect(service.hongKongWeekStart(new Date("2026-11-22T04:00:00.000Z"))).toBe("2026-11-16");
+    // 2026-11-23 星期一（香港）→ 新一週
+    expect(service.hongKongWeekStart(new Date("2026-11-22T16:30:00.000Z"))).toBe("2026-11-23");
+  });
+
+  it("電郵表格只列有練習的學生，並使用指定格式", () => {
+    const report = service.buildGradePracticeExport(database, {
+      formLevel: "4",
+      from: "2026-11-19",
+      to: "2026-11-19",
+    });
+    const lines = service.formatPracticeTable(report.rows).split("\n");
+
+    expect(lines[0]).toBe("班別班號\t姓名\t練習\t獲派\t作答\t答對\t答錯\t準確率\t最後練習");
+    // 只有甲同學（4A）及丙同學（4B）在 11-19 有練習；乙同學（0 次）不列出
+    expect(lines).toHaveLength(3);
+    expect(lines[1]).toBe("4A-2\t甲同學\t1\t2\t2\t1\t1\t50.00%\t11-19");
+    expect(lines[2]).toBe("4B-1\t丙同學\t1\t1\t1\t1\t0\t100.00%\t11-19");
+  });
+
+  it("沒有練習紀錄時只餘標題列（不會偽造數據）", () => {
+    const report = service.buildGradePracticeExport(database, {
+      formLevel: "4",
+      from: "2026-11-10",
+      to: "2026-11-10",
+    });
+    expect(report.rows.length).toBeGreaterThan(0);
+    expect(service.formatPracticeTable(report.rows).split("\n")).toHaveLength(1);
+  });
 });

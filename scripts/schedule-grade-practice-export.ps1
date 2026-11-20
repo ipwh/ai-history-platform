@@ -5,10 +5,11 @@
 .DESCRIPTION
     步驟：
       1. 立即執行一次匯出（驗證服務帳戶金鑰讀取備份、Excel 產生及電郵派發）；
-      2. 註冊／更新每日 07:45（香港時間）的 Windows 工作排程。
+      2. 註冊／更新**逢星期一至五** 07:45（香港時間）的 Windows 工作排程。
 
-    輸出：`<輸出資料夾>\中四_每日作答_<日期>.xlsx`（本機備份），並以電郵派發同一份檔案
-    （總表、班別統計、4A–4D 各一張工作表；重溫錯題不計入）。
+    輸出：`<輸出資料夾>\中四_每日作答_<日期>.xlsx`（本機備份），並以電郵派發同一份檔案。
+    電郵正文為 TAB 分隔的逐位學生表格（班別班號／姓名／練習／獲派／作答／答對／答錯／
+    準確率／最後練習），只列有練習紀錄的學生；預設統計**本週一至今日**的累計。
 
     憑證：
       - 讀取正式備份使用**服務帳戶金鑰**（`secrets\export-reader-service-account.json`），
@@ -92,7 +93,11 @@ $action = New-ScheduledTaskAction `
     -Execute "powershell.exe" `
     -Argument $runnerArgs `
     -WorkingDirectory $RepoRoot
-$trigger = New-ScheduledTaskTrigger -Daily -At $timeOfDay
+# 逢星期一至五執行（星期六、日不派發）
+$trigger = New-ScheduledTaskTrigger `
+    -Weekly `
+    -DaysOfWeek Monday, Tuesday, Wednesday, Thursday, Friday `
+    -At $timeOfDay
 # 使用者登入後執行（StartWhenAvailable：電腦於排程時間關機時，開機後補跑一次）
 $settings = New-ScheduledTaskSettingsSet `
     -StartWhenAvailable `
@@ -107,13 +112,14 @@ Register-ScheduledTask `
     -Trigger $trigger `
     -Settings $settings `
     -Principal $principal `
-    -Description "每日匯出中${Form}學生一般練習作答情況（Excel）到 $OutDir 並以電郵派發；重溫錯題不計入。" `
+    -Description "逢星期一至五匯出中${Form}學生一般練習情況（本週一至今日，電郵正文為 TSV 表格＋Excel 附件）到 $OutDir；重溫錯題不計入。" `
     -Force | Out-Null
 
 Write-Host ""
 Write-Host "已註冊每日排程" -ForegroundColor Green
 Write-Host "  名稱：$TaskName"
-Write-Host "  時間：每日 $Time（電腦需開機並已登入）"
+Write-Host "  時間：逢星期一至五 $Time（電腦需開機並已登入）"
+Write-Host "  範圍：本週一至今日累計（電郵正文為逐位學生表格）"
 Write-Host "  輸出：$OutDir"
 Write-Host "  日誌：$LogDir"
 Write-Host "  電郵：$(if ([string]::IsNullOrWhiteSpace($EmailTo)) { '依 secrets\export-mail.env 的 EXPORT_EMAIL_TO' } else { $EmailTo })"

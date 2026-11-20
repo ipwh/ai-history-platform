@@ -208,3 +208,62 @@ export function hongKongDateTime(iso: string | null): string {
   if (Number.isNaN(date.getTime())) return iso;
   return new Date(date.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 16).replace("T", " ");
 }
+
+/** 香港時間 `MM-DD`（電郵表格的「最後練習」欄） */
+export function hongKongMonthDay(iso: string | null): string {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Date(date.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(5, 10);
+}
+
+/**
+ * 本週一（香港時間）的 `YYYY-MM-DD`。
+ *
+ * 用於「逢星期一至五、累計本週至今」的每日更新：星期一至日都回傳該週的星期一。
+ * 以香港日期計算，避免在 UTC 伺服器上把香港星期一凌晨誤算成上一個星期日。
+ */
+export function hongKongWeekStart(now: Date = new Date()): string {
+  const dayKey = hongKongDate(now);
+  const weekday = new Date(`${dayKey}T00:00:00Z`).getUTCDay(); // 0 = 星期日
+  const offset = weekday === 0 ? 6 : weekday - 1;
+  return new Date(Date.parse(`${dayKey}T00:00:00Z`) - offset * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+/**
+ * 電郵正文的表格（以 TAB 分隔，可直接貼進 Excel）。
+ *
+ * 只列有練習紀錄的學生（`sessions > 0`）：教師要追蹤的是「誰交了」，把 100 多位
+ * 0 次的學生全部列出只會令表格失去焦點；完整名冊（含 0 次）仍在附件 Excel 內。
+ */
+export function formatPracticeTable(rows: GradePracticeRow[]): string {
+  const header = [
+    "班別班號",
+    "姓名",
+    "練習",
+    "獲派",
+    "作答",
+    "答對",
+    "答錯",
+    "準確率",
+    "最後練習",
+  ].join("\t");
+  const body = rows
+    .filter((row) => row.sessions > 0)
+    .map((row) =>
+      [
+        `${row.className}-${row.studentNumber}`,
+        row.name,
+        row.sessions,
+        row.assignedQuestions,
+        row.answeredQuestions,
+        row.correct,
+        row.wrong,
+        row.accuracy === null ? "—" : `${(row.accuracy * 100).toFixed(2)}%`,
+        hongKongMonthDay(row.lastPractisedAt),
+      ].join("\t"),
+    );
+  return [header, ...body].join("\n");
+}
