@@ -2220,6 +2220,67 @@ export function findTutorGrounding(
       };
     }
 
+    /**
+     * 節錄覆核（2026-11-20 學生模擬）：「命中課題」不等於「答得到問題」。
+     *
+     * 推斷出的課題揀得到片段，但提問的主要詞完全不在那些片段之中時，先掃描**全部**
+     * 教材（純字詞比對、零模型呼叫，實測 67–97ms／7,355 段／40 萬字）再決定是否換
+     * 課題。原本全教材掃描只在一段都選不到時才啟動，於是「推斷錯了但仍揀得到片段」
+     * 這類個案永遠不會回頭看：實測「二戰之後成立嗰個世界組織係咩？」被帶到課題9，
+     * 三段節錄都沒有「世界組織」，回覆稱教材沒有提及，而教材課題11 有 158 段提及聯合國。
+     *
+     * 收緊條件（寧可保留原本課題）：
+     *   ① 只在課題由課程用語推斷而來時覆核——學生設定的溫習目標及對話上文不應被
+     *      全教材掃描改寫（與 `allowSoftPriorFallback` 同一理由）；
+     *   ② 跨課題比較（已同時檢索多個課題）不覆核，否則比較題會被拉去單一課題；
+     *   ③ 新課題必須覆蓋**更多**提問關鍵詞才接納，否則保留原本課題及原本的處理紀錄。
+     */
+    const coverageOf = (current: typeof attempt): string[] => {
+      const text = normalizeHistoryAnswer(
+        current.passages.map((passage) => passage.promptText).join("\n"),
+      );
+      return current.distinctiveTerms.filter((term) => !termCoveredBy(text, term));
+    };
+    if (
+      audit.topicInference.source === "curriculum" &&
+      attempt.topicEvidence === undefined &&
+      coverageOf(attempt).length > 0
+    ) {
+      const inferenceBeforeReview = audit.topicInference;
+      const uncoveredBefore = coverageOf(attempt).length;
+      const reviewGuess = applyMaterialFallback();
+      const reviewAudit: TutorPassageSelectionAudit = {
+        candidateBlocks: 0,
+        scoredHits: 0,
+        belowThreshold: 0,
+        selected: [],
+        excluded: [],
+      };
+      const reviewAttempt =
+        reviewGuess !== null && reviewGuess.topicId !== guess.topicId
+          ? retrieveWithShortTerms(reviewGuess, reviewAudit)
+          : null;
+      if (
+        reviewGuess !== null &&
+        reviewAttempt !== null &&
+        reviewAttempt.passages.length > 0 &&
+        coverageOf(reviewAttempt).length < uncoveredBefore
+      ) {
+        guess = reviewGuess;
+        audit.searchedTopicIds = undefined;
+        audit.topicAllocation = undefined;
+        audit.candidateBlocks = 0;
+        audit.scoredHits = 0;
+        audit.belowThreshold = 0;
+        audit.selected = [];
+        audit.excluded = [];
+        attempt = retrieveWithShortTerms(guess);
+      } else {
+        // 沒有換課題：不要把覆核過程留下的紀錄當成結果。
+        audit.topicInference = inferenceBeforeReview;
+      }
+    }
+
     // 關鍵詞缺口：確實引用了教材，但提問的關鍵詞在所選段落中完全找不到
     // （例如三段都只有「美國革命」的背景，沒有「法國」）。API 會據此仍然抓取外部參考。
     const passageText = normalizeHistoryAnswer(

@@ -130,6 +130,49 @@ describe.skipIf(!hasContentDatabase)("檢索召回缺口修正（Sprint 34）", 
     expect(grounding.status).toBe("grounded");
     expect(grounding.sources[0]?.excerpt).toContain("國聯");
   });
+
+  /**
+   * 節錄覆核（2026-11-20）：「命中課題」不等於「答得到問題」。
+   *
+   * 推斷出的課題揀得到片段，但提問主要詞完全不在片段之中時，掃描**全部**教材
+   * （純字詞比對、零模型呼叫）再決定是否換課題。以下三個個案固定這條規則的三種結局。
+   */
+  it("節錄未覆蓋提問主要詞時，以全教材掃描換到覆蓋更好的課題", () => {
+    const grounding = ground("二次大戰後的重建與經濟增是甚麼？");
+    expect(grounding.status).toBe("grounded");
+    // 課程用語把它帶到課題7（美國的成立及發展），全教材掃描指向高中課題5（協作與繁榮）
+    expect(grounding.topicId).toBe("hs-topic-5");
+    expect(grounding.selectionAudit?.topicInference?.source).toBe("material-fallback");
+    // 「二次大戰後」由未覆蓋變成有覆蓋（掃描揀到真正相關的段落）
+    expect(grounding.uncoveredTerms).not.toContain("二次大戰後");
+  });
+
+  it("全教材掃描沒有改善覆蓋時保留原本課題，亦不留下誤導紀錄", () => {
+    const grounding = ground("年至 1914 年的國際是甚麼？");
+    expect(grounding.status).toBe("grounded");
+    // 詞庫把它帶到高中課題4；掃描找到的另一課題覆蓋更差，因此不換
+    expect(grounding.topicId).toBe("hs-topic-4");
+    expect(grounding.selectionAudit?.topicInference?.source).toBe("curriculum");
+    expect(grounding.selectionAudit?.topicInference?.fallbackCandidates).toBeUndefined();
+  });
+
+  it("節錄已覆蓋所有主要詞時不會掃描全部教材（成本控制）", () => {
+    for (const query of ["什麼是文藝復興？", "冷戰幾時結束？", "聯合國有咩目標？"]) {
+      const grounding = ground(query);
+      expect(grounding.uncoveredTerms ?? []).toHaveLength(0);
+      expect(grounding.selectionAudit?.topicInference?.fallbackCandidates).toBeUndefined();
+    }
+  });
+
+  it("學生設定的溫習目標不會被全教材掃描改寫", () => {
+    // 高中課題5 有可用片段 → 學生自己設定的溫習目標成立，覆核不得改寫它
+    const grounding = ground("二次大戰後的重建與經濟增是甚麼？", {
+      preferredTopicId: "hs-topic-5",
+    });
+    expect(grounding.topicId).toBe("hs-topic-5");
+    expect(grounding.selectionAudit?.topicInference?.source).toBe("preferred-topic");
+    expect(grounding.selectionAudit?.topicInference?.fallbackCandidates).toBeUndefined();
+  });
 });
 
 describe("匿名學生事件的召回詞展開", () => {
