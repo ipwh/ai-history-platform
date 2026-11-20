@@ -59,6 +59,7 @@ npm run dev          # 啟動開發伺服器
 | `npm run e2e` | 端對端流程測試（需先啟動伺服器） |
 | `npm run tutor:export-utterances` | **唯讀**匯出學伴澄清／離題／正規化事件（匿名，不含學生身分），供每月補強提問理解規則；可加 `-- --days 30 --limit 200 --type reject,clarify --format csv` |
 | `npm run tutor:export-review-packet` | **唯讀**準備全部學伴學生提問矩陣的教師覆核套件（不呼叫模型；`-- --database <核准本機資料庫> --out <版本庫外路徑>`；不會自動核准，見[教師覆核流程](docs/tutor-teacher-review-process.md)） |
+| `npm run tutor:simulate-student` | **模擬學生使用學伴**：以 20 條合成提問走完正式管線（正規化→檢索→可答性→提示→模型），逐條列出可自動判定的缺口（缺核心知識卡、未披露教材限制、虛構頁碼、粵語口語、簡體字、洩露答案）。預設只列計劃、**零模型呼叫**；要加 `-- --live` 才會呼叫付費模型，`-- --only sim-16`／`-- --limit 5` 可只跑指定個案，`-- --out <檔案>` 寫出 JSON 報告。只用合成問題，資料庫以唯讀模式開啟 |
 | `npm run setup` | 重建／更新示範資料（可加 `-- --ocr` 同時執行 OCR、`-- --pilot` 只匯入課題5；**`--` 不可省略**，否則 npm 會把參數吞掉） |
 | `npm run import:materials` | 由命令列匯入 `materials/` 內的教材及校內試題（可加 `--books`、`--questions`、`--topic`、`--senior`、`--ocr`） |
 | `npm run generate:questions` | 為各課題生成題目（`--topic`、`--count`、`--types mc`、`--draft-only`） |

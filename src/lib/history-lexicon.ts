@@ -1408,6 +1408,16 @@ export const HISTORY_TERM_GROUPS: readonly HistoryTermGroup[] = [
     scope: "課題11",
   },
   {
+    // 2026-11-20 學生模擬：「二戰之後成立嗰個世界組織係咩？」。教材完全沒有
+    // 「世界組織」這個說法（0 段），學生用的是類別詞；課題11「20世紀以來的國際合作」
+    // 正是各國成立國際組織的單元（聯合國 158 段、國際聯盟 17 段）。把類別詞收進詞庫
+    // 後，這類提問才有課題線索；實際是哪一個組織，仍由教材段落回答。
+    canonical: "國際組織",
+    aliases: ["世界組織", "國際機構"],
+    category: "institution",
+    scope: "課題11",
+  },
+  {
     canonical: "世界衛生組織",
     aliases: ["世衛", "世衛組織", "world health organization", "who"],
     category: "institution",

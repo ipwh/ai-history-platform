@@ -197,6 +197,11 @@ const RETRIEVAL_CONCEPT_TERMS: readonly {
     expansions: ["古代", "古典文明", "古希臘", "古羅馬", "雕塑", "建築"],
   },
   { trigger: "懲罰", expansions: ["處分", "制裁", "賠償"] },
+  // 2026-11-20 學生模擬：學生用「世界組織」「國際機構」這類類別詞指聯合國或國際聯盟，
+  // 而教材一個「世界組織」都沒有（全教材 0 段）。詞庫已把類別詞收作課題線索，
+  // 這裡補上實際專名作召回詞，令課題11 談聯合國及國際聯盟的段落排前。
+  { trigger: "世界組織", expansions: ["國際組織", "聯合國", "國際聯盟"] },
+  { trigger: "國際機構", expansions: ["國際組織", "聯合國", "國際聯盟"] },
   { trigger: "文學家", expansions: ["作家", "詩人", "文學"] },
   { trigger: "作家", expansions: ["文學家", "詩人"] },
   { trigger: "航海家", expansions: ["航海", "探險"] },
@@ -1175,10 +1180,19 @@ export function guessTutorTopic(
   const looseTerms = new Set(findLooseHistoryTerms(normalizedText));
   const studentLevel = options.studentLevel ?? null;
 
-  const isBetter = (candidate: TutorTopicGuess, current: TutorTopicGuess | null): boolean =>
-    current === null ||
-    candidate.score > current.score ||
-    (candidate.score === current.score && candidate.sectionIds.length > current.sectionIds.length);
+  const isBetter = (candidate: TutorTopicGuess, current: TutorTopicGuess | null): boolean => {
+    if (current === null) return true;
+    if (candidate.score !== current.score) return candidate.score > current.score;
+    /**
+     * 同分時先看「命中詞是否提問的主語」，再看命中的分節數（2026-11-20 學生模擬）。
+     *
+     * 「二戰之後成立嗰個世界組織係咩？」同時命中課題9（「世界大戰」只是時間背景）及
+     * 課題11（「世界組織」是提問的主語），各 10 分。原本按分節數及課題次序取捨，選了
+     * 課題9，回覆說教材沒有聯合國（課題11 實際有 158 段）。
+     */
+    if (candidate.explicitTerm !== current.explicitTerm) return candidate.explicitTerm === true;
+    return candidate.sectionIds.length > current.sectionIds.length;
+  };
 
   let best: TutorTopicGuess | null = null;
   /** 學生所屬程度中分數最高的課題（同程度優先，見函數末端） */

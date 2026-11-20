@@ -102,6 +102,34 @@ describe.skipIf(!hasContentDatabase)("檢索召回缺口修正（Sprint 34）", 
     expect(grounding.status).toBe("grounded");
     expect(grounding.topicId).toBe("topic-5");
   });
+
+  /**
+   * 2026-11-20 學生模擬：「二戰之後成立嗰個世界組織係咩？」原本被推斷為課題9
+   * （兩次世界大戰），三段教材全部與聯合國無關，回覆稱教材沒有提及；但課題11
+   * 有 158 段提及聯合國。原因有二：① 教材完全沒有「世界組織」這個說法（0 段），
+   * 提問因此沒有課題線索；② 課題9 與課題11 同分時按課題次序取捨，取了課題9。
+   */
+  it("學生模擬：以「世界組織」問二戰後的組織會召回課題11（聯合國）", () => {
+    const grounding = ground("二戰之後成立嗰個世界組織係咩？");
+    expect(grounding.status).toBe("grounded");
+    expect(grounding.topicId).toBe("topic-11");
+    const excerpts = grounding.sources.map((source) => source.excerpt).join("\n");
+    expect(excerpts).toContain("聯合國");
+  });
+
+  it("學生模擬：「國際組織」類別詞不再落空（原本 not-covered）", () => {
+    for (const query of ["點解要成立國際組織？", "國際組織有邊幾類？"]) {
+      const grounding = ground(query);
+      expect(grounding.status).toBe("grounded");
+      expect(grounding.topicId).toBe("topic-11");
+    }
+  });
+
+  it("一戰後的國際組織仍以國際聯盟為第一段（不會被推向聯合國）", () => {
+    const grounding = ground("一戰之後成立嘅國際組織係咩？");
+    expect(grounding.status).toBe("grounded");
+    expect(grounding.sources[0]?.excerpt).toContain("國聯");
+  });
 });
 
 describe("匿名學生事件的召回詞展開", () => {
@@ -126,6 +154,16 @@ describe("匿名學生事件的召回詞展開", () => {
       expect.arrayContaining([
         expect.objectContaining({ term: "科學革命" }),
         expect.objectContaining({ term: "羅馬天主教會" }),
+      ]),
+    );
+  });
+
+  it("「世界組織」補上實際專名作召回詞", () => {
+    const terms = extractQueryTerms("二戰之後成立嗰個世界組織係咩？");
+    expect(terms).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ term: "聯合國" }),
+        expect.objectContaining({ term: "國際聯盟" }),
       ]),
     );
   });

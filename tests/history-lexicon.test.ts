@@ -165,6 +165,12 @@ describe("專名同義詞比對", () => {
     expect(aliases).toContain("wwi");
     expect(aliases).toContain("第一次世界大戰");
   });
+
+  it("「世界組織」這類類別詞有詞庫對應（教材本身沒有這個說法）", () => {
+    expect(historyTermAliases("國際組織")).toEqual(
+      expect.arrayContaining(["世界組織", "國際機構"]),
+    );
+  });
 });
 
 describe("錯別字容錯（只用於檢索及主題判斷，不用於批改）", () => {
