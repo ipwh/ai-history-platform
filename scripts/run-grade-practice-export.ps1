@@ -10,7 +10,7 @@
         ./scripts/run-grade-practice-export.ps1 -OutDir "D:\匯出" -PreviousDay
 
     預設（不使用任何日期參數）按交付規則統計：
-      - **星期一**：上一個工作週（上星期一至五）——07:45 時本週才開始，本週累計必然是 0；
+      - **星期一**：上一個完整星期（上星期一至**日**）；
       - **星期二至五**：前一日，以及本週一至前一日的累計。
     `-Date`／`-PreviousDay`／`-Week` 只供手動或診斷使用。
 
@@ -73,7 +73,7 @@ if (-not [string]::IsNullOrWhiteSpace($Date)) {
     $rangeArgs = @("--schedule")
     $weekday = (Get-Date).DayOfWeek
     if ($weekday -eq [System.DayOfWeek]::Monday) {
-        Write-Log "統計範圍：上星期一至五（星期一交付規則）"
+        Write-Log "統計範圍：上星期一至日（星期一交付規則）"
     } else {
         Write-Log "統計範圍：前一日＋本週一至前一日累計（交付規則）"
     }

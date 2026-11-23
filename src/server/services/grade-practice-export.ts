@@ -250,10 +250,10 @@ function rangeLabelOf(from: string, to: string): string {
  * 一次交付包含哪些統計期間。
  *
  * 交付規則（2026-11-23 使用者指示）：
- *   - **星期一**：上一個工作週（上星期一至五）。07:45 時本週才剛開始，本週累計必然
- *     是 0——當日實際派出的正是「0 位有練習」的空白檔案；
+ *   - **星期一**：上一個完整星期（上星期一至**日**）。07:45 時本週才剛開始，本週累計
+ *     必然是 0——當日實際派出的正是「0 位有練習」的空白檔案；
  *   - **星期二至五**：前一日，以及本週一至前一日的累計（星期二的兩個期間相同，
- *     因此數字一樣，這是規則本身的结果，不是重複計算）。
+ *     因此數字一樣，這是規則本身的結果，不是重複計算）。
  *
  * 星期六、日排程不會執行；手動執行時沿用「前一日＋本週累計」的寫法。
  */
@@ -272,7 +272,8 @@ export function gradePracticeDeliveryPeriods(now: Date = new Date()): GradePract
   const weekday = new Date(`${today}T00:00:00Z`).getUTCDay(); // 0 = 星期日
   if (weekday === 1) {
     const from = addHongKongDays(hongKongWeekStart(now), -7);
-    const to = addHongKongDays(from, 4);
+    // 上星期一至星期日（2026-11-23 使用者指示：由「一至五」改為「一至日」）
+    const to = addHongKongDays(from, 6);
     return [{ key: "last-week", label: "上週", from, to, rangeLabel: rangeLabelOf(from, to) }];
   }
   const yesterday = addHongKongDays(today, -1);

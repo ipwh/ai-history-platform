@@ -178,10 +178,10 @@ describe("交付期間（星期一／星期二至五的分別）", () => {
   // 全部以香港時間的早上 07:45（UTC 前一日 23:45）表達，與排程執行時間一致
   const at = (hongKongMorning: string): Date => new Date(`${hongKongMorning}T07:45:00+08:00`);
 
-  it("星期一交付上週一至五（本週累計在 07:45 必然是 0）", () => {
+  it("星期一交付上星期一至日（本週累計在 07:45 必然是 0）", () => {
     const periods = service.gradePracticeDeliveryPeriods(at("2026-11-23"));
     expect(periods).toEqual([
-      { key: "last-week", label: "上週", from: "2026-11-16", to: "2026-11-20", rangeLabel: "11-16 至 11-20" },
+      { key: "last-week", label: "上週", from: "2026-11-16", to: "2026-11-22", rangeLabel: "11-16 至 11-22" },
     ]);
   });
 
@@ -220,13 +220,14 @@ describe("交付期間（星期一／星期二至五的分別）", () => {
     ]);
   });
 
-  it("以真實資料庫產生交付分段：星期一取上週（含 11-18、11-19），星期二取星期一（無紀錄）", () => {
+  it("以真實資料庫產生交付分段：星期一取上週一至日（含 11-18、11-19），星期二取星期一（無紀錄）", () => {
     const monday = service.buildGradePracticeSections(database, {
       formLevel: "4",
       now: at("2026-11-23"),
     });
     expect(monday).toHaveLength(1);
     expect(monday[0]!.period.key).toBe("last-week");
+    expect(monday[0]!.period.to).toBe("2026-11-22");
     // 測試資料：11-18 有 1 次、11-19 有 2 次一般練習（重溫錯題不計）
     expect(monday[0]!.report.totals).toMatchObject({ activeStudents: 2, sessions: 3 });
 
@@ -246,7 +247,7 @@ describe("交付期間（星期一／星期二至五的分別）", () => {
       );
 
     const monday = digestFor("2026-11-23");
-    expect(monday).toContain("一、上週（11-16 至 11-20）");
+    expect(monday).toContain("一、上週（11-16 至 11-22）");
     expect(monday).toContain("4A-2\t甲同學\t1\t2\t2\t1\t1\t50.00%\t11-19");
     expect(monday).not.toContain("二、");
 
