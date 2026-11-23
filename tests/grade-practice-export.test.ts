@@ -173,3 +173,87 @@ describe("按級別每日匯出", () => {
     expect(service.formatPracticeTable(report.rows).split("\n")).toHaveLength(1);
   });
 });
+
+describe("交付期間（星期一／星期二至五的分別）", () => {
+  // 全部以香港時間的早上 07:45（UTC 前一日 23:45）表達，與排程執行時間一致
+  const at = (hongKongMorning: string): Date => new Date(`${hongKongMorning}T07:45:00+08:00`);
+
+  it("星期一交付上週一至五（本週累計在 07:45 必然是 0）", () => {
+    const periods = service.gradePracticeDeliveryPeriods(at("2026-11-23"));
+    expect(periods).toEqual([
+      { key: "last-week", label: "上週", from: "2026-11-16", to: "2026-11-20", rangeLabel: "11-16 至 11-20" },
+    ]);
+  });
+
+  it("星期二交付前一日（星期一）及本週累計（同為星期一）", () => {
+    const periods = service.gradePracticeDeliveryPeriods(at("2026-11-24"));
+    expect(periods.map((period) => [period.key, period.from, period.to])).toEqual([
+      ["previous-day", "2026-11-23", "2026-11-23"],
+      ["week-to-date", "2026-11-23", "2026-11-23"],
+    ]);
+  });
+
+  it("星期三交付星期二，累計為星期一至星期二", () => {
+    const periods = service.gradePracticeDeliveryPeriods(at("2026-11-25"));
+    expect(periods.map((period) => [period.key, period.from, period.to, period.rangeLabel])).toEqual([
+      ["previous-day", "2026-11-24", "2026-11-24", "11-24"],
+      ["week-to-date", "2026-11-23", "2026-11-24", "11-23 至 11-24"],
+    ]);
+  });
+
+  it("星期五交付星期四，累計為星期一至星期四（不包含當日）", () => {
+    const periods = service.gradePracticeDeliveryPeriods(at("2026-11-27"));
+    expect(periods.map((period) => [period.from, period.to])).toEqual([
+      ["2026-11-26", "2026-11-26"],
+      ["2026-11-23", "2026-11-26"],
+    ]);
+  });
+
+  it("星期六、日手動執行時沿用前一日＋本週累計", () => {
+    expect(service.gradePracticeDeliveryPeriods(at("2026-11-28")).map((p) => [p.from, p.to])).toEqual([
+      ["2026-11-27", "2026-11-27"],
+      ["2026-11-23", "2026-11-27"],
+    ]);
+    expect(service.gradePracticeDeliveryPeriods(at("2026-11-29")).map((p) => [p.from, p.to])).toEqual([
+      ["2026-11-28", "2026-11-28"],
+      ["2026-11-23", "2026-11-28"],
+    ]);
+  });
+
+  it("以真實資料庫產生交付分段：星期一取上週（含 11-18、11-19），星期二取星期一（無紀錄）", () => {
+    const monday = service.buildGradePracticeSections(database, {
+      formLevel: "4",
+      now: at("2026-11-23"),
+    });
+    expect(monday).toHaveLength(1);
+    expect(monday[0]!.period.key).toBe("last-week");
+    // 測試資料：11-18 有 1 次、11-19 有 2 次一般練習（重溫錯題不計）
+    expect(monday[0]!.report.totals).toMatchObject({ activeStudents: 2, sessions: 3 });
+
+    const tuesday = service.buildGradePracticeSections(database, {
+      formLevel: "4",
+      now: at("2026-11-24"),
+    });
+    expect(tuesday).toHaveLength(2);
+    // 星期一（11-23）沒有練習 → 兩段都是 0，不會偽造數據
+    expect(tuesday.map((section) => section.report.totals.sessions)).toEqual([0, 0]);
+  });
+
+  it("電郵正文分段列出每個期間，期間相同時加一句說明", () => {
+    const digestFor = (iso: string): string =>
+      service.formatPracticeDigest(
+        service.buildGradePracticeSections(database, { formLevel: "4", now: at(iso) }),
+      );
+
+    const monday = digestFor("2026-11-23");
+    expect(monday).toContain("一、上週（11-16 至 11-20）");
+    expect(monday).toContain("4A-2\t甲同學\t1\t2\t2\t1\t1\t50.00%\t11-19");
+    expect(monday).not.toContain("二、");
+
+    const tuesday = digestFor("2026-11-24");
+    expect(tuesday).toContain("一、前一日（11-23）");
+    expect(tuesday).toContain("二、本週累計（11-23）");
+    expect(tuesday).toContain("（此期間沒有任何一般練習紀錄。）");
+    expect(tuesday).toContain("（前一日與本週累計的期間相同，兩表數字一樣。）");
+  });
+});

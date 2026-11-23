@@ -45,4 +45,31 @@ describe("表格 JPG 的 HTML", () => {
     expect(html).toContain("&lt;script&gt;");
     expect(html).toContain("陳&lt;大文&gt; &amp; &quot;同學&quot;");
   });
+
+  it("多個表格各自有標題、欄列及低分標示（排程的「前一日」＋「本週累計」）", () => {
+    const html = buildPracticeTableHtml({
+      ...image,
+      title: "中四 一般練習情況",
+      summary: [],
+      heading: "上週（11-16 至 11-20）— 名冊 135 位，其中 18 位有練習",
+      extraTables: [
+        {
+          heading: "本週累計（11-23 至 11-24）— 名冊 135 位，其中 2 位有練習",
+          columns: image.columns,
+          rows: [
+            ["4A-01", "歐咏怡", "2", "20", "20", "19", "1", "95.00%", "11-24"],
+            ["4B-04", "陳安怡", "1", "10", "9", "5", "4", "55.56%", "11-24"],
+          ],
+        },
+      ],
+    });
+    expect((html.match(/<table>/g) ?? [])).toHaveLength(2);
+    expect(html).toContain("<h2>上週（11-16 至 11-20）");
+    expect(html).toContain("<h2>本週累計（11-23 至 11-24）");
+    expect(html).toContain("<td>歐咏怡</td>");
+    expect(html).toContain("<td>陳安怡</td>");
+    // 低分標示按各自表格的準確率欄計算：主表 1 列（23.08%）＋第二表 1 列（55.56%）
+    expect((html.match(/<tr class="low">/g) ?? [])).toHaveLength(2);
+    expect(html).toMatch(/<tr class="low">([\s\S]*?)陳安怡[\s\S]*?<\/tr>/);
+  });
 });

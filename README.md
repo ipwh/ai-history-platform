@@ -90,7 +90,7 @@ npm run dev          # 啟動開發伺服器
 | `npm run golden:export` | 匯出教師已核准的 golden fixture 至 `golden-questions.v2.json`；`-- --check` **只驗證**（不寫檔、不寫 DB、不 migration），schema 不足時 exit 2 |
 | `npm run db:migrate` | **明確**套用資料庫 migration（必須 `-- --database <path>`；沒有預設值，不會誤對 `data/app.db` 執行） |
 | `npm run report:usage` | **唯讀**統計練習使用情況：總數、學生／班別／課題、一般練習／重溫錯題、題目來源、準確率、每日趨勢及重溫成效；預設讀本機 `data/app.db`，加 `-- --production` 會從正式環境備份 bucket 下載最新快照至暫存目錄並在分析後刪除；加 `--json` 可讓 Copilot 直接分析，`--from`／`--to` 使用香港日期 `YYYY-MM-DD` |
-| `npm run export:grade-daily` | **唯讀**匯出某一級別的逐位學生一般練習作答情況為 Excel（總表、班別統計、每班分表；**不計重溫錯題**）：`-- --form 4 --date 2026-11-19 --out "D:\匯出"`；預設由正式備份下載最新快照，`--database <快照>` 可改用本機檔案，`--from`／`--to` 可匯出日期範圍 |
+| `npm run export:grade-daily` | **唯讀**匯出某一級別的逐位學生一般練習作答情況為 Excel（逐個統計期間的總表、班別統計、每班分表；**不計重溫錯題**）：`-- --form 4 --date 2026-11-19 --out "D:\匯出"`；`-- --form 4 --schedule` 為排程交付規則（星期一＝上星期一至五；星期二至五＝前一日＋本週一至前一日的累計，可用 `--now 2026-11-25T07:45:00+08:00` 模擬執行日）；預設由正式備份下載最新快照，`--database <快照>` 可改用本機檔案，`--from`／`--to` 可匯出日期範圍，`--print-email` 只印出電郵主旨及正文而不改變寄出與否 |
 | `npm run golden:eval` | 唯讀：驗證 golden dataset 並執行評估；approved fixture 為 0 時輸出 `INSUFFICIENT_EVIDENCE` |
 | `npm run release:gate` | 唯讀發布閘門：綜合隔離、可作答性、來源、解釋、元數據、教師裁決、審核來源、結構裁決、provenance 風險、使用授權、Golden 核准、測試及部署證據，輸出 `PASS`／`FAIL`／`WARN`／`POLICY_PENDING`／`INSUFFICIENT_EVIDENCE` 及 `READY`／`READY WITH LIMITATIONS`／`NOT READY` |
 | `npm run review:adjudication` | 唯讀：由修復來源報告產生 18 題逐題裁決套件（原始 vs 現行、空格位置及答案次序、版本與紀錄來源、待填決定欄） |
@@ -136,18 +136,25 @@ node scripts/e2e-flow.mjs --start     # 或先 npm start，再另開視窗執行
 
 郵件憑證（SMTP）只需設定一次：填寫 `secrets\export-mail.env`（已列入 `.gitignore`，不會提交）。
 
-- 檔案：`中四_本週累計_<執行日>.xlsx` 及同名 `.jpg`（週報）或 `中四_每日作答_<日期>.xlsx`／`.jpg`（指定單日）。
-  - **Excel**：含「說明」「總表」「班別統計」及 4A–4D 各一張工作表；沒有練習的學生亦會列出 0 次。
-  - **JPG**：電郵正文同一份表格的圖片版（A4 直向比例、中文清晰），方便存檔、貼進通告或在手機／即時通訊分享；準確率低於 60% 以紅色標示。
-- **逢星期一至五 07:45 執行**，統計**本週一至今日**的累計（`--week`）；星期六、日不派發。手動執行時可用 `--date`／`--from`／`--to` 指定單日或範圍。
-- **電郵正文為逐位學生表格**（TAB 分隔，可直接貼進 Excel），只列有練習紀錄的學生：
+- 檔案：`中四_本週累計_<執行日>.xlsx` 及同名 `.jpg`（按交付規則的期間）或 `中四_每日作答_<日期>.xlsx`／`.jpg`（手動指定單日）。
+  - **Excel**：含「說明」、逐個統計期間一張總表、每個期間 4A–4D 各一張工作表（例如「4A 前一日」）及「班別統計」；沒有練習的學生亦會列出 0 次。
+  - **JPG**：電郵正文同一份表格的圖片版（中文清晰），方便存檔、貼進通告或在手機／即時通訊分享；準確率低於 60% 以紅色標示。多個統計期間會分段列在同一張圖片。
+- **逢星期一至五 07:45 執行**，統計範圍（2026-11-23 起）：
+  - **星期一**：上一個工作週（上星期一至五）——07:45 時本週才開始，本週累計必然是 0；
+  - **星期二至五**：前一日，以及本週一至前一日的累計。
+
+  星期六、日不派發。手動執行時可用 `--date`／`--from`／`--to`／`--week` 指定單一期間，`--now` 可模擬執行日以核對交付內容。
+- **電郵正文為逐位學生表格**（TAB 分隔，可直接貼進 Excel），只列有練習紀錄的學生，每個統計期間一段：
 
   ```text
+  一、前一日（11-19）
+  名冊 135 位，其中 10 位有練習；練習 14 次、作答 128／140 題，準確率 66.41%
+
   班別班號	姓名	練習	獲派	作答	答對	答錯	準確率	最後練習
   4A-01	歐咏怡	3	30	22	17	5	77.27%	11-20
   ```
 
-  同時附上同一份 Excel（完整名冊及各班分表）及同名 JPG（圖片版，方便在手機分享）。
+  同時附上同一份 Excel（完整名冊及各班分表）及同名 JPG（圖片版，方便在手機分享）。主旨維持 `中四 本週累計（<交付日>）`。
 - **電郵派發**：同一份 Excel 以附件寄出，正文為逐位學生表格。收件人及 SMTP 設定放 `secrets\export-mail.env`（已列入 `.gitignore`），首次使用請填寫 `EXPORT_SMTP_HOST`／`EXPORT_SMTP_PORT`／`EXPORT_SMTP_USER`／`EXPORT_SMTP_PASSWORD`／`EXPORT_MAIL_FROM`／`EXPORT_EMAIL_TO`。未設定收件人時排程會**失敗並記錄**，不會靜默當作已派發（除錯可用 `-NoEmail`）。
 - 口徑：只計**一般練習**，重溫錯題（`wrong-only`）不計入練習次數、作答題數及準確率；與教師端記錄一致。
 - **憑證（不需要定期 `gcloud auth login`）**：正式備份以專用服務帳戶金鑰讀取（`secrets\export-reader-service-account.json`，只具該 bucket 的 `roles/storage.objectViewer`），金鑰不會過期；分析後刪除暫存快照。`--use-gcloud` 只保留作診斷。

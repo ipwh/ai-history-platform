@@ -12,15 +12,33 @@
  */
 import fs from "node:fs";
 
+export interface PracticeTableBlock {
+  /** 區塊標題（例如「前一日（11-22）」）；單一表格時留空 */
+  heading?: string;
+  columns: string[];
+  rows: string[][];
+}
+
 export interface PracticeTableImage {
-  /** 標題（例如「中四 本週累計」） */
+  /** 標題（例如「中四 一般練習情況」） */
   title: string;
   /** 副標題（日期範圍等） */
   subtitle: string;
   /** 統計摘要行（可為空） */
   summary: string[];
+  /**
+   * 第一個表格上方的區塊標題（例如「上週（11-16 至 11-20）— 名冊 135 位…」）。
+   *
+   * 沒有這個標題時，單一期間的圖片只寫「交付日」，看不出統計範圍。
+   */
+  heading?: string;
   columns: string[];
   rows: string[][];
+  /**
+   * 額外表格區塊（2026-11-23）：排程每日交付「前一日」及「本週累計」兩個期間，
+   * 同一張圖片內分兩段列出，教師存檔或轉發時只有一個檔案。
+   */
+  extraTables?: PracticeTableBlock[];
   /** 表格下方的說明（口徑等） */
   notes: string[];
 }
@@ -40,21 +58,40 @@ function escapeHtml(value: string): string {
  * 這個標示只影響圖片，Excel 與電郵正文的數字不受影響。
  */
 export function buildPracticeTableHtml(image: PracticeTableImage): string {
-  const accuracyIndex = image.columns.indexOf("準確率");
-  const bodyRows = image.rows
-    .map((row) => {
-      const cells = row
-        .map((cell) => `<td>${escapeHtml(cell)}</td>`)
-        .join("");
-      const accuracy =
-        accuracyIndex >= 0 ? Number.parseFloat((row[accuracyIndex] ?? "").replace("%", "")) : NaN;
-      const low = Number.isFinite(accuracy) && accuracy < 60;
-      return `<tr${low ? ' class="low"' : ""}>${cells}</tr>`;
-    })
-    .join("\n");
-  const head = image.columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("");
   const summary = image.summary.filter((line) => line.trim().length > 0);
   const notes = image.notes.filter((line) => line.trim().length > 0);
+  const blocks: PracticeTableBlock[] = [
+    { heading: image.heading, columns: image.columns, rows: image.rows },
+    ...(image.extraTables ?? []),
+  ];
+
+  const renderTable = (block: PracticeTableBlock): string => {
+    const accuracyIndex = block.columns.indexOf("準確率");
+    const bodyRows = block.rows
+      .map((row) => {
+        const cells = row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("");
+        const accuracy =
+          accuracyIndex >= 0 ? Number.parseFloat((row[accuracyIndex] ?? "").replace("%", "")) : NaN;
+        const low = Number.isFinite(accuracy) && accuracy < 60;
+        return `<tr${low ? ' class="low"' : ""}>${cells}</tr>`;
+      })
+      .join("\n");
+    const blockHead = block.columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("");
+    return `<table>
+    <thead><tr>${blockHead}</tr></thead>
+    <tbody>
+${bodyRows}
+    </tbody>
+  </table>`;
+  };
+
+  const tables = blocks
+    .map((block) => {
+      const heading =
+        block.heading === undefined ? "" : `<h2>${escapeHtml(block.heading)}</h2>`;
+      return `${heading}${renderTable(block)}`;
+    })
+    .join("\n  ");
 
   return `<!DOCTYPE html>
 <html lang="zh-Hant">
@@ -72,6 +109,7 @@ export function buildPracticeTableHtml(image: PracticeTableImage): string {
     font-size: 15px;
   }
   h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: 0.5px; }
+  h2 { margin: 22px 0 8px; font-size: 16px; color: #1f2937; }
   .subtitle { color: #4b5563; font-size: 14px; margin-bottom: 10px; }
   .summary { display: flex; flex-wrap: wrap; gap: 18px; margin: 0 0 14px; padding: 10px 14px;
     background: #f3f4f6; border-radius: 8px; font-size: 14px; color: #1f2937; }
@@ -104,12 +142,7 @@ export function buildPracticeTableHtml(image: PracticeTableImage): string {
           .join("")}</div>`
       : ""
   }
-  <table>
-    <thead><tr>${head}</tr></thead>
-    <tbody>
-${bodyRows}
-    </tbody>
-  </table>
+  ${tables}
   ${
     notes.length > 0
       ? `<div class="notes">${notes.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>`

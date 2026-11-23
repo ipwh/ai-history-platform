@@ -232,6 +232,90 @@ export function hongKongWeekStart(now: Date = new Date()): string {
     .slice(0, 10);
 }
 
+/** 香港日期加減日數（純日期字串運算，不受伺服器時區影響） */
+export function addHongKongDays(dateKey: string, days: number): string {
+  return new Date(Date.parse(`${dateKey}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+}
+
+/** `YYYY-MM-DD` → `MM-DD`（表格標題用） */
+function monthDayOf(dateKey: string): string {
+  return dateKey.slice(5);
+}
+
+function rangeLabelOf(from: string, to: string): string {
+  return from === to ? monthDayOf(from) : `${monthDayOf(from)} 至 ${monthDayOf(to)}`;
+}
+
+/**
+ * 一次交付包含哪些統計期間。
+ *
+ * 交付規則（2026-11-23 使用者指示）：
+ *   - **星期一**：上一個工作週（上星期一至五）。07:45 時本週才剛開始，本週累計必然
+ *     是 0——當日實際派出的正是「0 位有練習」的空白檔案；
+ *   - **星期二至五**：前一日，以及本週一至前一日的累計（星期二的兩個期間相同，
+ *     因此數字一樣，這是規則本身的结果，不是重複計算）。
+ *
+ * 星期六、日排程不會執行；手動執行時沿用「前一日＋本週累計」的寫法。
+ */
+export interface GradePracticeDeliveryPeriod {
+  key: "last-week" | "previous-day" | "week-to-date";
+  /** 顯示名稱，例如「上週」「前一日」「本週累計」 */
+  label: string;
+  from: string;
+  to: string;
+  /** 日期範圍的簡短寫法，例如「11-22」或「11-23 至 11-24」 */
+  rangeLabel: string;
+}
+
+export function gradePracticeDeliveryPeriods(now: Date = new Date()): GradePracticeDeliveryPeriod[] {
+  const today = hongKongDate(now);
+  const weekday = new Date(`${today}T00:00:00Z`).getUTCDay(); // 0 = 星期日
+  if (weekday === 1) {
+    const from = addHongKongDays(hongKongWeekStart(now), -7);
+    const to = addHongKongDays(from, 4);
+    return [{ key: "last-week", label: "上週", from, to, rangeLabel: rangeLabelOf(from, to) }];
+  }
+  const yesterday = addHongKongDays(today, -1);
+  const weekStart = hongKongWeekStart(now);
+  // 防禦：若執行時間早於本週一（時鐘異常），不要做出 from > to 的期間
+  const from = weekStart <= yesterday ? weekStart : yesterday;
+  return [
+    {
+      key: "previous-day",
+      label: "前一日",
+      from: yesterday,
+      to: yesterday,
+      rangeLabel: rangeLabelOf(yesterday, yesterday),
+    },
+    {
+      key: "week-to-date",
+      label: "本週累計",
+      from,
+      to: yesterday,
+      rangeLabel: rangeLabelOf(from, yesterday),
+    },
+  ];
+}
+
+export interface GradePracticeSection {
+  period: GradePracticeDeliveryPeriod;
+  report: GradePracticeExport;
+}
+
+export function buildGradePracticeSections(
+  database: DatabaseSync,
+  options: { formLevel: string; now?: Date },
+): GradePracticeSection[] {
+  return gradePracticeDeliveryPeriods(options.now).map((period) => ({
+    period,
+    report: buildGradePracticeExport(database, {
+      formLevel: options.formLevel,
+      from: period.from,
+      to: period.to,
+    }),
+  }));
+}
+
 /** 電郵正文及 JPG 共用同一個欄序（不可任意改動，教師會直接貼進 Excel 對照） */
 export const PRACTICE_TABLE_COLUMNS = [
   "班別班號",
@@ -272,4 +356,55 @@ export function formatPracticeTable(rows: GradePracticeRow[]): string {
   return [PRACTICE_TABLE_COLUMNS.join("\t"), ...practiceTableRows(rows).map((row) => row.join("\t"))].join(
     "\n",
   );
+}
+
+/** 單一期間的摘要句（電郵正文及 JPG 標題共用同一寫法） */
+export function practiceSectionSummary(report: GradePracticeExport): string {
+  const accuracy =
+    report.totals.accuracy === null ? "—" : `${(report.totals.accuracy * 100).toFixed(2)}%`;
+  return (
+    `名冊 ${report.totals.students} 位，其中 ${report.totals.activeStudents} 位有練習；` +
+    `練習 ${report.totals.sessions} 次、作答 ${report.totals.answeredQuestions}／` +
+    `${report.totals.assignedQuestions} 題，準確率 ${accuracy}`
+  );
+}
+
+const SECTION_ORDINALS = ["一", "二", "三", "四"];
+
+/** `formatPracticeDigest` 需要的欄位（`GradePracticeSection` 結構上相容） */
+export interface PracticeDigestSection {
+  period: { label: string; from: string; to: string; rangeLabel: string };
+  report: GradePracticeExport;
+}
+
+/**
+ * 電郵正文：逐個統計期間一段（標題、摘要、TAB 表格）。
+ *
+ * 兩個期間的日期完全相同時（星期二：前一日即本週一）加一句說明，避免教師以為
+ * 同一份表格重複寄了兩次。
+ */
+export function formatPracticeDigest(sections: readonly PracticeDigestSection[]): string {
+  const blocks = sections.map((section, index) => {
+    const heading =
+      `${SECTION_ORDINALS[index] ?? String(index + 1)}、` +
+      `${section.period.label}（${section.period.rangeLabel}）`;
+    const empty = section.report.totals.activeStudents === 0;
+    return [
+      heading,
+      practiceSectionSummary(section.report),
+      "",
+      formatPracticeTable(section.report.rows),
+      empty
+        ? "（此期間沒有任何一般練習紀錄。）"
+        : "（只列有練習紀錄的學生；完整名冊見附件 Excel。）",
+    ].join("\r\n");
+  });
+  const sameRange =
+    sections.length === 2 &&
+    sections[0]!.period.from === sections[1]!.period.from &&
+    sections[0]!.period.to === sections[1]!.period.to;
+  return [
+    ...blocks,
+    ...(sameRange ? ["（前一日與本週累計的期間相同，兩表數字一樣。）"] : []),
+  ].join("\r\n\r\n");
 }

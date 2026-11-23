@@ -7,9 +7,11 @@
       1. 立即執行一次匯出（驗證服務帳戶金鑰讀取備份、Excel 產生及電郵派發）；
       2. 註冊／更新**逢星期一至五** 07:45（香港時間）的 Windows 工作排程。
 
-    輸出：`<輸出資料夾>\中四_每日作答_<日期>.xlsx`（本機備份），並以電郵派發同一份檔案。
+    輸出：`<輸出資料夾>\中四_本週累計_<交付日>.xlsx`（本機備份），並以電郵派發同一份檔案。
     電郵正文為 TAB 分隔的逐位學生表格（班別班號／姓名／練習／獲派／作答／答對／答錯／
-    準確率／最後練習），只列有練習紀錄的學生；預設統計**本週一至今日**的累計。
+    準確率／最後練習），只列有練習紀錄的學生。統計範圍自 2026-11-23 起改為：
+      - **星期一**：上一個工作週（上星期一至五）；
+      - **星期二至五**：前一日，以及本週一至前一日的累計。
 
     憑證：
       - 讀取正式備份使用**服務帳戶金鑰**（`secrets\export-reader-service-account.json`），
@@ -112,14 +114,14 @@ Register-ScheduledTask `
     -Trigger $trigger `
     -Settings $settings `
     -Principal $principal `
-    -Description "逢星期一至五匯出中${Form}學生一般練習情況（本週一至今日，電郵正文為 TSV 表格＋Excel 附件）到 $OutDir；重溫錯題不計入。" `
+    -Description "逢星期一至五匯出中${Form}學生一般練習情況（星期一＝上星期一至五；星期二至五＝前一日＋本週累計；電郵正文為 TSV 表格＋Excel＋JPG 附件）到 $OutDir；重溫錯題不計入。" `
     -Force | Out-Null
 
 Write-Host ""
 Write-Host "已註冊每日排程" -ForegroundColor Green
 Write-Host "  名稱：$TaskName"
 Write-Host "  時間：逢星期一至五 $Time（電腦需開機並已登入）"
-Write-Host "  範圍：本週一至今日累計（電郵正文為逐位學生表格）"
+Write-Host "  範圍：星期一＝上星期一至五；星期二至五＝前一日＋本週一至前一日累計"
 Write-Host "  輸出：$OutDir"
 Write-Host "  日誌：$LogDir"
 Write-Host "  電郵：$(if ([string]::IsNullOrWhiteSpace($EmailTo)) { '依 secrets\export-mail.env 的 EXPORT_EMAIL_TO' } else { $EmailTo })"

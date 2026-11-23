@@ -9,8 +9,10 @@
         ./scripts/run-grade-practice-export.ps1 -OutDir "D:\匯出" -Date 2026-11-19
         ./scripts/run-grade-practice-export.ps1 -OutDir "D:\匯出" -PreviousDay
 
-    預設統計「本週一至今日」的累計（逢星期一至五每日更新），電郵正文為
-    TAB 分隔的逐位學生表格；`-PreviousDay` 改為只統計前一日。
+    預設（不使用任何日期參數）按交付規則統計：
+      - **星期一**：上一個工作週（上星期一至五）——07:45 時本週才開始，本週累計必然是 0；
+      - **星期二至五**：前一日，以及本週一至前一日的累計。
+    `-Date`／`-PreviousDay`／`-Week` 只供手動或診斷使用。
 
     日誌檔：`<OutDir>\logs\export-<YYYY-MM-DD>.log`（每次執行附加，失敗時保留完整輸出）。
     離開碼：0 = 成功；1 = 失敗（排程的「上次執行結果」會顯示）。
@@ -20,12 +22,12 @@ param(
     [Parameter(Mandatory = $true)][string]$OutDir,
     [string]$Form = "4",
     [string]$NodeExe = "npm.cmd",
-    # 統計日期（YYYY-MM-DD）。留空時按 -PreviousDay 決定：
-    #   預設 = 本週一至今日（逢星期一至五每日更新，累計本週至今）；
-    #   -PreviousDay = 前一日單日。
+    # 手動指定單一統計日期（YYYY-MM-DD）；留空時按交付規則統計（見 .DESCRIPTION）。
     [string]$Date = "",
-    # 只統計前一日（預設為累計本週一至今日）
+    # 只統計前一日（手動用；排程本身在星期二至五已包含前一日）
     [switch]$PreviousDay,
+    # 只統計本週一至今日的累計（手動用）
+    [switch]$Week,
     # 收件人（多個以分號或逗號分隔）。留空 = 使用 secrets\export-mail.env 的 EXPORT_EMAIL_TO。
     [string]$EmailTo = "",
     # 只寫本機檔案、不寄電郵（例如除錯）
@@ -59,14 +61,22 @@ Write-Log "開始匯出中${Form}每日作答情況 → $OutDir"
 $rangeArgs = @()
 if (-not [string]::IsNullOrWhiteSpace($Date)) {
     $rangeArgs = @("--date", $Date)
-    Write-Log "統計日期：$Date"
+    Write-Log "統計日期：$Date（手動指定）"
 } elseif ($PreviousDay) {
     $previous = (Get-Date).AddDays(-1).ToString("yyyy-MM-dd")
     $rangeArgs = @("--date", $previous)
-    Write-Log "統計日期：$previous（前一日）"
-} else {
+    Write-Log "統計日期：$previous（前一日，手動指定）"
+} elseif ($Week) {
     $rangeArgs = @("--week")
-    Write-Log "統計範圍：本週一至今日（累計）"
+    Write-Log "統計範圍：本週一至今日（累計，手動指定）"
+} else {
+    $rangeArgs = @("--schedule")
+    $weekday = (Get-Date).DayOfWeek
+    if ($weekday -eq [System.DayOfWeek]::Monday) {
+        Write-Log "統計範圍：上星期一至五（星期一交付規則）"
+    } else {
+        Write-Log "統計範圍：前一日＋本週一至前一日累計（交付規則）"
+    }
 }
 
 $arguments = @("run", "--silent", "export:grade-daily", "--", "--form", $Form, "--out", $OutDir) + $rangeArgs
