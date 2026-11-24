@@ -1,0 +1,93 @@
+{
+  "date": "2026-11-24",
+  "commit": "4dbd9f6e99c2125a997fb7df9d50d9575d82c683",
+  "subject": "feat(generation): top-up short generations, stream progress, and block longest-answer MCQs",
+  "repository": "ipwh/ai-history-platform",
+  "branch": "main",
+  "ci": {
+    "runId": 45319457268,
+    "url": "https://github.com/ipwh/ai-history-platform/actions/runs/45319457268",
+    "conclusion": "success"
+  },
+  "cloudBuild": {
+    "id": "b2dcfd6d-61ad-4683-a907-5f4420bb6860",
+    "project": "pccss-ai-history",
+    "trigger": "history-main-push",
+    "status": "SUCCESS",
+    "createdAt": "2026-11-24T03:25:54.746475Z",
+    "finishedAt": "2026-11-24T03:34:16.650939Z",
+    "image": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:b2dcfd6d-61ad-4683-a907-5f4420bb6860",
+    "qualityGate": "建置內建品質閘門（npm ci → lint → test）通過，_QUALITY_GATE=1"
+  },
+  "cloudRun": {
+    "service": "history-self-study",
+    "region": "asia-east2",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00124-chg",
+    "previousRevision": "history-self-study-00123-p9c",
+    "trafficPercent": 100
+  },
+  "verification": {
+    "healthStatus": 200,
+    "healthOk": true,
+    "database": {
+      "driver": "sqlite",
+      "status": "ok"
+    },
+    "llmProvider": "deepseek",
+    "llmConfigured": true,
+    "demoMode": false,
+    "materials": {
+      "documents": 46,
+      "blocks": 26599,
+      "studentVisibleDocuments": 22
+    },
+    "persistence": {
+      "backupEnabled": true,
+      "restore": "restored",
+      "lastSuccessAt": null,
+      "lastError": null,
+      "backupsUploaded": 0
+    },
+    "staffApiGuard": "未帶工作階段的 POST /api/teacher/questions/generate（含 Accept: text/event-stream）回 401——新的 SSE 進度路徑在 requireTeacher 之後，權限沒有被繞過。"
+  },
+  "changes": {
+    "summary": [
+      "自動補題：通過驗證的題目少於要求時以「還缺幾題」再向模型要一次（avoidAnswers 帶入已用答案），最多 2 輪、整體最多 5 次模型呼叫；與題庫重複的題目改為合併時即時略過。學生練習路徑沿用本身的跨分節補題迴圈（topUpRounds: 0），避免內外兩層相乘。",
+      "生成進度：POST /api/teacher/questions/generate 支援 Accept: text/event-stream（progress／done／error，每 15 秒心跳），沒有要求串流的呼叫仍回同一個 JSON；客戶端離線不會中止生成。教師端顯示進度面板、已取得題數進度條及已等待秒數並攔截重新整理；學生練習設定頁顯示已等待秒數及「請勿重新整理」。",
+      "正確答案不可以是最長選項：提示詞（規則 18）改為硬性要求並明確允許加長錯誤選項；生成階段以 answerIsLongest（正確答案比其他選項多 2 字）觸發重寫，重寫及補題後仍然如此則不寫入題庫（派題關卡維持 1.5 倍／4 字的嚴重門檻）；本地示範生成優先取用較長的同類錯誤選項。"
+    ],
+    "files": [
+      "src/server/services/question-service.ts",
+      "src/server/quality/option-quality.ts",
+      "src/server/llm/prompt.ts",
+      "src/server/llm/mock-provider.ts",
+      "src/server/llm/question-quality.ts",
+      "src/server/services/practice-service.ts",
+      "src/app/api/teacher/questions/generate/route.ts",
+      "src/components/QuestionManager.tsx",
+      "src/components/PracticeSetupForm.tsx",
+      "src/lib/types.ts",
+      "tests/generation-topup-shortfall.test.ts（新增）",
+      "tests/generation-progress-stream.test.ts（新增）",
+      "tests/option-length-neutrality.test.ts",
+      "tests/question-quality-gate.test.ts",
+      "README.md、CHANGELOG.md、docs/quality/option-quality-warning-traceability.md"
+    ]
+  },
+  "localValidation": {
+    "testFilesPassed": 182,
+    "testsPassed": 2763,
+    "testsSkipped": 4,
+    "typecheck": "passed",
+    "lintErrors": 0,
+    "lintWarnings": 1,
+    "lintWarning": "既有未使用的 import（scripts/verify-questionbank-sync.ts），與本次改動無關",
+    "build": "npm run build 成功；npm run verify:build 確認沒有頁面被預先渲染",
+    "liveSmoke": "以 next start + 臨時資料庫副本、示範生成（LLM_PROVIDER=mock）經真實 HTTP 生成 3 個分節共 14 條選擇題：正確答案為最長者 0 條、最大差距 0 字；SSE 依序收到 preparing→generating→reviewing→saving→done（requestedCount/shortfall 如實回報）；未帶 Accept 的請求仍回 JSON。臨時資料庫副本已刪除，data/app.db 未被改動。"
+  },
+  "notVerified": [
+    "正式環境的教師／學生介面流程未有真人帳戶操作：生成題目需要已登入的教師工作階段（且會消耗真實模型呼叫），因此部署驗證只包括健康檢查、教材數量、資料庫狀態及後台守衛回 401。補題、SSE 進度及長度判定由本機 HTTP 實測（示範生成）及單元／路由測試覆蓋。",
+    "既有題庫中「正確答案是最長選項」的舊題目仍然存在（生成階段的新規則不會追溯修改）；派題關卡仍按 1.5 倍／4 字門檻攔截嚴重個案，教師可用 npm run audit:option-bias 查看數量。"
+  ]
+}

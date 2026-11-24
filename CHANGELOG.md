@@ -18,6 +18,8 @@
 
 ## [未發布] — 2026-11-24（三十一）：選擇題「正確答案是最長那項」在生成階段直接擋下
 
+**狀態**：已部署（連同同日第三十節的補題及生成進度）。功能提交 `4dbd9f6` 的 GitHub Actions CI（run `45319457268`）及 Cloud Build（`b2dcfd6d-61ad-4683-a907-5f4420bb6860`）均成功；Cloud Run revision `history-self-study-00124-chg` 承接 100% 流量，正式 `/api/health` 回應 200、`database=sqlite/ok`、`materials 46 份／26,599 段`。詳見 [deployment-evidence-2026-11-24.json](docs/deployment-evidence-2026-11-24.json)。
+
 ### 修正
 
 - **生成階段收緊「正確答案不可以是最長的選項」**（擁有者指示）：以往只有「正確答案 ≥ 1.5 倍最長錯誤選項且多 4 字」（嚴重不對稱）才重寫及丟棄，較輕微的「正確答案就是最長那項」仍會寫入題庫——本機 2026-11-24 快照量度（2,260 條選擇題）顯示 **40.3%** 屬此類，其中 `origin=material-ai` 高達 **60.4%**（學校試卷 15.5%）。現在：
