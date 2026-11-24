@@ -339,6 +339,10 @@ async function generateForSections(options: {
           // 避免「一題不合格」令整節沒有題目（見 GenerateOptions.overGenerate）。
           // 只要求 1 題時多要 1 題（已是兩倍機會）；要求 2 題以上則多要 2 題。
           overGenerate: count <= 1 ? 1 : 2,
+          // 補題由呼叫端（generatePracticeQuestions）跨分節處理：它可以在其他分節
+          // 重新分配題數，比在單一分節內重試更有機會補足，因此這裡停用內層補題，
+          // 避免內外兩層補題相乘而令學生等得太久。
+          topUpRounds: 0,
           persist: false,
           allowBankDuplicates: true,
           requestType: "question-instant",
@@ -625,6 +629,8 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
           difficulty: parsed.difficulty,
           questionCount: missing,
           overGenerate: 2,
+          // 見 generateForSections：題庫練習的補題由呼叫端逐次再要，不在單次生成內重試
+          topUpRounds: 0,
           requestType: "question-instant",
           // 學生自行觸發：教材來源只可取用已確認可向學生發布的內容（fail-closed）
           audience: "student",

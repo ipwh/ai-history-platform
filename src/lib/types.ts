@@ -1194,6 +1194,38 @@ export const generatedQuestionPreviewSchema = z.object({
 });
 export type GeneratedQuestionPreview = z.infer<typeof generatedQuestionPreviewSchema>;
 
+/**
+ * 生成進度回報（2026-11-24）。
+ *
+ * 為甚麼需要：一次生成可能包含多輪模型呼叫（重寫教學品質不合格的題目、補足不足的題數），
+ * 每輪都要數十秒。介面若只顯示一個靜止的「正在生成…」，用家很自然會以為平台已經失敗
+ * 而重新整理頁面，令該次生成白費。生成流程因此透過 `onProgress` 回報階段、輪次及進度，
+ * 由 `POST /api/teacher/questions/generate` 以 SSE `progress` 事件送到介面。
+ */
+export const generationStageSchema = z.enum([
+  "preparing",
+  "generating",
+  "reviewing",
+  "revising",
+  "topping-up",
+  "saving",
+]);
+export type GenerationStage = z.infer<typeof generationStageSchema>;
+
+export interface GenerationProgress {
+  stage: GenerationStage;
+  /** 這是第幾次模型呼叫（補題會令它超過 1） */
+  round: number;
+  /** 這次生成最多會呼叫模型的次數（上限，不代表一定會用盡） */
+  maxRounds: number;
+  /** 已通過驗證、會保留的題目數 */
+  accepted: number;
+  /** 要求的題數 */
+  target: number;
+  /** 直接顯示給用家的中文說明 */
+  message: string;
+}
+
 /** AI 語意批改時，模型必須返回的格式（之後會驗證並轉成 AiGrading） */
 export const llmGradingSchema = z.object({
   verdict: z.enum(["correct", "partial", "incorrect"]),

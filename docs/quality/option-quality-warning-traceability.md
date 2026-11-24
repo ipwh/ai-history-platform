@@ -1,6 +1,6 @@
 # 選擇題表面線索警告：可追溯性契約（Sprint 24）
 
-最後更新：2026-10-23
+最後更新：2026-11-24（新增第 6 節：生成階段的嚴格長度判定）
 
 ---
 
@@ -24,7 +24,7 @@
 
 | 代碼 | 檢查內容 |
 | --- | --- |
-| `option-length-asymmetry` | 正確項唯一最長、≥1.5× 最長干擾項、且多出 ≥4 字 |
+| `option-length-asymmetry` | 正確項唯一最長、≥1.5× 最長干擾項、且多出 ≥4 字（**派題關卡**的門檻）。生成流程另有更嚴格的 `answerIsLongest`（多 2 字即重寫／丟棄），見第 7 節 |
 | `option-form-mismatch` | 正確項與干擾項的句式不一致（說明句 vs 短標籤） |
 | `option-absolutist-distractor` | 干擾項使用「一定／必然／完全／所有／永遠／必定／唯一」而正確項沒有 |
 | `option-duplicate` | 選項正規化後重複 |
@@ -32,6 +32,12 @@
 **版本遞增規則**：只在門檻、判定邏輯或訊息語意改變時把 `OPTION_QUALITY_RULE_VERSION`
 由 `v1` 遞增。版本不同代表兩條警告不可直接相加比較；`summariseOptionQualityWarnings()`
 會分開統計各版本。
+
+> **2026-11-24 的訊息更新（版本仍為 `v1`）**：`option-length-asymmetry` 的白話說明由
+> 「不可用加長錯誤選項的方式湊字數」改為「**主要做法是把錯誤選項加長**（加入同類而具體、
+> 明確錯誤的史實）」。**判定門檻、代碼及嚴重程度全部不變**（仍是 1.5× 且多 4 字、
+> 仍是 `warning`），只是建議做法改變——因此不遞增版本，避免把同一規則的歷史警告
+> 拆成兩個版本統計。
 
 ---
 
@@ -167,3 +173,29 @@ SELECT code, COUNT(*) FROM question_quality_findings
 - 不是使用授權或 provenance 已處理的證明；
 - 不是「已消除選最長漏洞」的證明——Sprint 22／23 已證實長度線索在選項打亂後仍然存在，
   本 Sprint 只令它可以被**看見與統計**。
+
+---
+
+## 7. 生成階段的嚴格長度判定（2026-11-24）
+
+同一支 `analyseOptionQuality` 的結果，在**三個位置**有不同的用途與門檻：
+
+| 位置 | 判定 | 門檻 | 後果 |
+| --- | --- | --- | --- |
+| 教師介面的品質警告 | `option-length-asymmetry` | 正確項唯一最長、≥1.5× 且多 4 字 | 只顯示警告，不改變發布政策（本文件第 1–5 節） |
+| 派題關卡（`checkQuestionDeliverable` → `checkOptionLengthNeutral`） | `isSevereLengthAsymmetry` | 同上（1.5× 且多 4 字） | 該題不派給學生；題目仍留在題庫供教師修訂 |
+| **生成流程**（[question-service.ts](../../src/server/services/question-service.ts) 的 `mergeAccepted`） | **`answerIsLongest`** | **正確答案比最長錯誤選項多 2 字或以上** | 與其他可修正問題共用同一次重寫；重寫、補題後仍然如此則**不寫入題庫**，由自動補題補回題數 |
+
+為甚麼生成階段更嚴格：生成可以重寫（修訂指示明確要求**加長錯誤選項**，見 [prompt.ts](../../src/server/llm/prompt.ts) 規則 18）及補題，沒有理由把「只選最長那項就答對」的題目寫入題庫；派題關卡要同時處理已在題庫的校內試題，一律「最長即攔」會令大量舊題目即時不可用。
+
+量度與門檻選擇（本機 2026-11-24 快照，`question_type = mc`，n=2,260）：
+
+| 指標 | 數值 |
+| --- | --- |
+| 正確答案唯一最長（任何差距） | 40.3%（`material-ai` 60.4%、學校試卷 15.5%、示範 39.3%） |
+| 只差 1 字（不觸發生成判定） | 6.2% |
+| 嚴重不對稱（1.5× 且多 4 字） | 8.1% |
+
+「只差 1 字」不觸發：視覺上不構成可用的提示，而要求模型每次撞出完全等長的選項並不現實；把這批一併丟棄只會減少題目數量而不改善防作弊效果。
+
+長度檢查在**合併每一輪結果**時執行（第一輪、重寫、空回應重試、補題），避免「重寫後丟棄、但補題又把同類題目帶回結果」；測試見 [tests/generation-topup-shortfall.test.ts](../../tests/generation-topup-shortfall.test.ts) 及 [tests/option-length-neutrality.test.ts](../../tests/option-length-neutrality.test.ts)。

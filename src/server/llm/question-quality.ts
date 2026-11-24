@@ -1162,7 +1162,9 @@ export function checkQuestionQuality(
   // 不改動任何題目內容（見 src/server/quality/option-quality.ts 的說明）。
   //
   // 2026-10-27：長度不對稱的**實際攔截**不在這裡做，而在兩個地方——
-  //   1. question-service 會就這條警告要求模型把四個選項一併重寫一次；
+  //   1. question-service 會就這條警告要求模型重寫一次；2026-11-24 起，生成階段
+  //      對「正確答案是最長的選項」更嚴格（`answerIsLongest`：多 2 字即觸發重寫），
+  //      重寫後仍然如此則不寫入題庫；
   //   2. practice-service 派題前會檢查（question-servability.ts 的
   //      `checkOptionLengthNeutral`），重寫後仍然「正確項唯一最長」的題目不會到學生手上。
   // 這樣教師端的發布判定不變，但學生永遠不會見到「選最長那項」就能答對的題目。

@@ -48,6 +48,31 @@ export const LENGTH_ASYMMETRY_RATIO = 1.5;
  */
 export const LENGTH_ASYMMETRY_MIN_DELTA = 4;
 
+/**
+ * 「正確答案就是最長的選項」的判定門檻（2026-11-24，擁有者指示）。
+ *
+ * 與 `isSevereLengthAsymmetry` 的分工：
+ *   - `isSevereLengthAsymmetry`（1.5 倍且多 4 字）是**派題關卡**（question-servability），
+ *     門檻較寬是因為要顧及已在題庫的校內試題，不能一次過攔下大量舊題；
+ *   - `answerIsLongest` 是**生成關卡**：生成階段可以重寫、可以補題，因此要求更嚴——
+ *     只要正確答案比所有錯誤選項長 2 字或以上，就當作「學生只選最長那項就能答對」。
+ *
+ * 為甚麼下限是 2 字（本機 2026-11-24 快照，`question_type = mc`，n=2,260）：
+ *   - 正確選項唯一最長 40.3%（其中 `origin=material-ai` 60.4%、學校試卷 15.5%）；
+ *   - 只差 1 字者佔 6.2%——那個差距在視覺上不構成可用的提示，模型亦難以每次都撞出
+ *     完全等長的選項；把這批一併丟棄只會令題目數量下降而不改善防作弊效果。
+ */
+export const ANSWER_LONGEST_MIN_DELTA = 2;
+
+/** 正確答案是否為「最長的那一項」（生成階段使用的嚴格判定，見 {@link ANSWER_LONGEST_MIN_DELTA}） */
+export function answerIsLongest(metrics: OptionLengthMetrics | null): boolean {
+  if (metrics === null) return false;
+  return (
+    metrics.uniquelyLongest &&
+    metrics.correctLength - metrics.longestDistractorLength >= ANSWER_LONGEST_MIN_DELTA
+  );
+}
+
 /** 少於或等於此長度且不含句中標點的選項，視為「短標籤」（名詞／年份／人名） */
 export const SHORT_OPTION_MAX_LENGTH = 8;
 
@@ -307,9 +332,10 @@ export function analyseOptionQuality(input: {
       code: "option-length-asymmetry",
       message:
         `正確選項（${correctLength} 字）明顯長於最長的錯誤選項（${longestDistractorLength} 字），` +
-        "學生只憑「哪一項最長」就可以答對，毋須讀懂歷史內容。請把這道題的四個選項**一併改寫**" +
-        "成字數相若（差距不超過三成）、句式相同的同類寫法；錯誤選項要同樣具體（同類的人物／" +
-        "事件／制度／年份），不可用加長錯誤選項的方式湊字數，也不可把正確答案縮短至失去關鍵史實。" +
+        "學生只憑「哪一項最長」就可以答對，毋須讀懂歷史內容。請把這道題的四個選項改成字數相若" +
+        "（差距不超過三成）、句式相同的同類寫法：**主要做法是把錯誤選項加長**——加入同類而具體、" +
+        "明確錯誤的史實或同樣詳略的說明，令至少一個錯誤選項與正確答案等長或更長；" +
+        "亦可把正確答案的精細度降至與其他選項相若，但不可縮短至失去關鍵史實。" +
         "若無法在教材範圍內做到，請改出另一條只涉及單一史實的題目。",
     });
   }

@@ -16,6 +16,45 @@
 
 ---
 
+## [未發布] — 2026-11-24（三十一）：選擇題「正確答案是最長那項」在生成階段直接擋下
+
+### 修正
+
+- **生成階段收緊「正確答案不可以是最長的選項」**（擁有者指示）：以往只有「正確答案 ≥ 1.5 倍最長錯誤選項且多 4 字」（嚴重不對稱）才重寫及丟棄，較輕微的「正確答案就是最長那項」仍會寫入題庫——本機 2026-11-24 快照量度（2,260 條選擇題）顯示 **40.3%** 屬此類，其中 `origin=material-ai` 高達 **60.4%**（學校試卷 15.5%）。現在：
+  - [option-quality.ts](src/server/quality/option-quality.ts) 新增 `answerIsLongest`（正確答案比最長錯誤選項多 **2 字或以上**即成立），並把「只差 1 字」排除在門檻外（佔 6.2%，視覺上不構成提示，亦難以要求模型每次撞出完全等長）。
+  - [question-service.ts](src/server/services/question-service.ts) 以 `answerIsLongest` 決定重寫及丟棄：這類題目與其他可修正問題共用同一次重寫；重寫、補題後仍然如此者**不會寫入題庫**，由自動補題補回題數（見同日第三十節）。
+  - **長度檢查改為在「合併每一輪結果」時執行**（`mergeAccepted`）：修補了「重寫後丟棄、但之後的補題又把同類題目帶回結果」的漏洞（以測試重現後修正）。
+  - 丟棄原因會寫明字數（例如「正確答案 16 字、最長的錯誤選項 12 字」），令教師知道可以怎樣修正。
+- **提示詞改為允許（並要求）加長錯誤選項**：[prompt.ts](src/server/llm/prompt.ts) 規則 18 由「不可用加長錯誤選項的方式湊字數」改為「**主要做法是把錯誤選項加長**——加入同類而具體、明確錯誤的史實，令至少一個錯誤選項與正確答案等長或更長」，同時保留「不可加入教材沒有交代的內容」及「不可把正確答案縮短至失去關鍵史實」。修訂指示（`optionSymmetryNote`）及表面線索警告文字同步更新。
+- **本地示範生成優先選用較長的同類錯誤選項**：[mock-provider.ts](src/server/llm/mock-provider.ts) 的 `buildOptions` 只調整候選詞語的**取用次序**（長度不短於正確答案者優先），不改動任何文字，減少示範題目因長度不合格而被丟棄。
+- 派題關卡 `checkOptionLengthNeutral` **維持原來的嚴重門檻**：它同時要處理已在題庫的校內試題，一律以「最長即攔」會令大量舊題目即時不可用。生成階段可以重寫及補題，因此可以更嚴格。
+
+### 驗證
+
+- 新測試：[option-length-neutrality.test.ts](tests/option-length-neutrality.test.ts) 的 `answerIsLongest` 四個個案（多 2 字→成立、多 1 字→不成立、錯誤選項更長→不成立、無度量→不成立）及提示詞契約（要求「正確答案不可以是最長的選項」、允許加長錯誤選項）；[generation-topup-shortfall.test.ts](tests/generation-topup-shortfall.test.ts) 新增個案：正確答案最長的題目會被重寫，重寫及補題後仍然如此則不寫入題庫（只有長度中性的題目保留、短欠如實回報）。
+- [question-quality-gate.test.ts](tests/question-quality-gate.test.ts) 的生成個案改用長度中性的樣本選項（`withNeutralOptions`），令該段測試繼續聚焦於解釋品質與重寫行為。
+- 全套 `npm test`：**2,763 通過、4 略過**（182 個檔案）；`npm run typecheck`、`npx eslint`、`npm run build` 均通過。
+
+## [未發布] — 2026-11-24（三十）：AI 生成題目短欠時自動補題，並顯示生成進度
+
+### 修正
+
+- **短欠（少於要求題數）不再直接交付**：[question-service.ts](src/server/services/question-service.ts) 的 `generateQuestions` 以往只在「完全沒有可用題目」時才重試，模型交出 3 題（要求 5 題）時就把 3 題交給教師／學生，教師要逐次再按「生成題目」補齊，每次都是全新的模型呼叫及等待。現在只要通過驗證的題目少於 `questionCount`，就會以「還缺幾題」再向模型要一次，並把**已用過的標準答案**放進 `avoidAnswers` 提示詞，要求改用教材其他史實。
+  - 上限：補題最多 2 輪，整體最多 5 次模型呼叫（初始、品質重寫、空回應重試、補題 2 輪）；連續兩輪沒有新增題目即停止，教材真的不足時不會無限呼叫。
+  - 與題庫重複的題目改為**在合併時即時略過**（`checkBankDuplicates`），補題因此會補回真正缺的題數，不再出現「補到 5 題後有 2 題因重複被丟棄，最終又少了 2 題」。全部題目都因重複被略過時仍回 409（與以往一致）。
+  - 短欠如實回報：`GenerationResult` 新增 `requestedCount`／`shortfall`，`notice` 會說明「只取得 N／M 題」及可行下一步，不會假裝成功。
+  - 學生練習路徑（`practice-service.ts`）沿用本身的跨分節補題迴圈，兩處呼叫明確設 `topUpRounds: 0`，避免內外兩層補題相乘而令學生等得太久。
+
+### 新增
+
+- **`POST /api/teacher/questions/generate` 支援 SSE 進度**（`Accept: text/event-stream`）：先推送多個 `progress` 事件（`preparing`／`generating`／`reviewing`／`revising`／`topping-up`／`saving`，含第幾輪、上限、已取得題數、目標題數及可直接顯示的中文說明），最後推送 `done`（完整結果）或 `error`（附 HTTP 狀態）。每 15 秒一個心跳註解，避免長時間沒有位元組被代理層切斷。**沒有要求串流的呼叫仍收到同一個 JSON 回應**（指令碼及舊整合不受影響）。客戶端中途離線**不會中止生成**：題目照常寫入題庫。
+- **介面進度提示**：教師端 [QuestionManager.tsx](src/components/QuestionManager.tsx) 顯示階段訊息、已取得／要求題數的進度條、第幾輪及已等待秒數，並在生成期間攔截 `beforeunload`（重新整理／關閉分頁會有提示）；結果摘要改為顯示「已取得 N／M 題」。學生端 [PracticeSetupForm.tsx](src/components/PracticeSetupForm.tsx) 的「開始練習」按鈕會顯示已等待秒數，說明文字改為「題目不足時會自動補題，可能需要一至兩分鐘。請勿重新整理或關閉頁面。」，生成期間同樣攔截 `beforeunload`。
+
+### 驗證
+
+- 新測試：[tests/generation-topup-shortfall.test.ts](tests/generation-topup-shortfall.test.ts)（模型每次只交 2 題 → 自動補題至要求題數並回報 `topping-up` 進度；教材不足時補題停止、`shortfall` 如實回報且模型呼叫不超過 5 次）、[tests/generation-progress-stream.test.ts](tests/generation-progress-stream.test.ts)（SSE 事件次序、`topping-up` 階段、`done` 的 `requestedCount`／`shortfall`／題數）。
+- 全套 `npm test`：**2,757 通過、4 略過**（182 個檔案），`npm run typecheck` 及 `npx eslint` 無錯誤。
+
 ## [未發布] — 2026-11-23（二十九）：星期一的統計範圍再改為「上星期一至**日**」
 
 ### 變更

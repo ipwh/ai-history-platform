@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   analyseOptionQuality,
+  answerIsLongest,
   isSevereLengthAsymmetry,
   optionTextLength,
 } from "@/server/quality/option-quality";
@@ -86,6 +87,54 @@ describe("isSevereLengthAsymmetry", () => {
   });
 });
 
+/**
+ * 生成階段的嚴格判定（2026-11-24，擁有者指示）。
+ *
+ * 派題關卡容許「只長一點」的題目（舊題目太多，不能一次過攔下），但生成階段可以
+ * 重寫及補題，因此要求「正確答案不是最長的一項」：只要多出 2 字或以上就重寫，
+ * 重寫後仍然如此則不寫入題庫。
+ */
+describe("answerIsLongest", () => {
+  it("正確答案比最長錯誤選項多 2 字或以上 → 視為洩露答案", () => {
+    // 正確 10 字、最長干擾 8 字
+    const options = ["工業革命促進城市發展", "農業技術大幅改良", "海外貿易迅速擴張", "人口統計出現變化"];
+    const metrics = analyseOptionQuality({
+      questionType: "mc",
+      options,
+      correctAnswer: options[0],
+    }).metrics;
+    expect(answerIsLongest(metrics)).toBe(true);
+    // 未達「嚴重」門檻（比例未到 1.5），證明兩者是不同的判定
+    expect(isSevereLengthAsymmetry(metrics)).toBe(false);
+  });
+
+  it("正確答案只多 1 字 → 不視為洩露答案（視覺上不構成提示）", () => {
+    // 正確 11 字、最長干擾 10 字
+    const options = ["人口大量增加城市勞動力", "人口大量減少城市勞動", "農業人口大量轉往工廠", "城市就業機會大幅減少"];
+    const metrics = analyseOptionQuality({
+      questionType: "mc",
+      options,
+      correctAnswer: options[0],
+    }).metrics;
+    expect(metrics?.uniquelyLongest).toBe(true);
+    expect(answerIsLongest(metrics)).toBe(false);
+  });
+
+  it("錯誤選項與正確答案等長或更長 → 不視為洩露答案", () => {
+    const options = ["人口大量增加", "人口大幅減少", "農業急劇萎縮", "城市迅速擴大"];
+    const metrics = analyseOptionQuality({
+      questionType: "mc",
+      options,
+      correctAnswer: options[0],
+    }).metrics;
+    expect(answerIsLongest(metrics)).toBe(false);
+  });
+
+  it("沒有可用度量時不判為洩露答案", () => {
+    expect(answerIsLongest(null)).toBe(false);
+  });
+});
+
 describe("派題前的長度檢查", () => {
   it("正確選項明顯最長的選擇題不可派給學生，並說明原因", () => {
     const check = checkOptionLengthNeutral(
@@ -148,6 +197,14 @@ describe("出題提示詞要求選項長度對稱", () => {
     expect(prompt).toContain("把正確答案寫得最詳細");
   });
 
+  it("系統提示要求「正確答案不可以是最長的選項」，並允許加長錯誤選項", () => {
+    // 2026-11-24 擁有者指示：正確答案若是四個選項中最長的一項，學生只憑長度就能答對；
+    // 必要時可以（並應該）加長錯誤選項，而不是只把正確答案縮短。
+    const prompt = buildSystemPrompt("junior");
+    expect(prompt).toContain("正確答案不可以是最長的選項");
+    expect(prompt).toContain("把錯誤選項加長");
+  });
+
   it("使用者提示在 JSON 格式提醒中重申同一要求", () => {
     const input = {
       topicTitle: "課題",
@@ -157,6 +214,8 @@ describe("出題提示詞要求選項長度對稱", () => {
       count: 1,
       materialUnits: [{ blockId: "b1", sourceLocation: "位置", text: "教材內容" }],
     } as unknown as QuestionGenerationInput;
-    expect(buildUserPrompt(input)).toContain("字數相若");
+    const prompt = buildUserPrompt(input);
+    expect(prompt).toContain("字數相若");
+    expect(prompt).toContain("正確答案不可以是最長的選項");
   });
 });

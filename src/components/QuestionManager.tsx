@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { api } from "@/lib/api-client";
+import { api, ApiError } from "@/lib/api-client";
 import {
   DIFFICULTIES,
   DIFFICULTY_LABELS,
@@ -15,6 +15,7 @@ import {
   QUESTION_TYPE_LABELS,
   type Difficulty,
   type GeneratedQuestionPreview,
+  type GenerationProgress,
   type Question,
   type QuestionReportDetail,
   type QuestionReportStatus,
@@ -25,12 +26,150 @@ import {
   type QuestionType,
   type TopicOverview,
 } from "@/lib/types";
-import { ErrorNotice, Loading, Notice } from "@/components/ui";
+import { ErrorNotice, Loading, Notice, ProgressBar } from "@/components/ui";
 import { QuestionReportPanel } from "@/components/QuestionReportPanel";
 
 interface GenerateResult extends GeneratedQuestionPreview {
   notice: string | null;
   usable: boolean;
+  /** 要求生成的題數（伺服器補題的目標） */
+  requestedCount?: number;
+  /** 補題後仍然不足的題數 */
+  shortfall?: number;
+}
+
+/**
+ * 讀取 SSE 進度並回傳最終生成結果（見 `POST /api/teacher/questions/generate`）。
+ *
+ * 生成可能包含多輪模型呼叫（重寫、補題），伺服器會在每輪開始前推送 `progress`，
+ * 完成後推送 `done`（完整結果）或 `error`。若伺服器沒有以串流回應（錯誤、舊版
+ * 伺服器或代理改寫），會沿用一般的 JSON 處理，行為與以往一致。
+ */
+async function postGenerationWithProgress(
+  body: Record<string, unknown>,
+  onProgress: (progress: GenerationProgress) => void,
+): Promise<GenerateResult> {
+  const response = await fetch("/api/teacher/questions/generate", {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "text/event-stream" },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!response.body || !contentType.includes("text/event-stream")) {
+    const text = await response.text();
+    let payload: Record<string, unknown> | null = null;
+    try {
+      payload = text.length > 0 ? (JSON.parse(text) as Record<string, unknown>) : null;
+    } catch {
+      payload = null;
+    }
+    if (!response.ok) {
+      throw new ApiError(
+        typeof payload?.error === "string" ? payload.error : `請求失敗（HTTP ${response.status}）`,
+        response.status,
+        Array.isArray(payload?.details) ? (payload.details as string[]) : [],
+      );
+    }
+    if (payload === null) {
+      throw new ApiError(
+        `伺服器回應格式不正確（HTTP ${response.status}），請重試。`,
+        response.status,
+        [],
+        "format",
+      );
+    }
+    return payload as unknown as GenerateResult;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let event = "";
+  let result: GenerateResult | null = null;
+
+  const handleLine = (line: string): void => {
+    if (line.startsWith("event:")) {
+      event = line.slice(6).trim();
+      return;
+    }
+    if (!line.startsWith("data:")) return;
+    const data = JSON.parse(line.slice(5).trim()) as Record<string, unknown>;
+    if (event === "progress") {
+      onProgress(data as unknown as GenerationProgress);
+    } else if (event === "done") {
+      result = data as unknown as GenerateResult;
+    } else if (event === "error") {
+      // 伺服器以事件回報失敗（HTTP 狀態已是 200）：直接拋出，交由呼叫端顯示可行動的說明
+      throw new ApiError(
+        typeof data.error === "string" ? data.error : "生成題目時發生錯誤，請稍後再試。",
+        typeof data.status === "number" ? data.status : 500,
+        [],
+      );
+    }
+    event = "";
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split(/\r?\n/);
+    buffer = lines.pop() ?? "";
+    for (const line of lines) handleLine(line);
+  }
+  buffer += decoder.decode();
+  if (buffer.length > 0) handleLine(buffer);
+
+  // `result` 在事件回呼內賦值，TypeScript 無法追蹤，因此以斷言收窄
+  const finalResult = result as GenerateResult | null;
+  if (finalResult === null) {
+    // 串流在 `done` 之前斷開（例如網絡中斷、代理逾時）：不可假裝成功
+    throw new ApiError(
+      "生成題目的連線中斷，未能確認結果。題目可能已經寫入題庫，請重新載入題目清單查看；如沒有新增題目請再生成一次。",
+      0,
+      [],
+      "format",
+    );
+  }
+  return finalResult;
+}
+
+/**
+ * 生成進度面板（2026-11-24）。
+ *
+ * 補題令生成時間變長，若畫面只有一個靜止的「正在生成…」，用家很容易以為平台
+ * 已經失敗而重新整理頁面。這裡同時顯示：伺服器回報的階段、第幾輪、已取得題數、
+ * 已等待秒數，以及「請勿重新整理」的明確提示。
+ */
+function GenerationProgressPanel({
+  progress,
+  elapsed,
+}: {
+  progress: GenerationProgress | null;
+  elapsed: number;
+}) {
+  const target = progress?.target ?? 0;
+  const accepted = progress?.accepted ?? 0;
+  return (
+    <div className="flex flex-col gap-2" role="status" aria-live="polite">
+      <p className="text-sm font-semibold">
+        {progress?.message ?? "正在整理教材並請 AI 出題…"}
+      </p>
+      {target > 0 ? <ProgressBar value={accepted / target} /> : null}
+      <p className="text-meta">
+        {progress !== null && target > 0
+          ? `已取得 ${accepted}／${target} 題 · 第 ${progress.round} 輪（最多 ${progress.maxRounds} 輪） · 已用 ${elapsed} 秒`
+          : `已用 ${elapsed} 秒`}
+      </p>
+      <p className="text-meta">
+        AI 出題可能需要多輪（例如重寫未達教學品質要求的題目、補足不足的題數），每輪約需
+        數十秒。<strong>請勿重新整理或關閉此頁</strong>：重新整理會令這次進度提示中斷；
+        題目仍會在伺服器完成後寫入題庫，重新載入頁面即可在下方清單查看。
+      </p>
+    </div>
+  );
 }
 
 /**
@@ -64,6 +203,10 @@ export function QuestionManager({
   const [generating, setGenerating] = useState(false);
   const [generateResult, setGenerateResult] = useState<GenerateResult | null>(null);
   const [generateError, setGenerateError] = useState<unknown>(null);
+  /** 伺服器回報的生成進度（多輪生成時顯示「第幾輪、已取得幾題」） */
+  const [generateProgress, setGenerateProgress] = useState<GenerationProgress | null>(null);
+  /** 已等待秒數：即使未收到新的進度事件，畫面仍然會動，用家不會以為當掉 */
+  const [generateElapsed, setGenerateElapsed] = useState(0);
 
   const [editorState, setEditorState] = useState<{ mode: "new" | "edit"; question?: Question } | null>(
     null,
@@ -77,6 +220,29 @@ export function QuestionManager({
     if (!focusGenerate) return;
     generateSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [focusGenerate]);
+
+  /**
+   * 生成期間的兩個保護（2026-11-24）：
+   *   1. 每秒更新已等待時間，令畫面在等待模型回應時仍然有變化；
+   *   2. 攔截重新整理／關閉分頁，提醒用家生成仍在進行（一次生成可能包含多輪補題）。
+   */
+  useEffect(() => {
+    if (!generating) return;
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      setGenerateElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1_000);
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      // 舊版瀏覽器（Safari 15）只會顯示自己的固定文字，因此仍需設定 returnValue
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("beforeunload", warnBeforeUnload);
+    };
+  }, [generating]);
 
   /**
    * 由教師審核工作台以 `?question=<id>` 進入時，直接開啟該題的編輯表單。
@@ -296,20 +462,26 @@ export function QuestionManager({
     setGenerating(true);
     setGenerateError(null);
     setGenerateResult(null);
+    setGenerateProgress(null);
+    setGenerateElapsed(0);
     try {
-      const result = await api.post<GenerateResult>("/api/teacher/questions/generate", {
-        topicId: topic.id,
-        sectionIds: generateSections,
-        questionTypes: generateTypes,
-        difficulty: generateDifficulty,
-        questionCount: generateCount,
-      });
+      const result = await postGenerationWithProgress(
+        {
+          topicId: topic.id,
+          sectionIds: generateSections,
+          questionTypes: generateTypes,
+          difficulty: generateDifficulty,
+          questionCount: generateCount,
+        },
+        setGenerateProgress,
+      );
       setGenerateResult(result);
       await refreshQuestions();
     } catch (caught) {
       setGenerateError(caught);
     } finally {
       setGenerating(false);
+      setGenerateProgress(null);
     }
   }
 
@@ -526,22 +698,27 @@ export function QuestionManager({
             onClick={() => void handleGenerate()}
             disabled={generating}
           >
-            {generating ? "正在生成及驗證…" : "生成題目"}
+            {generating ? `正在生成及驗證…（已用 ${generateElapsed} 秒）` : "生成題目"}
           </button>
           <button
             type="button"
             className="btn"
             onClick={() => setEditorState({ mode: "new" })}
-            disabled={!topic}
+            disabled={!topic || generating}
           >
             手動新增題目
           </button>
         </div>
 
+        {generating ? <GenerationProgressPanel progress={generateProgress} elapsed={generateElapsed} /> : null}
+
         {generateResult ? (
           <div className="flex flex-col gap-3">
             <Notice tone={generateResult.usedDemoFallback || warningCount > 0 ? "warning" : "success"}>
               來源：{generateResult.providerLabel}
+              {generateResult.requestedCount !== undefined
+                ? `；已取得 ${generateResult.questions.length}／${generateResult.requestedCount} 題`
+                : ""}
               {generateResult.discardedCount > 0
                 ? `；已捨棄 ${generateResult.discardedCount} 題（不合規或沒有教材依據）`
                 : "；全部題目均通過驗證"}

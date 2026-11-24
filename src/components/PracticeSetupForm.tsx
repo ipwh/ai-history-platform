@@ -159,6 +159,8 @@ export function PracticeSetupForm() {
   const [questionSource, setQuestionSource] = useState<PracticeQuestionSource>("bank");
   const [demoMode, setDemoMode] = useState<boolean | null>(null);
   const [starting, setStarting] = useState(false);
+  /** 已等待秒數：AI 出題可能分多輪（不足時自動補題），畫面需要有變化才不會令人以為當掉 */
+  const [startElapsed, setStartElapsed] = useState(0);
   const [startError, setStartError] = useState<unknown>(null);
   const [failedAttempt, setFailedAttempt] = useState<StartAttempt | null>(null);
 
@@ -208,6 +210,30 @@ export function PracticeSetupForm() {
       cancelled = true;
     };
   }, [initialTopicId, initialSectionId, reloadToken]);
+
+  /**
+   * 生成期間顯示已等待秒數，並攔截重新整理／關閉分頁（2026-11-24）。
+   *
+   * 為甚麼需要：AI 出題可能分多輪（第一輪不足時會自動補題），等待時間比以往長；
+   * 畫面完全沒有變化時，學生很自然會以為平台失敗而重新整理頁面，令等待白費。
+   */
+  useEffect(() => {
+    if (!starting) return;
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      setStartElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1_000);
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      // 舊版瀏覽器（Safari 15）只會顯示自己的固定文字，因此仍需設定 returnValue
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("beforeunload", warnBeforeUnload);
+    };
+  }, [starting]);
 
   // 已設定 AI provider 時，預設以 AI 按所選主題即時生成題目
   useEffect(() => {
@@ -304,6 +330,7 @@ export function PracticeSetupForm() {
     }
 
     setStarting(true);
+    setStartElapsed(0);
     setStartError(null);
     setFailedAttempt(null);
     try {
@@ -462,8 +489,8 @@ export function PracticeSetupForm() {
           >
             {starting
               ? questionSource === "ai" && mode === "standard"
-                ? "AI 正在按你揀選的主題生成題目…"
-                : "正在準備題目…"
+                ? `AI 正在按你揀選的主題生成題目…（已用 ${startElapsed} 秒）`
+                : `正在準備題目…（已用 ${startElapsed} 秒）`
               : "開始練習"}
           </button>
           <button
@@ -475,13 +502,16 @@ export function PracticeSetupForm() {
               setCustomOpen(true);
               customSettingsRef.current.scrollIntoView({ block: "start", behavior: "smooth" });
             }}
+            disabled={starting}
           >
             自訂設定
           </button>
-          <span className="text-meta">
-            {questionSource === "ai" && mode === "standard"
-              ? "AI 生成需時（約 10 至 60 秒），請勿關閉頁面。"
-              : "題目不足時，系統會按教材即時生成，並自動核對教材依據。"}
+          <span className="text-meta" role={starting ? "status" : undefined} aria-live={starting ? "polite" : undefined}>
+            {starting
+              ? "題目不足時會自動補題，可能需要一至兩分鐘。請勿重新整理或關閉頁面。"
+              : questionSource === "ai" && mode === "standard"
+                ? "AI 生成需時（約 10 至 60 秒；不足時會自動補題，或需更長時間），請勿關閉頁面。"
+                : "題目不足時，系統會按教材即時生成，並自動核對教材依據。"}
           </span>
         </div>
       </section>

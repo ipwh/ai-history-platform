@@ -22,6 +22,7 @@ import {
 } from "../materials/text-utils";
 import { buildBlankedStem } from "./fill-question";
 import { checkHistoricalAnswer, isYearAnswer } from "./historical-answer";
+import { optionTextLength } from "../quality/option-quality";
 import type { LlmProvider, MaterialUnit, QuestionGenerationInput } from "./provider";
 
 interface UnitFact {
@@ -114,8 +115,16 @@ function explainFromMaterial(fact: UnitFact, note: string): string {
 }
 
 function buildOptions(correct: string, candidates: string[]): string[] {
+  const correctLength = optionTextLength(correct);
+  // 優先選取長度「不短於正確答案」的同類詞語（2026-11-24）：正確答案若是四個選項中
+  // 最長的一項，學生只憑「選最長那項」就能答對，題目沒有考核作用。這裡只是調整
+  // 同類詞語的**取用次序**（全部仍然來自教材、仍然明確錯誤），不會改動或加長任何文字。
+  const ordered = [...candidates].sort((left, right) => {
+    const rank = (value: string): number => (optionTextLength(value) >= correctLength ? 0 : 1);
+    return rank(left) - rank(right);
+  });
   const options = [correct];
-  for (const candidate of candidates) {
+  for (const candidate of ordered) {
     if (options.length >= 4) break;
     const trimmed = candidate.trim();
     if (trimmed.length < 2) continue;

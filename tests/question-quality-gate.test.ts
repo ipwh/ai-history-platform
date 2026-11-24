@@ -615,6 +615,25 @@ describe("生成流程的有限次重寫與失敗處理", () => {
   }
 
   /**
+   * 把錯誤選項補長至與正確答案相若（2026-11-24）。
+   *
+   * 樣本檔的個案是為「解釋品質」而寫，選項長度未必平衡；生成流程現在會丟棄
+   * 「正確答案是最長那項」的題目（見 option-quality 的 `answerIsLongest`），
+   * 因此這裡只補長錯誤選項（不改動正確答案、解釋或任何教材依據），
+   * 令本段測試聚焦於它要驗證的品質判定與重寫行為。
+   */
+  function withNeutralOptions(request: FixtureCase["request"]) {
+    const target = [...request.correctAnswer].length;
+    const options = request.options.map((option) => {
+      if (option === request.correctAnswer) return option;
+      let text = option;
+      while ([...text].length < target) text += "，並非史實所述";
+      return text;
+    });
+    return { ...request, options };
+  }
+
+  /**
    * 建立測試用課題及教材：樣本教材（合成內容）寫入測試資料庫，
    * 另加一段其他分節的教材，令生成流程不會因為「教材太少」而拒絕生成。
    */
@@ -727,7 +746,7 @@ describe("生成流程的有限次重寫與失敗處理", () => {
     calls = [];
     const topicId = "fx-topic-quality";
     seedFixtureTopic(topicId, "cause-and-effect");
-    const good = withRealBlocks("cause-and-effect-supported");
+    const good = withNeutralOptions(withRealBlocks("cause-and-effect-supported"));
     const restating = {
       ...good,
       // 第一次回應：解釋只是重複標準答案 → 屬「機器可自行修正」的品質問題，觸發重寫
@@ -766,7 +785,7 @@ describe("生成流程的有限次重寫與失敗處理", () => {
     calls = [];
     const topicId = "fx-topic-quality-2";
     seedFixtureTopic(topicId, "cause-and-effect");
-    const good = withRealBlocks("cause-and-effect-supported");
+    const good = withNeutralOptions(withRealBlocks("cause-and-effect-supported"));
     const restating = { ...good, explanation: good.correctAnswer };
     // 兩次回應都只是重複答案，沒有說明理由
     responder = () => ({ questions: [restating] });
@@ -790,7 +809,7 @@ describe("生成流程的有限次重寫與失敗處理", () => {
     calls = [];
     const topicId = "fx-topic-quality-rewrite-fail";
     seedFixtureTopic(topicId, "cause-and-effect");
-    const good = withRealBlocks("cause-and-effect-supported");
+    const good = withNeutralOptions(withRealBlocks("cause-and-effect-supported"));
     const restating = { ...good, explanation: good.correctAnswer };
     responder = () => {
       if (calls.length >= 2) throw new Error("stub provider failure on rewrite");
@@ -817,7 +836,7 @@ describe("生成流程的有限次重寫與失敗處理", () => {
     calls = [];
     const topicId = "fx-topic-quality-revalidate";
     seedFixtureTopic(topicId, "cause-and-effect");
-    const good = withRealBlocks("cause-and-effect-supported");
+    const good = withNeutralOptions(withRealBlocks("cause-and-effect-supported"));
     // 兩次回應都只是重複答案 → 判定 revise（可修正的教學品質問題）
     const restating = { ...good, explanation: good.correctAnswer };
     responder = () => ({ questions: [restating] });

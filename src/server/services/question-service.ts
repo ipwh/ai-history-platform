@@ -16,6 +16,8 @@ import {
   questionInputSchema,
   questionSchema,
   type GeneratedQuestionPreview,
+  type GenerationProgress,
+  type GenerationStage,
   type LlmRequestType,
   type LlmUsage,
   type Question,
@@ -41,7 +43,7 @@ import { checkQuestionQuality, isMachineRevisableIssue, qualityOutcome } from ".
 import {
   OPTION_QUALITY_CODES,
   analyseOptionQuality,
-  isSevereLengthAsymmetry,
+  answerIsLongest,
   mergeOptionQualityWarnings,
   parseOptionQualityWarning,
   type OptionLengthMetrics,
@@ -138,6 +140,23 @@ export interface GenerateOptions extends QuestionGenerationRequest {
    * 直接發布，令 `--draft-only` 名不副實（2026-10-23 實際發生：14 題被自動發布）。
    */
   autoPublish?: boolean;
+  /**
+   * 補題輪數上限（預設 2，設 0 即停用）。
+   *
+   * 模型經常少於要求的題數（例如要求 5 題只交出 3 題），以往流程只在「完全沒有題目」
+   * 時才重試，短欠的題數就直接交給教師，令教師要逐次手動再生成。現在只要通過驗證的
+   * 題目少於要求，就會以「還缺幾題」再向模型要一次（並以已用過的答案提示它改用其他史實）。
+   * 每輪都是一次額外的模型呼叫，因此有上限；呼叫端本身已有補題迴圈時（學生練習）
+   * 應設 0，避免內外兩層補題相乘。
+   */
+  topUpRounds?: number;
+  /**
+   * 進度回報（可選）。
+   *
+   * 用於介面顯示「第幾輪、已經有幾題、正在補題」等進度，避免用家因為生成時間變長
+   * 而以為平台失敗並重新整理頁面。回報失敗不會影響生成。
+   */
+  onProgress?: (progress: GenerationProgress) => void;
 }
 
 export interface GenerationResult extends GeneratedQuestionPreview {
@@ -145,6 +164,10 @@ export interface GenerationResult extends GeneratedQuestionPreview {
   notice: string | null;
   /** 產生的題目是否可以直接給學生使用 */
   usable: boolean;
+  /** 要求生成的題數（補題的目標） */
+  requestedCount: number;
+  /** 補題後仍然不足的題數；0 表示已達要求 */
+  shortfall: number;
 }
 
 /**
@@ -200,9 +223,125 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
 
   const resolved = resolveProvider();
   const warnings: string[] = [];
-  let questions: Question[] = [];
-  let discardedReasons: string[] = [];
+  /** 每輪被捨棄的題目原因（跨輪累積，令教師知道為甚麼補題後仍然短欠） */
+  const discardedReasons: string[] = [];
   let usedProvider = resolved.provider;
+
+  /** 教師／學生要求的題數：補題以它為目標（不含 overGenerate 的備用題） */
+  const targetCount = request.questionCount;
+  /**
+   * 每次生成最多向模型請求多少次：初始 1 次、品質重寫 1 次、空回應重試 1 次、補題 2 次。
+   * 補題會令生成時間變長，因此設硬上限，並透過 `onProgress` 向介面回報進度，
+   * 免得用家以為平台失敗而重新整理頁面。
+   */
+  const maxProviderCalls = 5;
+  let providerCalls = 0;
+  /** 因與題庫現有題目重複而被略過的題數（用來分辨「重複」與「不合規」兩種失敗） */
+  let bankDuplicateDrops = 0;
+  let providerNoticePushed = false;
+
+  /** 已通過驗證的題目（跨輪累積；同一題幹只保留一次） */
+  let questions: Question[] = [];
+  const questionStems = new Set<string>();
+
+  /** 以已完成輪數推算目前的輪次（1 起） */
+  const currentRound = (): number => Math.min(providerCalls + 1, maxProviderCalls);
+
+  /** 回報進度；回報失敗（例如串流已中斷）不可影響生成 */
+  const reportProgress = (
+    stage: GenerationStage,
+    message: string,
+    accepted = questions.length,
+  ): void => {
+    if (!options.onProgress) return;
+    try {
+      options.onProgress({
+        stage,
+        round: currentRound(),
+        maxRounds: maxProviderCalls,
+        accepted,
+        target: targetCount,
+        message,
+      });
+    } catch (error) {
+      console.warn("[generation] 進度回報失敗", error);
+    }
+  };
+
+  /**
+   * 題庫重複檢查：在**補題之前**就要知道哪些題幹題庫已經有了。
+   *
+   * 以往重複檢查在補題之後才做，於是「補到 5 題，其中 2 題與題庫重複」會再一次
+   * 變成短欠；現在重複的題目在合併時就略過，補題會自動補回真正缺的題數。
+   */
+  const persist = options.persist !== false;
+  const checkBankDuplicates = persist && options.allowBankDuplicates !== true;
+  const bankStems = checkBankDuplicates
+    ? new Set(listQuestions({ topicId: topic.id }).map((entry) => normalizeForMatch(entry.question)))
+    : null;
+
+  /** 選項長度度量：正確答案是否為四個選項中最長的一項（見下方 `answerIsLongest` 說明） */
+  const measureOptionSymmetry = (question: Question): OptionLengthMetrics | null =>
+    analyseOptionQuality({
+      questionType: question.questionType,
+      options: question.options,
+      correctAnswer: question.correctAnswer,
+    }).metrics;
+
+  /**
+   * 因「正確答案是最長的一項」而被丟棄的題目（以題幹為鍵）。
+   *
+   * 用 Set 而不是計數：同一個題幹可能在重寫／補題時再被交回，重複丟棄同一條題目
+   * 不應在訊息中重複計算。
+   */
+  const lengthRejected = new Set<string>();
+
+  /** 把一批已驗證題目加入結果；回傳實際新增的題數 */
+  const mergeAccepted = (batch: Question[]): number => {
+    let added = 0;
+    for (const question of batch) {
+      const key = normalizeForMatch(question.question);
+      if (questionStems.has(key)) {
+        discardedReasons.push(`題目「${truncate(question.question, 24)}」與同批其他題目重複，已略過`);
+        continue;
+      }
+      if (bankStems?.has(key)) {
+        bankDuplicateDrops += 1;
+        discardedReasons.push(`題目「${truncate(question.question, 24)}」與題庫現有題目重複，已略過`);
+        continue;
+      }
+      // 長度檢查放在**合併**這一層，而不是只做一次：補題及重寫的結果同樣要通過，
+      // 否則「重寫後丟棄」之後的補題仍可把同一類題目帶回結果（2026-11-24 發現）。
+      const metrics = measureOptionSymmetry(question);
+      if (metrics !== null && answerIsLongest(metrics)) {
+        if (!lengthRejected.has(key)) {
+          lengthRejected.add(key);
+          discardedReasons.push(
+            `題目「${truncate(question.question, 24)}」的正確答案是最長的選項` +
+              `（正確答案 ${metrics.correctLength} 字、最長的錯誤選項 ${metrics.longestDistractorLength} 字），` +
+              "學生只選最長那項就能答對，已丟棄",
+          );
+        }
+        continue;
+      }
+      questionStems.add(key);
+      questions.push(question);
+      added += 1;
+    }
+    return added;
+  };
+
+  /** 以新的題目清單取代目前結果（用於重寫之後：保留第一輪沒有問題的題目） */
+  const setAccepted = (batch: Question[]): void => {
+    questions = [];
+    questionStems.clear();
+    for (const question of batch) {
+      const key = normalizeForMatch(question.question);
+      if (questionStems.has(key)) continue;
+      questionStems.add(key);
+      questions.push(question);
+    }
+  };
 
   // 教材的結構化語意分析（Sprint 8.5）：先整理教材實際交代的歷史內容
   // （關鍵詞語、時序、因果、轉變、比較、意義，以及教材**沒有**交代的面向），
@@ -221,6 +360,9 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
     30,
     request.questionCount + Math.max(0, options.overGenerate ?? 0),
   );
+
+  /** 補題輪數上限（見 GenerateOptions.topUpRounds） */
+  const topUpRounds = Math.min(2, Math.max(0, options.topUpRounds ?? 2));
 
   /** 記錄 LLM 用量（本地示範生成不使用外部 API，因此不記錄） */
   const logUsage = (input: {
@@ -249,14 +391,12 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
     sectionTitle: sectionTitles.join("、"),
     questionTypes: request.questionTypes,
     difficulty: request.difficulty,
-    count: requestedCount,
     materialUnits: units,
     distractorUnits,
-    avoidAnswers: options.avoidAnswers ?? [],
     // 教材的結構化語意分析（Sprint 8.5）：模型先看到教材的歷史脈絡（關鍵詞語、時序、
     // 因果、轉變、比較、意義，以及教材沒有交代的面向），才設計題目。
     materialAnalysis: analysis,
-  } satisfies QuestionGenerationInput;
+  } satisfies Omit<QuestionGenerationInput, "count" | "avoidAnswers">;
 
   const validationContext = {
     topicId: topic.id,
@@ -271,15 +411,34 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
     idFor: () => newId("q"),
   };
 
-  /** 每輪驗證的品質判定（用於決定是否需要有限次重寫） */
-  let qualityOutcomes: Awaited<ReturnType<typeof validateLlmQuestions>>["qualityOutcomes"] = [];
-
-  const attempt = async (allowFallback: boolean, revisionNotes: string[] = []): Promise<void> => {
+  /**
+   * 執行一次「要求模型出題 → 驗證」的輪次，回傳該輪的結果（不直接改動累積結果）。
+   *
+   * 補題、重寫、空回應重試都經由這裡，令每一輪的用量記錄、示範回退及驗證條件一致。
+   */
+  const runRound = async (round: {
+    count: number;
+    avoidAnswers: string[];
+    revisionNotes?: string[];
+    allowFallback: boolean;
+  }): Promise<{
+    accepted: Question[];
+    discardedReasons: string[];
+    qualityOutcomes: Awaited<ReturnType<typeof validateLlmQuestions>>["qualityOutcomes"];
+  }> => {
     const startedAt = Date.now();
-    const run = async (provider: LlmProvider, origin: QuestionOrigin): Promise<void> => {
+    const run = async (
+      provider: LlmProvider,
+      origin: QuestionOrigin,
+    ): Promise<Awaited<ReturnType<typeof validateLlmQuestions>>> => {
+      providerCalls += 1;
       const outcome = await provider.generateQuestions({
         ...generationInput,
-        ...(revisionNotes.length > 0 ? { revisionNotes } : {}),
+        count: round.count,
+        avoidAnswers: round.avoidAnswers,
+        ...(round.revisionNotes && round.revisionNotes.length > 0
+          ? { revisionNotes: round.revisionNotes }
+          : {}),
       });
       logUsage({
         provider,
@@ -288,15 +447,19 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
         usage: outcome.usage,
         errorType: null,
       });
-      const result = validateLlmQuestions(outcome.questions, { ...validationContext, origin });
-      questions = result.accepted;
-      discardedReasons = result.discardedReasons;
-      qualityOutcomes = result.qualityOutcomes;
+      return validateLlmQuestions(outcome.questions, { ...validationContext, origin });
     };
 
     try {
-      await run(resolved.provider, resolved.provider.name === "mock" ? "material-mock" : "material-ai");
-      if (resolved.notice) warnings.push(resolved.notice);
+      const result = await run(
+        resolved.provider,
+        resolved.provider.name === "mock" ? "material-mock" : "material-ai",
+      );
+      if (resolved.notice && !providerNoticePushed) {
+        warnings.push(resolved.notice);
+        providerNoticePushed = true;
+      }
+      return result;
     } catch (error) {
       logUsage({
         provider: resolved.provider,
@@ -306,7 +469,7 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
         errorType: categorizeLlmError(error),
       });
 
-      if (!allowFallback) {
+      if (!round.allowFallback) {
         throw error instanceof Error ? error : new Error(String(error));
       }
       const reason = error instanceof LlmProviderError ? error.message : String(error);
@@ -314,40 +477,57 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
 
       const fallback = await resolveMockProvider();
       usedProvider = fallback;
-      await run(fallback, "material-mock");
+      return await run(fallback, "material-mock");
     }
   };
 
   const allowFallback = options.allowMockFallback !== false && resolved.provider.name !== "mock";
-  await attempt(allowFallback);
+  reportProgress("preparing", `正在整理教材，準備生成 ${targetCount} 題…`, 0);
+  reportProgress("generating", `第 1 輪：正在請 AI 按教材出題（目標 ${targetCount} 題）…`, 0);
+  const firstRound = await runRound({
+    count: requestedCount,
+    avoidAnswers: options.avoidAnswers ?? [],
+    allowFallback,
+  });
+  discardedReasons.push(...firstRound.discardedReasons);
+  mergeAccepted(firstRound.accepted);
+  const qualityOutcomes = firstRound.qualityOutcomes;
+  reportProgress(
+    "reviewing",
+    `已收到 ${firstRound.accepted.length} 條題目，正在核對教材依據及教學品質…`,
+  );
 
   /**
-   * 選擇題「正確選項唯一最長」的量度（2026-10-27）。
+   * 選擇題「正確答案是最長那項」的量度（2026-10-27 起，2026-11-24 收緊）。
    *
    * 這是學生可以用「選最長那項」代替思考的線索（本機快照命中率 72.5%，隨機基準 25%），
    * 打亂選項次序無法解決。處理方式分三層：
-   *   1. 提示詞直接要求四個選項字數相若（見 prompt.ts 規則 18）；
-   *   2. 這裡把仍然不對稱的題目加入**同一次**有限次重寫，並附上具體修訂指示；
-   *   3. 重寫後仍然不對稱的題目一律丟棄（不寫入題庫），而派題前還有一層
+   *   1. 提示詞直接要求「正確答案不可以是最長的選項」（見 prompt.ts 規則 18），並明確
+   *      允許**加長錯誤選項**來平衡長度——錯誤選項本來就要具體，加長不會令它變成正確答案；
+   *   2. 這裡把仍然「正確答案最長（多 2 字或以上）」的題目加入**同一次**有限次重寫，
+   *      並附上具體修訂指示（把錯誤選項寫得更詳略相若）；
+   *   3. 重寫後仍然「正確答案最長」的題目一律丟棄（不寫入題庫）；派題前還有一層
    *      `checkOptionLengthNeutral`（見 practice-service），舊題目亦不會到學生手上。
+   *
+   * 生成階段比派題關卡嚴格（`answerIsLongest` 對 `isSevereLengthAsymmetry`）：
+   * 生成可以重寫及補題，沒有理由把「只選最長那項就答對」的題目寫入題庫；
+   * 派題關卡要顧及已在題庫的校內試題，因此仍沿用較寬的 1.5 倍門檻。
    */
   const optionSymmetryNote = (question: Question, metrics: OptionLengthMetrics): string =>
-    `上一輪有一條選擇題（題幹：「${question.question.slice(0, 20)}…」）的正確選項有 ${metrics.correctLength} 字，` +
-    `但最長的錯誤選項只有 ${metrics.longestDistractorLength} 字，學生只憑「哪一項最長」就可以答對。` +
-    "請把這道題的四個選項一併改寫成字數相若（差距不可超過三成）、句式相同的同類寫法；" +
-    "錯誤選項要同樣具體，不可用加長錯誤選項的方式湊字數，也不可把正確答案縮短至失去關鍵史實。";
+    `上一輪有一條選擇題（題幹：「${question.question.slice(0, 20)}…」）的正確答案是四個選項中最長的一項` +
+    `（正確答案 ${metrics.correctLength} 字，最長的錯誤選項只有 ${metrics.longestDistractorLength} 字），` +
+    "學生只憑「哪一項最長」就可以答對。" +
+    "請把**錯誤選項加長**至與正確答案相若：加入同類而具體、明確錯誤的史實（同類的人物／事件／制度／年份），" +
+    "令至少一個錯誤選項與正確答案等長或更長，句式亦要相同；" +
+    "不可以加入教材沒有交代的內容，亦不可把正確答案縮短至失去關鍵史實。" +
+    "如果無法在教材範圍內做到，請改出另一條只涉及單一史實的題目。";
 
-  const measureOptionSymmetry = (question: Question): OptionLengthMetrics | null =>
-    analyseOptionQuality({
-      questionType: question.questionType,
-      options: question.options,
-      correctAnswer: question.correctAnswer,
-    }).metrics;
-
+  // 重寫的修訂指示由**第一輪驗證結果**（而不是已合併的結果）計算：長度不合格的題目
+  // 已在 mergeAccepted 時被擋下，不會出現在 `questions` 之中。
   const asymmetricNotes = new Map<string, string>();
-  for (const question of questions) {
+  for (const question of firstRound.accepted) {
     const metrics = measureOptionSymmetry(question);
-    if (metrics !== null && isSevereLengthAsymmetry(metrics)) {
+    if (metrics !== null && answerIsLongest(metrics)) {
       asymmetricNotes.set(question.id, optionSymmetryNote(question, metrics));
     }
   }
@@ -360,8 +540,12 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
   );
   // 選項長度不對稱與「解釋只抄教材」屬同一類可修正問題，共用同一次重寫（不額外增加成本）
   for (const id of asymmetricNotes.keys()) revisableIds.add(id);
-  if (revisableIds.size > 0 && resolved.provider.name !== "mock") {
-    const cleanFromFirstRound = questions.filter((question) => !revisableIds.has(question.id));
+  if (revisableIds.size > 0 && resolved.provider.name !== "mock" && providerCalls < maxProviderCalls) {
+    const cleanFromFirstRound = firstRound.accepted.filter(
+      (question) =>
+        !revisableIds.has(question.id) &&
+        questionStems.has(normalizeForMatch(question.question)),
+    );
     const notes = [
       ...new Set([
         ...qualityOutcomes
@@ -374,18 +558,22 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
       `有 ${revisableIds.size} 條題目的教學品質需要改善（例如解釋只是抄錄教材原文、選擇題的正確答案寫得比其他選項明顯長），已要求重寫一次。`,
     );
     try {
-      await attempt(false, notes);
-      const accepted = [...cleanFromFirstRound];
-      const seenStems = new Set(accepted.map((question) => normalizeForMatch(question.question)));
-      for (const question of questions) {
-        const key = normalizeForMatch(question.question);
-        if (seenStems.has(key)) continue;
-        seenStems.add(key);
-        accepted.push(question);
-      }
-      questions = accepted;
+      reportProgress(
+        "revising",
+        `第 ${currentRound()} 輪：正在重寫 ${revisableIds.size} 條未達教學品質要求的題目…`,
+      );
+      const rewrite = await runRound({
+        count: requestedCount,
+        avoidAnswers: options.avoidAnswers ?? [],
+        revisionNotes: notes,
+        allowFallback: false,
+      });
+      discardedReasons.push(...rewrite.discardedReasons);
+      // 重寫只取代有問題的題目：第一輪沒有問題的題目保留，重寫結果再逐題合併
+      setAccepted(cleanFromFirstRound);
+      mergeAccepted(rewrite.accepted);
       // 重寫後仍然有問題的題目：交回教師（品質警告已寫入題目，自動發布已被暫緩）
-      const remaining = qualityOutcomes.filter((entry) => entry.machineRevisable).length;
+      const remaining = rewrite.qualityOutcomes.filter((entry) => entry.machineRevisable).length;
       if (remaining > 0) {
         warnings.push(`重寫後仍有 ${remaining} 條題目未達教學品質要求，已保留為草稿交由教師處理。`);
       }
@@ -400,31 +588,16 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
     }
   }
 
-  // 重寫後仍然「正確選項唯一最長」的題目一律丟棄：這類題目只憑長度就能答對，
-  // 寫入題庫只會令教師及學生都以為它考核了內容。這一步對本地示範生成同樣有效
-  // （示範生成不會重寫）。
-  const beforeSymmetryFilter = questions.length;
-  questions = questions.filter((question) => {
-    const metrics = measureOptionSymmetry(question);
-    return !(metrics !== null && isSevereLengthAsymmetry(metrics));
-  });
-  if (questions.length < beforeSymmetryFilter) {
-    warnings.push(
-      `有 ${beforeSymmetryFilter - questions.length} 條選擇題的正確選項明顯比其他選項長` +
-        "（學生只選最長那項就能答對），已丟棄不予採用。",
-    );
-  }
-
   // 完全沒有可用題目時再試一次（2026-10-18 由模擬學生使用發現）：真實模型偶爾
   // 每一題都違反題幹規則（答案在題幹重複出現、題幹超過長度上限），令整次生成失敗、
-  // 學生拿不到任何題目。這裡把上一輪的丟棄原因當作修訂指示重試**一次**，
-  // 只在「本來會完全失敗」時發生，因此成本有上限（每次生成最多 3 次 provider 呼叫）。
+  // 學生拿不到任何題目。這裡把上一輪的丟棄原因當作修訂指示重試**一次**，只在
+  // 「本來會完全失敗」時發生，因此成本有上限（見 maxProviderCalls）。
   //
   // 2026-10-20 修正：模型有時**一個題目都沒有回傳**（空回應或全部無法解析），
   // 此時 discardedReasons 是空的，舊條件（`discardedReasons.length > 0`）不會重試，
   // 整節直接當作失敗——模擬學生使用時實際出現於「課題5 科學革命」一節。
   // 現在只要沒有可用題目就重試一次；沒有丟棄原因時提示模型只輸出合格式的題目。
-  if (questions.length === 0 && resolved.provider.name !== "mock") {
+  if (questions.length === 0 && resolved.provider.name !== "mock" && providerCalls < maxProviderCalls) {
     const notes = [...new Set(discardedReasons)].slice(0, 5);
     warnings.push(
       notes.length > 0
@@ -432,12 +605,19 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
         : "第一輪生成沒有回傳可用題目，已重試一次。",
     );
     try {
-      await attempt(
-        false,
-        notes.length > 0
-          ? notes
-          : ["上一次回應沒有任何可用題目，請只輸出符合指定格式的題目。"],
-      );
+      reportProgress("generating", `第 ${currentRound()} 輪：第一輪沒有可用題目，正在重試…`, 0);
+      const retry = await runRound({
+        count: requestedCount,
+        avoidAnswers: options.avoidAnswers ?? [],
+        revisionNotes:
+          notes.length > 0
+            ? notes
+            : ["上一次回應沒有任何可用題目，請只輸出符合指定格式的題目。"],
+        allowFallback: false,
+      });
+      discardedReasons.push(...retry.discardedReasons);
+      // 用 mergeAccepted 而非 setAccepted：重試結果同樣要通過「與題庫重複」的檢查
+      mergeAccepted(retry.accepted);
     } catch (error) {
       warnings.push(
         `重試時 provider 回報錯誤（${error instanceof Error ? error.message : String(error)}），本次沒有可用題目。`,
@@ -445,8 +625,93 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
     }
   }
 
+  /*
+   * 補題（2026-11-24）：模型少於要求的題數是常態（要求 5 題只交出 3 題），
+   * 舊流程只在「完全沒有題目」時重試，短欠的題數就這樣交給教師，教師要逐次
+   * 再按「生成題目」補齊，而每一次都是全新的模型呼叫及等待。
+   *
+   * 現在缺題時會以「還剩幾題」再向模型要一次，並把已用過的答案交給提示詞，
+   * 要求它改用教材其他史實（避免同一件事改寫後再交一次而變成無效補題）。
+   * 上限：`topUpRounds`（預設 2 輪）；連續兩輪沒有新增題目即停止，令教材真的
+   * 不足以出題時不會無止境地呼叫模型。每輪都是額外的模型呼叫，因此同時受
+   * `maxProviderCalls` 限制，並在呼叫前回報進度供介面顯示。
+   */
+  let topUpRoundsUsed = 0;
+  let noGainRounds = 0;
+  while (
+    questions.length < targetCount &&
+    resolved.provider.name !== "mock" &&
+    topUpRoundsUsed < topUpRounds &&
+    providerCalls < maxProviderCalls
+  ) {
+    const missing = targetCount - questions.length;
+    const before = questions.length;
+    const avoidAnswers = [
+      ...new Set([
+        ...(options.avoidAnswers ?? []),
+        ...questions.map((question) => question.correctAnswer.trim()),
+      ]),
+    ]
+      .filter((answer) => answer.length > 0)
+      .slice(0, 20);
+    topUpRoundsUsed += 1;
+    reportProgress(
+      "topping-up",
+      `已取得 ${before}／${targetCount} 題，第 ${currentRound()} 輪：正在補足其餘 ${missing} 題…`,
+    );
+    try {
+      const topUp = await runRound({
+        // 多要 1 題作備用：補題結果同樣要通過驗證，多一點才有機會剛好補足
+        count: Math.min(30, missing + 1),
+        avoidAnswers,
+        allowFallback: false,
+      });
+      discardedReasons.push(...topUp.discardedReasons);
+      mergeAccepted(topUp.accepted);
+    } catch (error) {
+      warnings.push(
+        `補題時 provider 回報錯誤（${error instanceof Error ? error.message : String(error)}），` +
+          `已保留目前取得的 ${questions.length} 題。`,
+      );
+      break;
+    }
+    noGainRounds = questions.length === before ? noGainRounds + 1 : 0;
+    if (noGainRounds >= 2) break;
+  }
+
+  // 備用題只會用來抵銷被丟棄的題目，不會令交付數量多於要求
+  if (questions.length > requestedCount) setAccepted(questions.slice(0, requestedCount));
+
+  // 「正確答案是最長那項」的題目已在 mergeAccepted（每一輪、包括補題）時擋下，
+  // 不會寫入題庫：這類題目只憑長度就能答對，留下只會令教師及學生都以為它考核了內容。
+  // 這裡只負責把**最終**丟棄數量告訴教師；丟棄後的題數由上面的補題嘗試補回。
+  if (lengthRejected.size > 0) {
+    warnings.push(
+      `有 ${lengthRejected.size} 條選擇題的正確答案是最長的選項` +
+        "（學生只選最長那項就能答對），已丟棄不予採用；系統已要求模型改以「加長錯誤選項」的方式重寫，" +
+        "如本批題數不足可再生成一次。",
+    );
+  }
+
+  // 短欠說明只在本流程確實有嘗試補題時才加入；`topUpRounds: 0`（學生練習）由呼叫端
+  // 統一交代短欠，避免同一件事在兩層各說一次。
+  if (topUpRounds > 0 && questions.length > 0 && questions.length < targetCount) {
+    const shortfallMessage =
+      usedProvider.name === "mock"
+        ? `本地示範生成只準備了 ${questions.length}／${targetCount} 題（示範模式不會補題）；如需指定題數，請設定真正的 LLM provider 或由教師手動新增題目。`
+        : `已自動補題 ${topUpRoundsUsed} 輪，但仍只取得 ${questions.length}／${targetCount} 題` +
+          "（教材中可考核的史實不足，或部分題目未達要求）。可改選其他分節、減少題數或補充教材後再生成。";
+    warnings.push(shortfallMessage);
+  }
+
   const usable = questions.length > 0;
   if (!usable) {
+    if (bankDuplicateDrops > 0) {
+      throw new QuestionServiceError(
+        "生成結果與題庫現有題目重複，沒有新增題目。可改選其他分節、調整難度或題型後再試。",
+        409,
+      );
+    }
     const reasons = discardedReasons.slice(0, 3).join("；");
     const mockHint =
       usedProvider.name === "mock"
@@ -458,31 +723,17 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
     );
   }
 
-  // 避免與題庫現有題目重複（同一課題內，題目文字相同者視為重複）
-  // 練習時即時生成的題目（allowBankDuplicates）不受此限，否則學生重複練習時會被擋。
-  const persist = options.persist !== false;
-  let finalQuestions = questions;
-  if (persist && options.allowBankDuplicates !== true) {
-    const existing = listQuestions({ topicId: topic.id });
-    const existingKeys = new Set(
-      existing.map((question) => normalizeForMatch(question.question)),
-    );
-    finalQuestions = questions.filter((question) => {
-      const key = normalizeForMatch(question.question);
-      if (existingKeys.has(key)) {
-        discardedReasons.push(`題目「${truncate(question.question, 24)}」與題庫現有題目重複，已略過`);
-        return false;
-      }
-      existingKeys.add(key);
-      return true;
-    });
+  // 與題庫重複的題目已在 mergeAccepted 時略過（見 checkBankDuplicates），
+  // 因此這裡的題目全部都是可以寫入題庫的新題目；即使補題後仍然短欠，
+  // 已取得的題目照常寫入，不會因為數量不足而整批丟棄。
+  const finalQuestions = questions;
 
-    if (finalQuestions.length === 0) {
-      throw new QuestionServiceError(
-        "生成結果與題庫現有題目重複，沒有新增題目。可改選其他分節、調整難度或題型後再試。",
-        409,
-      );
-    }
+  if (persist) {
+    reportProgress(
+      "saving",
+      `正在寫入題庫（${finalQuestions.length} 題）並記錄自動品質驗證…`,
+      finalQuestions.length,
+    );
   }
 
   const saved = persist
@@ -516,6 +767,8 @@ export async function generateQuestions(options: GenerateOptions): Promise<Gener
     questions: saved,
     notice: warnings.length > 0 ? warnings.join(" ") : null,
     usable,
+    requestedCount: targetCount,
+    shortfall: Math.max(0, targetCount - saved.length),
   };
 }
 
