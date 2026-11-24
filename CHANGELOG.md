@@ -18,7 +18,7 @@
 
 ## [未發布] — 2026-11-24（三十一）：選擇題「正確答案是最長那項」在生成階段直接擋下
 
-**狀態**：已部署（連同同日第三十節的補題及生成進度）。功能提交 `4dbd9f6` 的 GitHub Actions CI（run `45319457268`）及 Cloud Build（`b2dcfd6d-61ad-4683-a907-5f4420bb6860`）均成功；Cloud Run revision `history-self-study-00124-chg` 承接 100% 流量，正式 `/api/health` 回應 200、`database=sqlite/ok`、`materials 46 份／26,599 段`。詳見 [deployment-evidence-2026-11-24.json](docs/deployment-evidence-2026-11-24.json)。
+**狀態**：已部署（連同同日第三十節的補題及生成進度）。功能提交 `4dbd9f6` 的 GitHub Actions CI（run `45319457268`）及 Cloud Build（`b2dcfd6d-61ad-4683-a907-5f4420bb6860`）均成功，Cloud Run revision `history-self-study-00124-chg` 承接 100% 流量；其後的文件提交亦觸發重建（`205cc199-1e97-4886-8f2a-939820ff2b08` → `history-self-study-00125-vxg`，程式碼相同）。正式 `/api/health` 回應 200、`database=sqlite/ok`、`materials 46 份／26,599 段`；未帶工作階段的生成端點回 401。詳見 [deployment-evidence-2026-11-24.json](docs/deployment-evidence-2026-11-24.json)。
 
 ### 修正
 

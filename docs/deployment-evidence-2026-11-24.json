@@ -19,13 +19,23 @@
     "image": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:b2dcfd6d-61ad-4683-a907-5f4420bb6860",
     "qualityGate": "建置內建品質閘門（npm ci → lint → test）通過，_QUALITY_GATE=1"
   },
+  "cloudBuildFollowUp": {
+    "id": "205cc199-1e97-4886-8f2a-939820ff2b08",
+    "status": "SUCCESS",
+    "createdAt": "2026-11-24T03:35:40.866401Z",
+    "finishedAt": "2026-11-24T03:45:18.879653Z",
+    "triggeredBy": "38fdc52（本記錄的文件提交）",
+    "note": "推送即部署的觸發程序沒有路徑過濾，因此只改文件的提交亦會重建**相同程式碼**並產生新 revision。"
+  },
   "cloudRun": {
     "service": "history-self-study",
     "region": "asia-east2",
     "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
-    "revision": "history-self-study-00124-chg",
+    "revision": "history-self-study-00125-vxg",
     "previousRevision": "history-self-study-00123-p9c",
-    "trafficPercent": 100
+    "featureRevision": "history-self-study-00124-chg",
+    "trafficPercent": 100,
+    "note": "00124 由功能提交 4dbd9f6 建置；00125 由本記錄的文件提交建置，程式碼與 4dbd9f6 相同。日後的文件提交同樣會觸發重建（程式碼不變），最新服務中的 revision 請以 `gcloud run services describe history-self-study --region=asia-east2` 為準；**程式碼以 commit `4dbd9f6` 為準**。"
   },
   "verification": {
     "healthStatus": 200,
