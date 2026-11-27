@@ -18,7 +18,7 @@
 
 ## [未發布] — 2026-11-27（三十二）：作答頁只顧作答——不顯示出題過程，並防止誤按跳題／離開
 
-**狀態**：已部署。功能提交 `09f10e8` 的 GitHub Actions CI（run `45927303235`，第 149 次）及 Cloud Build（`40da00a2-214a-47ac-b725-f6113af2e0e8`，五個步驟全部 SUCCESS）均成功，Cloud Run revision `history-self-study-00128-dbx` 承接 100% 流量（前一個 revision 為 `00127-jcr`）；正式 `/api/health` 回應 200、`database=sqlite/ok`、`materials 46 份／26,599 段`（學生可見 22 份）。詳見 [deployment-evidence-2026-11-27-practice-focus.json](docs/deployment-evidence-2026-11-27-practice-focus.json)。
+**狀態**：已部署。功能提交 `09f10e8` 的 GitHub Actions CI（run `45927303235`，第 149 次）及 Cloud Build（`40da00a2-214a-47ac-b725-f6113af2e0e8`，五個步驟全部 SUCCESS）均成功，Cloud Run revision `history-self-study-00128-dbx` 承接 100% 流量（前一個 revision 為 `00127-jcr`）；正式 `/api/health` 回應 200、`database=sqlite/ok`、`materials 46 份／26,599 段`（學生可見 22 份）。其後的文件提交亦觸發重建（`34610083` → `history-self-study-00129-5c6`，程式碼相同）；**程式碼以 commit `09f10e8` 為準，最新 revision 以 `gcloud run services describe` 為準**。詳見 [deployment-evidence-2026-11-27-practice-focus.json](docs/deployment-evidence-2026-11-27-practice-focus.json)。
 
 ### 變更
 

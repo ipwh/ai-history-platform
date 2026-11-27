@@ -21,6 +21,14 @@
     "steps": ["quality-gate", "sync-materials", "build-image", "push-image", "deploy-cloud-run"],
     "qualityGate": "建置內建品質閘門（npm ci → lint → test）通過，_QUALITY_GATE=1"
   },
+  "cloudBuildFollowUp": {
+    "id": "34610083-010a-413a-a68c-43de13dc8c98",
+    "status": "SUCCESS",
+    "createdAt": "2026-11-27T02:26:00Z",
+    "finishedAt": "2026-11-27T02:34:59Z",
+    "triggeredBy": "4f83279（本記錄的文件提交）",
+    "note": "推送即部署的觸發程序沒有路徑過濾，因此只改文件的提交亦會重建**相同程式碼**並產生新 revision（00129-5c6）。**程式碼以 commit `09f10e8` 為準**；最新 revision 請以 `gcloud run services describe history-self-study --region=asia-east2` 為準。"
+  },
   "cloudRun": {
     "service": "history-self-study",
     "region": "asia-east2",
