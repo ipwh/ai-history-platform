@@ -159,7 +159,8 @@ describe("AI 即時出題模式", () => {
 
     expect(assembled.questions.length).toBeGreaterThan(0);
     expect(assembled.session.origin).toBe("generated");
-    expect(assembled.notice).toContain("本地示範生成");
+    // 學生只看到練習的組成，不會看到題目是怎樣生成的（2026-11-27）
+    expect(assembled.notice ?? "").not.toMatch(/生成|補題|重寫|丟棄/);
 
     // 題目（含答案）仍可在練習快照中找回，供作答及查看成績
     const stored = practice.getPracticeView(assembled.session.id, LEARNER);

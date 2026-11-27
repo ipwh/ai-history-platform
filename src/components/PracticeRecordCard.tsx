@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import type { PracticeRecordQuestion, PracticeRecordSession } from "@/lib/types";
 
 /** 練習時間顯示（香港時區、24 小時制） */
@@ -57,6 +59,11 @@ export interface PracticeRecordCardProps {
   choiceLabel?: string;
   /** 教師端逐次匯出：提供時會在卡片顯示「匯出此次練習」的下載選項 */
   exportHref?: (format: RecordExportFormat) => string;
+  /**
+   * 學生端「繼續作答」：仍有未作答題目時，提供返回該次練習補答的入口。
+   * 老師端不提供（教師不會以學生身分改動記錄）。
+   */
+  resumeHref?: string;
 }
 
 /**
@@ -76,6 +83,7 @@ export function PracticeRecordCard({
   answerLabel = "學生答案",
   choiceLabel = "學生選擇",
   exportHref,
+  resumeHref,
 }: PracticeRecordCardProps) {
   const visible = record.questions
     .map((question, index) => ({ question, index }))
@@ -145,6 +153,11 @@ export function PracticeRecordCard({
                 ))}
               </div>
             </details>
+          ) : null}
+          {resumeHref ? (
+            <Link href={resumeHref} className="btn btn-primary">
+              繼續作答（{record.questions.filter((item) => !item.answered).length} 題未作答）
+            </Link>
           ) : null}
           <button type="button" className="btn" onClick={onToggle}>
             {expanded ? "收起題目" : `查看題目（${record.totalQuestions}）`}

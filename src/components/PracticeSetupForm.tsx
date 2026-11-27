@@ -508,10 +508,10 @@ export function PracticeSetupForm() {
           </button>
           <span className="text-meta" role={starting ? "status" : undefined} aria-live={starting ? "polite" : undefined}>
             {starting
-              ? "題目不足時會自動補題，可能需要一至兩分鐘。請勿重新整理或關閉頁面。"
+              ? "正在準備題目，可能需要一至兩分鐘。請勿重新整理或關閉頁面。"
               : questionSource === "ai" && mode === "standard"
-                ? "AI 生成需時（約 10 至 60 秒；不足時會自動補題，或需更長時間），請勿關閉頁面。"
-                : "題目不足時，系統會按教材即時生成，並自動核對教材依據。"}
+                ? "需時約 10 至 60 秒，請勿關閉頁面。"
+                : "題目不足時會自動補足。"}
           </span>
         </div>
       </section>
@@ -634,15 +634,15 @@ export function PracticeSetupForm() {
             <p className="text-meta">重溫錯題會直接使用你之前的題目。</p>
           ) : questionSource === "ai" ? (
             <p className="text-meta">
-              AI 會按你揀選的主題即時出題（每題都會核對教材依據），需時約 10 至 60 秒。
+              AI 會按你揀選的主題即時出題，需時約 10 至 60 秒。
               AI 只會使用已確認可向學生發布的教材，因此教材未開放的主題不能選；
               如需在那些主題練習，請改用「使用題庫題目」。
               {demoMode === true ? " 現時為示範模式，會使用本地示範生成（未使用 AI）。" : null}
             </p>
           ) : (
             <p className="text-meta">
-              使用題庫中已發布的題目；所選難度（選擇題）的題目不足時，系統會按該難度即時生成補足
-              （需時約 10 至 60 秒），仍然不足才加入其他難度並如實說明。
+              使用題庫中已發布的題目；所選難度（選擇題）的題目不足時，系統會按該難度即時生成補足，
+              仍然不足才加入其他難度並如實說明。
             </p>
           )}
         </div>

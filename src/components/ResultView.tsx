@@ -189,6 +189,11 @@ export function ResultView({ sessionId }: { sessionId: string }) {
         >
           {retrying ? "正在準備…" : `針對錯題再練習（${needsReview.length} 題）`}
         </button>
+        {result.answeredCount < result.totalQuestions ? (
+          <Link href={`/practice/${sessionId}`} className="btn">
+            返回補答未作答的 {result.totalQuestions - result.answeredCount} 題
+          </Link>
+        ) : null}
         <Link
           href={`/practice/new?topic=${result.session.topicId}`}
           className="btn"

@@ -76,6 +76,8 @@ describe("題庫不足時的補題", () => {
     expect(assembled.questions.length).toBeGreaterThan(0);
     expect(assembled.questions.length).toBeLessThanOrEqual(requested);
     // 確認真的走了「題庫不足 → 即時生成補足」這條路徑（否則這個測試會變成空轉）
-    expect(assembled.notice ?? "").toContain("題庫題目不足");
+    expect(assembled.session.origin).toBe("generated");
+    // 生成過程不會交給學生：提示只交代練習的組成（2026-11-27）
+    expect(assembled.notice ?? "").not.toMatch(/題庫題目不足|即時生成|補題/);
   });
 });

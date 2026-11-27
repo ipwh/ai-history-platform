@@ -63,6 +63,8 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
   const [submitError, setSubmitError] = useState<unknown>(null);
   const [completing, setCompleting] = useState(false);
   const [aiGradingAvailable, setAiGradingAvailable] = useState(false);
+  /** 「其他選項」（跳過、返回未作答、提早結束、離開）預設收起，避免與主要按鈕並排誤按 */
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -119,6 +121,29 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
   const currentFeedback = current ? feedback[current.id] : undefined;
   const answeredCount = Object.keys(feedback).length;
 
+  /** 未作答的題目（順序＝題目次序）：用來引導學生補答，而不是靠「下一題」跳過 */
+  const unanswered = questions
+    .map((question, index) => ({ question, index }))
+    .filter((item) => feedback[item.question.id] === undefined);
+  const firstUnansweredIndex = unanswered[0]?.index ?? -1;
+
+  /**
+   * 仍有未作答題目時攔截重新整理／關閉分頁。
+   *
+   * 已提交的答案其實已存在伺服器，但重新載入會令學生以為作答中斷；
+   * 瀏覽器只會顯示它自己的固定文字（不能自訂），作用只是「停一停、想一想」。
+   */
+  useEffect(() => {
+    if (!data) return;
+    if (unanswered.length === 0) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [data, unanswered.length]);
+
   const progress = useMemo(
     () => (questions.length === 0 ? 0 : answeredCount / questions.length),
     [answeredCount, questions.length],
@@ -158,6 +183,8 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
       return;
     }
 
+    // 提交後同一個位置會變成「下一題」：即使學生雙擊，第二下亦只是前進一題
+    // （該題已作答），可用「上一題」返回；未作答的題目不會因此被跳過。
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -199,6 +226,27 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
     }
   }
 
+  /**
+   * 離開練習一律先確認。
+   *
+   * 以往「離開」是一個直接的連結，手機上與「下一題」同列，誤按一下就會離開作答頁
+   * 而不會察覺。現在改為按鈕並說明後果（未作答的題目不會計分，已提交的答案會保留）。
+   */
+  function handleLeave(): void {
+    const remaining = questions.length - answeredCount;
+    const message =
+      remaining > 0
+        ? `仍有 ${remaining} 題未作答，未作答的題目不會計分。已提交的答案會保留，之後可在「我的記錄」按「繼續作答」返回這份練習。確定離開嗎？`
+        : "已完成全部題目，可以在「我的記錄」查看這次練習。確定離開嗎？";
+    if (window.confirm(message)) router.push("/");
+  }
+
+  /** 跳題或補答後收起「其他選項」，畫面只留下一個主要動作 */
+  function goToQuestion(index: number): void {
+    setMoreOpen(false);
+    setCurrentIndex(Math.max(0, Math.min(questions.length - 1, index)));
+  }
+
   if (error) return <ErrorNotice error={error} onRetry={() => setReloadToken((t) => t + 1)} />;
   // 伺服器回傳成功但題目清單是空的：以前會永遠停在「正在載入題目…」（`!current` 為真），
   // 學生與教師都無法判斷發生甚麼事。這裡改為明確、可重試的錯誤（Sprint 23）。
@@ -220,11 +268,18 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
   const isLast = currentIndex === questions.length - 1;
   const hasAnswer = (drafts[current.id] ?? "").trim().length > 0;
   const allAnswered = answeredCount >= questions.length;
+  /**
+   * 最後一題已提交但仍有其他題目未作答時，主要按鈕改為「補答未作答的 N 題」：
+   * 預設行動是補齊，而不是結束（要提早結束須經「其他選項」再確認）。
+   */
+  const primaryIsBackfill = currentFeedback !== undefined && isLast && unanswered.length > 0;
   /** 每一刻只顯示「現在應該按哪一個」：引導學生由選答案 → 提交 → 下一題。 */
   const stepHint = currentFeedback
-    ? isLast
-      ? "已提交，請按「完成練習並查看結果」。"
-      : "已提交，請按「下一題」繼續。"
+    ? primaryIsBackfill
+      ? `尚有 ${unanswered.length} 題未作答，請按「補答未作答的 ${unanswered.length} 題」繼續（要結束請按「其他選項」）。`
+      : isLast
+        ? "已提交，請按「完成練習並查看結果」。"
+        : "已提交，請按「下一題」繼續。"
     : hasAnswer
       ? "已填寫答案，請按「提交答案」查看結果。"
       : current.questionType === "mc"
@@ -251,7 +306,9 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
         <ProgressBar value={progress} />
       </div>
 
-      {data.notice ? <Notice>{data.notice}</Notice> : null}
+      {/* 練習的組成（題數／題型）只佔一行淡色文字：不描述題目是怎樣生成的，
+          亦不與題目爭奪注意力。 */}
+      {data.notice ? <p className="text-meta">{data.notice}</p> : null}
 
       {/* 題目是主角：字級最大、沒有其他按鈕與它爭奪注意力 */}
       <article className="card flex flex-col gap-4" style={{ padding: "1.2rem 1.25rem" }}>
@@ -328,7 +385,8 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
       </article>
 
       {/* 每次只保留一個主要動作：先「提交答案」，提交後同一個位置才變成「下一題」。
-          學生不需要在幾個並排按鈕之間選擇，也就不會誤按下一步或提早結束。 */}
+          跳過、提早結束、離開等不可逆或容易誤按的操作收進「其他選項」，並先確認；
+          作答期間學生眼前只有「現在該按的那一個」。 */}
       <div className="action-bar">
         <p className="practice-step" aria-live="polite">
           {stepHint}
@@ -336,7 +394,15 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
 
         <div className="action-bar__main">
           {currentFeedback ? (
-            isLast ? (
+            primaryIsBackfill ? (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => goToQuestion(firstUnansweredIndex)}
+              >
+                補答未作答的 {unanswered.length} 題
+              </button>
+            ) : isLast ? (
               <button
                 type="button"
                 className="btn btn-primary"
@@ -349,9 +415,7 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() =>
-                  setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))
-                }
+                onClick={() => goToQuestion(currentIndex + 1)}
               >
                 下一題
               </button>
@@ -374,52 +438,97 @@ export function PracticeRunner({ sessionId }: { sessionId: string }) {
         </div>
 
         <div className="action-bar__links">
-          {currentFeedback || currentIndex > 0 ? (
+          {currentIndex > 0 ? (
             <button
               type="button"
               className="btn"
-              onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
-              disabled={currentIndex === 0}
+              onClick={() => goToQuestion(currentIndex - 1)}
             >
               上一題
             </button>
           ) : null}
-          {currentFeedback ? null : (
+
+          <div className="practice-more">
             <button
               type="button"
               className="btn"
-              onClick={() =>
-                setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))
-              }
-              disabled={isLast}
+              aria-expanded={moreOpen}
+              aria-controls="practice-more-panel"
+              onClick={() => setMoreOpen((open) => !open)}
             >
-              下一題
+              其他選項
             </button>
-          )}
-          {allAnswered ? (
-            isLast ? null : (
-              <button
-                type="button"
-                className="btn"
-                onClick={() => void handleComplete()}
-                disabled={completing}
+            {moreOpen ? (
+              <div
+                id="practice-more-panel"
+                className="practice-more__panel"
+                role="group"
+                aria-label="其他選項"
               >
-                {completing ? "正在計算成績…" : "完成練習並查看結果"}
-              </button>
-            )
-          ) : currentFeedback && isLast ? null : (
-            <button
-              type="button"
-              className="btn"
-              onClick={() => void handleComplete()}
-              disabled={completing}
-            >
-              {completing ? "正在計算成績…" : "提早結束練習"}
-            </button>
-          )}
-          <Link href="/" className="btn">
-            離開
-          </Link>
+                {firstUnansweredIndex !== -1 && firstUnansweredIndex !== currentIndex ? (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => goToQuestion(firstUnansweredIndex)}
+                  >
+                    返回未作答的題目（{unanswered.length}）
+                  </button>
+                ) : null}
+                {!isLast ? (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => goToQuestion(currentIndex + 1)}
+                  >
+                    {currentFeedback ? "繼續下一題" : "跳過這題（保持未作答）"}
+                  </button>
+                ) : null}
+                {isLast ? (
+                  primaryIsBackfill ? (
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        void handleComplete();
+                      }}
+                      disabled={completing}
+                    >
+                      {completing
+                        ? "正在計算成績…"
+                        : `完成練習並查看結果（${unanswered.length} 題未作答）`}
+                    </button>
+                  ) : null
+                ) : (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setMoreOpen(false);
+                      void handleComplete();
+                    }}
+                    disabled={completing}
+                  >
+                    {completing
+                      ? "正在計算成績…"
+                      : allAnswered
+                        ? "完成練習並查看結果"
+                        : "提早結束練習"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setMoreOpen(false);
+                    handleLeave();
+                  }}
+                >
+                  離開練習
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

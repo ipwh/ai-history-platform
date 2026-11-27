@@ -239,8 +239,8 @@ describe("學生即時生成（questionSource: ai）", () => {
     expect(delivered.some((question) => question.question === UNCERTAIN_STEM)).toBe(false);
     // 其他題目不受影響：乾淨的選擇題仍然可以練習
     expect(delivered.some((question) => question.questionType === "mc")).toBe(true);
-    // 學生如實得知有題目被抽起並交教師確認
-    expect(assembled.notice ?? "").toContain("未確定");
+    // 教師覆核流程不會寫給學生：被抽起的題目只反映在題數說明上（2026-11-27）
+    expect(assembled.notice ?? "").not.toMatch(/未確定|教師確認/);
     // 學生端的題目資料不含答案欄位（未作答前不會洩露）
     const serialised = JSON.stringify(assembled.questions);
     expect(serialised).not.toContain("correctAnswer");
@@ -319,7 +319,8 @@ describe("題庫不足時的即時補題（questionSource: bank）", () => {
     // 修復前：補題直接採用生成結果，未確定的題目會出現在練習快照並送到學生面前
     expect(delivered.some((question) => question.question === UNCERTAIN_STEM)).toBe(false);
     expect(delivered.map((question) => question.id)).toContain("q-withheld-bank-clean");
-    expect(assembled.notice ?? "").toContain("未確定");
+    // 教師覆核流程不會寫給學生（2026-11-27）
+    expect(assembled.notice ?? "").not.toMatch(/未確定|教師確認/);
 
     // 補題寫入題庫的題目仍然保留（草稿），教師可在「題目管理」看到並處理
     const held = questionsRepo

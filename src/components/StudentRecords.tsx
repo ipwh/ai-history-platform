@@ -369,6 +369,12 @@ export function StudentRecords() {
             topicLabel={topicLabelById.get(record.topicId) ?? record.topicTitle}
             answerLabel="你的答案"
             choiceLabel="你的選擇"
+            // 有未作答題目時可以直接返回該次練習補答：學生離開作答頁後仍能完成整份練習
+            resumeHref={
+              record.questions.some((question) => !question.answered)
+                ? `/practice/${record.sessionId}`
+                : undefined
+            }
           />
         ))}
       </section>

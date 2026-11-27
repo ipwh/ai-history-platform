@@ -135,6 +135,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
    */
   const onPracticeRoute = pathname === "/practice" || pathname.startsWith("/practice/");
 
+  /**
+   * 正在作答的練習頁（`/practice/<sessionId>`，不含設定頁及結果頁）。
+   *
+   * 這頁收起全站導覽及頁首標誌的連結：學生作答時最常見的意外離開，就是手指
+   * 在畫面上方或底部滑動時誤按導覽連結。離開練習一律經底部操作列的
+   * 「其他選項 → 離開練習」，並先確認（2026-11-27）。
+   */
+  const inPracticeSession = /^\/practice\/(?!new(?:\/|$))[^/]+\/?$/.test(pathname);
+
   return (
     <div
       className="app-shell min-h-full flex flex-col"
@@ -142,22 +151,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     >
       <header className="bg-white border-b" style={{ borderColor: "var(--border)" }}>
         <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Link href="/" aria-label="返回課題首頁">
-            <SchoolBrand showSiteName />
-          </Link>
-          <nav className="nav-links nav-links--student flex-wrap items-center gap-1 text-sm">
-            {studentNavItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="nav-link"
-                data-active={isActive(item) ? "true" : "false"}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          {staffNavItems.length > 0 ? (
+          {inPracticeSession ? (
+            <span className="inline-flex items-center">
+              <SchoolBrand showSiteName />
+            </span>
+          ) : (
+            <Link href="/" aria-label="返回課題首頁">
+              <SchoolBrand showSiteName />
+            </Link>
+          )}
+          {inPracticeSession ? null : (
+            <nav className="nav-links nav-links--student flex-wrap items-center gap-1 text-sm">
+              {studentNavItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="nav-link"
+                  data-active={isActive(item) ? "true" : "false"}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          )}
+          {inPracticeSession && !isStaff ? null : staffNavItems.length > 0 ? (
             <nav className="flex flex-wrap items-center gap-1 text-sm">
               {staffNavItems.map((item) => (
                 <Link
@@ -172,7 +189,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </nav>
           ) : null}
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2 app-identity">
-            {health ? (
+            {/* 作答期間不顯示系統狀態徽章：學生只需專注作答，題目來源已在題目上方標示 */}
+            {health && !inPracticeSession ? (
               <span
                 className={`badge hide-sm ${health.demoMode ? "badge-warning" : "badge-success"}`}
                 title={

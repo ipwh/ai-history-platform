@@ -16,6 +16,29 @@
 
 ---
 
+## [未發布] — 2026-11-27（三十二）：作答頁只顧作答——不顯示出題過程，並防止誤按跳題／離開
+
+### 變更
+
+- **學生練習頁不再顯示題目是怎樣生成的**（擁有者指示：UI 盡量精簡，讓學生專注作答）。以往練習頁會把生成服務的說明原句交給學生，例如「有 2 條題目的教學品質需要改善…已要求重寫一次」「有 7 條選擇題的正確答案是最長的選項…已丟棄不予採用；系統已要求模型改以「加長錯誤選項」的方式重寫」，以及 provider 回退、補題輪數、AI 用量上限、待教師確認等內部流程。
+  - [practice-service.ts](src/server/services/practice-service.ts)：`generatePracticeQuestions` 改為回傳兩組文字——`notices`（只交代這份練習的組成：實際題數／原定題數、哪些所選主題暫時沒有題目）與 `diagnostics`（重寫、丟棄、補題、provider 回退、待教師確認），後者只經 `console.info` 寫入伺服器日誌供教師排查；題庫補題路徑（`topUpWithGeneration`）及「未達派題要求而略過」亦改為只記錄日誌，不再放進學生看到的 `notice`。
+  - 練習頁的說明由藍色提示方塊改為一行淡色文字，不再與題目爭奪注意力。
+  - 練習設定頁同步刪去「自動補題」等出題細節（只保留「需時約 10 至 60 秒／請勿關閉頁面」及「AI 只會使用已確認可向學生發布的教材」等實際影響選擇的說明）。
+- **作答頁聚焦模式（防止誤按「下一題」「離開」）**：
+  - 「跳過這題」「返回未作答的題目（N）」「提早結束練習」「離開練習」全部收進**預設收起的「其他選項」**，主要按鈕只有一個（提交答案 → 下一題 → 完成練習並查看結果），不再有與主要按鈕並排的次要按鈕。
+  - 「離開練習」由直接跳轉的連結改為按鈕，**一律先確認**並說明後果（未作答的題目不會計分、已提交的答案會保留）；「提早結束練習」原本已有確認。
+  - 主要按鈕只有一個，而且未作答時一定是反白的「提交答案」：提交後同一位置才變成「下一題」，學生連續點擊不會一路跳過未作答的題目（跳過任何一題都必須經「其他選項」再按一次），「下一題」僅前進一題，隨時可用「上一題」返回。
+  - **最後一題提交後若仍有其他題目未作答，主要按鈕改為「補答未作答的 N 題」**（直接返回第一條未作答的題目），結束練習收在「其他選項」並寫明「完成練習並查看結果（N 題未作答）」——預設行動是補齊，不是提早結束。
+  - 仍有未作答題目時，重新整理／關閉分頁會先由瀏覽器提示。
+  - [AppShell.tsx](src/components/AppShell.tsx)：作答期間收起全站導覽、頁首標誌的連結及系統狀態徽章（教師／管理員仍保留後台導覽），減少手指滑動時誤按而離開；題目來源仍以題目上方的標籤顯示。
+- **離開後仍可完成整份練習**：[ResultView.tsx](src/components/ResultView.tsx) 在仍有未作答題目時提供「返回補答未作答的 N 題」；[StudentRecords.tsx](src/components/StudentRecords.tsx) 的練習記錄卡在仍有未作答題目時提供「繼續作答（N 題未作答）」，直接返回該次練習（答案已儲存，未作答題目仍可提交）。
+
+### 驗證
+
+- 更新測試：[practice-ai-mode.test.ts](tests/practice-ai-mode.test.ts)、[practice-withheld-delivery.test.ts](tests/practice-withheld-delivery.test.ts)、[bank-topup-count.test.ts](tests/bank-topup-count.test.ts) 改為斷言「生成過程不會出現在學生的 `notice`」（並以 `session.origin` 確認確實走了生成／補題路徑）。
+- [tests/ui/student-practice.spec.ts](tests/ui/student-practice.spec.ts)：新增「未提交時只有『提交答案』一個主要動作，離開練習收在『其他選項』並先確認」（含全站導覽收起、取消確認後留在同一題）及「最後一題提交後主要按鈕是補答未作答的題目，提早結束收在『其他選項』」；原有「下一題」導覽改為經「其他選項 → 跳過這題」。
+- 全套 `npm test`：**2,769 通過、4 略過**（183 個檔案）；`npm run typecheck`、`npx eslint`、`npm run build` 均通過；`npx playwright test tests/ui/student-practice.spec.ts tests/ui/ipad-layout.spec.ts` **共 18 項全部通過**（另以 Chromium 桌面及 390×844 手機視窗檢視作答頁、「其他選項」、提交後回饋、結果頁及記錄頁的排版）。
+
 ## [未發布] — 2026-11-24（三十一）：選擇題「正確答案是最長那項」在生成階段直接擋下
 
 **狀態**：已部署（連同同日第三十節的補題及生成進度）。功能提交 `4dbd9f6` 的 GitHub Actions CI（run `45319457268`）及 Cloud Build（`b2dcfd6d-61ad-4683-a907-5f4420bb6860`）均成功，Cloud Run revision `history-self-study-00124-chg` 承接 100% 流量；其後的文件提交亦觸發重建（`205cc199-1e97-4886-8f2a-939820ff2b08` → `history-self-study-00125-vxg`，程式碼相同）。正式 `/api/health` 回應 200、`database=sqlite/ok`、`materials 46 份／26,599 段`；未帶工作階段的生成端點回 401。詳見 [deployment-evidence-2026-11-24.json](docs/deployment-evidence-2026-11-24.json)。

@@ -372,7 +372,7 @@ async function generatePracticeQuestions(options: {
   questionTypes: QuestionType[];
   difficulty: Difficulty;
   questionCount: number;
-}): Promise<{ questions: Question[]; notices: string[] }> {
+}): Promise<{ questions: Question[]; notices: string[]; diagnostics: string[] }> {
   const allocation = distributeQuestionCount(options.questionCount, options.sectionIds);
   const outcomes = await generateForSections({
     topicId: options.topicId,
@@ -382,6 +382,12 @@ async function generatePracticeQuestions(options: {
   });
 
   const notices: string[] = [];
+  /**
+   * 生成過程的說明（重寫次數、丟棄題數、補題輪數、provider 回退、教師確認）：
+   * 只寫入伺服器日誌供教師排查，不會交給學生。學生只看得到練習的組成
+   * （題數、題型、難度），作答頁因此不會出現「系統正在怎樣出題」的文字。
+   */
+  const diagnostics: string[] = [];
   const questions: Question[] = [];
   const used = createDuplicateTracker();
   const sectionsWithQuestions = new Set<string>();
@@ -400,14 +406,7 @@ async function generatePracticeQuestions(options: {
         continue;
       }
       usedDemoFallback = usedDemoFallback || outcome.generated.usedDemoFallback;
-      if (outcome.generated.notice !== null) {
-        // 生成服務每次呼叫都會附上「有 N 條題目未確定…」的訊息；這裡移除，
-        // 改由下方以整次練習的總數統一說明，避免同一訊息重複顯示多次。
-        const withoutHeld = outcome.generated.notice
-          .replace(/有 \d+ 條題目的品質檢查有未確定項目[^。]*。\s*/g, "")
-          .trim();
-        if (withoutHeld.length > 0) notices.push(withoutHeld);
-      }
+      if (outcome.generated.notice !== null) diagnostics.push(outcome.generated.notice);
       for (const question of outcome.generated.questions) {
         // 跨分節、跨呼叫的去重（見 question-dedupe.ts）：舊版只比對題幹完全相同的字串，
         // 令「同一教材依據、同一答案、題幹略作改寫」的題目同時出現在一份練習之中；
@@ -475,10 +474,8 @@ async function generatePracticeQuestions(options: {
     );
   }
 
-  notices.unshift(
-    usedDemoFallback
-      ? "這次練習的題目由本地示範生成（未使用 AI），並已核對教材依據。"
-      : "這次練習的題目由 AI 按你揀選的主題即時生成，並已核對教材依據。",
+  console.info(
+    `[practice] 已準備 ${questions.length} 題（${usedDemoFallback ? "本地示範生成" : "AI 生成"}）。`,
   );
 
   // 只列出「有分配到題目、但最終沒有可用題目」的分節；題目數量少於所選分節時，
@@ -486,22 +483,16 @@ async function generatePracticeQuestions(options: {
   // 會誤報「15 個主題未能出題」）。
   const emptySections = countUnproductiveSections(allocation, sectionsWithQuestions);
   if (emptySections.length > 0) {
-    notices.push(
-      `有 ${emptySections.length} 個所選主題未能出題（教材不足或題目未通過檢查），這次練習只包含其餘主題的題目。`,
-    );
+    notices.push(`有 ${emptySections.length} 個所選主題暫時沒有題目。`);
   }
   if (missing > 0) {
-    notices.push(
-      `AI 這次準備了 ${questions.length} 題（原定 ${options.questionCount} 題），可以相同設定再練習一次以取得新題目。`,
-    );
+    notices.push(`這次練習共 ${questions.length} 題（原定 ${options.questionCount} 題）。`);
   }
   if (withheld > 0) {
-    notices.push(
-      `有 ${withheld} 條題目的品質檢查有未確定項目，暫時不會提供，已交教師確認；其他題目不受影響。`,
-    );
+    diagnostics.push(`有 ${withheld} 條題目的品質檢查有未確定項目，已抽起並交教師確認。`);
   }
 
-  return { questions, notices: [...new Set(notices)] };
+  return { questions, notices: [...new Set(notices)], diagnostics };
 }
 
 /**
@@ -577,13 +568,16 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
     );
     selected = shuffle(servableGenerated).slice(0, parsed.questionCount);
     if (servableGenerated.length < generated.questions.length) {
-      notices.push(
-        `有 ${generated.questions.length - servableGenerated.length} 條即時生成的題目未達派題要求` +
-          "（結構上無法作答，或正確選項明顯比其他選項長），已略過。",
+      console.info(
+        `[practice] 有 ${generated.questions.length - servableGenerated.length} 條即時生成的題目未達派題要求，已略過。`,
       );
     }
     origin = "generated";
+    // 學生只看到這份練習的組成（題數、題型、難度）；生成過程只留在伺服器日誌。
     notices.push(...generated.notices);
+    for (const diagnostic of generated.diagnostics) {
+      console.info("[practice] 生成說明（不顯示給學生）", diagnostic);
+    }
   } else {
     const holdPolicy = getServerConfig().explanationHoldPolicy;
     const bankAll = filterByExplanationPolicy(
@@ -615,7 +609,7 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
         reserveAiOperation(parsed.learnerId, "generation");
       } catch (error) {
         if (error instanceof ApiRouteError && error.status === 429) {
-          notices.push("短時間內的 AI 出題次數已達上限，這次未有即時生成額外題目。");
+          console.info("[practice] AI 出題次數已達上限，這次未有即時生成額外題目。");
           return;
         }
         throw error;
@@ -648,24 +642,21 @@ export async function createPractice(setup: PracticeSetupInput): Promise<Assembl
           // 否則會出現「要求 5 題卻交付 7 題」（2026-10-20 模擬學生使用時發現）。
           selected = [...selected, ...deliverable].slice(0, parsed.questionCount);
           origin = "generated";
-          notices.push(
-            generated.usedDemoFallback
-              ? "題庫題目不足，已即時按教材內容生成題目（本地示範生成模式）。"
-              : "題庫題目不足，已即時按教材內容生成題目。",
-          );
-          if (generated.notice) notices.push(generated.notice);
         }
-        if (heldCount > 0) {
-          notices.push(
-            `有 ${heldCount} 條即時生成的題目品質檢查有未確定項目，暫時不會提供，已交教師確認；其他題目不受影響。`,
-          );
+        // 生成過程的說明只留給伺服器日誌（學生只看到練習的組成）。
+        console.info(
+          "[practice] 題庫補題：即時生成",
+          deliverable.length,
+          "題；待教師確認",
+          heldCount,
+          "題。",
+        );
+        if (generated.notice) {
+          console.info("[practice] 生成說明（不顯示給學生）", generated.notice);
         }
       } catch (error) {
-        // 學生端只顯示簡短說明，詳細原因（例如教材不足以生成題目）留給教師後台
+        // 詳細原因（例如教材不足以生成題目）留給教師後台，學生只看到題數上的差異
         console.warn("[practice] 生成額外題目失敗", error);
-        notices.push(
-          "未能即時生成額外題目，這次只提供題庫中已有的題目。教師可在「題目管理」補充題目或設定 AI provider。",
-        );
       }
     };
 

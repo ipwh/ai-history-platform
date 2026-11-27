@@ -197,7 +197,7 @@ test("框架未能啟動時（模擬舊引擎無法解析 bundle）顯示可操�
  *   - 未登入時由伺服器守衛重新導向（不是空白畫面）
  *   - API 逾時（20 秒時限）
  */
-test("可以切換到下一題，並在重新載入後停留在同一題", async ({ page }) => {
+test("可以跳過題目到下一題，並在重新載入後停留在同一題", async ({ page }) => {
   await signIn(page, "student");
   const sessionId = await createPracticeSession();
   await page.goto(`/practice/${sessionId}`);
@@ -205,7 +205,9 @@ test("可以切換到下一題，並在重新載入後停留在同一題", async
   await expect(page.getByText(QUESTION_HEADER)).toBeVisible();
   const firstQuestion = await page.locator("article h1").innerText();
 
-  await page.getByRole("button", { name: "下一題" }).click();
+  // 跳過收在「其他選項」：作答頁不會有與主要按鈕並排的「下一題」
+  await page.getByRole("button", { name: "其他選項" }).click();
+  await page.getByRole("button", { name: "跳過這題（保持未作答）" }).click();
   await expect(page.getByText(/第 2 \/ \d+ 題/)).toBeVisible();
   const secondQuestion = await page.locator("article h1").innerText();
   expect(secondQuestion).not.toBe(firstQuestion);
@@ -214,6 +216,82 @@ test("可以切換到下一題，並在重新載入後停留在同一題", async
   await page.reload();
   await expect(page.getByText(QUESTION_HEADER)).toBeVisible();
   expect(await page.locator("article h1").innerText()).toBe(firstQuestion);
+});
+
+/**
+ * 作答頁的焦點（2026-11-27 擁有者指示）：
+ * 畫面上只有一個主要動作；跳過、提早結束、離開全部收在「其他選項」，
+ * 而且離開前一定先確認，避免學生專注作答時誤按而跳題或離開。
+ */
+test("未提交時只有「提交答案」一個主要動作，離開練習收在「其他選項」並先確認", async ({
+  page,
+}) => {
+  await signIn(page, "student");
+  const sessionId = await createPracticeSession();
+  await page.goto(`/practice/${sessionId}`);
+  await expect(page.getByText(QUESTION_HEADER)).toBeVisible();
+
+  // 未作答時畫面上沒有「下一題」或「離開」，全站導覽亦收起
+  await expect(page.getByRole("button", { name: "下一題" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "離開練習" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "重溫" })).toHaveCount(0);
+
+  // 展開「其他選項」才見到離開練習，而且要先確認
+  await page.getByRole("button", { name: "其他選項" }).click();
+  const leave = page.getByRole("button", { name: "離開練習" });
+  await expect(leave).toBeVisible();
+
+  let message = "";
+  page.once("dialog", async (dialog) => {
+    message = dialog.message();
+    await dialog.dismiss();
+  });
+  await leave.click();
+
+  // 取消確認：仍然留在同一題，不會被帶走
+  await expect(page.getByText(QUESTION_HEADER)).toBeVisible();
+  expect(message).toContain("未作答");
+});
+
+/**
+ * 完整作答（2026-11-27）：最後一題提交後，若有其他題目跳過了，
+ * 主要按鈕是「補答未作答的 N 題」，而不是「完成練習並查看結果」——
+ * 預設行動是補齊，提早結束須經「其他選項」。
+ */
+test("最後一題提交後主要按鈕是補答未作答的題目，提早結束收在「其他選項」", async ({
+  page,
+}) => {
+  await signIn(page, "student");
+  const sessionId = await createPracticeSession(2);
+  await page.goto(`/practice/${sessionId}`);
+  await expect(page.getByText(/第 1 \/ 2 題/)).toBeVisible();
+
+  // 跳過第 1 題
+  await page.getByRole("button", { name: "其他選項" }).click();
+  await page.getByRole("button", { name: "跳過這題（保持未作答）" }).click();
+  await expect(page.getByText(/第 2 \/ 2 題/)).toBeVisible();
+
+  // 作答最後一題
+  await page.locator(".option-row").first().click();
+  await page.getByRole("button", { name: "提交答案" }).click();
+  await expect(page.locator('.option-row[data-state="correct"]')).toHaveCount(1);
+
+  // 主要按鈕是補答，不是結束；結束收在「其他選項」並註明未作答題數
+  await expect(page.getByRole("button", { name: "完成練習並查看結果" })).toHaveCount(0);
+  const backfill = page.getByRole("button", { name: "補答未作答的 1 題" });
+  await expect(backfill).toBeVisible();
+  await expect(page.getByText(/尚有 1 題未作答/)).toBeVisible();
+
+  await page.getByRole("button", { name: "其他選項" }).click();
+  await expect(
+    page.getByRole("button", { name: "完成練習並查看結果（1 題未作答）" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "其他選項" }).click();
+
+  // 補答：回到未作答的第 1 題
+  await backfill.click();
+  await expect(page.getByText(/第 1 \/ 2 題/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "提交答案" })).toBeDisabled();
 });
 
 test("私密瀏覽／localStorage 被封鎖時仍可載入及作答", async ({ page }) => {

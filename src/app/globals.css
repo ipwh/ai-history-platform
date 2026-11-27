@@ -1257,6 +1257,40 @@ table.material-table th {
   font-size: 0.82rem;
 }
 
+/*
+ * 「其他選項」：跳過、返回未作答的題目、提早結束、離開練習都收在這裡，
+ * 預設收起。目的是令作答頁只有一個主要動作，次要／不可逆操作不在拇指範圍內
+ * 與主要按鈕並排（2026-11-27）。
+ */
+.practice-more {
+  position: relative;
+  margin-left: auto;
+}
+
+.practice-more__panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.4rem);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 13rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.practice-more__panel .btn {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  min-height: var(--tap-min, 44px);
+}
+
 @media (min-width: 768px) {
   .action-bar__main {
     justify-content: flex-end;
