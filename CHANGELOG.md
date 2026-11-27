@@ -18,6 +18,8 @@
 
 ## [未發布] — 2026-11-27（三十二）：作答頁只顧作答——不顯示出題過程，並防止誤按跳題／離開
 
+**狀態**：已部署。功能提交 `09f10e8` 的 GitHub Actions CI（run `45927303235`，第 149 次）及 Cloud Build（`40da00a2-214a-47ac-b725-f6113af2e0e8`，五個步驟全部 SUCCESS）均成功，Cloud Run revision `history-self-study-00128-dbx` 承接 100% 流量（前一個 revision 為 `00127-jcr`）；正式 `/api/health` 回應 200、`database=sqlite/ok`、`materials 46 份／26,599 段`（學生可見 22 份）。詳見 [deployment-evidence-2026-11-27-practice-focus.json](docs/deployment-evidence-2026-11-27-practice-focus.json)。
+
 ### 變更
 
 - **學生練習頁不再顯示題目是怎樣生成的**（擁有者指示：UI 盡量精簡，讓學生專注作答）。以往練習頁會把生成服務的說明原句交給學生，例如「有 2 條題目的教學品質需要改善…已要求重寫一次」「有 7 條選擇題的正確答案是最長的選項…已丟棄不予採用；系統已要求模型改以「加長錯誤選項」的方式重寫」，以及 provider 回退、補題輪數、AI 用量上限、待教師確認等內部流程。

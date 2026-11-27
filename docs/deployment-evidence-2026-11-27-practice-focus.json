@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-27",
+  "commit": "09f10e8918d68a0c969e64e4b95e834d07794b53",
+  "subject": "feat(practice): keep the answering screen focused and hide generation details",
+  "repository": "ipwh/ai-history-platform",
+  "branch": "main",
+  "ci": {
+    "runId": 45927303235,
+    "runNumber": 149,
+    "url": "https://github.com/ipwh/ai-history-platform/actions/runs/45927303235",
+    "conclusion": "success"
+  },
+  "cloudBuild": {
+    "id": "40da00a2-214a-47ac-b725-f6113af2e0e8",
+    "project": "pccss-ai-history",
+    "trigger": "history-main-push",
+    "status": "SUCCESS",
+    "createdAt": "2026-11-27T02:15:59.006169Z",
+    "finishedAt": "2026-11-27T02:24:25.928398Z",
+    "image": "asia-east2-docker.pkg.dev/pccss-ai-history/history/hk-history-self-study:40da00a2-214a-47ac-b725-f6113af2e0e8",
+    "steps": ["quality-gate", "sync-materials", "build-image", "push-image", "deploy-cloud-run"],
+    "qualityGate": "建置內建品質閘門（npm ci → lint → test）通過，_QUALITY_GATE=1"
+  },
+  "cloudRun": {
+    "service": "history-self-study",
+    "region": "asia-east2",
+    "url": "https://history-self-study-4sija7xvrq-df.a.run.app",
+    "revision": "history-self-study-00128-dbx",
+    "previousRevision": "history-self-study-00127-jcr",
+    "trafficPercent": 100
+  },
+  "verification": {
+    "healthStatus": 200,
+    "healthOk": true,
+    "database": {
+      "driver": "sqlite",
+      "status": "ok"
+    },
+    "llmProvider": "deepseek",
+    "llmConfigured": true,
+    "demoMode": false,
+    "aiGrading": true,
+    "materials": {
+      "documents": 46,
+      "blocks": 26599,
+      "studentVisibleDocuments": 22
+    },
+    "persistence": {
+      "backupEnabled": true,
+      "restore": "restored",
+      "lastSuccessAt": null,
+      "lastError": null,
+      "backupsUploaded": 0
+    },
+    "materialsAutoImport": {
+      "state": "skipped",
+      "documents": 0,
+      "ready": 0,
+      "failed": 0
+    },
+    "clientBundle": {
+      "check": "在本機以同一提交 `npm run build` 後，以 Select-String 掃描 .next/static/chunks/*.js",
+      "present": ["其他選項", "補答未作答的"],
+      "absent": ["已要求重寫一次", "已丟棄不予採用"],
+      "note": "生成過程的說明文字不再出現在瀏覽器 bundle；只有新的作答頁按鈕文字存在。"
+    }
+  },
+  "changes": {
+    "summary": [
+      "學生練習頁不再顯示出題過程：generatePracticeQuestions 改為回傳 notices（只交代練習的組成：實際／原定題數、暫時沒有題目的所選主題）與 diagnostics（重寫次數、丟棄題數、補題輪數、provider 回退、待教師確認），後者只經 console.info 寫入伺服器日誌；題庫補題路徑及「未達派題要求而略過」同樣只記錄日誌。練習頁的說明由提示方塊改為一行淡色文字。",
+      "作答頁聚焦：跳過、返回未作答的題目、提早結束、離開全部收進預設收起的「其他選項」；「離開練習」由直接連結改為按鈕並一律先確認；最後一題提交後若仍有未作答題目，主要按鈕改為「補答未作答的 N 題」，結束練習收在「其他選項」；有未作答題目時攔截重新整理／關閉分頁；作答期間收起全站導覽、頁首標誌連結及系統狀態徽章。",
+      "離開後仍可完成整份練習：結果頁提供「返回補答未作答的 N 題」，記錄頁的練習卡提供「繼續作答（N 題未作答）」。",
+      "練習設定頁刪去「自動補題」等出題細節，只保留需時及教材開放範圍等會影響選擇的說明。"
+    ],
+    "files": [
+      "src/server/services/practice-service.ts",
+      "src/components/PracticeRunner.tsx",
+      "src/components/AppShell.tsx",
+      "src/components/ResultView.tsx",
+      "src/components/PracticeRecordCard.tsx",
+      "src/components/StudentRecords.tsx",
+      "src/components/PracticeSetupForm.tsx",
+      "src/app/globals.css",
+      "tests/practice-ai-mode.test.ts",
+      "tests/practice-withheld-delivery.test.ts",
+      "tests/bank-topup-count.test.ts",
+      "tests/ui/student-practice.spec.ts",
+      "README.md、CHANGELOG.md"
+    ]
+  },
+  "localValidation": {
+    "testFilesPassed": 183,
+    "testsPassed": 2769,
+    "testsSkipped": 4,
+    "typecheck": "passed",
+    "lintErrors": 0,
+    "lintWarnings": 1,
+    "lintWarning": "既有未使用的 import（scripts/verify-questionbank-sync.ts），與本次改動無關",
+    "build": "npm run build 成功",
+    "browserTests": "npx playwright test tests/ui/student-practice.spec.ts tests/ui/ipad-layout.spec.ts：18 項全部通過（新增「只有一個主要動作／離開收在『其他選項』並先確認」及「最後一題提交後主要按鈕是補答未作答的題目」）。測試使用 data/app.db 的 VACUUM INTO 快照副本，來源資料庫未被改動。",
+    "visualCheck": "以 Chromium 桌面（1280×860）及手機（390×844）檢視作答頁、「其他選項」選單、提交後回饋、補答狀態、結果頁及記錄頁的排版。"
+  },
+  "notVerified": [
+    "正式環境的學生介面未有真人帳戶操作：練習頁需要已登入的學生工作階段，而建立練習會消耗 AI 出題額度，因此部署驗證只包括健康檢查、教材數量、資料庫狀態及本機用戶端 bundle 掃描。作答頁的按鈕、確認對話框及補答流程由 Playwright 對真實伺服器（next start + 臨時資料庫快照 + 示範生成）驗證。",
+    "生成過程的說明改為寫入伺服器日誌，需經 Cloud Logging 查看；介面上不再顯示，因此無法從外部 HTTP 回應驗證。"
+  ]
+}
