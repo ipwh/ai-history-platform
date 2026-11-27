@@ -57,6 +57,22 @@
 - 新測試：[tests/generation-topup-shortfall.test.ts](tests/generation-topup-shortfall.test.ts)（模型每次只交 2 題 → 自動補題至要求題數並回報 `topping-up` 進度；教材不足時補題停止、`shortfall` 如實回報且模型呼叫不超過 5 次）、[tests/generation-progress-stream.test.ts](tests/generation-progress-stream.test.ts)（SSE 事件次序、`topping-up` 階段、`done` 的 `requestedCount`／`shortfall`／題數）。
 - 全套 `npm test`：**2,757 通過、4 略過**（182 個檔案），`npm run typecheck` 及 `npx eslint` 無錯誤。
 
+## [未發布] — 2026-11-27（三十）：新增「上週欠交＋本週每日配額」應補報告（Excel）
+
+### 新增
+
+- **`npm run report:grade-makeup`**（[scripts/report-grade-makeup.ts](scripts/report-grade-makeup.ts)、[grade-makeup-report.ts](src/server/services/grade-makeup-report.ts)）：匯出某一級別的應補題數及次數為 Excel（「說明」「學生統計」「班別彙總」三張工作表），列為按班別及班號排序的單一表格，不再分開「不足」與「清零」。
+  - 口徑：上週（星期一至五）每人 50 題、**欠數 ×2**；本週每工作日 10 題但**星期一不計**（星期一的作答仍計入本週已做）；本週已做先滿足本週應做，**超出部分**才抵銷上週雙計欠數；抵銷後多出的不累積。
+  - 只計一般練習及已作答題目；重溫錯題不計。
+  - 預設只列上週或本週有練習紀錄的學生（名冊 135 位中其餘 117 位無練習者不列出，`--all` 可列全部）；並提供「上週獲派題目」欄，讓教師分辨「學生欠交」與「平台派題不足」。
+  - 選項：`--form`、`--out`、`--database`、`--now`（模擬時間）、`--include-today`（把今日計入配額）、`--include-monday`（把星期一計入配額）、`--all`、`--json`。
+- 測試：[tests/grade-makeup-report.test.ts](tests/grade-makeup-report.test.ts) 覆蓋雙計、星期一不計配額但計入本週已做、超出部分抵銷上限、重溫錯題排除、只列有練習者及排序。
+
+### 驗證（正式備份快照，2026-11-27 09:25）
+
+- 18 位有練習學生中 **11 位尚欠**，合計 **315 題／約 32 節**（逐人向上取整合共 36 節）。
+- 已實際讀回產生的 Excel 核對三張工作表內容與手算一致（陳安怡 112 題、冼慕言 51 題、葉慧霖 44 題……）。
+
 ## [未發布] — 2026-11-23（二十九）：星期一的統計範圍再改為「上星期一至**日**」
 
 ### 變更

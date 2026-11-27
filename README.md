@@ -91,6 +91,7 @@ npm run dev          # 啟動開發伺服器
 | `npm run db:migrate` | **明確**套用資料庫 migration（必須 `-- --database <path>`；沒有預設值，不會誤對 `data/app.db` 執行） |
 | `npm run report:usage` | **唯讀**統計練習使用情況：總數、學生／班別／課題、一般練習／重溫錯題、題目來源、準確率、每日趨勢及重溫成效；預設讀本機 `data/app.db`，加 `-- --production` 會從正式環境備份 bucket 下載最新快照至暫存目錄並在分析後刪除；加 `--json` 可讓 Copilot 直接分析，`--from`／`--to` 使用香港日期 `YYYY-MM-DD` |
 | `npm run export:grade-daily` | **唯讀**匯出某一級別的逐位學生一般練習作答情況為 Excel（逐個統計期間的總表、班別統計、每班分表；**不計重溫錯題**）：`-- --form 4 --date 2026-11-19 --out "D:\匯出"`；`-- --form 4 --schedule` 為排程交付規則（星期一＝上星期一至日；星期二至五＝前一日＋本週一至前一日的累計，可用 `--now 2026-11-25T07:45:00+08:00` 模擬執行日）；預設由正式備份下載最新快照，`--database <快照>` 可改用本機檔案，`--from`／`--to` 可匯出日期範圍，`--print-email` 只印出電郵主旨及正文而不改變寄出與否 |
+| `npm run report:grade-makeup` | **唯讀**匯出「上週欠交＋本週每日配額」的應補報告為 Excel（說明／學生統計／班別彙總）：上週（星期一至五）每人 50 題、欠數 ×2；本週每工作日 10 題但**星期一不計**（星期一的作答仍計入本週已做）；本週已做先滿足本週應做，超出部分才抵銷上週欠數。`-- --form 4 --out "D:\匯出"`；`--now 2026-11-27T09:30:00+08:00` 可模擬時間，`--include-today` 把今日計入配額，`--all` 列出完整名冊，`--json` 輸出結構化結果。預設只列有練習紀錄的學生，並以服務帳戶金鑰讀取正式備份快照 |
 | `npm run golden:eval` | 唯讀：驗證 golden dataset 並執行評估；approved fixture 為 0 時輸出 `INSUFFICIENT_EVIDENCE` |
 | `npm run release:gate` | 唯讀發布閘門：綜合隔離、可作答性、來源、解釋、元數據、教師裁決、審核來源、結構裁決、provenance 風險、使用授權、Golden 核准、測試及部署證據，輸出 `PASS`／`FAIL`／`WARN`／`POLICY_PENDING`／`INSUFFICIENT_EVIDENCE` 及 `READY`／`READY WITH LIMITATIONS`／`NOT READY` |
 | `npm run review:adjudication` | 唯讀：由修復來源報告產生 18 題逐題裁決套件（原始 vs 現行、空格位置及答案次序、版本與紀錄來源、待填決定欄） |
